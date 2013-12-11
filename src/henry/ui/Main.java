@@ -38,7 +38,6 @@ public class Main extends JFrame {
         contentPane = new LoginPane(new Runnable () {
             @Override
             public void run() {
-                System.out.println("here 2");
                 FacturaVentana.main(null);
             }
         });

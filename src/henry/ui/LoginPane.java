@@ -47,7 +47,6 @@ public class LoginPane extends JPanel implements ActionListener{
         add(message);
         
         login.addActionListener(this);
-        System.out.println("HERE");
 
     }
     

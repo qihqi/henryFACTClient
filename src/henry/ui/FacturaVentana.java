@@ -20,7 +20,7 @@ import net.miginfocom.swing.MigLayout;
 public class FacturaVentana extends JFrame {
     private JPanel panel;
     
-//    private ItemContainer contenido;
+    private ItemContainer contenido;
 //    private ClientePanel cliente;
     private JLabel numeroLabel;
     private JTextField pago;
@@ -41,6 +41,7 @@ public class FacturaVentana extends JFrame {
      * Create the application.
      */
     public FacturaVentana(String userId) {
+        System.out.println("creating itemcontainer");
         panel = new JPanel();
         getContentPane().add(panel);
         panel.setLayout(new MigLayout("", "[][][][]",""));
@@ -50,7 +51,8 @@ public class FacturaVentana extends JFrame {
         //numero = user.getLastFactura();
         numeroLabel = new JLabel("" + numero);
         
-    //    contenido = new ItemContainer(user, true);
+        System.out.println("creating itemcontainer");
+        contenido = new ItemContainer(true);
     //    cliente = new ClientePanel(contenido);
         JButton buscarPorCliente = new JButton("Buscar por Cliente");
         pedidoField = new JTextField();
@@ -67,7 +69,7 @@ public class FacturaVentana extends JFrame {
         panel.add(numeroLabel, "cell 3 0, wrap, width :100:");
         
         //panel.add(cliente, "wrap, span");
-       // panel.add(contenido, "wrap, span");
+        panel.add(contenido, "wrap, span");
         JButton aceptar = new JButton("aceptar");
         JButton cancelar = new JButton("cancelar");
         
@@ -112,6 +114,7 @@ public class FacturaVentana extends JFrame {
     }
 
     public static void main(String [] s) {
+        System.out.println("creating main");
         new FacturaVentana("").setVisible(true);
     }
 }
