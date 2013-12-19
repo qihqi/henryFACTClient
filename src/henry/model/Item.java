@@ -12,26 +12,27 @@ public class Item extends BaseModel {
     }
 
     public int getSubtotal() {
-        int precio = getPrecio();
-        return (cantidad / 1000) * precio + ((cantidad % 1000) * precio) / 1000 ;
+        if (producto == null) {
+            return 0;
+        }
+        int precio = producto.getPrecio1();
+        return milesimaPorCentavos(cantidad, precio);
     }
 
-    public int getPrecio() {
-        return (cantidad >= producto.getThreshold()) ?
-                producto.getPrecio1() : producto.getPrecio2();
+    public int getDescuento() {
+        if (producto == null) {
+            return 0;
+        }
+        if (cantidad >= producto.getThreshold()) {
+            int descUnit = producto.getPrecio1() - getProducto().getPrecio2();
+            return milesimaPorCentavos(cantidad, descUnit);
+        }
+        else {
+            return 0;
+        }
     }
 
-    public String getDisplayCantidad() {
-        return String.format("%d.%d", cantidad / 1000, cantidad % 1000);
-    }
-
-    public String getDisplayPrecio() {
-        int precio = getPrecio();
-        return String.format("%d.%d", precio / 100, precio % 100);
-    }
-
-    public String getDisplaySubtotal() {
-        int subtotal = getSubtotal();
-        return String.format("%d.%d", subtotal / 100, subtotal % 100);
+    private static int milesimaPorCentavos(int milesimas, int centavos) {
+        return (milesimas / 1000) * centavos + ((milesimas % 1000) * centavos) / 1000 ;
     }
 }

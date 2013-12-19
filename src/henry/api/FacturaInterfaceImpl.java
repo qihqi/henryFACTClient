@@ -11,9 +11,9 @@ public class FacturaInterfaceImpl implements FacturaInterface {
     public Producto getProductoPorCodigo(String codigo) {
         Producto producto = new Producto();
         producto.setCodigo("123");
-        producto.setPrecio1(1);
-        producto.setPrecio2(2);
-        producto.setThreshold(3);
+        producto.setPrecio1(200);
+        producto.setPrecio2(150);
+        producto.setThreshold(3000);
         producto.setNombre("producto de prueba");
         return producto;
     }
@@ -25,7 +25,11 @@ public class FacturaInterfaceImpl implements FacturaInterface {
 
     @Override
     public Cliente getClientePorCodigo(String codigo) {
-        return null;
+        Cliente cliente = new Cliente();
+        cliente.setCodigo("NA");
+        cliente.setApellidos("Cliente General");
+        cliente.setNombres("Cliente General");
+        return cliente;
     }
 
     @Override

@@ -21,7 +21,6 @@ public class FacturaVentana extends JFrame {
     private JPanel panel;
     
     private ItemContainer contenido;
-//    private ClientePanel cliente;
     private JLabel numeroLabel;
     private JTextField pago;
     private JTextField pedidoField;
@@ -53,7 +52,8 @@ public class FacturaVentana extends JFrame {
         
         System.out.println("creating itemcontainer");
         contenido = new ItemContainer(true);
-    //    cliente = new ClientePanel(contenido);
+        ClientePanel cliente = new ClientePanel(contenido);
+
         JButton buscarPorCliente = new JButton("Buscar por Cliente");
         pedidoField = new JTextField();
         
@@ -68,7 +68,7 @@ public class FacturaVentana extends JFrame {
         panel.add(new JLabel("No. de Factura: "));
         panel.add(numeroLabel, "cell 3 0, wrap, width :100:");
         
-        //panel.add(cliente, "wrap, span");
+        panel.add(cliente, "wrap, span");
         panel.add(contenido, "wrap, span");
         JButton aceptar = new JButton("aceptar");
         JButton cancelar = new JButton("cancelar");

@@ -57,7 +57,7 @@
         <!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
         <jar jarfile="${dist}/lib/venta.jar" basedir="${build}">
             <manifest>
-                <attribute name="Main-Class" value="henry.common.LoginVentana"/>
+                <attribute name="Main-Class" value="henry.ui.Main"/>
                 <attribute name="Class-Path" value="${manifest.classpath}"/>
             </manifest>
         </jar>
@@ -84,7 +84,7 @@
         </jar>
         <jar jarfile="${dist}/lib/facturaw.jar" basedir="${build}">
             <manifest>
-                <attribute name="Main-Class" value="henry.common.FacturaLogin"/>
+                <attribute name="Main-Class" value="henry.ui.Main"/>
                 <attribute name="Class-Path" value="${windows.classpath}"/>
             </manifest>
         </jar>

@@ -1,31 +1,28 @@
 package henry.model;
 
 import lombok.Getter;
+import lombok.Setter;
 
 public class Cliente extends BaseModel {
-    @Getter
+    @Getter @Setter
     private String codigo;
 
-    @Getter
+    @Getter @Setter
     private String nombres;
 
-    @Getter
+    @Getter @Setter
     private String apellidos;
 
-    @Getter
+    @Getter @Setter
     private String direccion;
 
-    @Getter
+    @Getter @Setter
     private String ciudad;
 
-    @Getter
+    @Getter @Setter
     private String tipo;
 
-    @Getter
+    @Getter @Setter
     private String telefono;
-
-    public void load(String codigo) {
-    }
-
 }
 

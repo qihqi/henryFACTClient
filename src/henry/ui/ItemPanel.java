@@ -1,15 +1,20 @@
 package henry.ui;
 
 import henry.api.FacturaInterfaceImpl;
+import henry.model.BaseModel;
+import henry.model.Item;
 import henry.model.Producto;
 import net.miginfocom.swing.MigLayout;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JButton;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import java.awt.Font;
 import java.awt.event.*;
 
-import henry.model.BaseModel;
-import henry.model.Item;
+import static henry.Helpers.displayAsMoney;
+import static henry.Helpers.displayMilesimas;
 
 /** This Class represents a row in a nota de venta o factura
  *
@@ -27,8 +32,6 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
     private Item item;
 
     public ItemPanel(ItemContainer parent_, Item item) {
-        System.out.println("Called constructor");
-        new RuntimeException("here").printStackTrace();
         parent = parent_;
         this.item = item;
         item.addListener(this);
@@ -66,9 +69,13 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         public void actionPerformed(ActionEvent e) {
             String code = codigo.getText();
             Producto prod = new FacturaInterfaceImpl().getProductoPorCodigo(code);
-            item.setProducto(prod);
-            //cantidad no es 0, es decir subtotal cambiara
-            item.notifyListeners();
+            if (prod != null) {
+                item.setProducto(prod);
+                item.notifyListeners();
+                cantidad.requestFocus();
+            } else {
+                codigo.requestFocus();
+            }
         }
     }
 
@@ -79,6 +86,9 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
             int cantReal = (int) Math.round(Double.parseDouble(cantString) * 1000);
             item.setCantidad(cantReal);
             item.notifyListeners();
+
+            parent.shiftEvent(ItemPanel.this);
+            parent.scrollDown();
         }
     }
 
@@ -114,17 +124,20 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         add(newPrice, "width :15:,height :20:");
     }
 
-    public void focus() {}
+    public void focus() {
+        codigo.requestFocus();
+    }
+
     public void clear() {}
 
     public void onDataChanged() {
         System.out.println("onDataChagned");
         Producto prod = item.getProducto();
         codigo.setText(prod.getCodigo());
-        cantidad.setText(item.getDisplayCantidad());
-        precio.setText(item.getDisplayPrecio());
+        cantidad.setText(displayMilesimas(item.getCantidad()));
+        precio.setText(displayAsMoney(prod.getPrecio1()));
         nombre.setText(prod.getNombre());
-        subtotal.setText(item.getDisplaySubtotal());
+        subtotal.setText(displayAsMoney(item.getSubtotal()));
     }
 
 }

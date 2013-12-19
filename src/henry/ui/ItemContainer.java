@@ -20,6 +20,7 @@ import henry.model.Item;
 import net.miginfocom.swing.MigLayout;
 import javax.swing.JTextField;
 
+import static henry.Helpers.displayAsMoney;
 @SuppressWarnings("serial")
 public class ItemContainer extends JPanel implements BaseModel.Listener {
 
@@ -37,11 +38,11 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
 
     private JPanel content;
 
-    private JLabel lCod;
-    private JLabel lCant;
+    private JLabel lCodigo;
+    private JLabel lCantidad;
     private JLabel lNombre;
-    private JLabel lPre;
-    private JLabel lSub;
+    private JLabel lPrecio;
+    private JLabel lSubtotal;
     private JScrollPane scroll;
 
     private JTextField ivaPorciento;
@@ -49,30 +50,18 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
     private JTextField totalValor;
     private JTextField descValor;
 
-    private JTextField subValor;
-    private JTextField subtotalValor;
+    private JTextField valorBruto;
+    private JTextField valorNeto;
 
     private Documento documento;
-    private DocumentoUpdater totalUpdater;
 
-    private static class DocumentoUpdater implements BaseModel.Listener {
-        private Documento documento;
-        DocumentoUpdater(Documento documento) {
-            this.documento = documento;
-        }
+    private class IvaUpdater implements ActionListener {
 
         @Override
-        public void onDataChanged() {
-            int subtotal = 0;
-            for (Item item : documento.getItems()) {
-                subtotal += item.getSubtotal();
-            }
-            documento.setSubtotal(subtotal);
-            int iva = (int) Math.round(0.12 * subtotal);
-            int total = subtotal + iva;
-            documento.setIva(iva);
-            documento.setTotal(total);
-            documento.notifyListeners();
+        public void actionPerformed(ActionEvent e) {
+           int iva = Integer.parseInt(ivaPorciento.getText());
+           documento.setIvaPorciento(iva);
+           documento.notifyListeners();
         }
     }
 
@@ -85,10 +74,10 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
 
         reverseItem = new HashMap<ItemPanel, Integer>();
         documento = new Documento();
+        documento.setIvaPorciento(DEFAULT_IVA);
         documento.addListener(this);
         Item firstItem = new Item();
-        totalUpdater = new DocumentoUpdater(documento);
-        firstItem.addListener(totalUpdater);
+        documento.addItem(firstItem);
         initUI(firstItem);
 
     }
@@ -98,26 +87,26 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         JPanel header = new JPanel(new MigLayout("",
                 "90[]10[][][][]",""));
 
-        lCod = new JLabel();
-        lCod.setText("Codigo");
+        lCodigo = new JLabel();
+        lCodigo.setText("Codigo");
 
-        lCant = new JLabel();
-        lCant.setText("Cantidad");
+        lCantidad = new JLabel();
+        lCantidad.setText("Cantidad");
 
         lNombre = new JLabel();
         lNombre.setText("Nombre del Producto");
 
-        lPre = new JLabel();
-        lPre.setText("Precio");
+        lPrecio = new JLabel();
+        lPrecio.setText("Precio");
 
-        lSub = new JLabel();
-        lSub.setText("Subtotal");
+        lSubtotal = new JLabel();
+        lSubtotal.setText("Subtotal");
 
-        header.add(lCod, "width :100:");
-        header.add(lCant, "width :80:");
+        header.add(lCodigo, "width :100:");
+        header.add(lCantidad, "width :80:");
         header.add(lNombre, "width :200:");
-        header.add(lPre, "width :80:");
-        header.add(lSub, "width :100:");
+        header.add(lPrecio, "width :80:");
+        header.add(lSubtotal, "width :100:");
         setPreferredSize(new Dimension(792, 570));
 
         add(header, BorderLayout.PAGE_START);
@@ -155,20 +144,16 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         ivaValor = new JTextField();
         ivaValor.setEditable(false);
 
-        ivaPorciento.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                updateIVA();
-            }
-        });
+        ivaPorciento.addActionListener(new IvaUpdater());
 
 
         totales.add(subLabel, "cell 0 0");
 
-        subValor = new JTextField();
-        subValor.setEditable(false);
+        valorBruto = new JTextField();
+        valorBruto.setEditable(false);
 
 
-        totales.add(subValor, "cell 3 0,width :100:");
+        totales.add(valorBruto, "cell 3 0,width :100:");
 
         descValor = new JTextField();
         descValor.setEditable(false);
@@ -176,11 +161,11 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         totales.add(descLabel, "cell 0 1");
         totales.add(descValor, "cell 3 1, width :100:");
 
-        subtotalValor = new JTextField();
-        subtotalValor.setEditable(false);
+        valorNeto = new JTextField();
+        valorNeto.setEditable(false);
 
         totales.add(netLabel, "cell 0 2");
-        totales.add(subtotalValor, "cell 3 2, width :100:");
+        totales.add(valorNeto, "cell 3 2, width :100:");
 
         totales.add(ivaLabel, "cell 0 3");
         totales.add(ivaPorciento, "cell 1 3,width :30:");
@@ -213,19 +198,18 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
      *  Do the event when shift is updated. ie update the total
      *  and change the cursor to next line
      */
-    public void shiftEvent() {
-        //move the cursor to next one
-        //update the total
-        updateSubtotal(); //also update descuento
+    public void shiftEvent(ItemPanel item) {
+        current = reverseItem.get(item);
         getFocus();
     }
 
     public void getFocus() {
         int threshold = items.size() - 1;
+        current++;
         if (current < threshold) {
             //dont need to make new one
             System.out.println("didnt add new");
-            ItemPanel next = items.get(++current);
+            ItemPanel next = items.get(current);
             next.focus();
         }
         else if (current == threshold /*&& items.get(threshold).getProdCont() == null */ ) {
@@ -233,17 +217,14 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         }
         else {
             //allocate new ones
-        /*    Item nuevoItem = new Item();
+            Item nuevoItem = new Item();
             ItemPanel newOne = new ItemPanel(this, nuevoItem);
-            nuevoItem.addListener(totalUpdater);
-            documento.getItems().add(nuevoItem);
+            documento.addItem(nuevoItem);
             items.add(newOne);
             content.add(newOne, "wrap");
             content.revalidate();
-            current++;
             reverseItem.put(newOne, current);
             newOne.focus();
-            */
         }
     }
 
@@ -283,8 +264,8 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         //ivaPorciento.setText("");
         ivaValor.setText("");
         totalValor.setText("");
-        subtotalValor.setText("");
-        subValor.setText("");
+        valorNeto.setText("");
+        valorBruto.setText("");
         descValor.setText("");
 
         scrollUp();
@@ -292,6 +273,10 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
 
     @Override
     public void onDataChanged() {
-
+        valorBruto.setText(displayAsMoney(documento.getSubtotal()));
+        descValor.setText(displayAsMoney(documento.getDescuento()));
+        valorNeto.setText(displayAsMoney(documento.getTotalNeto()));
+        ivaValor.setText(displayAsMoney(documento.getIva()));
+        totalValor.setText(displayAsMoney(documento.getTotal()));
     }
 }
