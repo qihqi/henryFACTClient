@@ -24,5 +24,10 @@ public class Cliente extends BaseModel {
 
     @Getter @Setter
     private String telefono;
+
+    @Override
+    public String toString() {
+        return apellidos + " " + nombres;
+    }
 }
 

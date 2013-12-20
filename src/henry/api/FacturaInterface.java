@@ -10,4 +10,6 @@ public interface FacturaInterface {
     
     Cliente getClientePorCodigo(String codigo);
     List<Cliente> buscarCliente(String prefijo);
+
+    public static final FacturaInterface INSTANCE = new FacturaInterfaceImpl();
 }

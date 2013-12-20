@@ -3,6 +3,7 @@ package henry.api;
 import henry.model.Cliente;
 import henry.model.Producto;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class FacturaInterfaceImpl implements FacturaInterface {
@@ -20,7 +21,9 @@ public class FacturaInterfaceImpl implements FacturaInterface {
 
     @Override
     public List<Producto> buscarProducto(String prefijo) {
-        return null;
+        List<Producto> result = new ArrayList<>();
+        result.add(getProductoPorCodigo(""));
+        return result;
     }
 
     @Override
@@ -34,6 +37,8 @@ public class FacturaInterfaceImpl implements FacturaInterface {
 
     @Override
     public List<Cliente> buscarCliente(String prefijo) {
-        return null;
+        List<Cliente> result = new ArrayList<>();
+        result.add(getClientePorCodigo(""));
+        return result;
     }
 }

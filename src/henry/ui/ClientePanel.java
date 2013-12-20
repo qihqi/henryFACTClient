@@ -37,9 +37,14 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
         @Override
         public void actionPerformed(ActionEvent e) {
             String cod = codigo.getText().trim();
-            cliente = new FacturaInterfaceImpl().getClientePorCodigo(cod);
-            cliente.addListener(ClientePanel.this);
-            cliente.notifyListeners();
+            loadCliente(cod);
+        }
+    }
+
+    private class LoadGeneral implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            loadCliente("NA");
         }
     }
 
@@ -59,6 +64,7 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
 
 		general = new JCheckBox();
 		general.setText("Cliente General");
+        general.addActionListener(new LoadGeneral());
 
 		setLayout(new MigLayout("", "[][][][]", "[]"));
 
@@ -86,5 +92,13 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
     public void onDataChanged() {
         codigo.setText(cliente.getCodigo());
         nombre.setText(cliente.getApellidos() + " " + cliente.getNombres());
+    }
+
+    private void loadCliente(String cod) {
+        cliente = new FacturaInterfaceImpl().getClientePorCodigo(cod);
+        if (cliente != null) {
+            cliente.addListener(ClientePanel.this);
+            cliente.notifyListeners();
+        }
     }
 }

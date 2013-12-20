@@ -10,4 +10,9 @@ public class Producto {
     @Getter @Setter private int precio1;
     @Getter @Setter private int precio2;
     @Getter @Setter private int threshold;
+
+    @Override
+    public String toString() {
+        return nombre;
+    }
 }
