@@ -19,4 +19,8 @@ def new_session():
     if not get_session.session:
         get_session.session_class = sessionmaker(bind=get_engine())
     return get_session.session_class()
-get_session.session_class = None
+new_session.session_class = None
+
+
+def create_mysql_string(user, password):
+    return "mysql+mysqldb://%s:%s@localhost/henry" % (user, password)

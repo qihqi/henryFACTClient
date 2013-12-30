@@ -1,11 +1,13 @@
 import json
 import sys
+import bottle
 from bottle import run, request
 from bottle import get, post, put, HTTPError
 from config import get_engine
 from henry.layer1.api import get_product_by_id, create_producto, search_product
 from henry.helpers.connection import timed
 
+app = bottle.Bottle()
 
 class Response(object):
     def __init__(self, result=None, error=None, continuation=None):
@@ -25,7 +27,7 @@ class Response(object):
         return json.dumps(data)
 
 
-@get('/api/producto')
+@app.get('/api/producto')
 def get_producto():
     prod_id = request.query.get('id')
     bodega_id = request.query.get('bodega_id')
@@ -52,7 +54,7 @@ def _display_prod(prod, cont):
     }
 
 
-@get('/api/cliente')
+@app.get('/api/cliente')
 def get_cliente():
     cliente_id = request.query.get('id')
     if cliente_id:
@@ -64,18 +66,17 @@ def get_cliente():
             'telefono': 'tel'
         }
 
-
-@get('/api/pedido')
+@app.get('/api/pedido')
 def get_nota_de_pedido():
     pass
 
 
-@put('/api/pedido')
+@app.put('/api/pedido')
 def put_nota_de_pedido():
     pass
 
 
-@put('/api/factura')
+@app.put('/api/factura')
 def put_factura():
     pass
 
