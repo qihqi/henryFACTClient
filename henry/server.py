@@ -3,11 +3,12 @@ import sys
 import bottle
 from bottle import run, request
 from bottle import get, post, put, HTTPError
-from config import get_engine
-from henry.layer1.api import get_product_by_id, create_producto, search_product
-from henry.helpers.connection import timed
+from helpers.connection import timed
+from henry.layer1.api import get_product_by_id, create_producto, search_product, get_nota_de_venta_by_id, get_cliente_by_id, save_nota
+from henry.config import CONFIG, get_engine
 
 app = bottle.Bottle()
+
 
 class Response(object):
     def __init__(self, result=None, error=None, continuation=None):
@@ -17,37 +18,36 @@ class Response(object):
         self.cont = continuation
 
     def serialize(self):
-        data = {'success': self.success}
+        data = {'success': self.success, 'result': self.result}
         if self.error:
             data['error'] = self.error
-        if self.result:
-            data['result'] = self.result
         if self.cont:
             data['cont'] = self.cont
         return json.dumps(data)
 
 
 @app.get('/api/producto')
+@timed(ostream=sys.stderr)
 def get_producto():
     prod_id = request.query.get('id')
     bodega_id = request.query.get('bodega_id')
     if prod_id:
-        prod, cont = get_product_by_id(prod_id, bodega_id)
-        return Response(result=_display_prod(prod, cont)).serialize()
+        cont = get_product_by_id(prod_id, bodega_id)
+        result = _display_prod(cont) if cont else None
+        resp = Response(result=result).serialize()
+        return resp
     prefijo = request.query.get('prefijo')
     if prefijo:
-        result = []
-        for prod, cont in search_product(prefijo):
-            result.append(_display_prod(prod, cont))
+        result = map(_display_prod, search_product(prefijo))
         return Response(result).serialize()
 
     raise HTTPError()
 
 
-def _display_prod(prod, cont):
+def _display_prod(cont):
     return {
-        'codigo': prod.codigo,
-        'nombre': prod.nombre,
+        'codigo': cont.prod_id.decode('latin1'),
+        'nombre': cont.producto.nombre.decode('latin1'),
         'precio1': int(cont.precio * 100),
         'precio2': int(cont.precio * 100),
         'threshold': cont.cant_mayorista,
@@ -58,27 +58,31 @@ def _display_prod(prod, cont):
 def get_cliente():
     cliente_id = request.query.get('id')
     if cliente_id:
+        cliente = get_cliente_by_id(cliente_id)
         return {
-            'cliente_id': cliente_id,
-            'nombres': 'x x',
-            'apellidos': 'y y',
-            'direccion': 'direccion',
-            'telefono': 'tel'
+            name: getattr(cliente, name) for name in cliente.__dict__ if isinstance(getattr(cliente,name), str)
         }
 
 @app.get('/api/pedido')
 def get_nota_de_pedido():
-    pass
+    codigo = request.query.get('id')
+    if codigo:
+        return get_nota_de_venta_by_id(int(codigo))
 
 
 @app.put('/api/pedido')
 def put_nota_de_pedido():
-    pass
+    data = json.loads(request.body.read())
+    num = save_nota(data)
+    return {'num': num}
+
 
 
 @app.put('/api/factura')
 def put_factura():
-    pass
+    data = request.body.read()
+    print data
+    return data
 
 
 def setup_testdata():
@@ -92,10 +96,15 @@ def setup_testdata():
 
 
 if __name__ == '__main__':
+    import sys
+    import os
+    CONFIG['echo'] = False
+    sys.path.append(os.path.dirname(os.path.realpath(__file__)))
     from henry.layer1.schema import Base
-    Base.metadata.create_all(get_engine)
-    setup_testdata()
-    run(host='localhost', debug=True, port=8080)
+    Base.metadata.create_all(get_engine())
+#    setup_testdata()
+    print get_cliente_by_id('NA')
+#    run(app, host='localhost', debug=True, port=8080)
 
 
 

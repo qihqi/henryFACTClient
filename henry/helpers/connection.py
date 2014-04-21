@@ -6,10 +6,11 @@ def timed(ostream):
     def inner(f):
         def ff(*args, **kwargs):
             start = time.time()
-            f(*args, **kwargs)
+            result = f(*args, **kwargs)
             end = time.time()
             printd = '%s : %f\n' % (f.__name__, end - start)
             ostream.write(printd)
+            return result
         return ff
     return inner
 

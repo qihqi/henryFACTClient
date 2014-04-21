@@ -1,13 +1,11 @@
 import json
-
-from sqlalchemy.sql import select
-
+from henry.layer1.schema import NVenta, NItemVenta, NOrdenDespacho, NItemDespacho
 from henry.layer1.schema import NProducto, NContenido, NCliente
 from henry.config import new_session
 
 
 def _prod_query(session):
-    return session.query(NProducto, NContenido).filter(NProducto.codigo == NContenido.prod_id)
+    return session.query(NContenido).join(NProducto, NContenido.prod_id == NProducto.codigo)
 
 
 def get_product_by_id(codigo, bodega_id):
@@ -39,6 +37,7 @@ def create_producto(codigo, nombre, precio1, precio2,
     session.add(prod)
     session.add(cont)
     session.commit()
+    return cont
 
 
 def serialize_product(product_row):
@@ -63,39 +62,64 @@ def search_cliente(apellido):
     return clientes
 
 
-def get_nota_de_venta(id):
-    metadata_query = select([Schemas.nota_de_venta]).where(Schemas.nota_de_venta.c.id == id)
-    row_query = select([Schemas.item_de_venta,
-                        Schemas.producto.c.nombre,
-                        Schemas.contenido.c.precio,
-                        Schemas.contenido.c.precio2]).where(
-        (Schemas.item_de_venta.c.venta_cod_id == id) &
-        (Schemas.producto.c.codigo == Schemas.item_de_venta.c.producto_id) &
-        (Schemas.contenido.c.prod_id == Schemas.item_de_venta.c.producto_id))
-
-    engine = get_database_connection()
-
-    nota = engine.execute(metadata_query).fetchone()
-    rows = engine.execute(row_query)
-
-    return create_full_nota(nota, rows)
+def get_nota_de_venta_by_id(codigo):
+    session = new_session()
+    metadata = session.query(NVenta).filter(NVenta.id == codigo).first()
+    rows = session.query(NItemVenta).filter(NItemVenta.venta_cod_id == codigo).all()
+    return serialize_nota(metadata, rows)
 
 
-def create_full_nota(nota, rows):
+def serialize_nota(nota, rows):
     def serialize_item(item):
-        return {
-            'codigo': item.producto_id,
-            'nombre': item.nombre,
-            'cantidad': str(item.cantidad),
-            'precio': str(item.precio)}
+        cant, prod = get_product_by_id(item.producto_id, nota.bodega_id)
+        try:
+            return {
+                'codigo': item.producto_id.decode('latin1'),
+                'nombre': prod.nombre.decode('latin1'),
+                'cantidad': str(item.cantidad),
+                'precio': str(cant.precio)}
+        except UnicodeDecodeError:
+            print prod.codigo
+            raise
 
     item_list = map(serialize_item, rows)
-    return json.dumps({
+    return {
         'cliente': {
             'id': nota.cliente_id
         },
         'items': item_list
-    })
+    }
+
+
+def save_nota(nota_dict):
+    return _save_documento(
+        NVenta,
+        NItemVenta,
+        content_dict=nota_dict)
+
+
+def save_factura(fact_dict):
+    return _save_documento(NOrdenDespacho,
+                           NItemDespacho,
+                           content_dict=fact_dict)
+
+
+def _save_documento(header_cls, item_cls, content_dict):
+    items = content_dict['items']
+    other_attr = {x: content_dict[x] for x in content_dict if x != 'items'}
+
+    session = new_session()
+    header = header_cls(**other_attr)
+    session.add(header)
+    for num, x in enumerate(items):
+        item = item_cls(
+            header=header,
+            num=num,
+            **x
+        )
+        session.add(item)
+    session.commit()
+    return header.id
 
 
 

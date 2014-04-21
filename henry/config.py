@@ -12,7 +12,7 @@ CONFIG = {
 def get_engine():
     if not get_engine.engine:
         print CONFIG
-        engine = create_engine(CONFIG['connection_string'], echo=CONFIG['echo'])
+        get_engine.engine = create_engine(CONFIG['connection_string'], echo=CONFIG['echo'])
     return get_engine.engine
 get_engine.engine = None
 
