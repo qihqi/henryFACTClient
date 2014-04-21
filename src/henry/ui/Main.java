@@ -1,14 +1,7 @@
 package henry.ui;
 
-import java.awt.EventQueue;
-import java.awt.KeyboardFocusManager;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPasswordField;
-import javax.swing.JTextField;
+import javax.swing.*;
+import java.awt.*;
 
 @SuppressWarnings("serial")
 public class Main extends JFrame {

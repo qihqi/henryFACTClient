@@ -1,12 +1,13 @@
 package henry.api;
 
 import henry.model.Cliente;
+import henry.model.Documento;
 import henry.model.Producto;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class FacturaInterfaceImpl implements FacturaInterface {
+public class FacturaInterfaceImplSQL implements FacturaInterface {
 
     @Override
     public Producto getProductoPorCodigo(String codigo) {
@@ -33,6 +34,11 @@ public class FacturaInterfaceImpl implements FacturaInterface {
         cliente.setApellidos("Cliente General");
         cliente.setNombres("Cliente General");
         return cliente;
+    }
+
+    @Override
+    public void guardarDocumento(Documento doc) {
+
     }
 
     @Override

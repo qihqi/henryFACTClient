@@ -1,16 +1,14 @@
 package henry.ui;
 
-import henry.api.FacturaInterfaceImpl;
+import henry.api.FacturaInterfaceImplSQL;
+import henry.api.SearchEngine;
 import henry.model.BaseModel;
 import henry.model.Item;
 import henry.model.Producto;
 import net.miginfocom.swing.MigLayout;
 
-import javax.swing.JButton;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
-import java.awt.Font;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.*;
 
 import static henry.Helpers.displayAsMoney;
@@ -26,7 +24,6 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
     private JTextField nombre;
     private JTextField precio;
     private JTextField subtotal;
-    private JButton buscar;
 
     private ItemContainer parent;
     private Item item;
@@ -68,7 +65,7 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         @Override
         public void actionPerformed(ActionEvent e) {
             String code = codigo.getText();
-            Producto prod = new FacturaInterfaceImpl().getProductoPorCodigo(code);
+            Producto prod = new FacturaInterfaceImplSQL().getProductoPorCodigo(code);
             if (prod != null) {
                 item.setProducto(prod);
                 item.notifyListeners();
@@ -92,6 +89,17 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         }
     }
 
+    private class SearchProducto implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            SearchDialog<Producto> dialog = new SearchDialog<>(SearchEngine.PRODUCTO);
+            dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+            dialog.setVisible(true);
+            Producto result = dialog.getResult();
+            item.setProducto(result);
+            item.notifyListeners();
+        }
+    }
     public void initUI() {
         codigo = new JTextField();
         cantidad = new JTextField();
@@ -102,8 +110,9 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         subtotal = new JTextField();
         subtotal.setEditable(false);
 
-        buscar = new JButton("Bus");
+        JButton buscar = new JButton("Bus");
         buscar.setFont(new Font("Dialog", Font.BOLD, 10));
+        buscar.addActionListener(new SearchProducto());
         final JButton newPrice = new JButton();
 
         codigo.addFocusListener(new HighlightFocusListener(codigo));

@@ -1,17 +1,12 @@
 package henry.ui;
 
-import java.awt.EventQueue;
+import net.miginfocom.swing.MigLayout;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JTextField;
-import javax.swing.border.EmptyBorder;
-
-import net.miginfocom.swing.MigLayout;
 
 @SuppressWarnings("serial")
 public class LoginPane extends JPanel implements ActionListener{

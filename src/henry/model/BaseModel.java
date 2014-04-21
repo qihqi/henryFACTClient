@@ -1,8 +1,8 @@
 package henry.model;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
-import java.lang.ref.WeakReference;
 
 public abstract class BaseModel {
     private List<WeakReference<Listener>> listeners;

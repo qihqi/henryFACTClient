@@ -1,19 +1,14 @@
 package henry.ui;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
-
-import henry.api.FacturaInterfaceImpl;
+import henry.api.FacturaInterfaceImplSQL;
+import henry.api.SearchEngine;
 import henry.model.BaseModel;
 import henry.model.Cliente;
 import net.miginfocom.swing.MigLayout;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class ClientePanel extends JPanel implements BaseModel.Listener {
 
@@ -30,8 +25,6 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
 	private ItemContainer contenido;
 
     private Cliente cliente;
-
-	private boolean create_client = false;
 
     private class LoadCliente implements ActionListener {
         @Override
@@ -51,6 +44,16 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
 	private void initUI() {
 		buscar = new JButton();
 		buscar.setText("Bus");
+        buscar.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                SearchDialog<Cliente> dialog = new SearchDialog<>(SearchEngine.CLIENTE);
+                dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+                dialog.setVisible(true);
+                Cliente result = dialog.getResult();
+                bindCliente(result);
+            }
+        });
 
 		label = new JLabel();
 		label.setText("Cliente");
@@ -95,7 +98,11 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
     }
 
     private void loadCliente(String cod) {
-        cliente = new FacturaInterfaceImpl().getClientePorCodigo(cod);
+        bindCliente(new FacturaInterfaceImplSQL().getClientePorCodigo(cod));
+    }
+
+    private void bindCliente(Cliente newCliente) {
+        cliente = newCliente;
         if (cliente != null) {
             cliente.addListener(ClientePanel.this);
             cliente.notifyListeners();

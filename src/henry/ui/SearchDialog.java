@@ -1,28 +1,16 @@
 package henry.ui;
 
-import java.awt.BorderLayout;
-import java.awt.Dialog;
-import java.awt.Font;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import javax.swing.DefaultListModel;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextField;
-import javax.swing.ListSelectionModel;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-
 import henry.api.SearchEngine;
 import henry.model.BaseModel;
 import net.miginfocom.swing.MigLayout;
+
+import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.List;
 
 @SuppressWarnings("serial")
 public class SearchDialog<T> extends JDialog {
@@ -107,11 +95,11 @@ public class SearchDialog<T> extends JDialog {
         display.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                if (resultList.isEmpty()) {
-                    return;
-                }
-                selectedIndex = display.getSelectedIndex();
-                dispose();
+            if (resultList.isEmpty()) {
+                return;
+            }
+            selectedIndex = display.getSelectedIndex();
+            dispose();
             }
         });
         contentPanel.add(new JScrollPane(display), "span, width :456:");

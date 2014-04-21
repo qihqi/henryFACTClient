@@ -1,8 +1,10 @@
 package henry.api;
 
-import java.util.List;
-import henry.model.Producto;
 import henry.model.Cliente;
+import henry.model.Documento;
+import henry.model.Producto;
+
+import java.util.List;
 
 public interface FacturaInterface {
     Producto getProductoPorCodigo(String codigo);
@@ -11,5 +13,7 @@ public interface FacturaInterface {
     Cliente getClientePorCodigo(String codigo);
     List<Cliente> buscarCliente(String prefijo);
 
-    public static final FacturaInterface INSTANCE = new FacturaInterfaceImpl();
+    void guardarDocumento(Documento doc);
+
+    public static final FacturaInterface INSTANCE = new FacturaInterfaceImplSQL();
 }
