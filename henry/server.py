@@ -1,9 +1,10 @@
 import json
-import sys
 import bottle
+import sys
 from bottle import run, request
 from bottle import get, post, put, HTTPError
 from helpers.connection import timed
+from henry.layer2.models import Producto
 from henry.layer1.api import get_product_by_id, create_producto, search_product, get_nota_de_venta_by_id, get_cliente_by_id, save_nota
 from henry.config import CONFIG, get_engine
 
@@ -18,6 +19,8 @@ class Response(object):
         self.cont = continuation
 
     def serialize(self):
+        if hasattr(self.result, 'serialize'):
+            self.result = self.result.serialize()
         data = {'success': self.success, 'result': self.result}
         if self.error:
             data['error'] = self.error
@@ -30,10 +33,9 @@ class Response(object):
 @timed(ostream=sys.stderr)
 def get_producto():
     prod_id = request.query.get('id')
-    bodega_id = request.query.get('bodega_id')
+    bodega_id = int(request.query.get('bodega_id'))
     if prod_id:
-        cont = get_product_by_id(prod_id, bodega_id)
-        result = _display_prod(cont) if cont else None
+        result = Producto.get(prod_id, bodega_id)
         resp = Response(result=result).serialize()
         return resp
     prefijo = request.query.get('prefijo')
@@ -95,16 +97,21 @@ def setup_testdata():
     create_producto('6', 'prueba 6', 0.2, 0.1, 0)
 
 
-if __name__ == '__main__':
+def main():
     import sys
     import os
     CONFIG['echo'] = False
     sys.path.append(os.path.dirname(os.path.realpath(__file__)))
     from henry.layer1.schema import Base
     Base.metadata.create_all(get_engine())
-#    setup_testdata()
-    print get_cliente_by_id('NA')
-#    run(app, host='localhost', debug=True, port=8080)
+    #setup_testdata()
+    #print get_cliente_by_id('NA')
+    run(app, host='localhost', debug=True, port=8080)
+    return 'http://localhost:8080'
+
+
+if __name__ == '__main__':
+    main()
 
 
 

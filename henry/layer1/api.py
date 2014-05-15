@@ -10,13 +10,13 @@ def _prod_query(session):
 
 def get_product_by_id(codigo, bodega_id):
     session = new_session()
-    prod = _prod_query(session).filter(
+    cont = _prod_query(session).filter(
         NContenido.bodega_id == bodega_id
     ).filter(
         NContenido.prod_id == codigo
     ).first()
 
-    return prod
+    return cont
 
 
 def search_product(prefix):
@@ -71,18 +71,19 @@ def get_nota_de_venta_by_id(codigo):
 
 def serialize_nota(nota, rows):
     def serialize_item(item):
-        cant, prod = get_product_by_id(item.producto_id, nota.bodega_id)
+        cont = get_product_by_id(item.producto_id, nota.bodega_id)
         try:
             return {
-                'codigo': item.producto_id.decode('latin1'),
-                'nombre': prod.nombre.decode('latin1'),
+                'codigo': cont.prod_id.decode('latin1'),
+                'nombre': cont.producto.nombre.decode('latin1'),
                 'cantidad': str(item.cantidad),
-                'precio': str(cant.precio)}
+                'precio': int(cont.precio * 100)}
         except UnicodeDecodeError:
             print prod.codigo
             raise
 
     item_list = map(serialize_item, rows)
+    print item_list
     return {
         'cliente': {
             'id': nota.cliente_id
@@ -107,6 +108,8 @@ def save_factura(fact_dict):
 def _save_documento(header_cls, item_cls, content_dict):
     items = content_dict['items']
     other_attr = {x: content_dict[x] for x in content_dict if x != 'items'}
+    other_attr['cliente_id'] = other_attr['cliente']['id']
+    del other_attr['cliente']
 
     session = new_session()
     header = header_cls(**other_attr)
