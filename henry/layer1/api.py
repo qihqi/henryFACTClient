@@ -19,16 +19,15 @@ def get_product_by_id(codigo, bodega_id):
     return cont
 
 
-def search_product(prefix):
+def search_product(prefix, bodega_id=None):
     session = new_session()
-    prod = _prod_query(session).filter(
-        NProducto.nombre.startswith(prefix)
-    )
+    prod = _prod_query(session).filter(NProducto.nombre.startswith(prefix))
+    if bodega_id:
+        prod = prod.filter(NContenido.bodega_id == bodega_id)
     return prod
 
 
-def create_producto(codigo, nombre, precio1, precio2,
-                    bodega):
+def create_product(codigo, nombre, precio1, precio2, bodega):
     prod = NProducto(codigo=codigo, nombre=nombre)
     cont = NContenido(prod_id=codigo, bodega_id=bodega,
                       precio=precio1, precio2=precio2,
@@ -52,8 +51,8 @@ def serialize_product(product_row):
 
 def get_cliente_by_id(cliente_id):
     session = new_session()
-    cliente = session.query(NCliente).filter(NCliente.codigo == cliente_id).first()
-    return cliente
+    cliente = session.query(NCliente).filter(NCliente.codigo == cliente_id)
+    return cliente.first()
 
 
 def search_cliente(apellido):
@@ -65,8 +64,20 @@ def search_cliente(apellido):
 def get_nota_de_venta_by_id(codigo):
     session = new_session()
     metadata = session.query(NVenta).filter(NVenta.id == codigo).first()
-    rows = session.query(NItemVenta).filter(NItemVenta.venta_cod_id == codigo).all()
-    return serialize_nota(metadata, rows)
+    return metadata
+
+
+def get_items_de_venta_by_id(venta_id, bodega_id):
+    session = new_session()
+    rows = session.query(
+        NItemVenta.cantidad, NItemVenta.producto_id, NProducto.nombre,
+        NContenido.precio, NContenido.precio2, NItemVenta.nuevo_precio
+    ).join(
+        NProducto, NItemVenta.producto_id == NProducto.codigo
+    ).join(NContenido, NItemVenta.producto_id == NContenido.prod_id).filter(
+        NItemVenta.venta_cod_id == venta_id and NContenido.bodega_id == bodega_id
+    )
+    return rows
 
 
 def serialize_nota(nota, rows):

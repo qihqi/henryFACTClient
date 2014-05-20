@@ -2,10 +2,10 @@ import json
 import bottle
 import sys
 from bottle import run, request
-from bottle import get, post, put, HTTPError
+from bottle import HTTPError
 from helpers.connection import timed
-from henry.layer2.models import Producto
-from henry.layer1.api import get_product_by_id, create_producto, search_product, get_nota_de_venta_by_id, get_cliente_by_id, save_nota
+from henry.layer2.models import Producto, ModelEncoder
+from henry.layer1.api import  get_nota_de_venta_by_id, get_cliente_by_id, save_nota, get_items_de_venta_by_id
 from henry.config import CONFIG, get_engine
 
 app = bottle.Bottle()
@@ -26,7 +26,7 @@ class Response(object):
             data['error'] = self.error
         if self.cont:
             data['cont'] = self.cont
-        return json.dumps(data)
+        return json.dumps(data, cls=ModelEncoder)
 
 
 @app.get('/api/producto')
@@ -40,7 +40,7 @@ def get_producto():
         return resp
     prefijo = request.query.get('prefijo')
     if prefijo:
-        result = map(_display_prod, search_product(prefijo))
+        result = list(Producto.search(prefijo, bodega_id))
         return Response(result).serialize()
 
     raise HTTPError()
@@ -87,27 +87,22 @@ def put_factura():
     return data
 
 
-def setup_testdata():
-    create_producto('0', 'prueba 0', 0.2, 0.1, 0)
-    create_producto('1', 'prueba 1', 0.2, 0.1, 0)
-    create_producto('2', 'prueba 2', 0.2, 0.1, 0)
-    create_producto('3', 'prueba 3', 0.2, 0.1, 0)
-    create_producto('4', 'prueba 4', 0.2, 0.1, 0)
-    create_producto('5', 'prueba 5', 0.2, 0.1, 0)
-    create_producto('6', 'prueba 6', 0.2, 0.1, 0)
-
 
 def main():
     import sys
     import os
-    CONFIG['echo'] = False
+    CONFIG['echo'] = True
     sys.path.append(os.path.dirname(os.path.realpath(__file__)))
     from henry.layer1.schema import Base
     Base.metadata.create_all(get_engine())
     #setup_testdata()
     #print get_cliente_by_id('NA')
-    run(app, host='localhost', debug=True, port=8080)
-    return 'http://localhost:8080'
+    for x in get_items_de_venta_by_id(86590, 2):
+        print x.__dict__
+        print x.NContenido.__dict__
+        print list(x)
+  #  run(app, host='localhost', debug=True, port=8080)
+  #  return 'http://localhost:8080'
 
 
 if __name__ == '__main__':
