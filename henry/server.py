@@ -4,7 +4,7 @@ import sys
 from bottle import run, request
 from bottle import HTTPError
 from helpers.connection import timed
-from henry.layer2.models import Producto, ModelEncoder
+from henry.layer2.models import Producto, ModelEncoder, Venta
 from henry.layer1.api import  get_nota_de_venta_by_id, get_cliente_by_id, save_nota, get_items_de_venta_by_id
 from henry.config import CONFIG, get_engine
 
@@ -97,10 +97,7 @@ def main():
     Base.metadata.create_all(get_engine())
     #setup_testdata()
     #print get_cliente_by_id('NA')
-    for x in get_items_de_venta_by_id(86590, 2):
-        print x.__dict__
-        print x.NContenido.__dict__
-        print list(x)
+    print json.dumps(Venta.get(86590).serialize(), cls=ModelEncoder)
   #  run(app, host='localhost', debug=True, port=8080)
   #  return 'http://localhost:8080'
 

@@ -8,6 +8,8 @@ class ModelEncoder(json.JSONEncoder):
     def default(self, obj):
         if hasattr(obj, 'serialize'):
             return obj.serialize()
+        if isinstance(obj, decimal.Decimal):
+            return str(obj)
         return super(ModelEncoder, self).default(obj)
 
 
@@ -41,10 +43,10 @@ class Producto(SerializableMixin):
         self.threshold = threshold
 
     def merge_from_cont(self, cont):
-        self.codigo = cont.prod_id.decode('latin1')
-        self.nombre = cont.producto.nombre.decode('latin1')
-        self.precio1 = int(cont.precio * 100)
-        self.precio2 = int(cont.precio2 * 100)
+        self.codigo = cont.codigo.decode('latin1')
+        self.nombre = cont.nombre.decode('latin1')
+        self.precio1 = cont.precio
+        self.precio2 = cont.precio2
         self.threshold = cont.cant_mayorista
         return self
 
@@ -65,8 +67,8 @@ class Producto(SerializableMixin):
         api.create_product(
             prod.codigo,
             prod.nombre,
-            decimal.Decimal(prod.precio1) / 100,
-            decimal.Decimal(prod.precio2) / 100,
+            prod.precio1,
+            prod.precio2,
             bodega=bodega_id
         )
         return prod
@@ -91,7 +93,9 @@ class Venta(SerializableMixin):
     def merge_from_db(self, metadata, rows):
         self.id = metadata.id
         self.cliente = metadata.cliente_id
-        self.items = (rows, )
+        self.bodega_id = metadata.bodega_id
+        self.items = [(r.cantidad, Producto().merge_from_cont(r), r.nuevo_precio)
+                      for r in rows]
         return self
 
     @classmethod

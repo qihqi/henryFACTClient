@@ -5,7 +5,10 @@ from henry.config import new_session
 
 
 def _prod_query(session):
-    return session.query(NContenido).join(NProducto, NContenido.prod_id == NProducto.codigo)
+    return session.query(
+        NProducto.codigo, NProducto.nombre, NContenido.precio,
+        NContenido.precio2, NContenido.cant_mayorista
+    ).filter(NContenido.prod_id == NProducto.codigo)
 
 
 def get_product_by_id(codigo, bodega_id):
@@ -70,8 +73,9 @@ def get_nota_de_venta_by_id(codigo):
 def get_items_de_venta_by_id(venta_id, bodega_id):
     session = new_session()
     rows = session.query(
-        NItemVenta.cantidad, NItemVenta.producto_id, NProducto.nombre,
-        NContenido.precio, NContenido.precio2, NItemVenta.nuevo_precio
+        NItemVenta.cantidad, NProducto.codigo, NProducto.nombre,
+        NContenido.precio, NContenido.precio2, NItemVenta.nuevo_precio,
+        NContenido.cant_mayorista
     ).join(
         NProducto, NItemVenta.producto_id == NProducto.codigo
     ).join(NContenido, NItemVenta.producto_id == NContenido.prod_id).filter(
