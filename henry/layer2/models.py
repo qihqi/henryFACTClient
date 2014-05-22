@@ -1,7 +1,10 @@
 import decimal
 import itertools
 import json
+import datetime
+from henry.config import new_session
 from henry.layer1 import api
+from henry.layer1.schema import NVenta, NItemVenta
 
 
 class ModelEncoder(json.JSONEncoder):
@@ -89,6 +92,7 @@ class Venta(SerializableMixin):
         self.cliente = cliente
         self.bodega_id = bodega_id
         self.items = items # items is una list de tuple (cantidad, codigo)
+        self.vendedor_id = None
 
     def merge_from_db(self, metadata, rows):
         self.id = metadata.id
@@ -103,6 +107,29 @@ class Venta(SerializableMixin):
         metadata = api.get_nota_de_venta_by_id(venta_id)
         rows = api.get_items_de_venta_by_id(venta_id, metadata.bodega_id)
         return cls().merge_from_db(metadata, rows)
+
+    @staticmethod
+    def save(venta):
+        header = NVenta(id=venta.id,
+                        vendedor_id=venta.vendedor_id,
+                        cliente_id=venta.cliente,
+                        fecha=datetime.date.today(),
+                        bodega_id=venta.bodega_id,
+                        )
+        session = new_session()
+        session.add(header)
+        for num, (cant, producto, nuevo_p) in enumerate(venta.items):
+            item = NItemVenta(header=header,
+                              num=num,
+                              producto_id=producto,
+                              cantidad=cant,
+                              nuevo_precio=nuevo_p)
+            session.add(item)
+        session.commit()
+        return venta
+
+
+
 
 
 
