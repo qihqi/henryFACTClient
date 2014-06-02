@@ -19,8 +19,6 @@ class Response(object):
         self.cont = continuation
 
     def serialize(self):
-        if hasattr(self.result, 'serialize'):
-            self.result = self.result.serialize()
         data = {'success': self.success, 'result': self.result}
         if self.error:
             data['error'] = self.error
@@ -69,7 +67,8 @@ def get_cliente():
 def get_nota_de_pedido():
     codigo = request.query.get('id')
     if codigo:
-        return get_nota_de_venta_by_id(int(codigo))
+        venta = Venta.get(codigo)
+        return Response(result=venta).serialize()
 
 
 @app.put('/api/pedido')
@@ -84,7 +83,6 @@ def put_nota_de_pedido():
 def put_factura():
     data = request.body.read()
     print data
-    return data
 
 
 
@@ -97,9 +95,9 @@ def main():
     Base.metadata.create_all(get_engine())
     #setup_testdata()
     #print get_cliente_by_id('NA')
-    print json.dumps(Venta.get(86590).serialize(), cls=ModelEncoder)
-  #  run(app, host='localhost', debug=True, port=8080)
-  #  return 'http://localhost:8080'
+  #  print json.dumps(Venta.get(86590).serialize(), cls=ModelEncoder)
+    run(app, host='localhost', debug=True, port=8080)
+    return 'http://localhost:8080'
 
 
 if __name__ == '__main__':

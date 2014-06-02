@@ -84,6 +84,33 @@ def get_items_de_venta_by_id(venta_id, bodega_id):
     return rows
 
 
+def get_despacho_by_id(codigo):
+    session = new_session()
+    metadata = session.query(NOrdenDespacho).filter(NOrdenDespacho.id == codigo).first()
+    return metadata
+
+
+def get_despacho_by_bodega(codigo, bodega_id):
+    session = new_session()
+    metadata = session.query(NOrdenDespacho).filter(
+        NOrdenDespacho.codigo == codigo and NOrdenDespacho.bodega_id == bodega_id
+    ).first()
+    return metadata
+
+
+def get_items_de_despacho_by_id(orden_id, bodega_id):
+    session = new_session()
+    rows = session.query(
+        NItemDespacho.cantidad, NProducto.codigo, NProducto.nombre,
+        NItemDespacho.precio, NContenido.precio2, NContenido.cant_mayorista
+    ).join(
+        NProducto, NItemDespacho.producto_id == NProducto.codigo
+    ).join(NContenido, NItemDespacho.producto_id == NContenido.prod_id).filter(
+        NItemDespacho.desp_cod_id == orden_id and NContenido.bodega_id == bodega_id
+    )
+    return rows
+
+
 def serialize_nota(nota, rows):
     def serialize_item(item):
         cont = get_product_by_id(item.producto_id, nota.bodega_id)

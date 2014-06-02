@@ -1,5 +1,7 @@
+import json
 import unittest
-from henry.layer2.models import Producto
+import sqlalchemy
+from henry.layer2.models import Producto, Venta, Factura, ModelEncoder
 from henry.layer1.schema import Base
 from henry import config
 
@@ -21,6 +23,13 @@ class ProductoTest(unittest.TestCase):
         for p in cls.productos:
             Producto.save(p, 1)
 
+    @classmethod
+    def tearDownClass(cls):
+        engine = config.get_engine()
+        meta = sqlalchemy.MetaData(engine)
+        meta.reflect()
+        meta.drop_all()
+
     def _equal_prod(self, prod1, prod2):
         self.assertEquals(prod1.codigo, prod2.codigo)
         self.assertEquals(prod1.nombre, prod2.nombre)
@@ -38,6 +47,40 @@ class ProductoTest(unittest.TestCase):
         for codigo in range(6):
             p = Producto.get(str(codigo), 1)
             self._equal_prod(self.productos[codigo], p)
+
+    def test_venta(self):
+        venta = Venta('NA', 1,
+                      items=[
+                          (1, Producto('0')),
+                          (2, Producto('1'))
+                      ])
+        Venta.save(venta)
+        v2 = Venta.get(venta.id)
+        self.assertEquals(2, len(v2.items))
+        self.assertEquals('0', v2.items[0][1].codigo)
+        self.assertEquals('1', v2.items[1][1].codigo)
+        self.assertEquals(1, v2.items[0][0])
+        self.assertEquals(2, v2.items[1][0])
+        print json.dumps(v2.serialize(), cls=ModelEncoder)
+
+    def test_factura(self):
+        factura = Factura('NA', 1,
+                      items=[
+                          (1, Producto('0', precio1=0.01)),
+                          (2, Producto('1', precio2=0.02))
+                      ])
+        factura.codigo = 123
+        factura.bodega_id = 1
+        Factura.save(factura)
+        f2 = Factura.get_with_bodega(factura.codigo, factura.bodega_id)
+
+        self.assertEquals(2, len(f2.items))
+        self.assertEquals('0', f2.items[0][1].codigo)
+        self.assertEquals('1', f2.items[1][1].codigo)
+        self.assertEquals(1, f2.items[0][0])
+        self.assertEquals(2, f2.items[1][0])
+        print json.dumps(f2.serialize(), cls=ModelEncoder)
+
 
 
 if __name__ == '__main__':
