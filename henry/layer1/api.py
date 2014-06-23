@@ -64,6 +64,23 @@ def search_cliente(apellido):
     return clientes
 
 
+def create_cliente(cliente):
+    newc = NCliente(codigo=cliente.codigo,
+                    nombres=cliente.nombres,
+                    apellidos=cliente.apellidos,
+                    direccion=cliente.direccion,
+                    telefono=cliente.telefono,
+                    ciudad=cliente.ciudad,
+                    tipo=cliente.tipo,
+                    cliente_desde=cliente.cliente_desde
+                    )
+    session = new_session()
+    session.add(newc)
+    session.commit()
+    return newc
+
+
+
 def get_nota_de_venta_by_id(codigo):
     session = new_session()
     metadata = session.query(NVenta).filter(NVenta.id == codigo).first()

@@ -1,9 +1,13 @@
 import json
+import datetime
 import unittest
 import sqlalchemy
-from henry.layer2.models import Producto, Venta, Factura, ModelEncoder
+from decimal import Decimal
+from henry.layer2.models import (Producto, Venta, Factura,
+    Cliente)
 from henry.layer1.schema import Base
 from henry import config
+from henry.helpers.serialization import ModelEncoder
 
 
 class ProductoTest(unittest.TestCase):
@@ -12,14 +16,15 @@ class ProductoTest(unittest.TestCase):
     def setUpClass(cls):
         config.CONFIG['connection_string'] = 'sqlite:///:memory:'
         config.get_engine.engine = None
+        config.CONFIG['echo'] = False
         Base.metadata.create_all(config.get_engine())
         cls.productos = [
-            Producto('0', 'prueba 0', 20, 10, 0),
-            Producto('1', 'prueba 1', 20, 10, 0),
-            Producto('2', 'prueba 2', 20, 10, 0),
-            Producto('3', 'prueba 3', 20, 10, 0),
-            Producto('4', 'prueba 4', 20, 10, 0),
-            Producto('5', 'prueba 5', 20, 10, 0)]
+            Producto('0', 'prueba 0', Decimal('20.23'), Decimal('10'), 0),
+            Producto('1', 'prueba 1', Decimal('20.23'), Decimal('10'), 0),
+            Producto('2', 'prueba 2', Decimal('20.23'), Decimal('10'), 0),
+            Producto('3', 'prueba 3', Decimal('20.23'), Decimal('10'), 0),
+            Producto('4', 'prueba 4', Decimal('20.23'), Decimal('10'), 0),
+            Producto('5', 'prueba 5', Decimal('20.23'), Decimal('10'), 0)]
         for p in cls.productos:
             Producto.save(p, 1)
 
@@ -61,7 +66,6 @@ class ProductoTest(unittest.TestCase):
         self.assertEquals('1', v2.items[1][1].codigo)
         self.assertEquals(1, v2.items[0][0])
         self.assertEquals(2, v2.items[1][0])
-        print json.dumps(v2.serialize(), cls=ModelEncoder)
 
     def test_factura(self):
         factura = Factura('NA', 1,
@@ -79,7 +83,25 @@ class ProductoTest(unittest.TestCase):
         self.assertEquals('1', f2.items[1][1].codigo)
         self.assertEquals(1, f2.items[0][0])
         self.assertEquals(2, f2.items[1][0])
-        print json.dumps(f2.serialize(), cls=ModelEncoder)
+
+    def test_cliente(self):
+        cliente = Cliente()
+        cliente.nombres = 'han'
+        cliente.apellidos = 'hola que tal'
+        cliente.direccion = 'hello'
+        cliente.ciudad = 'ciudad'
+        cliente.telefono = 'hello'
+        cliente.tipo = 'hello'
+        cliente.codigo = '123'
+        cliente.cliente_desde = datetime.datetime.now()
+        Cliente.save(cliente)
+
+        c2 = Cliente.get('123')
+
+        print json.dumps(Cliente.get('123'), cls=ModelEncoder)
+        print json.dumps(Cliente.search('hola'), cls=ModelEncoder)
+
+
 
 
 

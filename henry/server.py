@@ -3,10 +3,10 @@ import bottle
 import sys
 from bottle import run, request
 from bottle import HTTPError
-from helpers.connection import timed
-from henry.layer2.models import Producto, ModelEncoder, Venta
+from henry.layer2.models import Producto, Venta, Cliente
 from henry.layer1.api import  get_nota_de_venta_by_id, get_cliente_by_id, save_nota, get_items_de_venta_by_id
 from henry.config import CONFIG, get_engine
+from henry.helpers.serialization import ModelEncoder
 
 app = bottle.Bottle()
 
@@ -24,11 +24,10 @@ class Response(object):
             data['error'] = self.error
         if self.cont:
             data['cont'] = self.cont
-        return json.dumps(data, cls=ModelEncoder)
+        return json.dumps(self.result, cls=ModelEncoder)
 
 
 @app.get('/api/producto')
-@timed(ostream=sys.stderr)
 def get_producto():
     prod_id = request.query.get('id')
     bodega_id = int(request.query.get('bodega_id'))
@@ -58,10 +57,11 @@ def _display_prod(cont):
 def get_cliente():
     cliente_id = request.query.get('id')
     if cliente_id:
-        cliente = get_cliente_by_id(cliente_id)
-        return {
-            name: getattr(cliente, name) for name in cliente.__dict__ if isinstance(getattr(cliente,name), str)
-        }
+        return json.dumps(Cliente.get(cliente_id), cls=ModelEncoder)
+
+    prefijo = request.query.get('prefijo')
+    if prefijo:
+        return json.dumps(Cliente.search(prefijo), cls=ModelEncoder)
 
 @app.get('/api/pedido')
 def get_nota_de_pedido():

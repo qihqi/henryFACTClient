@@ -1,6 +1,7 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Numeric, Date, Boolean, ForeignKey
 from sqlalchemy.orm import relationship, backref
+from henry.helpers.serialization import SerializableMixin
 
 Base = declarative_base()
 
@@ -81,4 +82,3 @@ class NCliente(Base):
     telefono = Column(String(50), nullable=True)
     tipo = Column(String(1))
     cliente_desde = Column(Date)
-

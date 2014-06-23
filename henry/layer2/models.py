@@ -1,29 +1,15 @@
-import decimal
 import itertools
-import json
 import datetime
 from henry.config import new_session
 from henry.layer1 import api
-from henry.layer1.schema import NVenta, NItemVenta, NOrdenDespacho, NItemDespacho
+from henry.layer1.schema import (
+    NVenta, NItemVenta, NOrdenDespacho, NItemDespacho, NCliente)
+from henry.helpers.serialization import SerializableMixin
 
-
-class ModelEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if hasattr(obj, 'serialize'):
-            return obj.serialize()
-        if isinstance(obj, decimal.Decimal):
-            return str(obj)
-        return super(ModelEncoder, self).default(obj)
-
-
-class SerializableMixin(object):
-    def serialize(self):
-        return {
-            name: getattr(self, name) for name in self._name
-        }
-
-    def to_json(self):
-        return json.dumps(self.serialize(), cls=ModelEncoder)
+def decode(s, codec='latin1'):
+    if s is None:
+        return None
+    return s.decode(codec)
 
 
 class Producto(SerializableMixin):
@@ -204,3 +190,29 @@ class Factura(Venta):
         factura.id = header.id
         factura.fecha = header.fecha
         return factura
+
+
+class Cliente(SerializableMixin, NCliente):
+    _name = [
+        'apellidos',
+        'nombres',
+        'codigo',
+        'direccion',
+        'ciudad'
+    ]
+
+    @classmethod
+    def get(cls, codigo):
+        session = new_session()
+        return session.query(cls).filter(cls.codigo == codigo).first()
+
+    @staticmethod
+    def save(cliente):
+        session = new_session()
+        session.add(cliente)
+        session.commit()
+
+    @classmethod
+    def search(cls, prefijo):
+        session = new_session()
+        return list(session.query(cls).filter(cls.apellidos.startswith(prefijo)))

@@ -37,6 +37,13 @@ class PerformanceTest(unittest.TestCase):
             end = time.time()
             print 'get nota ', end - start
 
+    def test_get_cliente(self):
+        url = self.url_base + '/cliente'
+        r = requests.get(url, params={'id': 'NA'})
+        print 'cliente ', r.text
+        # r = requests.get(url, params={'prefijo': 'A'})
+        #print 'cliente ', r.text
+
 
 if __name__ == '__main__':
     unittest.main()
