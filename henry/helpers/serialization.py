@@ -1,6 +1,12 @@
 import json
 import decimal
 
+def json_dump(content):
+    return json.dumps(
+            content,
+            cls=ModelEncoder,
+            encoding='latin1')
+
 
 class ModelEncoder(json.JSONEncoder):
     def __init__(self, use_int_repr=False, decimal_places=2, *args, **kwargs):

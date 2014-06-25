@@ -204,7 +204,10 @@ class Cliente(SerializableMixin, NCliente):
     @classmethod
     def get(cls, codigo):
         session = new_session()
-        return session.query(cls).filter(cls.codigo == codigo).first()
+        res = session.query(cls).filter(cls.codigo == codigo).first()
+        for x in self._name:
+            setattr(res, x, decode(gettattr(res, x)))
+        return res
 
     @staticmethod
     def save(cliente):
