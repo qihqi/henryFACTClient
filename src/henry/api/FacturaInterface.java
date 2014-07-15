@@ -14,6 +14,7 @@ public interface FacturaInterface {
     List<Cliente> buscarCliente(String prefijo);
 
     void guardarDocumento(Documento doc);
+    Documento getPedidoPorCodigo(String codigo);
 
-    public static final FacturaInterface INSTANCE = new FacturaInterfaceImplSQL();
+    public static final FacturaInterface INSTANCE = new FacturaInterfaceRest("192.168.1.101:8080");
 }

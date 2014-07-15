@@ -8,7 +8,7 @@ public abstract class BaseModel {
     private List<WeakReference<Listener>> listeners;
 
     public BaseModel() {
-        listeners = new ArrayList<WeakReference<Listener>>();
+        listeners = new ArrayList<>();
     }
 
     public void notifyListeners() {
@@ -21,7 +21,7 @@ public abstract class BaseModel {
     }
 
     public void addListener(Listener listener) {
-        listeners.add(new WeakReference(listener));
+        listeners.add(new WeakReference<>(listener));
     }
 
     public interface Listener {

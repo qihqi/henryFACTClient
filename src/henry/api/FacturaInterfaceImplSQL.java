@@ -42,9 +42,15 @@ public class FacturaInterfaceImplSQL implements FacturaInterface {
     }
 
     @Override
+    public Documento getPedidoPorCodigo(String codigo) {
+        return null;
+    }
+
+    @Override
     public List<Cliente> buscarCliente(String prefijo) {
         List<Cliente> result = new ArrayList<>();
         result.add(getClientePorCodigo(""));
         return result;
     }
+
 }

@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 public class Item extends BaseModel {
-    @Getter @Setter private int cantidad; //en milesimas
+    @Getter @Setter private int cantidad;  // en milesimas
     @Getter @Setter private Producto producto;
 
     public Item() {

@@ -1,5 +1,6 @@
 package henry.ui;
 
+import henry.api.FacturaInterface;
 import henry.api.FacturaInterfaceImplSQL;
 import henry.api.SearchEngine;
 import henry.model.BaseModel;
@@ -94,11 +95,11 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
     @Override
     public void onDataChanged() {
         codigo.setText(cliente.getCodigo());
-        nombre.setText(cliente.getApellidos() + " " + cliente.getNombres());
+        nombre.setText(cliente.toString());
     }
 
     private void loadCliente(String cod) {
-        bindCliente(new FacturaInterfaceImplSQL().getClientePorCodigo(cod));
+        bindCliente(FacturaInterface.INSTANCE.getClientePorCodigo(cod));
     }
 
     private void bindCliente(Cliente newCliente) {

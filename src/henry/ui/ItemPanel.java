@@ -1,5 +1,6 @@
 package henry.ui;
 
+import henry.api.FacturaInterface;
 import henry.api.FacturaInterfaceImplSQL;
 import henry.api.SearchEngine;
 import henry.model.BaseModel;
@@ -65,7 +66,7 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         @Override
         public void actionPerformed(ActionEvent e) {
             String code = codigo.getText();
-            Producto prod = new FacturaInterfaceImplSQL().getProductoPorCodigo(code);
+            Producto prod = FacturaInterface.INSTANCE.getProductoPorCodigo(code);
             if (prod != null) {
                 item.setProducto(prod);
                 item.notifyListeners();
