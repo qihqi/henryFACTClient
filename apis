@@ -1,0 +1,15 @@
+GET /documentos/:id
+PUT /documentos
+POST /documentos/:id
+DELETE /documentos/:id
+
+GET /productos/:id
+PUT /productos/:id #crear producto 
+POST /productos/:id #cambiar precio etc
+DELETE /productos/:id #eliminar
+
+GET /cliente/:id
+PUT /cliente
+POST /cliente/:id
+DELETE /cliente/:id
+

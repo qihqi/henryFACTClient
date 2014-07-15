@@ -15,11 +15,11 @@ def get_producto():
     prod_id = request.query.get('id')
     bodega_id = int(request.query.get('bodega_id'))
     if prod_id:
-        json_dump(Producto.get(prod_id, bodega_id))
+        return json_dump(Producto.get(prod_id, bodega_id))
 
     prefijo = request.query.get('prefijo')
     if prefijo:
-        json_dump(list(Producto.search(prefijo, bodega_id)))
+        return json_dump(list(Producto.search(prefijo, bodega_id)))
 
     raise HTTPError()
 
@@ -67,10 +67,8 @@ def main():
     #setup_testdata()
     #print get_cliente_by_id('NA')
   #  print json.dumps(Venta.get(86590).serialize(), cls=ModelEncoder)
-    for c in Cliente.search('c'):
-        print c.codigo
-        print json_dump(c)
-    run(app, host='localhost', debug=True, port=8080)
+    host = sys.argv[1] if len(sys.argv) > 1 else 'localhost'
+    run(app, host=host, debug=True, port=8080)
     return 'http://localhost:8080'
 
 
