@@ -6,8 +6,15 @@ from henry.layer2.models import Producto, Venta, Cliente
 from henry.layer1.api import  get_nota_de_venta_by_id, get_cliente_by_id, save_nota, get_items_de_venta_by_id
 from henry.config import CONFIG, get_engine
 from henry.helpers.serialization import json_dump
+from henry.bodega_api import bodega_api_app
 
 app = bottle.Bottle()
+
+@app.get('/api/producto/<prod_id>')
+def get_producto(prod_id):
+    bodega_id = int(request.query.get('bodega_id'))
+    if prod_id:
+        return json_dump(Producto.get(prod_id, bodega_id))
 
 
 @app.get('/api/producto')
@@ -68,6 +75,7 @@ def main():
     #print get_cliente_by_id('NA')
   #  print json.dumps(Venta.get(86590).serialize(), cls=ModelEncoder)
     host = sys.argv[1] if len(sys.argv) > 1 else 'localhost'
+    app.merge(bodega_api_app)
     run(app, host=host, debug=True, port=8080)
     return 'http://localhost:8080'
 

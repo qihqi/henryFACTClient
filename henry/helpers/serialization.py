@@ -26,6 +26,11 @@ class SerializableMixin(object):
     def serialize(self):
         return SerializableMixin._serialize_helper(self, self._name)
 
+    @classmethod
+    def deserialize(cls, dict_input):
+        pass
+
+
     @staticmethod
     def _serialize_helper(obj, names):
         return {
