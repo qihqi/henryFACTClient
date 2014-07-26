@@ -82,3 +82,37 @@ class NCliente(Base):
     telefono = Column(String(50), nullable=True)
     tipo = Column(String(1))
     cliente_desde = Column(Date)
+
+
+class NIngreso(Base):
+    __tablename__ = 'ingresos'
+    id = Column(Integer, primary_key=True)
+    fecha = Column(Date)
+    usuario = Column(String(50))
+    bodega = Column(Integer) 
+    bodega_desde = Column(Integer) 
+    tipo = Column(String(1)) 
+    items = relationship('NIngresoItem', backref=backref('header'))
+
+    TIPO_INGRESO = 'I'
+    TIPO_REEMPAQUE = 'R'
+    TIPO_EXTERNA = 'E'
+    TIPO_TRANSFERENCIA = 'T'
+
+
+class NIngresoItem(Base):
+    __tablename__ = 'ingreso_items'
+    id = Column('id', Integer, primary_key=True)
+    ref_id = Column('ingreso_cod_id', Integer, ForeignKey('ingresos.id'))
+    num = Column('num', Integer)
+    producto_id = Column('producto_id', String(20))
+    cantidad = Column('cantidad', Numeric(23, 3))
+    
+
+class NTransform(Base):
+    __tablename__ = 'transformas'
+
+    id = Column(Integer, primary_key=True)
+    origin = Column(String(20))
+    dest = Column(String(20))
+    multiplier = Column(Numeric(10, 3))
