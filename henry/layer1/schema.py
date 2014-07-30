@@ -89,9 +89,9 @@ class NIngreso(Base):
     id = Column(Integer, primary_key=True)
     fecha = Column(Date)
     usuario = Column(String(50))
-    bodega = Column(Integer) 
-    bodega_desde = Column(Integer) 
-    tipo = Column(String(1)) 
+    bodega = Column(Integer)
+    bodega_desde = Column(Integer)
+    tipo = Column(String(1))
     items = relationship('NIngresoItem', backref=backref('header'))
 
     TIPO_INGRESO = 'I'
@@ -107,7 +107,7 @@ class NIngresoItem(Base):
     num = Column('num', Integer)
     producto_id = Column('producto_id', String(20))
     cantidad = Column('cantidad', Numeric(23, 3))
-    
+
 
 class NTransform(Base):
     __tablename__ = 'transformas'
@@ -116,3 +116,26 @@ class NTransform(Base):
     origin = Column(String(20))
     dest = Column(String(20))
     multiplier = Column(Numeric(10, 3))
+
+############################################################3
+# below are stuff that are not in prod yet
+
+
+class NTransaction(Base):
+    __tablename__ = 'transacciones'
+
+    # auto increment or event_id?
+    id = Column(Integer, primary_key=True)
+    bodega = Column(Integer)
+
+    # ref stand for reference, it can be:
+    # invoice, other transactions, or null (only for ingresos)
+    ref = Column(String(50))
+    # unix filepath where the items is stored
+    items = Column(String(200))
+
+    # status
+    status = Column(String(10))
+
+
+
