@@ -1,11 +1,20 @@
 import json
 import decimal
 
+# encoding of the database
+DB_ENCODING = 'latin1'
+   
+def decode(s, codec=DB_ENCODING):
+    if s is None:
+        return None
+    return s.decode(codec)
+
+
 def json_dump(content):
     return json.dumps(
             content,
             cls=ModelEncoder,
-            encoding='latin1')
+            encoding=DB_ENCODING)
 
 
 class ModelEncoder(json.JSONEncoder):
@@ -23,18 +32,31 @@ class ModelEncoder(json.JSONEncoder):
 
 
 class SerializableMixin(object):
+
+    def merge_from(self, obj):
+        for key in self._name:
+            try:
+                setattr(self, key, getattr(obj, key))
+            except AttributeError:
+                try:
+                    setattr(self, key, obj[key])
+                except:
+                    pass
+        return self
+
     def serialize(self):
         return SerializableMixin._serialize_helper(self, self._name)
 
     @classmethod
     def deserialize(cls, dict_input):
-        pass
+        obj = cls()
+        obj.__dict__ = {key: val for key, val in dict_input.items() if key in cls._name}
 
 
     @staticmethod
     def _serialize_helper(obj, names):
         return {
-            name: getattr(obj, name) for name in names
+            name: getattr(obj, name) for name in names if getattr(obj, name) is not None
         }
 
     def to_json(self):

@@ -101,9 +101,5 @@ class ProductoTest(unittest.TestCase):
         print json.dumps(Cliente.get('123'), cls=ModelEncoder)
         print json.dumps(Cliente.search('hola'), cls=ModelEncoder)
 
-
-
-
-
 if __name__ == '__main__':
     unittest.main()

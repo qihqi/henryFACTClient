@@ -3,7 +3,8 @@ from sqlalchemy import create_engine
 
 
 CONFIG = {
-    'connection_string': 'mysql+mysqldb://root:no jodas@localhost/henry',
+#    'connection_string': 'mysql+mysqldb://root:no jodas@localhost/henry',
+    'connection_string': 'sqlite://',
     'echo': True,
     'ip': 'localhost',
 }
