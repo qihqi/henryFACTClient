@@ -120,22 +120,31 @@ class NTransform(Base):
 ############################################################3
 # below are stuff that are not in prod yet
 
+class TransType:
+    INGRESS = 'INGRESO'
+    TRANSFER= 'TRANSFER'
+    REPACKAGE = 'REEMPAQUE'
+    EXTERNAL = 'EXTERNA'
 
-class NTransaction(Base):
+
+class Status:
+    NEW = 'NUEVO'
+    COMITTED = 'POSTEADO'
+    DELETED = 'ELIMINADO'
+
+
+class NTransferencia(Base):
     __tablename__ = 'transacciones'
 
     # auto increment or event_id?
     id = Column(Integer, primary_key=True)
-    bodega = Column(Integer)
+    date = Column(Date)
+    origin = Column(Integer)
+    dest = Column(Integer) 
 
-    # ref stand for reference, it can be:
-    # invoice, other transactions, or null (only for ingresos)
-    ref = Column(String(50))
-    # unix filepath where the items is stored
-    items = Column(String(200))
-
-    # status
     status = Column(String(10))
+    trans_type = Column(String(10))
+    ref = Column(String(100))
 
-
-
+    # unix filepath where the items is stored
+    items_location = Column(String(200))
