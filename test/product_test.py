@@ -4,7 +4,7 @@ from decimal import Decimal
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from henry.layer1.schema import NProducto, NContenido, Base
-from henry.layer2.productos import Producto, ProductApiDB
+from henry.layer2.productos import Product, ProductApiDB, Transaction
 
 class ProductApiTest(unittest.TestCase):
 
@@ -52,6 +52,10 @@ class ProductApiTest(unittest.TestCase):
             self.assertTrue(x.precio1 == Decimal('20.23'))
             self.assertTrue(x.precio2 == Decimal('10'))
 
+    def test_trans(self):
+        t = Transaction('0', 0, 10)
+        d = self.prod_api.execute_transactions([t, Transaction('123', 0, 10)])
+        self.assertEquals(d, 1)
 
 
 if __name__ == '__main__':

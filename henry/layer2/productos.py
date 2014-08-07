@@ -1,6 +1,6 @@
 import itertools
 import datetime
-from sqlalchemy.sql import bind_param
+from sqlalchemy.sql import bindparam
 from henry.config import new_session
 from henry.layer1.schema import NProducto, NContenido, NTransferencia
 from henry.helpers.serialization import SerializableMixin, decode
@@ -106,15 +106,14 @@ class ProductApiDB:
         self.db_session.commit()
 
     def execute_transactions(self, trans):
-        t = NContenido.__table__.update().where(prod_id == bind_param('prod_id'),
-                                                bodega_id == bind_param('bodega_id'))
-        t = t.values({'cant': NContenido.cant + bind_params('cant'))
-        count = self.db_session.execute(t,
-            ({'cant': x.delta, 'prod_id': x.prod_id, 'bodega_id': x.bodega_id} for x in trans) 
+        t = NContenido.__table__.update().where(
+                NContenido.prod_id == bindparam('p') and
+                NContenido.bodega_id == bindparam('b'))
+        t = t.values({'cant': NContenido.cant + bindparam('c')})
+        result = self.db_session.execute(t,
+            [{'c': x.delta, 'p': x.prod_id, 'b': x.bodega_id} for x in trans]) 
         self.db_session.commit()
-        return count
-
-
+        return result.rowcount
 
     def _construct_db_instance(self, prod):
         p = NProducto(
@@ -152,9 +151,9 @@ class TransApiDB:
         NTransferencia.items_location,
         )
 
-    def __init__(self, session, path):
+    def __init__(self, session, root):
         self.db_session = session
-        self.path = path
+        self.root = root
 
     def get_doc(self, uid):
         meta = self.db_session.query(*TransApiDB._QUERY_KEYS).filter(
@@ -167,7 +166,7 @@ class TransApiDB:
         return t
 
     def save(self, transfer):
-        filepath = os.path.join(self.path, transfer.date.isoformat(), transfer.uid)
+        filepath = os.path.join(self.root, transfer.date.isoformat(), transfer.uid)
         as_string = transfer.to_json()
         with open(filepath, 'w') as f:
             f.write(as_string)
@@ -191,22 +190,15 @@ class TransApiDB:
         if transfer.items is None:
             transfer = self.get_doc(transfer.uid)
 
-        for i in transfer.items:
-            cant = i[0]
-            prod = i[1]
-            bod = i[2]
-            update_stmts = get_update_stmt(prod, bod, cant)
-            self.db_session.execute(update_stmts)
+        def make_transaction(i):
+            return Transaction(i[0], i[1], i[2])
+        transactions = imap(make_transaction, transfer.items)
 
-    
+        if not self.prod_api.execute_transactions(transactions):
+            return None
 
-
-
-
-        
-
-
-
-
-
+        self.db_session.query(NTransferencia).filter_by(id=transfer.uid).update(status=Status.COMITTED)
+        self.dbsession.commit()
+        transfer.status = Status.COMITTED
+        return transfer
 
