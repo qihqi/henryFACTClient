@@ -137,7 +137,7 @@ class NTransferencia(Base):
     __tablename__ = 'transacciones'
 
     # auto increment or event_id?
-    id = Column(Integer, primary_key=True)
+    id = Column(String(20), primary_key=True)
     date = Column(Date)
     origin = Column(Integer)
     dest = Column(Integer) 

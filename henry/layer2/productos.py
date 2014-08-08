@@ -1,8 +1,11 @@
+import os
+import json
 import itertools
 import datetime
+
 from sqlalchemy.sql import bindparam
 from henry.config import new_session
-from henry.layer1.schema import NProducto, NContenido, NTransferencia
+from henry.layer1.schema import NProducto, NContenido, NTransferencia, Status
 from henry.helpers.serialization import SerializableMixin, decode
 
 
@@ -48,7 +51,7 @@ class Transaction:
 class ProductApiDB:
 
     _PROD_KEYS = [
-        NProducto.codigo, 
+        NProducto.codigo,
         NProducto.nombre,
     ]
     _PROD_PRICE_KEYS = [
@@ -111,14 +114,14 @@ class ProductApiDB:
                 NContenido.bodega_id == bindparam('b'))
         t = t.values({'cant': NContenido.cant + bindparam('c')})
         result = self.db_session.execute(t,
-            [{'c': x.delta, 'p': x.prod_id, 'b': x.bodega_id} for x in trans]) 
+            [{'c': x.delta, 'p': x.prod_id, 'b': x.bodega_id} for x in trans])
         self.db_session.commit()
         return result.rowcount
 
     def _construct_db_instance(self, prod):
         p = NProducto(
                 codigo=prod.codigo,
-                nombre=prod.nombre, 
+                nombre=prod.nombre,
                 categoria=prod.categoria)
         if prod.almacen_id:
             c = NContenido(
@@ -140,9 +143,24 @@ class Transferencia(SerializableMixin):
         'items',
         'ref')
 
-    def __init__(self, **kwargs):
-        self.merge_from(kwargs)
-        
+    def __init__(self, uid=None,
+                       origin=None,
+                       dest=None,
+                       user=None,
+                       status=None,
+                       trans_type=None,
+                       items=None,
+                       ref=None,
+                       timestamp=None):
+        self.uid = uid
+        self.origin = origin
+        self.dest = dest
+        self.user = user
+        self.status = status
+        self.trans_type = trans_type
+        self.items = items
+        self.ref = ref
+        self.timestamp = timestamp
 
 class TransApiDB:
     _QUERY_KEYS = (
@@ -151,28 +169,25 @@ class TransApiDB:
         NTransferencia.items_location,
         )
 
-    def __init__(self, session, root):
+    def __init__(self, session, filemanager):
         self.db_session = session
-        self.root = root
+        self.filemanager = filemanager
 
     def get_doc(self, uid):
         meta = self.db_session.query(*TransApiDB._QUERY_KEYS).filter(
                 NTransferencia.id == uid).first()
-        t = None
-        with open(meta.items_location) as f:
-            content = f.read()
-            t = Transferencia.deserialize(content)
+        parsed = json.loads(self.filemanager.get_file(meta.items_location))
+        t = Transferencia.deserialize(parsed)
         t.status = meta.status
         return t
 
     def save(self, transfer):
-        filepath = os.path.join(self.root, transfer.date.isoformat(), transfer.uid)
+        filepath = os.path.join(transfer.timestamp.date().isoformat(), transfer.uid)
         as_string = transfer.to_json()
-        with open(filepath, 'w') as f:
-            f.write(as_string)
+        self.filemanager.put_file(filepath, as_string)
         db_entry = NTransferencia(
             id=transfer.uid,
-            date=transfer.date,
+            date=transfer.timestamp,
             origin=transfer.origin,
             dest=transfer.dest,
             trans_type=transfer.trans_type,
@@ -180,7 +195,7 @@ class TransApiDB:
             items_location=filepath
             )
         self.db_session.add(db_entry)
-        self.commit()
+        self.db_session.commit()
         return transfer
 
     def commit(self, transfer):

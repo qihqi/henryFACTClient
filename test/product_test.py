@@ -1,10 +1,12 @@
 import unittest
-
+import datetime
 from decimal import Decimal
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from henry.layer1.schema import NProducto, NContenido, Base
-from henry.layer2.productos import Product, ProductApiDB, Transaction
+from henry.layer1.schema import NProducto, NContenido, Base, TransType
+from henry.helpers.fileservice import FileService
+from henry.layer2.productos import Product, ProductApiDB, Transaction, TransApiDB, Transferencia
 
 class ProductApiTest(unittest.TestCase):
 
@@ -28,7 +30,9 @@ class ProductApiTest(unittest.TestCase):
                            bodega_id=1))
             session.add(x)
         session.commit()
+        filemanager = FileService('/tmp')
         cls.prod_api = ProductApiDB(session)
+        cls.trans_api = TransApiDB(session, filemanager)
 
     def test_get_producto(self):
         x = self.prod_api.get_producto('0')
@@ -52,10 +56,30 @@ class ProductApiTest(unittest.TestCase):
             self.assertTrue(x.precio1 == Decimal('20.23'))
             self.assertTrue(x.precio2 == Decimal('10'))
 
-    def test_trans(self):
+    def test_transaction(self):
         t = Transaction('0', 0, 10)
         d = self.prod_api.execute_transactions([t, Transaction('123', 0, 10)])
         self.assertEquals(d, 1)
+
+
+    def test_transfer(self):
+        t = Transferencia(
+                uid='1',
+                origin=1,
+                dest=1,
+                user=0,
+                trans_type=TransType.INGRESS,
+                ref='hello world',
+                timestamp=datetime.datetime.now())
+        t.items = (
+                Transaction(1, '0', 1),
+                Transaction(1, '1', 1),
+                )
+        self.trans_api.save(t)
+
+        x =  self.trans_api.get_doc('1')
+        print x.serialize()
+
 
 
 if __name__ == '__main__':

@@ -51,6 +51,7 @@ class SerializableMixin(object):
     def deserialize(cls, dict_input):
         obj = cls()
         obj.__dict__ = {key: val for key, val in dict_input.items() if key in cls._name}
+        return obj
 
 
     @staticmethod
