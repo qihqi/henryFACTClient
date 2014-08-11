@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from henry.layer1.schema import NProducto, NContenido, Base, TransType
+from henry.layer1.schema import NProducto, NContenido, Base, TransType, Status
 from henry.helpers.fileservice import FileService
 from henry.layer2.productos import Product, ProductApiDB, Transaction, TransApiDB, Transferencia
 
@@ -27,12 +27,12 @@ class ProductApiTest(unittest.TestCase):
             x = NProducto(codigo=codigo, nombre=nombre)
             x.contenidos.append(
                 NContenido(prod_id=codigo, precio=p1, precio2=p2, cant_mayorista=thres,
-                           bodega_id=1))
+                           bodega_id=1, cant=0))
             session.add(x)
-        session.commit()
+        result = session.commit()
         filemanager = FileService('/tmp')
         cls.prod_api = ProductApiDB(session)
-        cls.trans_api = TransApiDB(session, filemanager)
+        cls.trans_api = TransApiDB(session, filemanager, cls.prod_api)
 
     def test_get_producto(self):
         x = self.prod_api.get_producto('0')
@@ -57,12 +57,14 @@ class ProductApiTest(unittest.TestCase):
             self.assertTrue(x.precio2 == Decimal('10'))
 
     def test_transaction(self):
-        t = Transaction('0', 0, 10)
-        d = self.prod_api.execute_transactions([t, Transaction('123', 0, 10)])
-        self.assertEquals(d, 1)
-
+        starting = self.prod_api.get_producto('0', bodega_id=0).cantidad
+        t = Transaction(prod_id='0', bodega_id=0, delta=10)
+        d = self.prod_api.execute_transactions([t, Transaction(prod_id='123', bodega_id=0, delta=1)])
+        prod = self.prod_api.get_producto('0', bodega_id=1)
+        self.assertEquals(10, prod.cantidad - starting)
 
     def test_transfer(self):
+        init_prod_cant = self.prod_api.get_producto('0', bodega_id=1).cantidad
         t = Transferencia(
                 uid='1',
                 origin=1,
@@ -72,11 +74,15 @@ class ProductApiTest(unittest.TestCase):
                 ref='hello world',
                 timestamp=datetime.datetime.now())
         t.items = (
-                Transaction(1, '0', 1),
-                Transaction(1, '1', 1),
+                (1, '0', 1),
+                (1, '1', 1),
                 )
-        self.trans_api.save(t)
-
+        t = self.trans_api.save(t)
+        self.assertEquals(t.status, Status.NEW)
+        result = self.trans_api.commit(t)
+        self.assertEquals(t.status, Status.COMITTED)
+        post_prod_cant = self.prod_api.get_producto('0', bodega_id=1).cantidad
+        self.assertEquals(Decimal(1), post_prod_cant - init_prod_cant)
         x =  self.trans_api.get_doc('1')
         print x.serialize()
 

@@ -2,6 +2,7 @@ import os
 import json
 import itertools
 import datetime
+from itertools import imap
 
 from sqlalchemy.sql import bindparam
 from henry.config import new_session
@@ -37,13 +38,13 @@ class Product(SerializableMixin):
 
 
 class Transaction:
-    def __init__(self, prod_id, bodega_id, delta=0):
+    def __init__(self, delta, prod_id, bodega_id):
         self.prod_id = prod_id
         self.bodega_id = bodega_id
         self.delta = delta
 
     def serialize(self):
-        return (self.delta, self.prod_id, self.bodega_id)
+        return (self.delta, aself.prod_id, self.bodega_id)
 
     def inverse(self):
         self.delta = -self.delta
@@ -61,7 +62,7 @@ class ProductApiDB:
         NContenido.cant_mayorista.label('threshold')
     ]
     _PROD_CANT_KEYS = [
-        NContenido.cant,
+        NContenido.cant.label('cantidad'),
         NContenido.bodega_id,
     ]
 
@@ -72,13 +73,15 @@ class ProductApiDB:
 
     def get_producto(self, prod_id, almacen_id=None, bodega_id=None):
         p = Product()
-        query_item = ProductApiDB._PROD_KEYS[:]
+        query_items = ProductApiDB._PROD_KEYS[:]
         filter_items = [NProducto.codigo == prod_id]
         if almacen_id is not None:
-            query_item.extend(ProductApiDB._PROD_PRICE_KEYS)
+            query_items.extend(ProductApiDB._PROD_PRICE_KEYS)
             filter_items.append(NContenido.prod_id == NProducto.codigo)
             filter_items.append(NContenido.bodega_id == almacen_id)
-        item = self.db_session.query(*query_item)
+        if bodega_id is not None:
+            query_items.extend(ProductApiDB._PROD_CANT_KEYS)
+        item = self.db_session.query(*query_items)
         for f in filter_items:
             item = item.filter(f)
         return Product().merge_from(item.first())
@@ -90,6 +93,8 @@ class ProductApiDB:
             query_items.extend(ProductApiDB._PROD_PRICE_KEYS)
             filters.append(NContenido.prod_id == NProducto.codigo)
             filters.append(NContenido.bodega_id == almacen_id)
+        if bodega_id is not None:
+            query_items.extend(ProductApiDB._PROD_CANT_KEYS)
         result_proxy = self.db_session.query(*query_items)
 
         for f in filters:
@@ -109,14 +114,19 @@ class ProductApiDB:
         self.db_session.commit()
 
     def execute_transactions(self, trans):
+        rowcount = self.exec_transactions_with_session(self.db_session, trans)
+        self.db_session.commit()
+        return rowcount
+
+    def exec_transactions_with_session(self, session, trans):
         t = NContenido.__table__.update().where(
                 NContenido.prod_id == bindparam('p') and
                 NContenido.bodega_id == bindparam('b'))
         t = t.values({'cant': NContenido.cant + bindparam('c')})
-        result = self.db_session.execute(t,
+        result = session.execute(t,
             [{'c': x.delta, 'p': x.prod_id, 'b': x.bodega_id} for x in trans])
-        self.db_session.commit()
         return result.rowcount
+
 
     def _construct_db_instance(self, prod):
         p = NProducto(
@@ -169,9 +179,10 @@ class TransApiDB:
         NTransferencia.items_location,
         )
 
-    def __init__(self, session, filemanager):
+    def __init__(self, session, filemanager, prod_api):
         self.db_session = session
         self.filemanager = filemanager
+        self.prod_api = prod_api
 
     def get_doc(self, uid):
         meta = self.db_session.query(*TransApiDB._QUERY_KEYS).filter(
@@ -196,10 +207,11 @@ class TransApiDB:
             )
         self.db_session.add(db_entry)
         self.db_session.commit()
+        transfer.status = Status.NEW
         return transfer
 
     def commit(self, transfer):
-        if transfer.status != Status.NEW:
+        if transfer.status and transfer.status != Status.NEW:
             return None
 
         if transfer.items is None:
@@ -208,12 +220,11 @@ class TransApiDB:
         def make_transaction(i):
             return Transaction(i[0], i[1], i[2])
         transactions = imap(make_transaction, transfer.items)
-
-        if not self.prod_api.execute_transactions(transactions):
+        if not self.prod_api.exec_transactions_with_session(self.db_session, transactions):
             return None
 
-        self.db_session.query(NTransferencia).filter_by(id=transfer.uid).update(status=Status.COMITTED)
-        self.dbsession.commit()
+        self.db_session.query(NTransferencia).filter_by(id=transfer.uid).update({'status': Status.COMITTED})
+        self.db_session.commit()
         transfer.status = Status.COMITTED
         return transfer
 
