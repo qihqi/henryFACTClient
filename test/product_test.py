@@ -79,14 +79,14 @@ class ProductApiTest(unittest.TestCase):
                 )
         t = self.trans_api.save(t)
         self.assertEquals(t.status, Status.NEW)
-        result = self.trans_api.commit(t)
+        t = self.trans_api.commit(t)
         self.assertEquals(t.status, Status.COMITTED)
         post_prod_cant = self.prod_api.get_producto('0', bodega_id=1).cantidad
         self.assertEquals(Decimal(1), post_prod_cant - init_prod_cant)
-        x =  self.trans_api.get_doc('1')
-        print x.serialize()
 
-
+        self.trans_api.delete(t)
+        last_cant = self.prod_api.get_producto('0', bodega_id=1).cantidad
+        self.assertEquals(init_prod_cant, last_cant)
 
 if __name__ == '__main__':
     unittest.main()

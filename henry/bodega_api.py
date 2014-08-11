@@ -1,31 +1,51 @@
 from bottle import Bottle, response, request
 
-from henry.layer2.models import Producto
+from henry.layer2.productos import Product, ProductApiDB, TransApiDB
 from henry.helpers.serialization import json_dump
+from henry.config import prodapi, transapi
 
 bodega_api_app = Bottle()
 
-@bodega_api_app.get('/api/bodega/<bodega_id>/producto/<prod_id>')
-def get_prod_from_inv(bodega_id, prod_id):
-    return json_dump(Producto.get(prod_id, bodega_id))
+@bodega_api_app.get('/api/alm/<almacen_id>/producto/<prod_id>')
+def get_prod_from_inv(almacen_id, prod_id):
+    return prodapi.get_producto(prod_id=prod_id, almacen_id=almacen_id)
 
 
-@bodega_api_app.get('/api/bodega/<bodega_id>/producto')
-def search_prod(bodega_id):
-    prefijo = request.query.get('prefijo')
+@bodega_api_app.get('/api/producto/<prod_id>')
+def get_prod_from_inv(prod_id):
+    return prodapi.get_producto(prod_id=prod_id)
+
+
+@bodega_api_app.get('/api/producto')
+def search_prod(almacen_id):
+    prefijo = request.query.prefijo
     if prefijo:
-        return json_dump(list(Producto.search(prefijo, bodega_id)))
+        return json_dump(list(prodapi.search(prefix=prefijo)))
     else:
         response.status = 400
+        return None
 
 
-@bodega_api_app.put('/api/bodega/<bodega_id>/ingreso')
+@bodega_api_app.get('/api/alm/<almacen_id>/producto')
+def search_prod(almacen_id):
+    prefijo = request.query.prefijo
+    if prefijo:
+        return json_dump(list(prodapi.search(prefix=prefijo, almacen_id=almacen_id)))
+    else:
+        response.status = 400
+        return None
+
+
+@bodega_api_app.post('/api/bodega/<bodega_id>/ingreso')
 def crear_ingreso(bodega_id):
-    pass
+    json_content = request.body.read()
+    content = json.parse(json_content)
+    ingreso = Transferencia.deserialize(content)
+    codigo = transapi.create(ingreso)
+    return '{"codigo": "%s"}' % str(codigo)
 
 
-@bodega_api_app.post('/api/bodega/<bodega_id>/ingreso/<ingreso_id>')
+@bodega_api_app.put('/api/bodega/<bodega_id>/ingreso/<ingreso_id>')
 def postear_ingreso(bodega_id, ingreso_id):
-    pass
-
-
+    t = transapi.commit(Transferencia(uid=ingreso_id))
+    return t.serialize()

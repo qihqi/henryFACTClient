@@ -1,29 +1,15 @@
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-
-
-CONFIG = {
-#    'connection_string': 'mysql+mysqldb://root:no jodas@localhost/henry',
-    'connection_string': 'sqlite://',
-    'echo': True,
-    'ip': 'localhost',
-}
-
-
-def get_engine():
-    if not get_engine.engine:
-        print CONFIG
-        get_engine.engine = create_engine(CONFIG['connection_string'], echo=CONFIG['echo'])
-    return get_engine.engine
-get_engine.engine = None
-
-
-def new_session():
-    if not new_session.session_class:
-        new_session.session_class = sessionmaker(bind=get_engine())
-    return new_session.session_class()
-new_session.session_class = None
-
+from henry.helpers.fileservice import FileService
+from henry.layer2.productos import ProdApiDB, TransApiDB
 
 def create_mysql_string(user, password):
     return "mysql+mysqldb://%s:%s@%s/henry" % (user, password, CONFIG['ip'])
+
+conn_string = 'mysql+mysqldb://root:no jodas@localhost/henry',
+engine = create_engine(conn_string)
+sessionfactory = sessionmaker(bind=engine)
+fileroot = '/tmp'
+prodapi = ProdApiDB(sessionfactory())
+filemanager = FileService(fileroot)
+transapi = TransApiDB(sessionfactory(), filemanager, prodapi)

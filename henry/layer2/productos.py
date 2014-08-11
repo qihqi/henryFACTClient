@@ -5,7 +5,6 @@ import datetime
 from itertools import imap
 
 from sqlalchemy.sql import bindparam
-from henry.config import new_session
 from henry.layer1.schema import NProducto, NContenido, NTransferencia, Status
 from henry.helpers.serialization import SerializableMixin, decode
 
@@ -48,6 +47,7 @@ class Transaction:
 
     def inverse(self):
         self.delta = -self.delta
+        return self
 
 class ProductApiDB:
 
@@ -123,8 +123,8 @@ class ProductApiDB:
                 NContenido.prod_id == bindparam('p') and
                 NContenido.bodega_id == bindparam('b'))
         t = t.values({'cant': NContenido.cant + bindparam('c')})
-        result = session.execute(t,
-            [{'c': x.delta, 'p': x.prod_id, 'b': x.bodega_id} for x in trans])
+        substitute = [{'c': x.delta, 'p': x.prod_id, 'b': x.bodega_id} for x in trans]
+        result = session.execute(t, substitute)
         return result.rowcount
 
 
@@ -196,13 +196,14 @@ class TransApiDB:
         filepath = os.path.join(transfer.timestamp.date().isoformat(), transfer.uid)
         as_string = transfer.to_json()
         self.filemanager.put_file(filepath, as_string)
+        new_status = transfer.status or Status.NEW
         db_entry = NTransferencia(
             id=transfer.uid,
             date=transfer.timestamp,
             origin=transfer.origin,
             dest=transfer.dest,
             trans_type=transfer.trans_type,
-            status=Status.NEW,
+            status=new_status,
             items_location=filepath
             )
         self.db_session.add(db_entry)
@@ -213,18 +214,31 @@ class TransApiDB:
     def commit(self, transfer):
         if transfer.status and transfer.status != Status.NEW:
             return None
-
-        if transfer.items is None:
-            transfer = self.get_doc(transfer.uid)
-
-        def make_transaction(i):
-            return Transaction(i[0], i[1], i[2])
-        transactions = imap(make_transaction, transfer.items)
+        transfer = self.get_doc(transfer.uid)
+        transactions = TransApiDB._tuples_to_transactions(transfer.items)
         if not self.prod_api.exec_transactions_with_session(self.db_session, transactions):
             return None
-
         self.db_session.query(NTransferencia).filter_by(id=transfer.uid).update({'status': Status.COMITTED})
         self.db_session.commit()
         transfer.status = Status.COMITTED
         return transfer
+
+    def delete(self, transfer):
+        if transfer.status != Status.COMITTED:
+            return None
+        transfer = self.get_doc(transfer.uid)
+        transactions = TransApiDB._tuples_to_transactions(transfer.items)
+        inversed = imap(Transaction.inverse, transactions) # revert transactions
+        if not self.prod_api.exec_transactions_with_session(self.db_session, inversed):
+            return None
+        self.db_session.query(NTransferencia).filter_by(id=transfer.uid).update({'status': Status.DELETED})
+        self.db_session.commit()
+        transfer.status = Status.DELETED
+        return transfer
+
+    @staticmethod
+    def _tuples_to_transactions(tuples):
+        def make_transaction(i):
+            return Transaction(i[0], i[1], i[2])
+        return imap(make_transaction, tuples)
 
