@@ -8,12 +8,12 @@ bodega_api_app = Bottle()
 
 @bodega_api_app.get('/api/alm/<almacen_id>/producto/<prod_id>')
 def get_prod_from_inv(almacen_id, prod_id):
-    return prodapi.get_producto(prod_id=prod_id, almacen_id=almacen_id)
+    return json_dump(prodapi.get_producto(prod_id=prod_id, almacen_id=almacen_id))
 
 
 @bodega_api_app.get('/api/producto/<prod_id>')
-def get_prod_from_inv(prod_id):
-    return prodapi.get_producto(prod_id=prod_id)
+def get_prod(prod_id):
+    return json_dump(prodapi.get_producto(prod_id=prod_id))
 
 
 @bodega_api_app.get('/api/producto')
@@ -42,10 +42,11 @@ def crear_ingreso(bodega_id):
     content = json.parse(json_content)
     ingreso = Transferencia.deserialize(content)
     codigo = transapi.create(ingreso)
-    return '{"codigo": "%s"}' % str(codigo)
+    return {'codigo': codigo} 
 
 
 @bodega_api_app.put('/api/bodega/<bodega_id>/ingreso/<ingreso_id>')
 def postear_ingreso(bodega_id, ingreso_id):
     t = transapi.commit(Transferencia(uid=ingreso_id))
     return t.serialize()
+
