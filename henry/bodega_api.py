@@ -8,7 +8,10 @@ bodega_api_app = Bottle()
 
 @bodega_api_app.get('/api/alm/<almacen_id>/producto/<prod_id>')
 def get_prod_from_inv(almacen_id, prod_id):
-    return json_dump(prodapi.get_producto(prod_id=prod_id, almacen_id=almacen_id))
+    prod = prodapi.get_producto(prod_id=prod_id, almacen_id=almacen_id)
+    if prod is None:
+        response.status = 404
+    return json_dump(prod)
 
 
 @bodega_api_app.get('/api/producto/<prod_id>')

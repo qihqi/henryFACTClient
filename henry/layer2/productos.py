@@ -72,7 +72,6 @@ class ProductApiDB:
         self.db_session = db_session
 
     def get_producto(self, prod_id, almacen_id=None, bodega_id=None):
-        p = Product()
         query_items = ProductApiDB._PROD_KEYS[:]
         filter_items = [NProducto.codigo == prod_id]
         if almacen_id is not None:
@@ -84,7 +83,9 @@ class ProductApiDB:
         item = self.db_session.query(*query_items)
         for f in filter_items:
             item = item.filter(f)
-        return Product().merge_from(item.first())
+        if item.first() is not None:
+            return Product().merge_from(item.first())
+        return None
 
     def search_producto(self, prefix, almacen_id=None, bodega_id=None):
         query_items = ProductApiDB._PROD_KEYS[:]

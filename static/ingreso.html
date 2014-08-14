@@ -15,45 +15,27 @@
                 function is_number(b) {
                     return b!=undefined && b!=null && (b - 0) == b;
                 }
-
                 function popup(){
-                    
                     var newwindow=window.open("/static/buscar_producto.html",'name','height=700,width=500, scrollbars=yes');
                     window.codigo_click = $(this).attr("id");
-                    if (window.focus) 
+                    if (window.focus) {
                         newwindow.focus();
+                    }
                     return false;
                 }
-
-
-                function getProducto(event) {
-                    if (event.which == 13){
-                        event.preventDefault();
-                        var id = $(this).attr("id");
-                        var codigo = $(this).val();
-                        var bodega = $("#id_bodega").val();
-                        var data = "codigo=" + codigo + "&bodega=" + bodega;
-                        var url = config.api + '/alm/' + bodega + '/producto/' + codigo;
-                        $.ajax({
-                            url: url, 
-                            success:function(result){
-                                alert(result);
-                                if (result.status) {
-                                    $("span#"+id).html(result.nombre);
-                                    cant.focus();
-                                }
-                                else {
-                                    $("span#"+id).html("Codigo Equivocado");
-                                    $(this).select();
-                                }
-                            },
-                            failure: function(x) {
-                                alert(x);
-                            }
-                        });
-                    }
+                function getProdAjaxCall(codigo, callback) {
+                    var url = config.api + '/producto/' + codigo;
+                    $.ajax({
+                        url: url,
+                        success: function(result) {
+                            var result = JSON.parse(result);
+                            callback(result);
+                        },
+                        failure: function(result) {
+                            callback(false);
+                        }
+                    });
                 }
-
 
 
                 var count=0;
@@ -78,7 +60,23 @@
                     //trans_cell.append(trans);
                     p.append(buscar_cell, codigo_cell, cant_cell, nombre_cell);
 
-                    codigo.keypress(getProducto);
+                    codigo.keypress(function(event) { 
+                        if (event.which == 13){
+                            event.preventDefault();
+                            var id = $(this).attr("id");
+                            var dest = $("span#"+id);
+                            var codigo = $(this).val();
+                            getProdAjaxCall(codigo, function(result) {
+                                if (result) {
+                                    dest.html(result.nombre);
+                                    cant.focus();
+                                } else {
+                                    dest.html("Codigo Equivocado");
+                                    $(this).select();
+                                }
+                            });
+                        }
+                    });
 
                     cant.keypress(function(event) {
                         if (event.which == 13) {
