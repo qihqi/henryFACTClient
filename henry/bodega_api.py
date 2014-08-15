@@ -45,7 +45,7 @@ def crear_ingreso(bodega_id):
     content = json.parse(json_content)
     ingreso = Transferencia.deserialize(content)
     codigo = transapi.create(ingreso)
-    return {'codigo': codigo} 
+    return {'codigo': codigo}
 
 
 @bodega_api_app.put('/api/bodega/<bodega_id>/ingreso/<ingreso_id>')

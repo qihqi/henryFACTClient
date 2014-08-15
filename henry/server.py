@@ -1,14 +1,17 @@
 import sys
 import os
-import bottle
 
-from bottle import run, request
-from bottle import HTTPError
+from bottle import run, request, static_file, Bottle, HTTPError
 
 from henry.bodega_api import bodega_api_app
 from henry.website.web_inventory import w
 
-app = bottle.Bottle()
+app = Bottle()
+
+@app.get('/static/<rest:path>')
+def static(rest):
+    return static_file(rest, root='./static/')
+
 
 def main():
     sys.path.append(os.path.dirname(os.path.realpath(__file__)))
