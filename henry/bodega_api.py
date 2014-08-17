@@ -16,14 +16,14 @@ def get_prod_from_inv(almacen_id, prod_id):
 
 @bodega_api_app.get('/api/producto/<prod_id>')
 def get_prod(prod_id):
-    return json_dump(prodapi.get_producto(prod_id=prod_id))
+    return get_prod_from_inv(None, prod_id)
 
 
 @bodega_api_app.get('/api/producto')
-def search_prod(almacen_id):
+def search_prod():
     prefijo = request.query.prefijo
     if prefijo:
-        return json_dump(list(prodapi.search(prefix=prefijo)))
+        return json_dump(list(prodapi.search_producto(prefix=prefijo)))
     else:
         response.status = 400
         return None

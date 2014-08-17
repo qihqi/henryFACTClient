@@ -1,12 +1,24 @@
 import os
 import json
 import itertools
-import datetime
+import uuid
 from itertools import imap
 
 from sqlalchemy.sql import bindparam
-from henry.layer1.schema import NProducto, NContenido, NTransferencia, Status
+from henry.layer1.schema import NProducto, NContenido, NTransferencia
 from henry.helpers.serialization import SerializableMixin, decode
+
+class TransType:
+    INGRESS = 'INGRESO'
+    TRANSFER= 'TRANSFER'
+    REPACKAGE = 'REEMPAQUE'
+    EXTERNAL = 'EXTERNA'
+
+
+class Status:
+    NEW = 'NUEVO'
+    COMITTED = 'POSTEADO'
+    DELETED = 'ELIMINADO'
 
 
 class Product(SerializableMixin):
@@ -43,7 +55,7 @@ class Transaction:
         self.delta = delta
 
     def serialize(self):
-        return (self.delta, aself.prod_id, self.bodega_id)
+        return (self.delta, self.prod_id, self.bodega_id)
 
     def inverse(self):
         self.delta = -self.delta
@@ -51,20 +63,20 @@ class Transaction:
 
 class ProductApiDB:
 
-    _PROD_KEYS = [
+    _PROD_KEYS = (
         NProducto.codigo,
         NProducto.nombre,
-    ]
-    _PROD_PRICE_KEYS = [
+    )
+    _PROD_PRICE_KEYS = (
         NContenido.bodega_id.label('almacen_id'),
         NContenido.precio.label('precio1'),
         NContenido.precio2,
         NContenido.cant_mayorista.label('threshold')
-    ]
-    _PROD_CANT_KEYS = [
+    )
+    _PROD_CANT_KEYS = (
         NContenido.cant.label('cantidad'),
         NContenido.bodega_id,
-    ]
+    )
 
     def __init__(self, db_session):
         self._prod_name_cache = {}
@@ -72,7 +84,7 @@ class ProductApiDB:
         self.db_session = db_session
 
     def get_producto(self, prod_id, almacen_id=None, bodega_id=None):
-        query_items = ProductApiDB._PROD_KEYS[:]
+        query_items = list(ProductApiDB._PROD_KEYS)
         filter_items = [NProducto.codigo == prod_id]
         if almacen_id is not None:
             query_items.extend(ProductApiDB._PROD_PRICE_KEYS)
@@ -88,7 +100,7 @@ class ProductApiDB:
         return None
 
     def search_producto(self, prefix, almacen_id=None, bodega_id=None):
-        query_items = ProductApiDB._PROD_KEYS[:]
+        query_items = list(ProductApiDB._PROD_KEYS)
         filters = [NProducto.nombre.startswith(prefix)]
         if almacen_id is not None:
             query_items.extend(ProductApiDB._PROD_PRICE_KEYS)
@@ -160,7 +172,6 @@ class Transferencia(SerializableMixin):
                        user=None,
                        status=None,
                        trans_type=None,
-                       items=None,
                        ref=None,
                        timestamp=None):
         self.uid = uid
@@ -169,9 +180,18 @@ class Transferencia(SerializableMixin):
         self.user = user
         self.status = status
         self.trans_type = trans_type
-        self.items = items
         self.ref = ref
         self.timestamp = timestamp
+        if not self.trans_type:
+            raise ValueError("Tiene que poner el tipo")
+
+
+    def add_item(item):
+        cant, prod = item[0], item[1]
+        self.items.append((cant, prod, self.dest))
+        if self.trans_type == TransType.TRANSFER:
+            i2 = (-item.cantidad, item.prod_id, self.origin)
+            self.items.append(i2)
 
 class TransApiDB:
     _QUERY_KEYS = (
@@ -194,7 +214,7 @@ class TransApiDB:
         return t
 
     def save(self, transfer):
-        filepath = os.path.join(transfer.timestamp.date().isoformat(), transfer.uid)
+        filepath = os.path.join(transfer.timestamp.date().isoformat(), uuid.uuid1().hex)
         as_string = transfer.to_json()
         self.filemanager.put_file(filepath, as_string)
         new_status = transfer.status or Status.NEW

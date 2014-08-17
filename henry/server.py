@@ -16,6 +16,8 @@ def static(rest):
 def main():
     sys.path.append(os.path.dirname(os.path.realpath(__file__)))
     from henry.layer1.schema import Base
+    from henry.config import engine
+    Base.metadata.create_all(engine)
     #setup_testdata()
     #print get_cliente_by_id('NA')
   #  print json.dumps(Venta.get(86590).serialize(), cls=ModelEncoder)

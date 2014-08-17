@@ -1,7 +1,9 @@
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
+from jinja2 import Environment, FileSystemLoader
 from henry.helpers.fileservice import FileService
 from henry.layer2.productos import ProductApiDB, TransApiDB
+
 
 def create_mysql_string(user, password):
     return "mysql+mysqldb://%s:%s@%s/henry" % (user, password, CONFIG['ip'])
@@ -14,3 +16,6 @@ fileroot = '/tmp'
 prodapi = ProductApiDB(sessionfactory())
 filemanager = FileService(fileroot)
 transapi = TransApiDB(sessionfactory(), filemanager, prodapi)
+
+template_paths = ['./templates']
+jinja_env = FileSystemLoader(template_paths)

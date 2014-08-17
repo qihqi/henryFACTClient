@@ -12,20 +12,20 @@ function getRequest(url, callback) {
 }
 
 function popup(){
-    var newwindow=window.open("/static/buscar_producto.html",'name','height=700,width=500, scrollbars=yes');
-    window.codigo_click = $(this).attr("id");
+    var newwindow=window.open("/static/buscar_prod.html",'name','height=700,width=500, scrollbars=yes');
+    window.dest_id = $(this).attr('i');
     if (window.focus) {
         newwindow.focus();
     }
     return false;
 }
 function getProdAjaxCall(codigo, callback) {
-    var url = config.api + '/producto/' + codigo;
+    var url = '/api/producto/' + codigo;
     getRequest(url, callback);
 }
 
 function searchProdAjax(prefix, callback) {
-    var url = config.api + '/producto?prefijo=' + prefix;
+    var url = '/api/producto?prefijo=' + prefix;
     getRequest(url, callback);
 }
 
@@ -53,6 +53,8 @@ function getRow() {
     p.append(buscar_cell, codigo_cell, cant_cell, nombre_cell);
     codigo.addClass('codigo');
     codigo.attr('i', count);
+    buscar.attr('i', count);
+    nombre.attr('i', count);
     cant.addClass('cant');
     count++;
     p.beginning = codigo;

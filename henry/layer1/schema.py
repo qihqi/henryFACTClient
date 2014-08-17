@@ -1,5 +1,5 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Numeric, Date, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Numeric, Date, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship, backref
 from henry.helpers.serialization import SerializableMixin
 
@@ -120,27 +120,13 @@ class NTransform(Base):
 ############################################################3
 # below are stuff that are not in prod yet
 
-class TransType:
-    INGRESS = 'INGRESO'
-    TRANSFER= 'TRANSFER'
-    REPACKAGE = 'REEMPAQUE'
-    EXTERNAL = 'EXTERNA'
-
-
-class Status:
-    NEW = 'NUEVO'
-    COMITTED = 'POSTEADO'
-    DELETED = 'ELIMINADO'
-
-
 class NTransferencia(Base):
     __tablename__ = 'transacciones'
 
-    # auto increment or event_id?
-    id = Column(String(20), primary_key=True)
-    date = Column(Date)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    date = Column(DateTime)
     origin = Column(Integer)
-    dest = Column(Integer) 
+    dest = Column(Integer)
 
     status = Column(String(10))
     trans_type = Column(String(10))

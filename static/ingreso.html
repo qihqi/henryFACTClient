@@ -14,13 +14,12 @@
                 $("#insert").append(a);
             });
         </script>
-        <style>
-            input.text_field { width : 100px }
+        <style> input.text_field { width : 100px }
         </style>
     </head>
     <body>
     <button onClick="window.location='/r';" > Regresar </button>
-    <form id="p" method="post" action="/r/producto/ingreso">
+    <form id="p" method="post" action="/app/crear_ingreso">
         <input type="submit" value="Guardar"/>
         <p> Bodega: 
         <select id="id_bodega" name="bodega">

@@ -4,9 +4,9 @@ from decimal import Decimal
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from henry.layer1.schema import NProducto, NContenido, Base, TransType, Status
+from henry.layer1.schema import NProducto, NContenido, Base
 from henry.helpers.fileservice import FileService
-from henry.layer2.productos import Product, ProductApiDB, Transaction, TransApiDB, Transferencia
+from henry.layer2.productos import Product, ProductApiDB, Transaction, TransApiDB, Transferencia, TransType, Status
 
 class ProductApiTest(unittest.TestCase):
 
