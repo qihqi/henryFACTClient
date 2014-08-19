@@ -2,7 +2,9 @@ import os
 import json
 import itertools
 import uuid
+import datetime
 from itertools import imap
+from collections import namedtuple
 
 from sqlalchemy.sql import bindparam
 from henry.layer1.schema import NProducto, NContenido, NTransferencia
@@ -48,18 +50,29 @@ class Product(SerializableMixin):
         self.cantidad = cantidad
 
 
-class Transaction:
-    def __init__(self, delta, prod_id, bodega_id):
+class Transaction(SerializableMixin):
+    _name=['delta', 'prod_id', 'bodega_id', 'name', 'ref']
+
+    def __init__(self, delta=None, prod_id=None, bodega_id=None, name=None, ref=None):
+        self.delta = delta
         self.prod_id = prod_id
         self.bodega_id = bodega_id
-        self.delta = delta
+        self.name = name
+        self.ref = ref
 
-    def serialize(self):
-        return (self.delta, self.prod_id, self.bodega_id)
 
     def inverse(self):
-        self.delta = -self.delta
+        return Transaction(-self.delta, self.prod_id, self.bodega_id, self.name)
+
+    def serialize(self):
+        if self.name is None:
+            return (self.delta, self.prod_id, self.bodega_id)
         return self
+
+    @classmethod
+    def deserialize(cls, data):
+        return cls(*data)
+
 
 class ProductApiDB:
 
@@ -140,7 +153,6 @@ class ProductApiDB:
         result = session.execute(t, substitute)
         return result.rowcount
 
-
     def _construct_db_instance(self, prod):
         p = NProducto(
                 codigo=prod.codigo,
@@ -155,6 +167,7 @@ class ProductApiDB:
             p.contenidos.add(c)
         return p
 
+
 class Transferencia(SerializableMixin):
     _name = (
         'uid',
@@ -166,12 +179,12 @@ class Transferencia(SerializableMixin):
         'items',
         'ref')
 
-    def __init__(self, uid=None,
+    def __init__(self, trans_type=None,
+                       uid=None,
                        origin=None,
                        dest=None,
                        user=None,
                        status=None,
-                       trans_type=None,
                        ref=None,
                        timestamp=None):
         self.uid = uid
@@ -182,16 +195,14 @@ class Transferencia(SerializableMixin):
         self.trans_type = trans_type
         self.ref = ref
         self.timestamp = timestamp
-        if not self.trans_type:
-            raise ValueError("Tiene que poner el tipo")
+
+        self.status = None
+        self.items = []
+
+    def add_item(self, cant, prod_id):
+        self.items.append((cant, prod_id))
 
 
-    def add_item(item):
-        cant, prod = item[0], item[1]
-        self.items.append((cant, prod, self.dest))
-        if self.trans_type == TransType.TRANSFER:
-            i2 = (-item.cantidad, item.prod_id, self.origin)
-            self.items.append(i2)
 
 class TransApiDB:
     _QUERY_KEYS = (
@@ -213,10 +224,27 @@ class TransApiDB:
         t.status = meta.status
         return t
 
+    def validate_and_widen(self, transfer):
+        if transfer.trans_type is None:
+            raise ValueError('Tipo de transferencia no existe')
+        if transfer.trans_type != TransType.INGRESS and transfer.origin is None:
+            raise ValueError('Require origen para transferencia tipo ' + transfer.trans_type)
+        new_items = []
+        for row in transfer.items:
+            if len(row) < 2:
+                raise ValueError('item invalido {}'.format(str(row)))
+            cant, prod_id = row[0], row[1]
+            p = self.prod_api.get_producto(prod_id)
+            if p is None:
+                raise ValueError('producto {} no existe'.format(prod_id))
+            new_items.append((cant, prod_id, p.nombre))
+        transfer.items = new_items
+        return transfer
+
     def save(self, transfer):
         filepath = os.path.join(transfer.timestamp.date().isoformat(), uuid.uuid1().hex)
-        as_string = transfer.to_json()
-        self.filemanager.put_file(filepath, as_string)
+        transfer = self.validate_and_widen(transfer)
+        self.filemanager.put_file(filepath, transfer.to_json())
         new_status = transfer.status or Status.NEW
         db_entry = NTransferencia(
             id=transfer.uid,
@@ -235,8 +263,9 @@ class TransApiDB:
     def commit(self, transfer):
         if transfer.status and transfer.status != Status.NEW:
             return None
+
         transfer = self.get_doc(transfer.uid)
-        transactions = TransApiDB._tuples_to_transactions(transfer.items)
+        transactions = TransApiDB.items_to_transactions(transfer)
         if not self.prod_api.exec_transactions_with_session(self.db_session, transactions):
             return None
         self.db_session.query(NTransferencia).filter_by(id=transfer.uid).update({'status': Status.COMITTED})
@@ -248,7 +277,7 @@ class TransApiDB:
         if transfer.status != Status.COMITTED:
             return None
         transfer = self.get_doc(transfer.uid)
-        transactions = TransApiDB._tuples_to_transactions(transfer.items)
+        transactions = TransApiDB.items_to_transactions(transfer)
         inversed = imap(Transaction.inverse, transactions) # revert transactions
         if not self.prod_api.exec_transactions_with_session(self.db_session, inversed):
             return None
@@ -257,9 +286,14 @@ class TransApiDB:
         transfer.status = Status.DELETED
         return transfer
 
-    @staticmethod
-    def _tuples_to_transactions(tuples):
-        def make_transaction(i):
-            return Transaction(i[0], i[1], i[2])
-        return imap(make_transaction, tuples)
+    @classmethod
+    def items_to_transactions(cls, transfer):
+        reason = 'transfer:' + transfer.uid
+        for i in transfer.items:
+            cant, prod = i[0], i[1]
+            name = i[2] if len(i) > 2 else None
+            yield Transaction(cant, prod, transfer.dest, name, reason)
+            if transfer.trans_type == TransType.TRANSFER:
+                yield Transaction(-cant, prod, tranfer.origin, name, reason)
+
 

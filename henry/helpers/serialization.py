@@ -3,7 +3,7 @@ import decimal
 
 # encoding of the database
 DB_ENCODING = 'latin1'
-   
+
 def decode(s, codec=DB_ENCODING):
     if s is None:
         return None
