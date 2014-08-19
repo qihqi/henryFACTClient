@@ -18,4 +18,4 @@ filemanager = FileService(fileroot)
 transapi = TransApiDB(sessionfactory(), filemanager, prodapi)
 
 template_paths = ['./templates']
-jinja_env = FileSystemLoader(template_paths)
+jinja_env = Environment(loader=FileSystemLoader(template_paths))

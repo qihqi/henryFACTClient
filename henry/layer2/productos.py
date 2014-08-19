@@ -7,7 +7,7 @@ from itertools import imap
 from collections import namedtuple
 
 from sqlalchemy.sql import bindparam
-from henry.layer1.schema import NProducto, NContenido, NTransferencia
+from henry.layer1.schema import NProducto, NContenido, NTransferencia, NBodega
 from henry.helpers.serialization import SerializableMixin, decode
 
 class TransType:
@@ -16,11 +16,21 @@ class TransType:
     REPACKAGE = 'REEMPAQUE'
     EXTERNAL = 'EXTERNA'
 
+    names = (INGRESS,
+             TRANSFER,
+             REPACKAGE,
+             EXTERNAL)
+
 
 class Status:
     NEW = 'NUEVO'
     COMITTED = 'POSTEADO'
     DELETED = 'ELIMINADO'
+
+    names = (NEW,
+             COMITTED,
+             DELETED)
+
 
 
 class Product(SerializableMixin):
@@ -167,6 +177,9 @@ class ProductApiDB:
             p.contenidos.add(c)
         return p
 
+    def get_bodegas(self):
+        return self.db_session.query(NBodega);
+
 
 class Transferencia(SerializableMixin):
     _name = (
@@ -244,7 +257,6 @@ class TransApiDB:
     def save(self, transfer):
         filepath = os.path.join(transfer.timestamp.date().isoformat(), uuid.uuid1().hex)
         transfer = self.validate_and_widen(transfer)
-        self.filemanager.put_file(filepath, transfer.to_json())
         new_status = transfer.status or Status.NEW
         db_entry = NTransferencia(
             id=transfer.uid,
@@ -256,6 +268,9 @@ class TransApiDB:
             items_location=filepath
             )
         self.db_session.add(db_entry)
+        self.db_session.flush()
+        transfer.uid = db_entry.id
+        self.filemanager.put_file(filepath, transfer.to_json())
         self.db_session.commit()
         transfer.status = Status.NEW
         return transfer

@@ -5,6 +5,12 @@ from henry.helpers.serialization import SerializableMixin
 
 Base = declarative_base()
 
+class NBodega(Base):
+    __tablename__ = 'bodegas'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    nombre = Column(String(100))
+    nivel = Column(Integer)
+
 
 class NProducto(Base):
     __tablename__ = 'productos'

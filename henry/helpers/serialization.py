@@ -57,7 +57,7 @@ class SerializableMixin(object):
     @staticmethod
     def _serialize_helper(obj, names):
         return {
-            name: getattr(obj, name) for name in names if getattr(obj, name) is not None
+            name: getattr(obj, name) for name in names if getattr(obj, name, None) is not None
         }
 
     def to_json(self):

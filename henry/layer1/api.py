@@ -184,5 +184,3 @@ def _save_documento(header_cls, item_cls, content_dict):
     return header.id
 
 
-
-
