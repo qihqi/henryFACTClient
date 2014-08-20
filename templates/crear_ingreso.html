@@ -1,0 +1,66 @@
+<html>
+    <head>
+        <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+        <script src="/static/prod.js"></script>
+        <script type="text/javascript">
+            $(document).ready(function(){
+                initEvents();
+                var a = getRow();
+                $("#insert").append(a);
+                $("select#tipo").change(function () {
+                    if ($(this).val() === 'INGRESO') {
+                        $('#desde_bodega').hide();
+                    } else {
+                        $('#desde_bodega').show();
+                    }
+                });    
+                if ($('select#tipo').val() === 'INGRESO') {
+                    $('#desde_bodega').hide();
+                } else {
+                    $('#desde_bodega').show();
+                }
+            });
+        </script>
+        <style> input.text_field { width : 100px }
+.type_select {float:left;} 
+        </style>
+    </head>
+    <body>
+    <button onClick="window.location='/r';" > Regresar </button>
+    <form id="p" method="post" action="/app/crear_ingreso">
+        <input type="submit" value="Guardar"/>
+        <p> 
+        <select id="tipo" name="trans_type">
+            {% for o in types %}
+            <option value="{{o}}">{{o}}</option>
+            {% endfor %}
+        </select>
+        <p> 
+            <div id="desde_bodega" class="type_select">
+            Desde bodega: <select name="desde">
+                {% for i in bodegas %}
+                <option value="{{i.id}}">{{i.nombre}}</option> 
+                {% endfor %}
+            </select>
+            </div>
+            <div class="type_select">
+            Hasta bodega: <select name="hasta">
+                {% for i in bodegas %}
+                <option value="{{i.id}}">{{i.nombre}}</option> 
+                {% endfor %}
+            </select>
+            </div>
+        </p>
+        <div>
+            <table id="insert" cellspacing="10px">
+                <tr>
+                    <td></td>
+                    <th> Codigo </th>
+                    <th> Cantidad </th>
+                    <th> Nombre de Producto </th>
+                </tr>
+            </table> 
+        </div>
+        </form>
+    </body>
+</html>
