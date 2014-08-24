@@ -10,10 +10,12 @@ w = Bottle()
 @w.get('/app/ingreso/<uid>')
 def get_ingreso(uid):
     trans = transapi.get_doc(uid)
-    print trans.serialize()
     if trans:
+        print trans.serialize()
         temp = jinja_env.get_template('ingreso.html')
         return temp.render(ingreso=trans)
+    else:
+        return 'Documento con codigo {} no existe'.format(uid)
 
 
 @w.get('/app/crear_ingreso')
@@ -28,7 +30,7 @@ def post_crear_ingreso():
     trans = Transferencia()
     trans.dest = request.forms.get('dest')
     trans.origin = request.forms.get('origin')
-    trans.trans_type = request.forms.get('type')
+    trans.trans_type = request.forms.get('trans_type')
     trans.timestamp = datetime.datetime.now()
     for cant, prod_id in zip(
             request.forms.getlist('cant'),
@@ -36,7 +38,6 @@ def post_crear_ingreso():
         if not cant.strip() or not prod_id.strip():
             # skip empty lines
             continue
-
         try:
             cant = int(cant)
         except ValueError:

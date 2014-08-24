@@ -40,7 +40,7 @@ function getRow() {
     var trans_cell = $("<td>");
     var codigo = $("<input id=\"cod"+ count + "\" name=\"codigo\" class=\"text_field\">");
     var cant = $("<input id=\"cant"+ count + "\" name=\"cant\" class=\"text_field\">");
-    var nombre = $("<span id=\"span"+ count + "\" name=\"nombre\" class=\"text_field\">");
+    var nombre = $("<span id=\"span"+ count + "\" name=\"nombre\" class=\"nombre\" class=\"text_field\">");
     var buscar = $("<a id=\"here"+ count + "\" name=\"nombre\" href=\"\" class=\"text_field\" >");
    // var trans = $("<input id=\"here"+ count + "\" name=\"transform\" class=\"text_field\" type=\"checkbox\">");
     buscar.click(popup);

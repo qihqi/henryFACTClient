@@ -20,12 +20,13 @@
         <button onClick="window.location='/r';" > Regresar al principio </button>
         <h3>
             {% if ingreso.trans_type == 'TRANSFER' %}
-            Transferencia: {{ingreso.origin}} a
+            Transferencia: {{ingreso.origin}} a {{ingreso.dest}}
             {%else%}
             Ingresos :
             {%endif%}
-            {{ingreso.desc}}  </h3>
-	<h4> Codigo: {{ingreso.uid}}</h4>
+            {{ingreso.dest}}  
+        </h3>
+        <h4> Codigo: {{ingreso.uid}}</h4>
         <table align="center" width=600>
             <tr>
                 <th width=100>Fecha</th>
@@ -36,7 +37,6 @@
         <br />
         <hr />
         <table width=600 align="center">
-            
             <tr>
                 <th width=100 class="codigo">Codigo</th>
                 <th>Nombre</th>

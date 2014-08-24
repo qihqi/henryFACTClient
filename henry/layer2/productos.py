@@ -207,7 +207,7 @@ class Transferencia(SerializableMixin):
         self.status = status
         self.trans_type = trans_type
         self.ref = ref
-        self.timestamp = timestamp
+        self.timestamp = timestamp or datetime.datetime.now()
 
         self.status = None
         self.items = []
@@ -232,14 +232,18 @@ class TransApiDB:
     def get_doc(self, uid):
         meta = self.db_session.query(*TransApiDB._QUERY_KEYS).filter(
                 NTransferencia.id == uid).first()
+        if meta is None:
+            return None
         parsed = json.loads(self.filemanager.get_file(meta.items_location))
         t = Transferencia.deserialize(parsed)
-        t.status = meta.status
+        t.merge_from(meta)
         return t
 
     def validate_and_widen(self, transfer):
         if transfer.trans_type is None:
             raise ValueError('Tipo de transferencia no existe')
+        if transfer.dest is None:
+            raise ValueError('Require bodega de destino')
         if transfer.trans_type != TransType.INGRESS and transfer.origin is None:
             raise ValueError('Require origen para transferencia tipo ' + transfer.trans_type)
         new_items = []
@@ -263,8 +267,7 @@ class TransApiDB:
             date=transfer.timestamp,
             origin=transfer.origin,
             dest=transfer.dest,
-            trans_type=transfer.trans_type,
-            status=new_status,
+            trans_type=transfer.trans_type, status=new_status,
             items_location=filepath
             )
         self.db_session.add(db_entry)
