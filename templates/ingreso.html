@@ -13,6 +13,33 @@
             }
             
         </style>
+        <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+        <script>
+            var current_id = {{ingreso.uid}};
+            $(document).ready(function() {
+                $('#post_button').click(function() {
+                    var button = $(this);
+                    $.ajax({
+                        'url': '/api/ingreso/' + current_id,
+                        'type': 'PUT',
+                        'success': function() {
+                            button.text('Postear');
+                        },
+                        'error': function(ajax, statusText, error) {
+                            alert('Fallo de postear...');
+                            button.text('Postear');
+                            button.prop('disabled', false);
+                        }
+                    });
+                    button.text('Posteando...');
+                    button.prop('disabled', true);
+                });
+                $('#delete_button').click(function() {
+                });
+
+            });
+        
+        </script>
     </head>
 
     <body>
@@ -31,6 +58,10 @@
             <tr>
                 <th width=100>Fecha</th>
                 <td>{{ingreso.timestamp}}</td> 
+                <th width=100>Estado</th>
+                <td>{{ingreso.status}}</td> 
+                <td><button id="post_button"{% if ingreso.status != 'creado' %}disabled="true"{% endif %}>Postear</button></td>
+                <td><button id="delete_button"{% if ingreso.status == 'eliminado' %}disabled="true"{% endif %}>Eliminar</button></td>
             </tr>
         </table>
         <!--items-->

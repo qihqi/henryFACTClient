@@ -1,6 +1,6 @@
 from bottle import Bottle, response, request
 
-from henry.layer2.productos import Product, ProductApiDB, TransApiDB
+from henry.layer2.productos import Product, ProductApiDB, TransApiDB, Transferencia
 from henry.helpers.serialization import json_dump
 from henry.config import prodapi, transapi
 
@@ -39,8 +39,8 @@ def search_prod(almacen_id):
         return None
 
 
-@bodega_api_app.post('/api/bodega/<bodega_id>/ingreso')
-def crear_ingreso(bodega_id):
+@bodega_api_app.post('/api/ingreso')
+def crear_ingreso():
     json_content = request.body.read()
     content = json.parse(json_content)
     ingreso = Transferencia.deserialize(content)
@@ -48,8 +48,8 @@ def crear_ingreso(bodega_id):
     return {'codigo': codigo}
 
 
-@bodega_api_app.put('/api/bodega/<bodega_id>/ingreso/<ingreso_id>')
-def postear_ingreso(bodega_id, ingreso_id):
+@bodega_api_app.put('/api/ingreso/<ingreso_id>')
+def postear_ingreso(ingreso_id):
     t = transapi.commit(Transferencia(uid=ingreso_id))
-    return t.serialize()
+    return ''
 

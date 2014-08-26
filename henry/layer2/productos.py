@@ -306,12 +306,12 @@ class TransApiDB:
 
     @classmethod
     def items_to_transactions(cls, transfer):
-        reason = 'transfer:' + transfer.uid
+        reason = 'transfer:' + str(transfer.uid)
         for i in transfer.items:
             cant, prod = i[0], i[1]
             name = i[2] if len(i) > 2 else None
             yield Transaction(cant, prod, transfer.dest, name, reason)
             if transfer.trans_type == TransType.TRANSFER:
-                yield Transaction(-cant, prod, tranfer.origin, name, reason)
+                yield Transaction(-cant, prod, transfer.origin, name, reason)
 
 
