@@ -1,4 +1,4 @@
-from bottle import Bottle, response, request
+from bottle import Bottle, response, request, abort
 
 from henry.layer2.productos import Product, ProductApiDB, TransApiDB, Transferencia
 from henry.helpers.serialization import json_dump
@@ -52,4 +52,12 @@ def crear_ingreso():
 def postear_ingreso(ingreso_id):
     t = transapi.commit(Transferencia(uid=ingreso_id))
     return ''
+
+@bodega_api_app.get('/api/ingreso/<ingreso_id>')
+def get_ingreso(ingreso_id):
+    ing = transapi.get_doc(ingreso_id)
+    if ing is None:
+        abort(404, 'Ingreso No encontrada')
+        return
+    return json_dump(ing.serialize())
 

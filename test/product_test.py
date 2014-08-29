@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from henry.layer1.schema import NProducto, NContenido, Base
 from henry.helpers.fileservice import FileService
-from henry.layer2.productos import Product, ProductApiDB, Transaction, TransApiDB, Transferencia, TransType, Status
+from henry.layer2.productos import Product, ProductApiDB, Transaction, TransApiDB, Transferencia, TransType, Status, Metadata, TransferCreationRequest
 
 class ProductApiTest(unittest.TestCase):
 
@@ -57,35 +57,33 @@ class ProductApiTest(unittest.TestCase):
             self.assertTrue(x.precio2 == Decimal('10'))
 
     def test_transaction(self):
-        starting = self.prod_api.get_producto('0', bodega_id=0).cantidad
+        starting = self.prod_api.get_producto('0', bodega_id=1).cantidad
         t = Transaction(prod_id='0', bodega_id=0, delta=10)
         d = self.prod_api.execute_transactions([t, Transaction(prod_id='123', bodega_id=0, delta=1)])
         prod = self.prod_api.get_producto('0', bodega_id=1)
         self.assertEquals(10, prod.cantidad - starting)
 
     def test_transfer(self):
-        init_prod_cant = self.prod_api.get_producto('0', bodega_id=1).cantidad
-        t = Transferencia(
-                uid='1',
+        init_prod_cant = self.prod_api.get_producto('1', bodega_id=1).cantidad
+        t = Metadata(
                 origin=1,
                 dest=1,
                 user=0,
                 trans_type=TransType.INGRESS,
-                ref='hello world',
-                timestamp=datetime.datetime.now())
-        t.items = (
-                (1, '0', 1),
-                (1, '1', 1),
-                )
-        t = self.trans_api.save(t)
-        self.assertEquals(t.status, Status.NEW)
-        t = self.trans_api.commit(t)
-        self.assertEquals(t.status, Status.COMITTED)
-        post_prod_cant = self.prod_api.get_producto('0', bodega_id=1).cantidad
-        self.assertEquals(Decimal(1), post_prod_cant - init_prod_cant)
+                ref='hello world')
+        req = TransferCreationRequest(t)
+        req.add('1' , 10)
+        req.add('2' , 10)
 
-        self.trans_api.delete(t)
-        last_cant = self.prod_api.get_producto('0', bodega_id=1).cantidad
+        trans = self.trans_api.save(req)
+        self.assertEquals(t.status, Status.NEW)
+        trans = self.trans_api.commit(trans.meta.uid)
+        self.assertEquals(trans.meta.status, Status.COMITTED)
+        post_prod_cant = self.prod_api.get_producto('1', bodega_id=1).cantidad
+        self.assertEquals(Decimal(10), post_prod_cant - init_prod_cant)
+        trans = self.trans_api.delete(trans.meta.uid)
+        last_cant = self.prod_api.get_producto('1', bodega_id=1).cantidad
+        self.assertEquals(trans.meta.status, Status.DELETED)
         self.assertEquals(init_prod_cant, last_cant)
 
 if __name__ == '__main__':

@@ -4,7 +4,7 @@ import itertools
 import uuid
 import datetime
 from itertools import imap
-from collections import namedtuple
+from collections import defaultdict
 
 from sqlalchemy.sql import bindparam
 from henry.layer1.schema import NProducto, NContenido, NTransferencia, NBodega
@@ -61,27 +61,18 @@ class Product(SerializableMixin):
 
 
 class Transaction(SerializableMixin):
-    _name=['delta', 'prod_id', 'bodega_id', 'name', 'ref']
+    _name=['bodega_id', 'prod_id', 'delta', 'name', 'ref']
 
-    def __init__(self, delta=None, prod_id=None, bodega_id=None, name=None, ref=None):
-        self.delta = delta
-        self.prod_id = prod_id
+    def __init__(self, bodega_id=None, prod_id=None, delta=None, name=None, ref=None):
         self.bodega_id = bodega_id
+        self.prod_id = prod_id
+        self.delta = delta
         self.name = name
         self.ref = ref
 
-
     def inverse(self):
-        return Transaction(-self.delta, self.prod_id, self.bodega_id, self.name)
-
-    def serialize(self):
-        if self.name is None:
-            return (self.delta, self.prod_id, self.bodega_id)
+        self.delta = -self.delta
         return self
-
-    @classmethod
-    def deserialize(cls, data):
-        return cls(*data)
 
 
 class ProductApiDB:
@@ -109,12 +100,17 @@ class ProductApiDB:
     def get_producto(self, prod_id, almacen_id=None, bodega_id=None):
         query_items = list(ProductApiDB._PROD_KEYS)
         filter_items = [NProducto.codigo == prod_id]
-        if almacen_id is not None:
-            query_items.extend(ProductApiDB._PROD_PRICE_KEYS)
+        has_alm = almacen_id is not None
+        has_bod = bodega_id is not None
+        if has_alm or has_bod:
             filter_items.append(NContenido.prod_id == NProducto.codigo)
+        if has_alm:
+            query_items.extend(ProductApiDB._PROD_PRICE_KEYS)
             filter_items.append(NContenido.bodega_id == almacen_id)
-        if bodega_id is not None:
+        if has_bod:
             query_items.extend(ProductApiDB._PROD_CANT_KEYS)
+            filter_items.append(NContenido.bodega_id == bodega_id)
+
         item = self.db_session.query(*query_items)
         for f in filter_items:
             item = item.filter(f)
@@ -180,41 +176,62 @@ class ProductApiDB:
     def get_bodegas(self):
         return self.db_session.query(NBodega);
 
-
-class Transferencia(SerializableMixin):
+class Metadata(SerializableMixin):
     _name = (
         'uid',
         'origin',
         'dest',
         'user',
-        'status',
         'trans_type',
-        'items',
-        'ref')
+        'ref',
+        'timestamp',
+        'status')
 
     def __init__(self, trans_type=None,
                        uid=None,
                        origin=None,
                        dest=None,
                        user=None,
-                       status=None,
                        ref=None,
+                       status=None,
                        timestamp=None):
         self.uid = uid
         self.origin = origin
         self.dest = dest
         self.user = user
-        self.status = status
         self.trans_type = trans_type
         self.ref = ref
-        self.timestamp = timestamp or datetime.datetime.now()
+        self.timestamp = timestamp
+        self.status = status
 
-        self.status = None
-        self.items = []
 
-    def add_item(self, cant, prod_id):
-        self.items.append((cant, prod_id))
+class TransferCreationRequest:
+    """
+    this class has 2 fields:
+        meta is an instance of Metadata
+        items is a dict with (prod_id -> cant)
+    """
 
+    def __init__(self, meta=None):
+        self.meta = meta
+        self.items = defaultdict(int)
+
+    def add(self, prod_id, cant):
+        self.items[prod_id] += cant
+
+
+class Transferencia(SerializableMixin):
+    _name = ('meta', 'items')
+
+    def __init__(self, meta=None, items=None):
+        self.meta = meta
+        self.items = items
+
+    @classmethod
+    def deserialize(cls, dict_input):
+        meta = Metadata.deserialize(dict_input['meta'])
+        items = dict_input['items']
+        return cls(meta, items)
 
 
 class TransApiDB:
@@ -230,88 +247,100 @@ class TransApiDB:
         self.prod_api = prod_api
 
     def get_doc(self, uid):
+        """
+        uid id of the tranfer to fetch,
+        returns Transferencia object
+        """
         meta = self.db_session.query(*TransApiDB._QUERY_KEYS).filter(
                 NTransferencia.id == uid).first()
         if meta is None:
             return None
         parsed = json.loads(self.filemanager.get_file(meta.items_location))
         t = Transferencia.deserialize(parsed)
-        t.merge_from(meta)
+        t.meta.merge_from(meta)
         return t
 
-    def validate_and_widen(self, transfer):
-        if transfer.trans_type is None:
+    def create_transfer_from_request(self, req):
+        if req.meta.trans_type is None:
             raise ValueError('Tipo de transferencia no existe')
-        if transfer.dest is None:
+        if req.meta.dest is None or req.meta.dest == -1:
             raise ValueError('Require bodega de destino')
-        if transfer.trans_type != TransType.INGRESS and transfer.origin is None:
+        if req.meta.trans_type != TransType.INGRESS and transfer.origin is None:
             raise ValueError('Require origen para transferencia tipo ' + transfer.trans_type)
+
+        t = Transferencia(meta=req.meta)
+        t.meta.status = Status.NEW
         new_items = []
-        for row in transfer.items:
-            if len(row) < 2:
-                raise ValueError('item invalido {}'.format(str(row)))
-            cant, prod_id = row[0], row[1]
+        for prod_id, cant in req.items.items():
             p = self.prod_api.get_producto(prod_id)
             if p is None:
                 raise ValueError('producto {} no existe'.format(prod_id))
-            new_items.append((cant, prod_id, p.nombre))
-        transfer.items = new_items
-        return transfer
+            if cant < 0:
+                raise ValueError('Cantidad de producto {} es negativo'.format(prod_id))
+            if cant > 0:
+                new_items.append((req.meta.dest, prod_id, cant, p.nombre))
+                if req.meta.trans_type == TransType.TRANSFER:
+                    new_items.append((req.meta.origin, prod_id, -cant. p.nombre))
 
-    def save(self, transfer):
-        filepath = os.path.join(transfer.timestamp.date().isoformat(), uuid.uuid1().hex)
-        transfer = self.validate_and_widen(transfer)
-        new_status = transfer.status or Status.NEW
+        t.items = new_items
+        return t
+
+    def save(self, request):
+        """
+        input TransferCreationRequest
+        returns Transferencia
+        """
+        request.meta.timestamp = request.meta.timestamp or datetime.datetime.now()
+        transfer = self.create_transfer_from_request(request)
+
+        meta = transfer.meta
+        filepath = os.path.join(meta.timestamp.date().isoformat(), uuid.uuid1().hex)
         db_entry = NTransferencia(
-            id=transfer.uid,
-            date=transfer.timestamp,
-            origin=transfer.origin,
-            dest=transfer.dest,
-            trans_type=transfer.trans_type, status=new_status,
+            date=meta.timestamp,
+            origin=meta.origin,
+            dest=meta.dest,
+            trans_type=meta.trans_type,
+            status=meta.status,
             items_location=filepath
             )
         self.db_session.add(db_entry)
         self.db_session.flush()
-        transfer.uid = db_entry.id
+        transfer.meta.uid = db_entry.id
         self.filemanager.put_file(filepath, transfer.to_json())
         self.db_session.commit()
-        transfer.status = Status.NEW
         return transfer
 
-    def commit(self, transfer):
-        if transfer.status and transfer.status != Status.NEW:
+    def commit(self, uid):
+        transfer = self.get_doc(uid)
+        meta = transfer.meta
+        if meta.status and meta.status != Status.NEW:
             return None
-
-        transfer = self.get_doc(transfer.uid)
         transactions = TransApiDB.items_to_transactions(transfer)
         if not self.prod_api.exec_transactions_with_session(self.db_session, transactions):
             return None
-        self.db_session.query(NTransferencia).filter_by(id=transfer.uid).update({'status': Status.COMITTED})
+        self.db_session.query(NTransferencia).filter_by(id=uid).update({'status': Status.COMITTED})
         self.db_session.commit()
-        transfer.status = Status.COMITTED
+        meta.status = Status.COMITTED
         return transfer
 
-    def delete(self, transfer):
-        if transfer.status != Status.COMITTED:
+    def delete(self, uid):
+        transfer = self.get_doc(uid)
+        if transfer.meta.status != Status.COMITTED:
             return None
-        transfer = self.get_doc(transfer.uid)
         transactions = TransApiDB.items_to_transactions(transfer)
         inversed = imap(Transaction.inverse, transactions) # revert transactions
         if not self.prod_api.exec_transactions_with_session(self.db_session, inversed):
             return None
-        self.db_session.query(NTransferencia).filter_by(id=transfer.uid).update({'status': Status.DELETED})
+        self.db_session.query(NTransferencia).filter_by(id=uid).update({'status': Status.DELETED})
         self.db_session.commit()
-        transfer.status = Status.DELETED
+        transfer.meta.status = Status.DELETED
         return transfer
 
     @classmethod
     def items_to_transactions(cls, transfer):
-        reason = 'transfer:' + str(transfer.uid)
+        reason = 'transfer:' + str(transfer.meta.uid)
         for i in transfer.items:
-            cant, prod = i[0], i[1]
-            name = i[2] if len(i) > 2 else None
-            yield Transaction(cant, prod, transfer.dest, name, reason)
-            if transfer.trans_type == TransType.TRANSFER:
-                yield Transaction(-cant, prod, transfer.origin, name, reason)
+            bodega_id, prod, cant, name = i
+            yield Transaction(bodega_id, prod, cant, name, reason)
 
 

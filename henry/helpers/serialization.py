@@ -1,5 +1,6 @@
 import json
 import decimal
+import datetime
 
 # encoding of the database
 DB_ENCODING = 'latin1'
@@ -28,6 +29,8 @@ class ModelEncoder(json.JSONEncoder):
             return obj.serialize()
         if isinstance(obj, decimal.Decimal):
             return str(obj)
+        if isinstance(obj, datetime.datetime):
+            return obj.isoformat()
         return super(ModelEncoder, self).default(obj)
 
 
