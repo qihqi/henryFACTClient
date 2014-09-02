@@ -12,7 +12,7 @@ conn_string = 'mysql+mysqldb://root:no jodas@localhost/henry'
 # conn_string = 'sqlite:////home/han/git/henryFACT/servidor/henry/test_db.sql'
 engine = create_engine(conn_string)
 sessionfactory = sessionmaker(bind=engine)
-fileroot = '/tmp'
+fileroot = '/var/data/ingreso'
 prodapi = ProductApiDB(sessionfactory())
 filemanager = FileService(fileroot)
 transapi = TransApiDB(sessionfactory(), filemanager, prodapi)
