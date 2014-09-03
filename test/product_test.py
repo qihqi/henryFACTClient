@@ -28,6 +28,9 @@ class ProductApiTest(unittest.TestCase):
             x.contenidos.append(
                 NContenido(prod_id=codigo, precio=p1, precio2=p2, cant_mayorista=thres,
                            bodega_id=1, cant=0))
+            x.contenidos.append(
+                NContenido(prod_id=codigo, precio=p1, precio2=p2, cant_mayorista=thres,
+                           bodega_id=2, cant=0))
             session.add(x)
         result = session.commit()
         filemanager = FileService('/tmp')
@@ -58,12 +61,12 @@ class ProductApiTest(unittest.TestCase):
 
     def test_transaction(self):
         starting = self.prod_api.get_producto('0', bodega_id=1).cantidad
-        t = Transaction(prod_id='0', bodega_id=0, delta=10)
-        d = self.prod_api.execute_transactions([t, Transaction(prod_id='123', bodega_id=0, delta=1)])
+        t = Transaction(prod_id='0', bodega_id=1, delta=10)
+        d = self.prod_api.execute_transactions([t])
         prod = self.prod_api.get_producto('0', bodega_id=1)
         self.assertEquals(10, prod.cantidad - starting)
 
-    def test_transfer(self):
+    def test_ingress(self):
         init_prod_cant = self.prod_api.get_producto('1', bodega_id=1).cantidad
         t = Metadata(
                 origin=1,
@@ -81,6 +84,29 @@ class ProductApiTest(unittest.TestCase):
         self.assertEquals(trans.meta.status, Status.COMITTED)
         post_prod_cant = self.prod_api.get_producto('1', bodega_id=1).cantidad
         self.assertEquals(Decimal(10), post_prod_cant - init_prod_cant)
+        trans = self.trans_api.delete(trans.meta.uid)
+        last_cant = self.prod_api.get_producto('1', bodega_id=1).cantidad
+        self.assertEquals(trans.meta.status, Status.DELETED)
+        self.assertEquals(init_prod_cant, last_cant)
+
+    def test_transfer(self):
+        init_prod_cant = self.prod_api.get_producto('1', bodega_id=1).cantidad
+        t = Metadata(
+                origin=2,
+                dest=1,
+                user=0,
+                trans_type=TransType.TRANSFER,
+                ref='hello world')
+        req = TransferCreationRequest(t)
+        req.add('1' , 10)
+
+        trans = self.trans_api.save(req)
+        self.assertEquals(t.status, Status.NEW)
+        trans = self.trans_api.commit(trans.meta.uid)
+        self.assertEquals(trans.meta.status, Status.COMITTED)
+        post_prod_cant = self.prod_api.get_producto('1', bodega_id=1).cantidad
+        self.assertEquals(Decimal(10), post_prod_cant - init_prod_cant)
+
         trans = self.trans_api.delete(trans.meta.uid)
         last_cant = self.prod_api.get_producto('1', bodega_id=1).cantidad
         self.assertEquals(trans.meta.status, Status.DELETED)

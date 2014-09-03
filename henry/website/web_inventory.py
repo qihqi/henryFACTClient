@@ -11,10 +11,11 @@ w = Bottle()
 @w.get('/app/ingreso/<uid>')
 def get_ingreso(uid):
     trans = transapi.get_doc(uid)
+    bodegas = {x.id: x.nombre for x in prodapi.get_bodegas()}
     if trans:
         print trans.serialize()
         temp = jinja_env.get_template('ingreso.html')
-        return temp.render(ingreso=trans)
+        return temp.render(ingreso=trans, bodega_mapping=bodegas)
     else:
         return 'Documento con codigo {} no existe'.format(uid)
 

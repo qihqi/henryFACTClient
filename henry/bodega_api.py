@@ -50,8 +50,13 @@ def crear_ingreso():
 
 @bodega_api_app.put('/api/ingreso/<ingreso_id>')
 def postear_ingreso(ingreso_id):
-    t = transapi.commit(Transferencia(uid=ingreso_id))
-    return ''
+    t = transapi.commit(uid=ingreso_id)
+    return {'status': t.meta.status}
+
+@bodega_api_app.delete('/api/ingreso/<ingreso_id>')
+def postear_ingreso(ingreso_id):
+    t = transapi.delete(uid=ingreso_id)
+    return {'status': t.meta.status}
 
 @bodega_api_app.get('/api/ingreso/<ingreso_id>')
 def get_ingreso(ingreso_id):
@@ -60,4 +65,5 @@ def get_ingreso(ingreso_id):
         abort(404, 'Ingreso No encontrada')
         return
     return json_dump(ing.serialize())
+
 

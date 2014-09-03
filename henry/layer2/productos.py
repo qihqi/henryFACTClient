@@ -152,10 +152,11 @@ class ProductApiDB:
 
     def exec_transactions_with_session(self, session, trans):
         t = NContenido.__table__.update().where(
-                NContenido.prod_id == bindparam('p') and
+                NContenido.prod_id == bindparam('p')).where(
                 NContenido.bodega_id == bindparam('b'))
         t = t.values({'cant': NContenido.cant + bindparam('c')})
         substitute = [{'c': x.delta, 'p': x.prod_id, 'b': x.bodega_id} for x in trans]
+        print substitute
         result = session.execute(t, substitute)
         return result.rowcount
 
@@ -265,7 +266,7 @@ class TransApiDB:
             raise ValueError('Tipo de transferencia no existe')
         if req.meta.dest is None or req.meta.dest == -1:
             raise ValueError('Require bodega de destino')
-        if req.meta.trans_type != TransType.INGRESS and transfer.origin is None:
+        if req.meta.trans_type != TransType.INGRESS and req.meta.origin is None:
             raise ValueError('Require origen para transferencia tipo ' + transfer.trans_type)
 
         t = Transferencia(meta=req.meta)
@@ -280,7 +281,7 @@ class TransApiDB:
             if cant > 0:
                 new_items.append((req.meta.dest, prod_id, cant, p.nombre))
                 if req.meta.trans_type == TransType.TRANSFER:
-                    new_items.append((req.meta.origin, prod_id, -cant. p.nombre))
+                    new_items.append((req.meta.origin, prod_id, -cant, p.nombre))
 
         t.items = new_items
         return t
