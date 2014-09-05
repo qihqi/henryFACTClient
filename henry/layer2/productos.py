@@ -9,6 +9,7 @@ from collections import defaultdict
 from sqlalchemy.sql import bindparam
 from henry.layer1.schema import NProducto, NContenido, NTransferencia, NBodega
 from henry.helpers.serialization import SerializableMixin, decode
+from henry.layer2.documents import DocumentApi
 
 class TransType:
     INGRESS = 'INGRESO'
@@ -22,14 +23,6 @@ class TransType:
              EXTERNAL)
 
 
-class Status:
-    NEW = 'NUEVO'
-    COMITTED = 'POSTEADO'
-    DELETED = 'ELIMINADO'
-
-    names = (NEW,
-             COMITTED,
-             DELETED)
 
 
 
@@ -206,20 +199,6 @@ class Metadata(SerializableMixin):
         self.status = status
 
 
-class TransferCreationRequest:
-    """
-    this class has 2 fields:
-        meta is an instance of Metadata
-        items is a dict with (prod_id -> cant)
-    """
-
-    def __init__(self, meta=None):
-        self.meta = meta
-        self.items = defaultdict(int)
-
-    def add(self, prod_id, cant):
-        self.items[prod_id] += cant
-
 
 class Transferencia(SerializableMixin):
     _name = ('meta', 'items')
@@ -235,67 +214,31 @@ class Transferencia(SerializableMixin):
         return cls(meta, items)
 
 
-class TransApiDB:
-    _QUERY_KEYS = (
+class TransApiDB(DocumentApi):
+    _query_string = (
         NTransferencia.id.label('uid'),
         NTransferencia.status,
         NTransferencia.items_location,
         )
+    _db_class = NTransferencia
+    _datatype = Transferencia
 
-    def __init__(self, session, filemanager, prod_api):
-        self.db_session = session
-        self.filemanager = filemanager
-        self.prod_api = prod_api
-
-    def get_doc(self, uid):
-        """
-        uid id of the tranfer to fetch,
-        returns Transferencia object
-        """
-        meta = self.db_session.query(*TransApiDB._QUERY_KEYS).filter(
-                NTransferencia.id == uid).first()
-        if meta is None:
-            return None
-        parsed = json.loads(self.filemanager.get_file(meta.items_location))
-        t = Transferencia.deserialize(parsed)
-        t.meta.merge_from(meta)
-        return t
-
-    def create_transfer_from_request(self, req):
-        if req.meta.trans_type is None:
+    def _validate_metadata(self, meta):
+        if meta.trans_type is None:
             raise ValueError('Tipo de transferencia no existe')
-        if req.meta.dest is None or req.meta.dest == -1:
-            raise ValueError('Require bodega de destino')
-        if req.meta.trans_type != TransType.INGRESS and req.meta.origin is None:
-            raise ValueError('Require origen para transferencia tipo ' + transfer.trans_type)
+        if meta.dest is None or meta.dest == -1:
+            raise ValueError('ire bodega de destino')
+        if meta.trans_type != TransType.INGRESS and meta.origin is None:
+            raise ValueError('ire origen para transferencia tipo ' + meta.trans_type)
 
-        t = Transferencia(meta=req.meta)
-        t.meta.status = Status.NEW
-        new_items = []
-        for prod_id, cant in req.items.items():
-            p = self.prod_api.get_producto(prod_id)
-            if p is None:
-                raise ValueError('producto {} no existe'.format(prod_id))
-            if cant < 0:
-                raise ValueError('Cantidad de producto {} es negativo'.format(prod_id))
-            if cant > 0:
-                new_items.append((req.meta.dest, prod_id, cant, p.nombre))
-                if req.meta.trans_type == TransType.TRANSFER:
-                    new_items.append((req.meta.origin, prod_id, -cant, p.nombre))
+    @classmethod
+    def _item_generator(cls, meta, prod, cantidad):
+        yield (meta.dest, prod.codigo, cantidad, prod.nombre)
+        if meta.trans_type == TransType.TRANSFER:
+            yield (meta.origin, prod.codigo, -cantidad, prod.nombre)
 
-        t.items = new_items
-        return t
-
-    def save(self, request):
-        """
-        input TransferCreationRequest
-        returns Transferencia
-        """
-        request.meta.timestamp = request.meta.timestamp or datetime.datetime.now()
-        transfer = self.create_transfer_from_request(request)
-
-        meta = transfer.meta
-        filepath = os.path.join(meta.timestamp.date().isoformat(), uuid.uuid1().hex)
+    @classmethod
+    def _db_instance(cls, meta, filepath):
         db_entry = NTransferencia(
             date=meta.timestamp,
             origin=meta.origin,
@@ -304,41 +247,10 @@ class TransApiDB:
             status=meta.status,
             items_location=filepath
             )
-        self.db_session.add(db_entry)
-        self.db_session.flush()
-        transfer.meta.uid = db_entry.id
-        self.filemanager.put_file(filepath, transfer.to_json())
-        self.db_session.commit()
-        return transfer
-
-    def commit(self, uid):
-        transfer = self.get_doc(uid)
-        meta = transfer.meta
-        if meta.status and meta.status != Status.NEW:
-            return None
-        transactions = TransApiDB.items_to_transactions(transfer)
-        if not self.prod_api.exec_transactions_with_session(self.db_session, transactions):
-            return None
-        self.db_session.query(NTransferencia).filter_by(id=uid).update({'status': Status.COMITTED})
-        self.db_session.commit()
-        meta.status = Status.COMITTED
-        return transfer
-
-    def delete(self, uid):
-        transfer = self.get_doc(uid)
-        if transfer.meta.status != Status.COMITTED:
-            return None
-        transactions = TransApiDB.items_to_transactions(transfer)
-        inversed = imap(Transaction.inverse, transactions) # revert transactions
-        if not self.prod_api.exec_transactions_with_session(self.db_session, inversed):
-            return None
-        self.db_session.query(NTransferencia).filter_by(id=uid).update({'status': Status.DELETED})
-        self.db_session.commit()
-        transfer.meta.status = Status.DELETED
-        return transfer
+        return db_entry
 
     @classmethod
-    def items_to_transactions(cls, transfer):
+    def _items_to_transactions(cls, transfer):
         reason = 'transfer:' + str(transfer.meta.uid)
         for i in transfer.items:
             bodega_id, prod, cant, name = i

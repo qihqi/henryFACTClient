@@ -6,7 +6,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from henry.layer1.schema import NProducto, NContenido, Base
 from henry.helpers.fileservice import FileService
-from henry.layer2.productos import Product, ProductApiDB, Transaction, TransApiDB, Transferencia, TransType, Status, Metadata, TransferCreationRequest
+from henry.layer2.productos import Product, ProductApiDB, Transaction, TransApiDB, Transferencia, TransType, Metadata
+from henry.layer2.documents import Status, DocumentCreationRequest
 
 class ProductApiTest(unittest.TestCase):
 
@@ -74,7 +75,7 @@ class ProductApiTest(unittest.TestCase):
                 user=0,
                 trans_type=TransType.INGRESS,
                 ref='hello world')
-        req = TransferCreationRequest(t)
+        req = DocumentCreationRequest(t)
         req.add('1' , 10)
         req.add('2' , 10)
 
@@ -97,7 +98,7 @@ class ProductApiTest(unittest.TestCase):
                 user=0,
                 trans_type=TransType.TRANSFER,
                 ref='hello world')
-        req = TransferCreationRequest(t)
+        req = DocumentCreationRequest(t)
         req.add('1' , 10)
 
         trans = self.trans_api.save(req)

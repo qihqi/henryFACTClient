@@ -3,8 +3,8 @@ import datetime
 import bottle
 from bottle import request, Bottle, abort, redirect
 from henry.config import jinja_env, transapi, prodapi
-from henry.layer2.productos import (Transferencia, TransType, Metadata,
-        TransferCreationRequest)
+from henry.layer2.productos import (Transferencia, TransType, Metadata)
+from henry.layer2.documents import DocumentCreationRequest
 
 w = Bottle()
 
@@ -35,7 +35,7 @@ def post_crear_ingreso():
     meta.meta_type = request.forms.get('meta_type')
     meta.trans_type = request.forms.get('trans_type')
     meta.timestamp = datetime.datetime.now()
-    trans = TransferCreationRequest(meta)
+    trans = DocumentCreationRequest(meta)
     for cant, prod_id in zip(
             request.forms.getlist('cant'),
             request.forms.getlist('codigo')):

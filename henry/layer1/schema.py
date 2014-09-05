@@ -140,3 +140,20 @@ class NTransferencia(Base):
 
     # unix filepath where the items is stored
     items_location = Column(String(200))
+
+
+class NNota(Base):
+    __tablename__ = 'nota'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    date = Column(DateTime)
+    client = Column(String(20))
+    seller = Column(String(20))
+    status = Column(String(10))
+
+    subtotal = Column(Integer)
+    total = Column(Integer)
+    tax = Column(Integer)
+    discount = Column(Integer)
+    # unix filepath where the items is stored
+    items_location = Column(String(200))
