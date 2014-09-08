@@ -66,4 +66,9 @@ def get_ingreso(ingreso_id):
         return
     return json_dump(ing.serialize())
 
+@bodega_api_app.get('/api/pedido/<uid>')
+def get_pedido(uid):
+    pass
+
+
 

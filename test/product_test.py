@@ -8,6 +8,7 @@ from henry.layer1.schema import NProducto, NContenido, Base
 from henry.helpers.fileservice import FileService
 from henry.layer2.productos import Product, ProductApiDB, Transaction, TransApiDB, Transferencia, TransType, Metadata
 from henry.layer2.documents import Status, DocumentCreationRequest
+from henry.layer2.invoice import Invoice, InvMetadata, InvApiDB
 
 class ProductApiTest(unittest.TestCase):
 
@@ -37,6 +38,7 @@ class ProductApiTest(unittest.TestCase):
         filemanager = FileService('/tmp')
         cls.prod_api = ProductApiDB(session)
         cls.trans_api = TransApiDB(session, filemanager, cls.prod_api)
+        cls.inv_api = InvApiDB(session, filemanager, cls.prod_api)
 
     def test_get_producto(self):
         x = self.prod_api.get_producto('0')
@@ -112,6 +114,33 @@ class ProductApiTest(unittest.TestCase):
         last_cant = self.prod_api.get_producto('1', bodega_id=1).cantidad
         self.assertEquals(trans.meta.status, Status.DELETED)
         self.assertEquals(init_prod_cant, last_cant)
+
+
+    def test_inv(self):
+        init_prod_cant = self.prod_api.get_producto('1', bodega_id=1).cantidad
+
+        t = InvMetadata(
+                codigo=1,
+                client='asdf',
+                user='asdf',
+                total=123,
+                subtotal=123,
+                tax=123,
+                discount=0,
+                bodega=1,
+                almacen=1
+                )
+        inv = DocumentCreationRequest()
+        inv.meta = t
+        inv.items = [
+                ('1', 'name', 5, 0.01)
+                ]
+        invoice = self.inv_api.save(inv)
+        print 'HAN', invoice.serialize()
+
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

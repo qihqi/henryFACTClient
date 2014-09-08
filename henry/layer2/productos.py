@@ -9,7 +9,7 @@ from collections import defaultdict
 from sqlalchemy.sql import bindparam
 from henry.layer1.schema import NProducto, NContenido, NTransferencia, NBodega
 from henry.helpers.serialization import SerializableMixin, decode
-from henry.layer2.documents import DocumentApi
+from henry.layer2.documents import DocumentApi, Status
 
 class TransType:
     INGRESS = 'INGRESO'
@@ -230,6 +230,24 @@ class TransApiDB(DocumentApi):
             raise ValueError('ire bodega de destino')
         if meta.trans_type != TransType.INGRESS and meta.origin is None:
             raise ValueError('ire origen para transferencia tipo ' + meta.trans_type)
+
+    def create_document_from_request(self, req):
+        self._validate_metadata(req.meta)
+        t = self._datatype(meta=req.meta)
+        t.meta.status = Status.NEW
+        new_items = []
+        for prod_id, cant in req.items.items():
+            p = self.prod_api.get_producto(prod_id)
+            if p is None:
+                raise ValueError('producto {} no existe'.format(prod_id))
+            if cant < 0:
+                raise ValueError('Cantidad de producto {} es negativo'.format(prod_id))
+            if cant > 0:
+                items = self._item_generator(t.meta, p, cant)
+                new_items.extend(items)
+
+        t.items = new_items
+        return t
 
     @classmethod
     def _item_generator(cls, meta, prod, cantidad):
