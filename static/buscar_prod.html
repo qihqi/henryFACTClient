@@ -1,0 +1,48 @@
+<html>
+    <head>
+        <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+        <script type="text/javascript" src="/static/prod.js" ></script>
+        <script type="text/javascript">
+            function sendResultToOpener() {    
+                if (window.opener && !window.opener.closed){
+                    var dest_id = opener.dest_id;
+                    alert(dest_id);
+                    opener.$("#cod"+dest_id).val($(this).attr('id'));
+                    opener.$("#span"+dest_id).html($(this).html());
+                    opener.$("#cant"+dest_id).focus()
+                    window.close();
+                }
+
+            }
+            function makeClickable(a) {
+                var elm = $('<p>');
+                elm.append(a.nombre);
+                elm.attr("id", a.codigo);
+                elm.click(sendResultToOpener);
+                return elm;
+            }
+            function getProductos() {
+                var nombre = $("#id_nombre").val();
+                searchProdAjax(nombre, function(status, result){
+                    if (status) {
+                        var a = result;    
+                        $("#dest").html("");
+                        for ( var i = 0; i < a.length; i++) {
+                            $("#dest").append(makeClickable(a[i]));
+                        }
+                    }
+                });
+            }
+            $(document).ready(function(){
+                $("button").click(getProductos);
+            });
+        </script>
+    </head>
+
+    <body>
+        <label for="id_nombre" >Nombre</label> <input id="id_nombre"/>
+        <button value="Buscar">Buscar </button>
+        <table id="dest"> 
+        </table>
+    </body>
+</html>
