@@ -120,8 +120,8 @@ class ProductApiTest(unittest.TestCase):
         init_prod_cant = self.prod_api.get_producto('1', bodega_id=1).cantidad
 
         t = InvMetadata(
-                codigo=1,
                 client='asdf',
+                codigo=None,
                 user='asdf',
                 total=123,
                 subtotal=123,
@@ -136,7 +136,19 @@ class ProductApiTest(unittest.TestCase):
                 ('1', 'name', 5, 0.01)
                 ]
         invoice = self.inv_api.save(inv)
-        print 'HAN', invoice.serialize()
+        print invoice.meta.uid
+        self.inv_api.set_codigo(invoice.meta.uid, '123')
+        self.assertEquals(self.inv_api.get_doc(invoice.meta.uid).meta.codigo, '123')
+
+        x = self.inv_api.commit(invoice.meta.uid)
+        self.assertEquals(Status.COMITTED, x.meta.status)
+        new_inv = self.prod_api.get_producto('1', bodega_id=1).cantidad
+        self.assertEquals(-5, new_inv - init_prod_cant)
+
+        x = self.inv_api.delete(invoice.meta.uid)
+        self.assertEquals(Status.DELETED, x.meta.status)
+        new_inv = self.prod_api.get_producto('1', bodega_id=1).cantidad
+        self.assertEquals(0, new_inv - init_prod_cant)
 
 
 
