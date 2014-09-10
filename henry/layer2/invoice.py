@@ -106,6 +106,26 @@ class InvApiDB(DocumentApi):
     def set_codigo(self, uid, codigo):
         self.db_session.query(NNota).filter_by(id=uid).update({'codigo' : codigo})
 
+    def get_doc_by_codigo(self, alm, codigo):
+        meta = self.db_session.query(NNota).filter_by(codigo=codigo, almacen=alm).first()
+        return self.get_doc_from_meta(meta)
+
+    def get_dated_report(self, start_date, end_date, almacen, seller=None, status=Status.COMITTED):
+        """
+        returns an iterable of InvMetadata object that represents sold invoices
+        """
+
+        dbmeta = self.db_session.query(NNota).filter_by(
+                    almacen=almacen.filter(timestamp <= end_date).filter(
+                        timestamp >= start_date):
+        if seller is not None:
+            dbmeta = dbmeta.filter_by(user=seller)
+        for meta in dbmeta:
+            yield InvMetadata().merge_from(meta)
+
+
+
+
 
 
 

@@ -67,6 +67,9 @@ class DocumentApi(object):
         returns Transferencia object
         """
         meta = self.db_session.query(*self._query_string).filter_by(id=uid).first()
+        return self.get_doc_from_meta(meta)
+
+    def get_doc_from_meta(self, meta):
         if meta is None:
             return None
         parsed = json.loads(self.filemanager.get_file(meta.items_location))
