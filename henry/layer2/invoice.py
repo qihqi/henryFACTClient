@@ -9,7 +9,7 @@ from collections import defaultdict
 from sqlalchemy.sql import bindparam
 from henry.layer1.schema import NProducto, NContenido, NNota, NBodega
 from henry.helpers.serialization import SerializableMixin, decode
-from henry.layer2.documents import DocumentApi
+from henry.layer2.documents import DocumentApi, Status
 from henry.layer2.productos import Transaction
 
 
@@ -116,16 +116,20 @@ class InvApiDB(DocumentApi):
         """
 
         dbmeta = self.db_session.query(NNota).filter_by(
-                    almacen=almacen.filter(timestamp <= end_date).filter(
-                        timestamp >= start_date):
+                    almacen=almacen).filter(
+                    NNota.timestamp < end_date).filter(
+                    NNota.timestamp >= start_date)
         if seller is not None:
             dbmeta = dbmeta.filter_by(user=seller)
+
+        if status:
+            if hasattr(status, '__iter__'):
+                exp = NNota.status == status[0]
+                for s in status:
+                    exp = exp or NNota.status == s
+                dbmeta.filter(exp)
+            else:
+                dbmeta = dbmeta.filter_by(status=status)
         for meta in dbmeta:
             yield InvMetadata().merge_from(meta)
-
-
-
-
-
-
 

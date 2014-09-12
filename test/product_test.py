@@ -140,6 +140,9 @@ class ProductApiTest(unittest.TestCase):
         self.inv_api.set_codigo(invoice.meta.uid, '123')
         self.assertEquals(self.inv_api.get_doc(invoice.meta.uid).meta.codigo, '123')
 
+        doc = self.inv_api.get_doc_by_codigo(alm=1, codigo='123')
+        self.assertEquals(invoice.meta.uid, doc.meta.uid)
+
         x = self.inv_api.commit(invoice.meta.uid)
         self.assertEquals(Status.COMITTED, x.meta.status)
         new_inv = self.prod_api.get_producto('1', bodega_id=1).cantidad
@@ -150,6 +153,24 @@ class ProductApiTest(unittest.TestCase):
         new_inv = self.prod_api.get_producto('1', bodega_id=1).cantidad
         self.assertEquals(0, new_inv - init_prod_cant)
 
+        now = datetime.datetime.now()
+        tomorrow = now + datetime.timedelta(days=1)
+        all_inv = list(self.inv_api.get_dated_report(
+                start_date=now.date(),
+                end_date=tomorrow.date(),
+                almacen=1, status=None))
+        self.assertEquals(1, len(all_inv))
+        all_inv = list(self.inv_api.get_dated_report(
+                start_date=now.date(),
+                end_date=tomorrow.date(),
+                almacen=1))
+        self.assertEquals(0, len(all_inv))
+
+        all_inv = list(self.inv_api.get_dated_report(
+                start_date=now.date(),
+                end_date=tomorrow.date(),
+                almacen=1, status=[Status.COMITTED, Status.DELETED]))
+        self.assertEquals(1, len(all_inv))
 
 
 
