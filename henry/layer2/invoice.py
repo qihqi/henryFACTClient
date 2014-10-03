@@ -7,7 +7,7 @@ from itertools import imap
 from collections import defaultdict
 
 from sqlalchemy.sql import bindparam
-from henry.layer1.schema import NProducto, NContenido, NNota, NBodega
+from henry.layer1.schema import NProducto, NContenido, NNota, NBodega, NOrdenDespacho
 from henry.helpers.serialization import SerializableMixin, decode
 from henry.layer2.documents import DocumentApi, Status
 from henry.layer2.productos import Transaction
@@ -132,4 +132,24 @@ class InvApiDB(DocumentApi):
                 dbmeta = dbmeta.filter_by(status=status)
         for meta in dbmeta:
             yield InvMetadata().merge_from(meta)
+
+
+
+class InvApiOld(object):
+
+    def __init__(self, session):
+        self.session = session
+
+    def get_dated_report(self, start_date, end_date, almacen, seller=None, status=Status.COMITTED):
+        dbmeta = self.session.query(NOrdenDespacho).filter_by(
+                bodega_id=almacen).filter(
+                NOrdenDespacho.fecha <= end_date).filter(
+                NOrdenDespacho.fecha >= start_date)
+
+        if seller is not None:
+            dbmeta = dbmeta.filter_by(user=seller)
+
+        return dbmeta
+
+
 
