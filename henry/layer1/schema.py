@@ -123,6 +123,16 @@ class NTransform(Base):
     dest = Column(String(20))
     multiplier = Column(Numeric(10, 3))
 
+
+class NUsuario(Base):
+    __tablename__ = 'usuarios'
+    username = Column(String(50), primary_key=True)
+    password = Column(String(200))
+    level = Column('nivel', Integer)
+    is_staff = Column(Boolean)
+    last_factura = Column(Integer)
+    bodega_factura_id = Column(Integer)
+
 ############################################################3
 # below are stuff that are not in prod yet
 
@@ -162,3 +172,5 @@ class NNota(Base):
     timestamp = Column(DateTime)
     # unix filepath where the items is stored
     items_location = Column(String(200))
+
+

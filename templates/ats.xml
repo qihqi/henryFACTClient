@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<iva>
+  <TipoIDInformante>R</TipoIDInformante>
+  <IdInformante></IdInformante> <!-- RUC -->
+  <razonSocial>QUINAL SA</razonSocial> <!-- nombre de la compania -->
+  <Anio>{{meta.date.year}}</Anio>
+  <Mes>{{meta.date.month}}</Mes>
+  <numEstabRuc>001</numEstabRuc>
+  <totalVentas>{{meta.total}}</totalVentas>
+  <codigoOperativo>IVA</codigoOperativo>
+  <compras>
+  </compras>
+  <ventas>
+    {% for id, detalle in vendidos.items() %}
+    <detalleVentas>
+      <tpIdCliente>{{ id_type(id) }}</tpIdCliente> <!-- 05 = venta cedula, 04 = venta ruc, 07 = consumidor final--> 
+      <idCliente>{{ id }}</idCliente>
+      <tipoComprobante>18</tipoComprobante>
+      <numeroComprobantes>{{ detalle.count }}</numeroComprobantes>
+      <baseNoGraIva>0.00</baseNoGraIva>
+      <baseImponible>0.00</baseImponible>
+      <baseImpGrav>{{ detalle.subtotal}}</baseImpGrav>
+      <montoIva>{{ detalle.iva }}</montoIva>
+      <valorRetIva>0.00</valorRetIva>
+      <valorRetRenta>0.00</valorRetRenta>
+    </detalleVentas>
+    {% endfor %}
+  </ventas>
+  <ventasEstablecimiento>
+    <ventaEst>
+      <codEstab>001</codEstab>
+      <ventasEstab>{{meta.total}}</ventasEstab>
+    </ventaEst>
+  </ventasEstablecimiento>
+
+  <anulados>
+    {% for venta in eliminados %}
+    <detalleAnulados>
+      <tipoComprobante>01</tipoComprobante>
+      <establecimiento>001</establecimiento>
+      <puntoEmision>001</puntoEmision>
+      <secuencialInicio>{{venta.codigo}}</secuencialInicio>
+      <secuencialFin>{{venta.codigo}}</secuencialFin>
+      <autorizacion>1111897538</autorizacion>
+    </detalleAnulados>
+    {% endfor %}
+  </anulados>
+</iva>

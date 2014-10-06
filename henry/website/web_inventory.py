@@ -7,6 +7,7 @@ from henry.layer2.productos import (Transferencia, TransType, Metadata)
 from henry.layer2.documents import DocumentCreationRequest
 
 w = Bottle()
+web_inventory_webapp = w
 
 @w.get('/app/ingreso/<uid>')
 def get_ingreso(uid):

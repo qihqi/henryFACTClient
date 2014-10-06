@@ -3,6 +3,9 @@ from henry.layer1.schema import NVenta, NItemVenta, NOrdenDespacho, NItemDespach
 from henry.layer1.schema import NProducto, NContenido, NCliente
 from henry.config import new_session
 
+def get_all_users():
+    session = sessionfactory()
+    return session.query(NUsuario)
 
 def _prod_query(session):
     return session.query(

@@ -146,8 +146,13 @@ class InvApiOld(object):
                 NOrdenDespacho.fecha <= end_date).filter(
                 NOrdenDespacho.fecha >= start_date)
 
+        if status == Status.DELETED:
+            dbmeta = dbmeta.filter_by(eliminado=True)
+        else:
+            dbmeta = dbmeta.filter_by(eliminado=False)
+
         if seller is not None:
-            dbmeta = dbmeta.filter_by(user=seller)
+            dbmeta = dbmeta.filter_by(vendedor_id=seller)
 
         return dbmeta
 

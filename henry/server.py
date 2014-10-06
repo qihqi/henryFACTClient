@@ -5,7 +5,8 @@ import os
 from bottle import run, request, static_file, Bottle, HTTPError
 
 from henry.bodega_api import bodega_api_app
-from henry.website.web_inventory import w
+from henry.website.web_inventory import web_inventory_webapp
+from henry.website.accounting import accounting_webapp
 from henry.config import sessionfactory
 from henry.layer2.invoice import InvApiOld
 
@@ -26,17 +27,13 @@ def main():
   #  print json.dumps(Venta.get(86590).serialize(), cls=ModelEncoder)
     host = sys.argv[1] if len(sys.argv) > 1 else 'localhost'
     app.merge(bodega_api_app)
-    app.merge(w)
+    app.merge(web_inventory_webapp)
+    app.merge(accounting_webapp)
     run(app, host=host, debug=True, port=8080)
     return 'http://localhost:8080'
 
 
 if __name__ == '__main__':
-    old = InvApiOld(sessionfactory())
-    start_date = datetime.date(2013,02,20)
-    end_date = datetime.date(2013,03,20)
-    for x in old.get_dated_report(start_date, end_date, 1):
-        print x.codigo, x.total
     main()
 
 
