@@ -4,20 +4,19 @@ from jinja2 import Environment, FileSystemLoader
 from henry.helpers.fileservice import FileService
 from henry.layer2.productos import ProductApiDB, TransApiDB
 from henry.layer2.invoice import InvApiDB, InvApiOld
+from henry.layer1.session_manager import SessionManager
+from henry.constants import CONN_STRING, INGRESO_PATH, INVOICE_PATH
 
 
-def create_mysql_string(user, password):
-    return "mysql+mysqldb://%s:%s@%s/henry" % (user, password, CONFIG['ip'])
-
-conn_string = 'mysql+mysqldb://root:no jodas@localhost/henry'
-# conn_string = 'sqlite:////home/han/git/henryFACT/servidor/henry/test_db.sql'
-engine = create_engine(conn_string)
+engine = create_engine(CONN_STRING)
 sessionfactory = sessionmaker(bind=engine)
-fileroot = '/var/data/ingreso'
-prodapi = ProductApiDB(sessionfactory())
-filemanager = FileService(fileroot)
-transapi = TransApiDB(sessionfactory(), filemanager, prodapi)
+sessionmanger = SessionManager(sessionfactory)
+prodapi = ProductApiDB(sessionmanager)
+
+transapi = TransApiDB(sessionfactory(), FileService(INGRESO_PATH), prodapi)
+invapi = TransApiDB(sessionfactory(), FileService(INVOICE_PATH), prodapi)
 invapi2 = InvApiOld(sessionfactory())
+
 
 template_paths = ['./templates']
 jinja_env = Environment(loader=FileSystemLoader(template_paths))

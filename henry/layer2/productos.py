@@ -1,19 +1,12 @@
-import os
-import json
-import itertools
-import uuid
-import datetime
-from itertools import imap
-from collections import defaultdict
-
 from sqlalchemy.sql import bindparam
 from henry.layer1.schema import NProducto, NContenido, NTransferencia, NBodega
-from henry.helpers.serialization import SerializableMixin, decode
+from henry.helpers.serialization import SerializableMixin
 from henry.layer2.documents import DocumentApi, Status
+
 
 class TransType:
     INGRESS = 'INGRESO'
-    TRANSFER= 'TRANSFER'
+    TRANSFER = 'TRANSFER'
     REPACKAGE = 'REEMPAQUE'
     EXTERNAL = 'EXTERNA'
 
@@ -21,9 +14,6 @@ class TransType:
              TRANSFER,
              REPACKAGE,
              EXTERNAL)
-
-
-
 
 
 class Product(SerializableMixin):
@@ -54,9 +44,11 @@ class Product(SerializableMixin):
 
 
 class Transaction(SerializableMixin):
-    _name=['bodega_id', 'prod_id', 'delta', 'name', 'ref']
+    _name = ('bodega_id', 'prod_id', 'delta', 'name', 'ref')
 
-    def __init__(self, bodega_id=None, prod_id=None, delta=None, name=None, ref=None):
+    def __init__(self, bodega_id=None,
+                 prod_id=None, delta=None,
+                 name=None, ref=None):
         self.bodega_id = bodega_id
         self.prod_id = prod_id
         self.delta = delta
@@ -85,10 +77,10 @@ class ProductApiDB:
         NContenido.bodega_id,
     )
 
-    def __init__(self, db_session):
+    def __init__(self, sessionmanager):
         self._prod_name_cache = {}
         self._prod_price_cache = {}
-        self.db_session = db_session
+        self.db_session = sessionmanager
 
     def get_producto(self, prod_id, almacen_id=None, bodega_id=None):
         query_items = list(ProductApiDB._PROD_KEYS)
@@ -104,7 +96,7 @@ class ProductApiDB:
             query_items.extend(ProductApiDB._PROD_CANT_KEYS)
             filter_items.append(NContenido.bodega_id == bodega_id)
 
-        item = self.db_session.query(*query_items)
+        item = self.db_session.session.query(*query_items)
         for f in filter_items:
             item = item.filter(f)
         if item.first() is not None:
@@ -120,7 +112,7 @@ class ProductApiDB:
             filters.append(NContenido.bodega_id == almacen_id)
         if bodega_id is not None:
             query_items.extend(ProductApiDB._PROD_CANT_KEYS)
-        result_proxy = self.db_session.query(*query_items)
+        result_proxy = self.db_session.session.query(*query_items)
 
         for f in filters:
             result_proxy = result_proxy.filter(f)
@@ -129,46 +121,52 @@ class ProductApiDB:
 
     def save(self, prod):
         p = self._construct_db_instance(prod)
-        self.db_session.add(p)
-        self.db_session.commit()
+        self.db_session.session.add(p)
 
     def save_batch(self, prods):
+        session = self.db_session.session
         for p in prods:
             x = self._construct_db_instance(p)
-            self.db_session.add(x)
-        self.db_session.commit()
+            session.add(x)
 
     def execute_transactions(self, trans):
-        rowcount = self.exec_transactions_with_session(self.db_session, trans)
-        self.db_session.commit()
-        return rowcount
+        session = self.db_session.session
+        t = NContenido.__table__.update().where(
+            NContenido.prod_id == bindparam('p')).where(
+            NContenido.bodega_id == bindparam('b'))
+        t = t.values({'cant': NContenido.cant + bindparam('c')})
+        substitute = [{'c': x.delta, 'p': x.prod_id, 'b': x.bodega_id}
+                      for x in trans]
+        result = session.execute(t, substitute)
+        return result.rowcount
 
     def exec_transactions_with_session(self, session, trans):
         t = NContenido.__table__.update().where(
-                NContenido.prod_id == bindparam('p')).where(
-                NContenido.bodega_id == bindparam('b'))
+            NContenido.prod_id == bindparam('p')).where(
+            NContenido.bodega_id == bindparam('b'))
         t = t.values({'cant': NContenido.cant + bindparam('c')})
-        substitute = [{'c': x.delta, 'p': x.prod_id, 'b': x.bodega_id} for x in trans]
+        substitute = [{'c': x.delta, 'p': x.prod_id, 'b': x.bodega_id}
+                      for x in trans]
         print substitute
         result = session.execute(t, substitute)
         return result.rowcount
 
     def _construct_db_instance(self, prod):
         p = NProducto(
-                codigo=prod.codigo,
-                nombre=prod.nombre,
-                categoria=prod.categoria)
+            codigo=prod.codigo,
+            nombre=prod.nombre,
+            categoria=prod.categoria)
         if prod.almacen_id:
             c = NContenido(
-                    bodega_id=prod.almacen_id,
-                    precio=prod.precio1,
-                    precio2=prod.precio2,
-                    )
+                bodega_id=prod.almacen_id,
+                precio=prod.precio1,
+                precio2=prod.precio2)
             p.contenidos.add(c)
         return p
 
     def get_bodegas(self):
-        return self.db_session.query(NBodega);
+        return self.db_session.session.query(NBodega)
+
 
 class Metadata(SerializableMixin):
     _name = (
@@ -181,14 +179,15 @@ class Metadata(SerializableMixin):
         'timestamp',
         'status')
 
-    def __init__(self, trans_type=None,
-                       uid=None,
-                       origin=None,
-                       dest=None,
-                       user=None,
-                       ref=None,
-                       status=None,
-                       timestamp=None):
+    def __init__(self,
+                 trans_type=None,
+                 uid=None,
+                 origin=None,
+                 dest=None,
+                 user=None,
+                 ref=None,
+                 status=None,
+                 timestamp=None):
         self.uid = uid
         self.origin = origin
         self.dest = dest
@@ -197,7 +196,6 @@ class Metadata(SerializableMixin):
         self.ref = ref
         self.timestamp = timestamp
         self.status = status
-
 
 
 class Transferencia(SerializableMixin):
@@ -228,8 +226,10 @@ class TransApiDB(DocumentApi):
             raise ValueError('Tipo de transferencia no existe')
         if meta.dest is None or meta.dest == -1:
             raise ValueError('ire bodega de destino')
-        if meta.trans_type != TransType.INGRESS and meta.origin is None:
-            raise ValueError('ire origen para transferencia tipo ' + meta.trans_type)
+        if (meta.trans_type != TransType.INGRESS and
+                meta.origin is None):
+            raise ValueError('ire origen para transferencia tipo '
+                             + meta.trans_type)
 
     def create_document_from_request(self, req):
         self._validate_metadata(req.meta)
@@ -241,7 +241,8 @@ class TransApiDB(DocumentApi):
             if p is None:
                 raise ValueError('producto {} no existe'.format(prod_id))
             if cant < 0:
-                raise ValueError('Cantidad de producto {} es negativo'.format(prod_id))
+                raise ValueError('Cantidad de producto {} es negativo'
+                                 .format(prod_id))
             if cant > 0:
                 items = self._item_generator(t.meta, p, cant)
                 new_items.extend(items)
@@ -273,5 +274,3 @@ class TransApiDB(DocumentApi):
         for i in transfer.items:
             bodega_id, prod, cant, name = i
             yield Transaction(bodega_id, prod, cant, name, reason)
-
-

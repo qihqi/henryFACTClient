@@ -1,15 +1,12 @@
 import os
 import json
-import itertools
 import uuid
 import datetime
 from itertools import imap
 from collections import defaultdict
 
-from sqlalchemy.sql import bindparam
 from sqlalchemy.exc import SQLAlchemyError
-from henry.layer1.schema import NProducto, NContenido, NTransferencia, NBodega
-from henry.helpers.serialization import SerializableMixin, decode
+
 
 class Status:
     NEW = 'NUEVO'
@@ -20,8 +17,10 @@ class Status:
              COMITTED,
              DELETED)
 
+
 class DocumentException(Exception):
     pass
+
 
 class DocumentCreationRequest(object):
     """
@@ -45,13 +44,14 @@ class DocumentApi(object):
     An Invoice, An Ingress are both documents.
 
     Metadata could be very different, the only common things is that its
-    saved in one row in the database, and have one field called uid for id, and another
+    saved in one row in the database, and have one field called uid for id,
+    and another
     items_location as a logical location for where the content is stored
 
     '''
 
-    def __init__(self, session, filemanager, prod_api):
-        self.db_session = session
+    def __init__(self, sessionmanager, filemanager, prod_api):
+        self.db_session = sessionmanager
         self.filemanager = filemanager
         self.prod_api = prod_api
 
@@ -66,7 +66,8 @@ class DocumentApi(object):
         uid id of the tranfer to fetch,
         returns Transferencia object
         """
-        meta = self.db_session.query(*self._query_string).filter_by(id=uid).first()
+        session = self.db_session.session
+        meta = session.query(*self._query_string).filter_by(id=uid).first()
         return self.get_doc_from_meta(meta)
 
     def get_doc_from_meta(self, meta):
@@ -78,26 +79,30 @@ class DocumentApi(object):
         return t
 
     def save(self, request):
-        request.meta.timestamp = request.meta.timestamp or datetime.datetime.now()
+        request.meta.timestamp = (request.meta.timestamp
+                                  or datetime.datetime.now())
         doc = self.create_document_from_request(request)
 
+        session = self.db_session.session
         meta = doc.meta
         meta.status = Status.NEW
-        filepath = os.path.join(meta.timestamp.date().isoformat(), uuid.uuid1().hex)
+        filepath = os.path.join(
+            meta.timestamp.date().isoformat(), uuid.uuid1().hex)
         db_entry = self._db_instance(meta, filepath)
-        self.db_session.add(db_entry)
-        self.db_session.flush()
+        session.add(db_entry)
         doc.meta.uid = db_entry.id
         self.filemanager.put_file(filepath, doc.to_json())
-        self.db_session.commit()
         return doc
 
     def commit(self, uid):
         doc = self.get_doc(uid)
+        if doc is None:
+            return None
         meta = doc.meta
         if meta.status and meta.status != Status.NEW:
             return None
-        if self._set_status_and_update_prod_count(doc, Status.COMITTED, inverse_transaction=False):
+        if self._set_status_and_update_prod_count(
+                doc, Status.COMITTED, inverse_transaction=False):
             return doc
         return None
 
@@ -105,23 +110,26 @@ class DocumentApi(object):
         doc = self.get_doc(uid)
         if doc.meta.status != Status.COMITTED:
             return None
-        if self._set_status_and_update_prod_count(doc, Status.DELETED, inverse_transaction=True):
+        if self._set_status_and_update_prod_count(
+                doc, Status.DELETED, inverse_transaction=True):
             return doc
         return None
 
-    def _set_status_and_update_prod_count(self, doc, new_status, inverse_transaction):
+    def _set_status_and_update_prod_count(
+            self, doc, new_status, inverse_transaction):
+        session = self.db_session.session
         try:
             items = self._items_to_transactions(doc)
             if inverse_transaction:
                 items = imap(lambda i: i.inverse(), items)
-            self.prod_api.exec_transactions_with_session(self.db_session, items)
-            self.db_session.query(self._db_class).filter_by(id=doc.meta.uid).update({'status': new_status})
-            self.db_session.commit()
+            self.prod_api.exec_transactions(items)
+            session.query(self._db_class).filter_by(
+                id=doc.meta.uid).update({'status': new_status})
+            session.commit()
             doc.meta.status = new_status
             return True
-        except SQLAlchemyError as e:
+        except SQLAlchemyError:
             import traceback
             traceback.print_exc()
-            self.db_session.rollback()
+            session.rollback()
             return False
-

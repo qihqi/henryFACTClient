@@ -1,14 +1,5 @@
-import os
-import json
-import itertools
-import uuid
-import datetime
-from itertools import imap
-from collections import defaultdict
-
-from sqlalchemy.sql import bindparam
-from henry.layer1.schema import NProducto, NContenido, NNota, NBodega, NOrdenDespacho
-from henry.helpers.serialization import SerializableMixin, decode
+from henry.layer1.schema import NNota, NOrdenDespacho
+from henry.helpers.serialization import SerializableMixin
 from henry.layer2.documents import DocumentApi, Status
 from henry.layer2.productos import Transaction
 
@@ -84,7 +75,8 @@ class InvApiDB(DocumentApi):
 
     @classmethod
     def _items_to_transactions(cls, doc):
-        reason = 'factura: id={} codigo={}'.format(doc.meta.uid, doc.meta.codigo)
+        reason = 'factura: id={} codigo={}'.format(
+            doc.meta.uid, doc.meta.codigo)
         for i in doc.items:
             prod_id, prod, cant, price = i
             yield Transaction(doc.meta.bodega, prod_id, -cant, prod, reason)
@@ -93,32 +85,38 @@ class InvApiDB(DocumentApi):
         inv = Invoice(req.meta)
         items = []
         for i in req.items:
-            p = self.prod_api.get_producto(i[0])
+            prod_id = i[0]
+            p = self.prod_api.get_producto(prod_id)
             if p is None:
                 raise ValueError('producto {} no existe'.format(prod_id))
             if i[1] < 0:
-                raise ValueError('Cantidad de producto {} es negativo'.format(prod_id))
+                raise ValueError(
+                    'Cantidad de producto {} es negativo'.format(prod_id))
             if i[1] > 0:
                 items.append(i)
         inv.items = items
         return inv
 
     def set_codigo(self, uid, codigo):
-        self.db_session.query(NNota).filter_by(id=uid).update({'codigo' : codigo})
+        self.db_session.session.query(
+            NNota).filter_by(id=uid).update({'codigo': codigo})
 
     def get_doc_by_codigo(self, alm, codigo):
-        meta = self.db_session.query(NNota).filter_by(codigo=codigo, almacen=alm).first()
+        meta = self.db_session.session.query(
+            NNota).filter_by(codigo=codigo, almacen=alm).first()
         return self.get_doc_from_meta(meta)
 
-    def get_dated_report(self, start_date, end_date, almacen, seller=None, status=Status.COMITTED):
+    def get_dated_report(self, start_date, end_date,
+                         almacen, seller=None, status=Status.COMITTED):
         """
         returns an iterable of InvMetadata object that represents sold invoices
         """
 
-        dbmeta = self.db_session.query(NNota).filter_by(
-                    almacen=almacen).filter(
-                    NNota.timestamp < end_date).filter(
-                    NNota.timestamp >= start_date)
+        session = self.db_session.session
+        dbmeta = session.query(NNota).filter_by(
+            almacen=almacen).filter(
+            NNota.timestamp < end_date).filter(
+            NNota.timestamp >= start_date)
         if seller is not None:
             dbmeta = dbmeta.filter_by(user=seller)
 
@@ -134,17 +132,17 @@ class InvApiDB(DocumentApi):
             yield InvMetadata().merge_from(meta)
 
 
-
 class InvApiOld(object):
 
     def __init__(self, session):
         self.session = session
 
-    def get_dated_report(self, start_date, end_date, almacen, seller=None, status=Status.COMITTED):
+    def get_dated_report(self, start_date, end_date, almacen,
+                         seller=None, status=Status.COMITTED):
         dbmeta = self.session.query(NOrdenDespacho).filter_by(
-                bodega_id=almacen).filter(
-                NOrdenDespacho.fecha <= end_date).filter(
-                NOrdenDespacho.fecha >= start_date)
+            bodega_id=almacen).filter(
+            NOrdenDespacho.fecha <= end_date).filter(
+            NOrdenDespacho.fecha >= start_date)
 
         if status == Status.DELETED:
             dbmeta = dbmeta.filter_by(eliminado=True)
@@ -155,6 +153,3 @@ class InvApiOld(object):
             dbmeta = dbmeta.filter_by(vendedor_id=seller)
 
         return dbmeta
-
-
-
