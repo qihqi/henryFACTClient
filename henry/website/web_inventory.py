@@ -1,15 +1,17 @@
 import datetime
 
-import bottle
 from bottle import request, Bottle, abort, redirect
 from henry.config import jinja_env, transapi, prodapi
-from henry.layer2.productos import (Transferencia, TransType, Metadata)
+from henry.layer2.productos import (TransType, Metadata)
 from henry.layer2.documents import DocumentCreationRequest
+from henry.config import dbcontext
 
 w = Bottle()
 web_inventory_webapp = w
 
+
 @w.get('/app/ingreso/<uid>')
+@dbcontext
 def get_ingreso(uid):
     trans = transapi.get_doc(uid)
     bodegas = {x.id: x.nombre for x in prodapi.get_bodegas()}
@@ -22,6 +24,7 @@ def get_ingreso(uid):
 
 
 @w.get('/app/crear_ingreso')
+@dbcontext
 def crear_ingreso():
     temp = jinja_env.get_template('crear_ingreso.html')
     bodegas = prodapi.get_bodegas()
@@ -29,6 +32,7 @@ def crear_ingreso():
 
 
 @w.post('/app/crear_ingreso')
+@dbcontext
 def post_crear_ingreso():
     meta = Metadata()
     meta.dest = int(request.forms.get('dest'))
@@ -56,4 +60,3 @@ def post_crear_ingreso():
         abort(400, str(e))
 
     redirect('/app/ingreso/{}'.format(transferencia.meta.uid))
-

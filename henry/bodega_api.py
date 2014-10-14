@@ -1,12 +1,16 @@
+import json
+
 from bottle import Bottle, response, request, abort
 
-from henry.layer2.productos import Product, ProductApiDB, TransApiDB, Transferencia
+from henry.layer2.productos import Transferencia
 from henry.helpers.serialization import json_dump
-from henry.config import prodapi, transapi
+from henry.config import prodapi, transapi, dbcontext
 
 bodega_api_app = Bottle()
 
+
 @bodega_api_app.get('/api/alm/<almacen_id>/producto/<prod_id>')
+@dbcontext
 def get_prod_from_inv(almacen_id, prod_id):
     prod = prodapi.get_producto(prod_id=prod_id, almacen_id=almacen_id)
     if prod is None:
@@ -15,11 +19,13 @@ def get_prod_from_inv(almacen_id, prod_id):
 
 
 @bodega_api_app.get('/api/producto/<prod_id>')
+@dbcontext
 def get_prod(prod_id):
     return get_prod_from_inv(None, prod_id)
 
 
 @bodega_api_app.get('/api/producto')
+@dbcontext
 def search_prod():
     prefijo = request.query.prefijo
     if prefijo:
@@ -30,16 +36,19 @@ def search_prod():
 
 
 @bodega_api_app.get('/api/alm/<almacen_id>/producto')
-def search_prod(almacen_id):
+@dbcontext
+def search_prod_alm(almacen_id):
     prefijo = request.query.prefijo
     if prefijo:
-        return json_dump(list(prodapi.search(prefix=prefijo, almacen_id=almacen_id)))
+        return json_dump(list(prodapi.search(prefix=prefijo,
+                                             almacen_id=almacen_id)))
     else:
         response.status = 400
         return None
 
 
 @bodega_api_app.post('/api/ingreso')
+@dbcontext
 def crear_ingreso():
     json_content = request.body.read()
     content = json.parse(json_content)
@@ -49,16 +58,21 @@ def crear_ingreso():
 
 
 @bodega_api_app.put('/api/ingreso/<ingreso_id>')
+@dbcontext
 def postear_ingreso(ingreso_id):
     t = transapi.commit(uid=ingreso_id)
     return {'status': t.meta.status}
 
+
 @bodega_api_app.delete('/api/ingreso/<ingreso_id>')
-def postear_ingreso(ingreso_id):
+@dbcontext
+def delete_ingreso(ingreso_id):
     t = transapi.delete(uid=ingreso_id)
     return {'status': t.meta.status}
 
+
 @bodega_api_app.get('/api/ingreso/<ingreso_id>')
+@dbcontext
 def get_ingreso(ingreso_id):
     ing = transapi.get_doc(ingreso_id)
     if ing is None:
@@ -66,9 +80,8 @@ def get_ingreso(ingreso_id):
         return
     return json_dump(ing.serialize())
 
+
 @bodega_api_app.get('/api/pedido/<uid>')
+@dbcontext
 def get_pedido(uid):
     pass
-
-
-

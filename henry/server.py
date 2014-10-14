@@ -1,16 +1,15 @@
-import datetime
 import sys
 import os
 
-from bottle import run, request, static_file, Bottle, HTTPError
+from bottle import run, static_file, Bottle
 
 from henry.bodega_api import bodega_api_app
 from henry.website.web_inventory import web_inventory_webapp
 from henry.website.accounting import accounting_webapp
-from henry.config import sessionfactory
-from henry.layer2.invoice import InvApiOld
+
 
 app = Bottle()
+
 
 @app.get('/static/<rest:path>')
 def static(rest):
@@ -35,6 +34,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
