@@ -1,6 +1,6 @@
 <html>
     <head>
-         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
         <script src="/static/prod.js"></script>
         <script type="text/javascript">
             $(document).ready(function(){
@@ -19,6 +19,20 @@
                 } else {
                     $('#desde_bodega').show();
                 }
+                $('#cargar_ingreso').click(function() {
+                    var ing_id = $('#ingreso_id').val();
+                    getIngreso(ing_id, function(status, result) {
+                        for (var i in result.items) {
+                            var row = result.items[i];
+                            $('#cod' + (count-1)).val(row[1]);
+                            $('#cant' + (count-1)).val(row[2]);
+                            $('#span' + (count-1)).html(row[3]);
+                            var newRow = getRow();
+                            $("#insert").append(newRow);
+                        }
+                    });
+                });
+                
             });
         </script>
         <style> input.text_field { width : 100px }
@@ -31,6 +45,7 @@
     <body>
     <div class="center">
         <button onClick="window.location='/r';" > Regresar </button>
+        <input id="ingreso_id"/> <button id="cargar_ingreso"> Copiar Ingreso Viejo</button>
         <form id="p" method="post" action="/app/crear_ingreso">
             <p><input type="submit" value="Guardar"/></p>
             <select id="tipo" name="trans_type">
