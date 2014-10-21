@@ -90,6 +90,7 @@ class DocumentApi(object):
             meta.timestamp.date().isoformat(), uuid.uuid1().hex)
         db_entry = self._db_instance(meta, filepath)
         session.add(db_entry)
+        session.flush()  # flush to get the autoincrement id
         doc.meta.uid = db_entry.id
         self.filemanager.put_file(filepath, doc.to_json())
         return doc

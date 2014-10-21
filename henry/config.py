@@ -16,9 +16,9 @@ sessionmanager = SessionManager(sessionfactory)
 dbcontext = DBContext(sessionmanager)
 prodapi = ProductApiDB(sessionmanager)
 
-transapi = TransApiDB(sessionfactory(), FileService(INGRESO_PATH), prodapi)
-invapi = InvApiDB(sessionfactory(), FileService(INVOICE_PATH), prodapi)
-invapi2 = InvApiOld(sessionfactory())
+transapi = TransApiDB(sessionmanager, FileService(INGRESO_PATH), prodapi)
+invapi = InvApiDB(sessionmanager, FileService(INVOICE_PATH), prodapi)
+invapi2 = InvApiOld(sessionmanager)
 
 
 template_paths = ['./templates']
