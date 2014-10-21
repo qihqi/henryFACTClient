@@ -123,7 +123,7 @@ class DocumentApi(object):
             items = self._items_to_transactions(doc)
             if inverse_transaction:
                 items = imap(lambda i: i.inverse(), items)
-            self.prod_api.exec_transactions(items)
+            self.prod_api.execute_transactions(items)
             session.query(self._db_class).filter_by(
                 id=doc.meta.uid).update({'status': new_status})
             session.commit()
