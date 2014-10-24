@@ -1,17 +1,17 @@
 from henry.helpers.serialization import SerializableMixin
 from henry.layer1.schema import NCliente
 
+
 class Client(SerializableMixin, NCliente):
     _name = (
-            'codigo',
-            'nombres',
-            'apellidos',
-            'direccion',
-            'ciudad',
-            'telefono',
-            'tipo',
-            'cliente_desde',
-        )
+        'codigo',
+        'nombres',
+        'apellidos',
+        'direccion',
+        'ciudad',
+        'telefono',
+        'tipo',
+        'cliente_desde',)
 
 
 class ClientApiDB(object):
@@ -21,12 +21,13 @@ class ClientApiDB(object):
 
     def get(self, cliente_id):
         cliente = self.manager.session.query(Client).filter(
-                Client.codigo == cliente_id)
+            Client.codigo == cliente_id)
         return cliente.first()
 
     def search(self, apellido):
         session = self.manager.session
-        clientes = session.query(Client).filter(NCliente.apellidos.startswith(apellido))
+        clientes = session.query(Client).filter(
+            NCliente.apellidos.startswith(apellido))
         return clientes
 
     def save(self, cliente):
@@ -44,4 +45,3 @@ class ClientApiDB(object):
         session = self.manager.session
         session.add(newc)
         session.flush()
-            
