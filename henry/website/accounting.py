@@ -25,7 +25,7 @@ def get_all_users():
     return all_user
 
 
-def extract_vta_from_total(total):
+def extract_subtotal_from_total(total):
     return (total / Decimal('1.12')).quantize(Decimal('.01'),
                                               rounding=ROUND_HALF_DOWN)
 
@@ -33,8 +33,8 @@ def extract_vta_from_total(total):
 def group_by_customer(inv):
     result = defaultdict(CustomerSell)
     for i in inv:
-        vta = extract_vta_from_total(i.total)
-        subtotal = i.total - vta
+        subtotal = extract_subtotal_from_total(i.total)
+        vta = i.total - subtotal
         result[i.cliente_id].subtotal += subtotal
         result[i.cliente_id].iva += vta
         result[i.cliente_id].count += 1
