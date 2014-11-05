@@ -6,6 +6,7 @@ from bottle import request, Bottle, response
 from henry.layer2.documents import Status
 from henry.layer1.schema import NUsuario
 from henry.config import sessionmanager, jinja_env, invapi2
+from henry.constants import RUC
 
 w = Bottle()
 accounting_webapp = w
@@ -25,16 +26,15 @@ def get_all_users():
     return all_user
 
 
-def extract_vta_from_total(total):
+def extract_subtotal_from_total(total):
     return (total / Decimal('1.12')).quantize(Decimal('.01'),
                                               rounding=ROUND_HALF_DOWN)
-
 
 def group_by_customer(inv):
     result = defaultdict(CustomerSell)
     for i in inv:
-        vta = extract_vta_from_total(i.total)
-        subtotal = i.total - vta
+        subtotal = extract_subtotal_from_total(i.total)
+        vta = i.total - subtotal
         result[i.cliente_id].subtotal += subtotal
         result[i.cliente_id].iva += vta
         result[i.cliente_id].count += 1
@@ -66,7 +66,8 @@ def get_sells_xml():
 
     meta = Meta()
     meta.date = start_date
-    meta.total = reduce(lambda acc, x: acc + x.subtotal, sold.values(), 0)
+    meta.total = reduce(lambda acc, x: acc + x.subtotal, grouped.values(), 0)
+    meta.ruc = RUC
     temp = jinja_env.get_template('ats.xml')
     # response.set_header('Content-disposition', 'attachment')
     response.set_header('Content-type', 'application/xml')

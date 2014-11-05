@@ -1,3 +1,4 @@
+import re
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from jinja2 import Environment, FileSystemLoader
@@ -28,10 +29,23 @@ jinja_env = Environment(loader=FileSystemLoader(template_paths))
 def id_type(uid):
     if uid == 'NA':
         return '07'  # General
-    elif len(uid) == 10:
+
+    uid = fix_id(uid)
+    if len(uid) == 10:
         return '05'  # cedula
     elif len(uid) == 13:
         return '04'  # RUC
     else:
-        return ''
-jinja_env.globals.update(id_type=id_type)
+        print 'error!! uid {} with length {}'.format(uid, len(uid))
+    return '07'
+
+def fix_id(uid):
+    if uid == 'NA':
+        return '9' * 13 # si es consumidor final retorna 13 digitos de 9
+    uid = re.sub('[^\d]', '', uid)
+    return uid
+
+jinja_env.globals.update({
+    'id_type': id_type,
+    'fix_id': fix_id,
+})

@@ -24,7 +24,7 @@ def main():
     #setup_testdata()
     #print get_cliente_by_id('NA')
   #  print json.dumps(Venta.get(86590).serialize(), cls=ModelEncoder)
-    host = sys.argv[1] if len(sys.argv) > 1 else 'localhost'
+    host = sys.argv[1] if len(sys.argv) > 1 else '0.0.0.0'
     app.merge(bodega_api_app)
     app.merge(web_inventory_webapp)
     app.merge(accounting_webapp)
