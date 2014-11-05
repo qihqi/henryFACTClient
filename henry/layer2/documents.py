@@ -90,6 +90,7 @@ class DocumentApi(object):
             meta.timestamp.date().isoformat(), uuid.uuid1().hex)
         db_entry = self._db_instance(meta, filepath)
         session.add(db_entry)
+        session.flush()  # flush to get the autoincrement id
         doc.meta.uid = db_entry.id
         self.filemanager.put_file(filepath, doc.to_json())
         return doc
@@ -122,7 +123,7 @@ class DocumentApi(object):
             items = self._items_to_transactions(doc)
             if inverse_transaction:
                 items = imap(lambda i: i.inverse(), items)
-            self.prod_api.exec_transactions(items)
+            self.prod_api.execute_transactions(items)
             session.query(self._db_class).filter_by(
                 id=doc.meta.uid).update({'status': new_status})
             session.commit()

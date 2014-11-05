@@ -147,7 +147,6 @@ class ProductApiDB:
         t = t.values({'cant': NContenido.cant + bindparam('c')})
         substitute = [{'c': x.delta, 'p': x.prod_id, 'b': x.bodega_id}
                       for x in trans]
-        print substitute
         result = session.execute(t, substitute)
         return result.rowcount
 

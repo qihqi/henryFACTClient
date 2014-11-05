@@ -134,12 +134,12 @@ class InvApiDB(DocumentApi):
 
 class InvApiOld(object):
 
-    def __init__(self, session):
-        self.session = session
+    def __init__(self, sessionmanager):
+        self.session = sessionmanager
 
     def get_dated_report(self, start_date, end_date, almacen,
                          seller=None, status=Status.COMITTED):
-        dbmeta = self.session.query(NOrdenDespacho).filter_by(
+        dbmeta = self.session.session.query(NOrdenDespacho).filter_by(
             bodega_id=almacen).filter(
             NOrdenDespacho.fecha <= end_date).filter(
             NOrdenDespacho.fecha >= start_date)

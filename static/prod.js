@@ -29,6 +29,11 @@ function searchProdAjax(prefix, callback) {
     getRequest(url, callback);
 }
 
+function getIngreso(codigo, callback) {
+    var url = '/api/ingreso/' + codigo;
+    getRequest(url, callback);
+}
+
 
 var count=0;
 function getRow() {

@@ -37,4 +37,5 @@ nosetests.xml
 #han
 rest/*
 *.pyc
+henry-api/*
 
