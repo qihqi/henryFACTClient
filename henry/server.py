@@ -16,6 +16,9 @@ def static(rest):
     return static_file(rest, root='./static/')
 
 
+app.merge(bodega_api_app)
+app.merge(web_inventory_webapp)
+app.merge(accounting_webapp)
 def main():
     sys.path.append(os.path.dirname(os.path.realpath(__file__)))
     from henry.layer1.schema import Base
@@ -25,9 +28,6 @@ def main():
     #print get_cliente_by_id('NA')
   #  print json.dumps(Venta.get(86590).serialize(), cls=ModelEncoder)
     host = sys.argv[1] if len(sys.argv) > 1 else '0.0.0.0'
-    app.merge(bodega_api_app)
-    app.merge(web_inventory_webapp)
-    app.merge(accounting_webapp)
     run(app, host=host, debug=True, port=8080)
     return 'http://localhost:8080'
 

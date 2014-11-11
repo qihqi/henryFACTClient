@@ -5,7 +5,7 @@ from collections import defaultdict
 from bottle import request, Bottle, response
 from henry.layer2.documents import Status
 from henry.layer1.schema import NUsuario
-from henry.config import sessionmanager, jinja_env, invapi2
+from henry.config import sessionmanager, jinja_env, invapi2, dbcontext
 from henry.constants import RUC
 
 w = Bottle()
@@ -42,6 +42,7 @@ def group_by_customer(inv):
 
 
 @w.get('/app/accounting_form')
+@dbcontext
 def get_sells_xml_form():
     temp = jinja_env.get_template('ats_form.html')
     return temp.render(today=datetime.date.today(), vendedores=get_all_users())
@@ -52,6 +53,7 @@ class Meta(object):
 
 
 @w.get('/app/accounting.xml')
+@dbcontext
 def get_sells_xml():
     datestrp = datetime.datetime.strptime
     start_date = datestrp(request.query.get('start_date'), "%Y-%m-%d")
