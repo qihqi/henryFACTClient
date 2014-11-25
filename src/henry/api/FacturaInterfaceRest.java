@@ -42,6 +42,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
     private static final String PROD_URL_PATH = "/api/producto";
     private static final String CLIENT_URL_PATH = "/api/cliente";
     private static final String VETNA_URL_PATH= "/api/pedido";
+    private static final String PROD_URL = "/api/alm/%s/producto/%s";
 
     private Parser parser;
     private CloseableHttpClient httpClient;
@@ -57,11 +58,10 @@ public class FacturaInterfaceRest implements FacturaInterface {
     @Override
     public Producto getProductoPorCodigo(String codigo) {
         try {
+            String url = String.format(PROD_URL, "1", codigo);
             URI prodUri = new URIBuilder().setScheme("http")
                                           .setHost(baseUrl)
-                                          .setPath(PROD_URL_PATH)
-                                          .setParameter("id", codigo)
-                                          .setParameter("bodega_id", "1")
+                                          .setPath(url)
                                           .build();
             String content = getUrl(prodUri);
             return parser.parse(content, Producto.class);
