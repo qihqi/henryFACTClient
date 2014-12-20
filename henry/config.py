@@ -8,7 +8,7 @@ from henry.layer2.invoice import InvApiDB, InvApiOld
 from henry.layer2.client import ClientApiDB
 from henry.layer1.session_manager import SessionManager
 from henry.layer1.db_context import DBContext
-from henry.constants import CONN_STRING, INGRESO_PATH, INVOICE_PATH, FIX_IDS
+from henry.constants import CONN_STRING, INGRESO_PATH, INVOICE_PATH
 from henry.hack import fix_id_error
 
 
@@ -47,6 +47,9 @@ def fix_id(uid):
     if uid == 'NA':
         return '9' * 13 # si es consumidor final retorna 13 digitos de 9
     uid = re.sub('[^\d]', '', uid)
+
+    if len(uid) != 10 and len(uid) != 13:
+        return '9' * 13
     return uid
 
 jinja_env.globals.update({
