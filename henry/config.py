@@ -30,7 +30,7 @@ jinja_env = Environment(loader=FileSystemLoader(template_paths))
 
 
 def id_type(uid):
-    if uid == 'NA':
+    if uid == 'NA' or uid == '9' * 13:
         return '07'  # General
 
     uid = fix_id(uid)
