@@ -8,7 +8,8 @@ from henry.layer2.invoice import InvApiDB, InvApiOld
 from henry.layer2.client import ClientApiDB
 from henry.layer1.session_manager import SessionManager
 from henry.layer1.db_context import DBContext
-from henry.constants import CONN_STRING, INGRESO_PATH, INVOICE_PATH
+from henry.constants import CONN_STRING, INGRESO_PATH, INVOICE_PATH, FIX_IDS
+from henry.hack import fix_id_error
 
 
 engine = create_engine(CONN_STRING)
@@ -42,6 +43,7 @@ def id_type(uid):
     return '07'
 
 def fix_id(uid):
+    uid = fix_id_error(uid)
     if uid == 'NA':
         return '9' * 13 # si es consumidor final retorna 13 digitos de 9
     uid = re.sub('[^\d]', '', uid)
