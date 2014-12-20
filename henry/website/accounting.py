@@ -5,7 +5,7 @@ from collections import defaultdict
 from bottle import request, Bottle, response
 from henry.layer2.documents import Status
 from henry.layer1.schema import NUsuario
-from henry.config import sessionmanager, jinja_env, invapi2, dbcontext
+from henry.config import sessionmanager, jinja_env, invapi2, dbcontext, fix_id
 from henry.constants import RUC
 
 w = Bottle()
@@ -33,11 +33,12 @@ def extract_subtotal_from_total(total):
 def group_by_customer(inv):
     result = defaultdict(CustomerSell)
     for i in inv:
+        cliente_id = fix_id(i.cliente_id)
         subtotal = extract_subtotal_from_total(i.total)
         vta = i.total - subtotal
-        result[i.cliente_id].subtotal += subtotal
-        result[i.cliente_id].iva += vta
-        result[i.cliente_id].count += 1
+        result[cliente_id].subtotal += subtotal
+        result[cliente_id].iva += vta
+        result[cliente_id].count += 1
     return result
 
 
