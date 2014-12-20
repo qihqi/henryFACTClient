@@ -4,7 +4,7 @@ def fix_id_error(uid):
     if uid in ID_MAP:
         return ID_MAP[uid]
     if uid in IGNORE_SET:
-        return '9' * 13
+        return 'NA'
     return uid
 
 IGNORE_SET = set([
