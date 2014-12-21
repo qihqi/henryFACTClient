@@ -8,6 +8,7 @@ from henry.layer1.schema import NProducto, NContenido, Base
 from henry.helpers.fileservice import FileService
 from henry.layer2.client import Client, ClientApiDB
 from henry.layer1.session_manager import SessionManager
+from henry.config import validate_uid_and_ruc
 
 class ClientTest(unittest.TestCase):
 
@@ -55,6 +56,43 @@ class ClientTest(unittest.TestCase):
             for i in x:
                 print i.serialize()
             self.assertEquals(2, len(x))
+
+
+    def test_validate_cedula(self):
+        test_false = [
+            '1302576771001',
+            '1302576771001',
+            '0910558795',
+            '0910558795',
+            '0992185888',
+            '0992185888',
+            '0930174717',
+            '0930174717',
+            '0906426646',
+            '0906426646',
+            '0912254474001',
+            '0912254474001',
+            '0900518843',
+            '0900518843',
+            '1708898789001',
+            '1708898789001',
+            '0901480778001',
+            '0901480778001',
+            '1203165151',
+            '1203165151',
+            '1729984507',
+            '1729984507',
+            '0921404016',
+            '0921404016',
+            '1101033250',
+            '1101033250',
+            '0926418753',
+            '0926418753',
+            '1302576771',
+            '1302576771',
+        ]
+        for x in test_false:
+            self.assertFalse(validate_uid_and_ruc(x))
             
             
 if __name__ == '__main__':
