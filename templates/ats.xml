@@ -39,7 +39,7 @@
       <tipoComprobante>01</tipoComprobante>
       <establecimiento>001</establecimiento>
       <puntoEmision>001</puntoEmision>
-      <secuencialInicio>{{venta.codigo}}</secuencialInicio>
+      <secuencialInicio>{{abs(venta.codigo)}}</secuencialInicio>
       <secuencialFin>{{venta.codigo}}</secuencialFin>
       <autorizacion>1111897538</autorizacion>
     </detalleAnulados>

@@ -51,9 +51,16 @@ def fix_id(uid):
         return '9' * 13
     return uid
 
+def abs_string(string):
+    if string.startswith('-'):
+        return string[1:]
+    return string
+
+
 jinja_env.globals.update({
     'id_type': id_type,
     'fix_id': fix_id,
+    'abs' : abs_string,
 })
 
 
