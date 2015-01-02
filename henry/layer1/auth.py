@@ -9,7 +9,7 @@ class AuthDecorator(object):
 
     def __call__(self, func):
         def inner(*args, **kwargs):
-            session_key = request.get_cookie('session_id', None)
+            session_key = request.get_cookie('sessionid', None)
             if session_key is not None:
                 key = self.db.session.query(
                     NDjangoSession).filter_by(
