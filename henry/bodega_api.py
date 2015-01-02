@@ -51,7 +51,7 @@ def search_prod_alm(almacen_id):
 @dbcontext
 def crear_ingreso():
     json_content = request.body.read()
-    content = json.parse(json_content)
+    content = json.loads(json_content)
     ingreso = Transferencia.deserialize(content)
     codigo = transapi.create(ingreso)
     return {'codigo': codigo}
@@ -79,9 +79,3 @@ def get_ingreso(ingreso_id):
         abort(404, 'Ingreso No encontrada')
         return
     return json_dump(ing.serialize())
-
-
-@bodega_api_app.get('/api/pedido/<uid>')
-@dbcontext
-def get_pedido(uid):
-    pass

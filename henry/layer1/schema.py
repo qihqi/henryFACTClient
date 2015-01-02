@@ -1,5 +1,5 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Numeric, Date, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Numeric, Date, DateTime, Boolean, ForeignKey, Text
 from sqlalchemy.orm import relationship, backref
 from henry.helpers.serialization import SerializableMixin
 
@@ -158,7 +158,7 @@ class NNota(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     codigo = Column(String(20))
     date = Column(DateTime)
-    client = Column(String(20))
+    client_id = Column(String(20))
     user = Column(String(20))
     status = Column(String(10))
 
@@ -172,5 +172,14 @@ class NNota(Base):
     timestamp = Column(DateTime)
     # unix filepath where the items is stored
     items_location = Column(String(200))
+
+
+class NDjangoSession(Base):
+    __tablename__ = 'django_session'
+    session_key = Column(String(40), primary_key=True)
+    session_data = Column(Text)
+    expire_date = Column(DateTime)
+
+
 
 

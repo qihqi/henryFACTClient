@@ -53,7 +53,7 @@ class SerializableMixin(object):
     @classmethod
     def deserialize(cls, dict_input):
         obj = cls()
-        obj.__dict__ = {key: val for key, val in dict_input.items() if key in cls._name}
+        obj.__dict__ = {key: dict_input.get(key, None) for key in cls._name}
         return obj
 
 

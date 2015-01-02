@@ -9,6 +9,7 @@ from henry.helpers.fileservice import FileService
 from henry.layer2.productos import Product, ProductApiDB, Transaction, TransApiDB, Transferencia, TransType, Metadata
 from henry.layer2.documents import Status, DocumentCreationRequest
 from henry.layer2.invoice import Invoice, InvMetadata, InvApiDB
+from henry.layer2.client import Client
 from henry.layer1.session_manager import SessionManager
 
 class ProductApiTest(unittest.TestCase):
@@ -137,8 +138,11 @@ class ProductApiTest(unittest.TestCase):
         with self.sessionmanager:
             init_prod_cant = self.prod_api.get_producto('1', bodega_id=1).cantidad
 
+            client = Client()
+            client.codigo = '123'
+
             t = InvMetadata(
-                    client='asdf',
+                    client=client,
                     codigo=None,
                     user='asdf',
                     total=123,

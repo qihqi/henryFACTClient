@@ -4,6 +4,8 @@ import os
 from bottle import run, static_file, Bottle
 
 from henry.bodega_api import bodega_api_app
+from henry.client_api import client_api_app
+from henry.invoice_api import invoice_api_app
 from henry.website.web_inventory import web_inventory_webapp
 from henry.website.accounting import accounting_webapp
 
@@ -17,6 +19,8 @@ def static(rest):
 
 
 app.merge(bodega_api_app)
+app.merge(client_api_app)
+app.merge(invoice_api_app)
 app.merge(web_inventory_webapp)
 app.merge(accounting_webapp)
 def main():

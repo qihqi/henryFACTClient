@@ -60,7 +60,7 @@ class InvApiDB(DocumentApi):
     def _db_instance(cls, meta, filepath):
         return NNota(
             codigo=meta.codigo,
-            client=meta.client,
+            client_id=meta.client.codigo,
             user=meta.user,
             timestamp=meta.timestamp,
             status=meta.status,
