@@ -65,15 +65,21 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
     private class ProductoLoader implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
-            String code = codigo.getText();
-            Producto prod = FacturaInterface.INSTANCE.getProductoPorCodigo(code);
-            if (prod != null) {
-                item.setProducto(prod);
-                item.notifyListeners();
-                cantidad.requestFocus();
-            } else {
-                codigo.requestFocus();
-            }
+            final String code = codigo.getText();
+            EventQueue.invokeLater(new Runnable() {
+                public void run() {
+                    System.out.println("Started requesting");
+                    Producto prod = FacturaInterface.INSTANCE.getProductoPorCodigo(code);
+                    System.out.println("Finished requesting");
+                    if (prod != null) {
+                        item.setProducto(prod);
+                        item.notifyListeners();
+                        cantidad.requestFocus();
+                    } else {
+                        codigo.requestFocus();
+                    }
+                }
+            });
         }
     }
 
