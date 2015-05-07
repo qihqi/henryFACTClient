@@ -29,7 +29,7 @@ class ModelEncoder(json.JSONEncoder):
             return obj.serialize()
         if isinstance(obj, decimal.Decimal):
             return str(obj)
-        if isinstance(obj, datetime.datetime):
+        if hasattr(obj, 'isoformat'):
             return obj.isoformat()
         return super(ModelEncoder, self).default(obj)
 
@@ -64,4 +64,4 @@ class SerializableMixin(object):
         }
 
     def to_json(self):
-        return json.dumps(self.serialize(), cls=ModelEncoder)
+        return json_dump(self.serialize())

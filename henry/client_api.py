@@ -14,7 +14,7 @@ def get_cliente(codigo):
     client = clientapi.get(codigo)
     if client is None:
         abort(404, 'cliente no encontrado')
-    return client.serialize()
+    return client.to_json()
 
 
 @w.put('/api/cliente/<codigo>')

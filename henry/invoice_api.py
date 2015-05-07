@@ -36,8 +36,8 @@ def create_invoice():
     client = clientapi.get(client_id)
     doc_request.meta.client = client
     doc = invapi.create_document_from_request(doc_request)
-    codigo = invapi.save(doc)
-    return {'codigo': codigo}
+    invoice = invapi.save(doc)
+    return {'codigo': invoice.meta.uid}
 
 
 @w.put('/api/nota/<uid>')
