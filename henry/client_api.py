@@ -29,3 +29,4 @@ def update_client(codigo):
 @w.post('/api/cliente/<codigo>')
 def create_client(codigo):
     return update_client(codigo)
+

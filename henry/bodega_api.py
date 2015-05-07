@@ -40,8 +40,8 @@ def search_prod():
 def search_prod_alm(almacen_id):
     prefijo = request.query.prefijo
     if prefijo:
-        return json_dump(list(prodapi.search(prefix=prefijo,
-                                             almacen_id=almacen_id)))
+        return json_dump(list(prodapi.search_producto(prefix=prefijo,
+            almacen_id=almacen_id)))
     else:
         response.status = 400
         return None

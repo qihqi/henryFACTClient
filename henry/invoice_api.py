@@ -3,6 +3,7 @@ from bottle import Bottle, request, abort
 from henry.config import dbcontext, invapi, clientapi, auth_decorator
 from henry.layer2.invoice import InvMetadata
 from henry.layer2.documents import DocumentCreationRequest
+from henry.helpers.serialization import json_dump
 
 w = invoice_api_app = Bottle()
 
@@ -15,7 +16,7 @@ def get_invoice(inv_id):
     if doc is None:
         abort(404, 'Nota no encontrado')
         return
-    return doc.serialize()
+    return json_dump(doc.serialize())
 
 
 @w.post('/api/nota')
