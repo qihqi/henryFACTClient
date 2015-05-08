@@ -4,9 +4,6 @@ import os
 from bottle import run, static_file, Bottle
 
 from henry.api_endpoints import api
-from henry.bodega_api import bodega_api_app
-from henry.client_api import client_api_app
-from henry.invoice_api import invoice_api_app
 from henry.website.web_inventory import web_inventory_webapp
 from henry.website.accounting import accounting_webapp
 
