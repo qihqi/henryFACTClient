@@ -12,7 +12,7 @@ class PerformanceTest(unittest.TestCase):
         self._url = 'http://localhost:8080/api/producto'
 
     def test_producto(self):
-        productos = ['A1', 'A2']
+        productos = ['123', '1234']
         start = time.time()
         for p in productos:
             url = self.url_base + '/alm/{}/producto/{}'.format(1, p)
@@ -49,7 +49,7 @@ class PerformanceTest(unittest.TestCase):
         print r.text
 
     def test_get_cliente(self):
-        url = self.url_base + '/cliente/0000000000'
+        url = self.url_base + '/cliente/NA'
         r = requests.get(url)
         print 'cliente ', r.text
         # r = requests.get(url, params={'prefijo': 'A'})

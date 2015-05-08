@@ -38,4 +38,5 @@ nosetests.xml
 rest/*
 *.pyc
 henry-api/*
+henry/constants.py
 

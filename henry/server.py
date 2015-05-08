@@ -3,6 +3,7 @@ import os
 
 from bottle import run, static_file, Bottle
 
+from henry.api_endpoints import api
 from henry.bodega_api import bodega_api_app
 from henry.client_api import client_api_app
 from henry.invoice_api import invoice_api_app
@@ -17,16 +18,15 @@ app = Bottle()
 def static(rest):
     return static_file(rest, root='./static/')
 
-
-app.merge(bodega_api_app)
-app.merge(client_api_app)
-app.merge(invoice_api_app)
+app.merge(api)
 app.merge(web_inventory_webapp)
 app.merge(accounting_webapp)
 def main():
     sys.path.append(os.path.dirname(os.path.realpath(__file__)))
     from henry.layer1.schema import Base
     from henry.config import engine
+
+    print 'i am here '
     Base.metadata.create_all(engine)
     #setup_testdata()
     #print get_cliente_by_id('NA')
