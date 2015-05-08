@@ -2,6 +2,7 @@ import json
 from bottle import Bottle, request, abort
 from henry.config import clientapi, dbcontext
 from henry.layer2.client import Client
+from henry.helpers.serialization import json_dump
 
 
 client_api_app = Bottle()
@@ -29,4 +30,14 @@ def update_client(codigo):
 @w.post('/api/cliente/<codigo>')
 def create_client(codigo):
     return update_client(codigo)
+
+@w.get('/api/cliente')
+def search_client():
+    prefijo = request.query.prefijo
+    if prefijo: 
+        return json_dump(list(clientapi.search(apellido=prefijo)))
+    else:
+        response.status = 400
+        return None
+
 
