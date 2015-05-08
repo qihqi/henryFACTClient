@@ -1,5 +1,6 @@
 package henry.ui;
 
+import henry.api.FacturaInterface;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
@@ -102,7 +103,22 @@ public class FacturaVentana extends JFrame {
         panel.setBackground(Color.RED);
         setBounds(100, 100, 735, 655);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        // actions
+        aceptar.addActionListener(new AceptarActionLister());
     }
+
+    private class AceptarActionLister implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (contenido == null) {
+                System.out.println("it is null");
+                System.out.println(contenido);
+            }
+            FacturaInterface.INSTANCE.guardarDocumento(contenido.getDocumento());
+        }
+    }
+
 
     public static void main(String [] s) {
         System.out.println("creating main");

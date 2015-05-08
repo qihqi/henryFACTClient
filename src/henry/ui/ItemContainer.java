@@ -272,4 +272,8 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         ivaValor.setText(displayAsMoney(documento.getIva()));
         totalValor.setText(displayAsMoney(documento.getTotal()));
     }
+
+    public Documento getDocumento() {
+        return documento;
+    }
 }

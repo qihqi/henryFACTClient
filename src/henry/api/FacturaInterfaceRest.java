@@ -1,37 +1,28 @@
 package henry.api;
 
-import com.google.gson.GsonBuilder;
-import com.google.gson.TypeAdapter;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
+import com.google.gson.*;
 import henry.model.Cliente;
 import henry.model.Documento;
+import henry.model.Item;
 import henry.model.Producto;
-import org.apache.http.*;
+import org.apache.http.HttpEntity;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.params.HttpParams;
-import org.apache.http.protocol.HttpContext;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-import com.google.gson.Gson;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
+
+import static henry.Helpers.displayAsMoney;
 
 
 /**
@@ -41,7 +32,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
 
     private static final String PROD_URL_PATH = "/api/producto";
     private static final String CLIENT_URL_PATH = "/api/cliente";
-    private static final String VETNA_URL_PATH= "/api/pedido";
+    private static final String VENTA_URL_PATH = "/api/nota";
     private static final String PROD_URL = "/api/alm/%s/producto/%s";
 
     private Parser parser;
@@ -53,7 +44,6 @@ public class FacturaInterfaceRest implements FacturaInterface {
         httpClient = HttpClients.createDefault();
         this.baseUrl = baseUrl;
     }
-
 
     @Override
     public Producto getProductoPorCodigo(String codigo) {
@@ -103,8 +93,8 @@ public class FacturaInterfaceRest implements FacturaInterface {
         try {
             URI uri = new URIBuilder().setScheme("http")
                     .setHost(baseUrl)
-                    .setPath(CLIENT_URL_PATH)
-                    .setParameter("id", codigo).build();
+                    .setPath(CLIENT_URL_PATH + "/" + codigo)
+                    .build();
             String content = getUrl(uri);
             return parser.parse(content, Cliente.class);
         }
@@ -132,7 +122,53 @@ public class FacturaInterfaceRest implements FacturaInterface {
 
     @Override
     public void guardarDocumento(Documento doc) {
+        System.out.println("guardarDocumento");
+        JsonObject meta = new JsonObject();
+        meta.addProperty("client_id", doc.getCliente().getCodigo());
+        meta.addProperty("user", "");
+        meta.addProperty("total", displayAsMoney(doc.getTotal()));
+        meta.addProperty("subtotal", displayAsMoney(doc.getSubtotal()));
+        meta.addProperty("discount", doc.getDescuento());
+        meta.addProperty("bodega", 1);
+        meta.addProperty("almacen", 1);
+        JsonArray items = new JsonArray();
+        for (Item i : doc.getItems()) {
+           items.add(prodToJsonArray(i.getProducto(), i.getCantidad()));
+        }
+        JsonObject factura = new JsonObject();
+        factura.add("meta", meta);
+        factura.add("items", items);
 
+        Gson gson = new Gson();
+        String content = gson.toJson(factura);
+        System.out.println(content);
+        try {
+            URI uri = new URIBuilder().setScheme("http")
+                    .setHost(VENTA_URL_PATH).build();
+            HttpPost req = new HttpPost(uri);
+            req.setEntity(new StringEntity(content));
+            try (CloseableHttpResponse response = httpClient.execute(req)) {
+                HttpEntity entity = response.getEntity();
+                String result = toString(entity.getContent());
+                System.out.println(result);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+        catch (URISyntaxException|UnsupportedEncodingException ex) {
+            ex.printStackTrace();
+        }
+
+    }
+
+    private static JsonArray prodToJsonArray(Producto producto, int cantidad) {
+        JsonArray p = new JsonArray();
+        p.add(new JsonPrimitive(producto.getCodigo()));
+        p.add(new JsonPrimitive(cantidad));
+        p.add(new JsonPrimitive(producto.getNombre()));
+        p.add(new JsonPrimitive(producto.getPrecio1()));
+        return p;
     }
 
     @Override
@@ -140,7 +176,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
         try {
             URI uri = new URIBuilder().setScheme("http")
                     .setHost(baseUrl)
-                    .setPath(VETNA_URL_PATH)
+                    .setPath(VENTA_URL_PATH)
                     .setParameter("id", codigo).build();
             String content = getUrl(uri);
             return parser.parse(content, Documento.class);

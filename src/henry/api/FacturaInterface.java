@@ -16,5 +16,5 @@ public interface FacturaInterface {
     void guardarDocumento(Documento doc);
     Documento getPedidoPorCodigo(String codigo);
 
-    public static final FacturaInterface INSTANCE = new FacturaInterfaceRest("localhost:8080");
+    public static final FacturaInterface INSTANCE = new FacturaInterfaceRest("192.168.0.23");
 }
