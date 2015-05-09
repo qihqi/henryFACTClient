@@ -109,4 +109,8 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
             cliente.notifyListeners();
         }
     }
+
+    public Cliente getCliente() {
+        return cliente;
+    }
 }

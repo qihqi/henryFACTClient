@@ -133,7 +133,9 @@ public class FacturaInterfaceRest implements FacturaInterface {
         meta.addProperty("almacen", 1);
         JsonArray items = new JsonArray();
         for (Item i : doc.getItems()) {
-           items.add(prodToJsonArray(i.getProducto(), i.getCantidad()));
+            if (i.getProducto() != null) {
+                items.add(prodToJsonArray(i.getProducto(), i.getCantidad()));
+            }
         }
         JsonObject factura = new JsonObject();
         factura.add("meta", meta);
@@ -143,8 +145,8 @@ public class FacturaInterfaceRest implements FacturaInterface {
         String content = gson.toJson(factura);
         System.out.println(content);
         try {
-            URI uri = new URIBuilder().setScheme("http")
-                    .setHost(VENTA_URL_PATH).build();
+            URI uri = new URIBuilder().setScheme("http").setHost(baseUrl)
+                    .setPath(VENTA_URL_PATH).build();
             HttpPost req = new HttpPost(uri);
             req.setEntity(new StringEntity(content));
             try (CloseableHttpResponse response = httpClient.execute(req)) {

@@ -1,7 +1,10 @@
 package henry.ui;
 
 import henry.api.FacturaInterface;
+import henry.model.Cliente;
+import henry.model.Documento;
 import net.miginfocom.swing.MigLayout;
+import org.apache.http.client.params.ClientParamBean;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,6 +19,7 @@ public class FacturaVentana extends JFrame {
     private JLabel numeroLabel;
     private JTextField pago;
     private JTextField pedidoField;
+    private ClientePanel cliente;
     
     private long numero = 0;
     private static final String []
@@ -44,7 +48,8 @@ public class FacturaVentana extends JFrame {
         
         System.out.println("creating itemcontainer");
         contenido = new ItemContainer(true);
-        ClientePanel cliente = new ClientePanel(contenido);
+        cliente = new ClientePanel(contenido);
+        contenido.getDocumento().setCliente(cliente.getCliente());
 
         JButton buscarPorCliente = new JButton("Buscar por Cliente");
         pedidoField = new JTextField();
@@ -115,6 +120,9 @@ public class FacturaVentana extends JFrame {
                 System.out.println("it is null");
                 System.out.println(contenido);
             }
+            Documento doc = contenido.getDocumento();
+            doc.setCliente(cliente.getCliente());
+            System.out.println("" + cliente.getCliente() == null);
             FacturaInterface.INSTANCE.guardarDocumento(contenido.getDocumento());
         }
     }

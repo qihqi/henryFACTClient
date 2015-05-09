@@ -1,3 +1,3 @@
-ant
-cp dist/lib/factura.jar ./
+ant && \
+cp dist/lib/factura.jar ./ && \
 java -jar factura.jar
