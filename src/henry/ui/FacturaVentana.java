@@ -6,14 +6,22 @@ import henry.model.Documento;
 import net.miginfocom.swing.MigLayout;
 import org.apache.http.client.params.ClientParamBean;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.ButtonGroup;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JTextField;
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 @SuppressWarnings("serial")
 public class FacturaVentana extends JFrame {
     private JPanel panel;
+
+    private Documento documento;
     
     private ItemContainer contenido;
     private JLabel numeroLabel;
@@ -35,7 +43,8 @@ public class FacturaVentana extends JFrame {
     /**
      * Create the application.
      */
-    public FacturaVentana(String userId) {
+    public FacturaVentana(Documento documento) {
+        this.documento = documento;
         System.out.println("creating itemcontainer");
         panel = new JPanel();
         getContentPane().add(panel);
@@ -48,8 +57,7 @@ public class FacturaVentana extends JFrame {
         
         System.out.println("creating itemcontainer");
         contenido = new ItemContainer(true);
-        cliente = new ClientePanel(contenido);
-        contenido.getDocumento().setCliente(cliente.getCliente());
+        cliente = new ClientePanel(documento.getCliente());
 
         JButton buscarPorCliente = new JButton("Buscar por Cliente");
         pedidoField = new JTextField();
@@ -111,25 +119,35 @@ public class FacturaVentana extends JFrame {
 
         // actions
         aceptar.addActionListener(new AceptarActionLister());
+        cancelar.addActionListener(new CancelarActionListener());
+        pedidoField.addActionListener(new LoadPedidoActionListener());
+    }
+
+    private class LoadPedidoActionListener implements ActionListener {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            Documento doc = FacturaInterface.INSTANCE.getPedidoPorCodigo(pedidoField.getText());
+            contenido.clear();
+            cliente.setCliente(doc.getCliente());
+
+
+        }
     }
 
     private class AceptarActionLister implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
-            if (contenido == null) {
-                System.out.println("it is null");
-                System.out.println(contenido);
-            }
             Documento doc = contenido.getDocumento();
             doc.setCliente(cliente.getCliente());
             System.out.println("" + cliente.getCliente() == null);
             FacturaInterface.INSTANCE.guardarDocumento(contenido.getDocumento());
         }
     }
-
-
-    public static void main(String [] s) {
-        System.out.println("creating main");
-        new FacturaVentana("").setVisible(true);
+    private class CancelarActionListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            contenido.clear();
+        }
     }
 }

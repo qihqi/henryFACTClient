@@ -5,8 +5,14 @@ import henry.model.Documento;
 import henry.model.Item;
 import net.miginfocom.swing.MigLayout;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.JViewport;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -221,12 +227,6 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         }
     }
 
-    public void updateSubtotal() {
-    }
-
-    public void updateIVA() {
-    }
-
     public void setCurrent(ItemPanel item) {
         current = reverseItem.get(item).intValue();
     }
@@ -251,16 +251,7 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         reverseItem.clear();
         reverseItem.put(first, 0);
 
-        //update new total etc//
-        current = 0;
-
-        //ivaPorciento.setText("");
-        ivaValor.setText("");
-        totalValor.setText("");
-        valorNeto.setText("");
-        valorBruto.setText("");
-        descValor.setText("");
-
+        documento.clear();
         scrollUp();
     }
 

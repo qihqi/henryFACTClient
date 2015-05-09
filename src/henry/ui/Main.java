@@ -1,14 +1,15 @@
 package henry.ui;
 
-import javax.swing.*;
-import java.awt.*;
+import henry.model.Documento;
+
+import javax.swing.JFrame;
+import java.awt.EventQueue;
 
 @SuppressWarnings("serial")
 public class Main extends JFrame {
     private LoginPane contentPane;
-    private JPasswordField pass;
-    private JTextField user;
-    private JLabel message;
+    private FacturaVentana factura;
+    private Documento documento;
 
     public static void main(String[] args) {
         EventQueue.invokeLater(new Runnable() {
@@ -23,19 +24,30 @@ public class Main extends JFrame {
                 }
             }
         });
+        System.out.println("main is exiting");
     }
 
     public Main() {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setBounds(100, 100, 393, 172);
-        contentPane = new LoginPane(new Runnable () {
+
+        documento = new Documento();
+        factura = new FacturaVentana(documento);
+        final FacturaVentana fact = factura;
+        final Main self = this;
+        contentPane = new LoginPane(documento, new Runnable () {
             @Override
             public void run() {
-                FacturaVentana.main(null);
+                fact.setVisible(true);
+                self.dispose();
             }
         });
 
+
         //aqui le puse el listener
         setContentPane(contentPane);
+
+        
+
     }
 }

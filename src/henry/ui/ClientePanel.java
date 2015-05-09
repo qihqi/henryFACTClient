@@ -1,13 +1,19 @@
 package henry.ui;
 
+import lombok.Getter;
+import lombok.Setter;
 import henry.api.FacturaInterface;
-import henry.api.FacturaInterfaceImplSQL;
 import henry.api.SearchEngine;
 import henry.model.BaseModel;
 import henry.model.Cliente;
 import net.miginfocom.swing.MigLayout;
 
-import javax.swing.*;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -23,8 +29,7 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
 	private JTextField nombre;
 	private JCheckBox general;
 
-	private ItemContainer contenido;
-
+    @Getter @Setter
     private Cliente cliente;
 
     private class LoadCliente implements ActionListener {
@@ -79,17 +84,10 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
 		add(general, "cell 1 1");
 	}
 
-	public ClientePanel(ItemContainer contenido_) {
-		contenido = contenido_;
+	public ClientePanel(Cliente cliente) {
+        this.cliente = cliente;
+        cliente.addListener(this);
 		initUI();
-	}
-
-	public void search() {
-        /*
-		SearchDialog dialog = new SearchDialog("Cliente", "Cliente");
-		dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		dialog.setVisible(true);
-	    */
 	}
 
     @Override
@@ -103,14 +101,17 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
     }
 
     private void bindCliente(Cliente newCliente) {
-        cliente = newCliente;
-        if (cliente != null) {
-            cliente.addListener(ClientePanel.this);
-            cliente.notifyListeners();
+        if (newCliente == null) {
+            return;
         }
+        cliente.setApellidos(newCliente.getApellidos());
+        cliente.setCodigo(newCliente.getCodigo());
+        cliente.setNombres(newCliente.getNombres());
+        cliente.setDireccion(newCliente.getDireccion());
+        cliente.setTipo(newCliente.getTipo());
+        cliente.setTelefono(newCliente.getTelefono());
+        cliente.setCiudad(newCliente.getCiudad());
+        cliente.notifyListeners();
     }
 
-    public Cliente getCliente() {
-        return cliente;
-    }
 }

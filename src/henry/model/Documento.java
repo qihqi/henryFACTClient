@@ -16,8 +16,11 @@ public class Documento extends BaseModel implements BaseModel.Listener {
     @Getter private int subtotal;
     private int descuentoIndividual;
 
+    @Getter @Setter private String user;
+
     public Documento() {
         items = new ArrayList<Item>();
+        cliente = new Cliente();
     }
 
     public void addItem(Item item) {
@@ -50,5 +53,11 @@ public class Documento extends BaseModel implements BaseModel.Listener {
             descuentoIndividual += i.getDescuento();
         }
         notifyListeners();
+    }
+
+    public void clear() {
+        cliente.clear();
+        items.clear();
+        onDataChanged();
     }
 }

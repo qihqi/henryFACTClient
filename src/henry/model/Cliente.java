@@ -37,5 +37,16 @@ public class Cliente extends BaseModel {
     public String toString() {
         return apellidos + " " + nombres;
     }
+
+    public void clear() {
+        tipo = "";
+        telefono = "";
+        codigo = "";
+        nombres = "";
+        apellidos = "";
+        direccion = "";
+        ciudad = "";
+        notifyListeners();
+    }
 }
 

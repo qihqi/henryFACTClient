@@ -8,9 +8,19 @@ import henry.model.Item;
 import henry.model.Producto;
 import net.miginfocom.swing.MigLayout;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 import static henry.Helpers.displayAsMoney;
 import static henry.Helpers.displayMilesimas;
@@ -40,7 +50,7 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
     private class ReFocusListener extends MouseAdapter {
         @Override
         public void  mouseClicked(MouseEvent e) {
-            //parent.setCurrent(thisPanel);
+            parent.setCurrent(ItemPanel.this);
         }
     }
 
@@ -144,7 +154,14 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         codigo.requestFocus();
     }
 
-    public void clear() {}
+    public void clear() {
+        codigo.setText("");
+        cantidad.setText("");
+        precio.setText("");
+        nombre.setText("");
+        subtotal.setText("");
+
+    }
 
     public void onDataChanged() {
         System.out.println("onDataChagned");

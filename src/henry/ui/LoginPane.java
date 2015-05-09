@@ -1,10 +1,15 @@
 package henry.ui;
 
+import henry.model.Documento;
 import net.miginfocom.swing.MigLayout;
 
-import javax.swing.*;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
-import java.awt.*;
+import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -15,10 +20,12 @@ public class LoginPane extends JPanel implements ActionListener{
     private JTextField user;
     private JPasswordField pass;
     private Runnable nextWindow;
+    private Documento doc;
     /**
      * Create the panel.
      */
-    public LoginPane(Runnable next) {
+    public LoginPane(Documento doc, Runnable next) {
+        this.doc = doc;
         nextWindow = next;
         
         setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -44,7 +51,7 @@ public class LoginPane extends JPanel implements ActionListener{
         login.addActionListener(this);
 
     }
-    
+
     public boolean validateUsuario() {
         return true;
     }
@@ -57,7 +64,7 @@ public class LoginPane extends JPanel implements ActionListener{
             pass.setText("");
             return;
         }
-            
+        doc.setUser(user.getText());
         EventQueue.invokeLater(nextWindow);
     }
 
