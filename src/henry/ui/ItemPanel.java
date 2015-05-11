@@ -5,6 +5,7 @@ import henry.api.FacturaInterfaceImplSQL;
 import henry.api.SearchEngine;
 import henry.model.BaseModel;
 import henry.model.Item;
+import henry.model.Observable;
 import henry.model.Producto;
 import net.miginfocom.swing.MigLayout;
 
@@ -37,12 +38,13 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
     private JTextField subtotal;
 
     private ItemContainer parent;
-    private Item item;
+    private Observable<Item> item;
 
     public ItemPanel(ItemContainer parent_, Item item) {
         parent = parent_;
-        this.item = item;
-        item.addListener(this);
+        this.item = new Observable<>();
+        this.item.setRef(item);
+        this.item.addListener(this);
         initUI();
     }
 
@@ -82,7 +84,7 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
                     Producto prod = FacturaInterface.INSTANCE.getProductoPorCodigo(code);
                     System.out.println("Finished requesting");
                     if (prod != null) {
-                        item.setProducto(prod);
+                        item.getRef().setProducto(prod);
                         item.notifyListeners();
                         cantidad.requestFocus();
                     } else {
@@ -98,7 +100,7 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         public void actionPerformed(ActionEvent e) {
             String cantString = cantidad.getText();
             int cantReal = (int) Math.round(Double.parseDouble(cantString) * 1000);
-            item.setCantidad(cantReal);
+            item.getRef().setCantidad(cantReal);
             item.notifyListeners();
 
             parent.shiftEvent(ItemPanel.this);
@@ -113,7 +115,7 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
             dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
             dialog.setVisible(true);
             Producto result = dialog.getResult();
-            item.setProducto(result);
+            item.getRef().setProducto(result);
             item.notifyListeners();
         }
     }
@@ -165,12 +167,12 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
 
     public void onDataChanged() {
         System.out.println("onDataChagned");
-        Producto prod = item.getProducto();
+        Producto prod = item.getRef().getProducto();
         codigo.setText(prod.getCodigo());
-        cantidad.setText(displayMilesimas(item.getCantidad()));
+        cantidad.setText(displayMilesimas(item.getRef().getCantidad()));
         precio.setText(displayAsMoney(prod.getPrecio1()));
         nombre.setText(prod.getNombre());
-        subtotal.setText(displayAsMoney(item.getSubtotal()));
+        subtotal.setText(displayAsMoney(item.getRef().getSubtotal()));
     }
 
 }

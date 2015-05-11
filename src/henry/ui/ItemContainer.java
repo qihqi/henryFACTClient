@@ -77,11 +77,12 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         documento.addListener(this);
         Item firstItem = new Item();
         documento.addItem(firstItem);
-        initUI(firstItem);
+        initUI();
+        addItemPanel(firstItem);
 
     }
 
-    public void initUI(Item firstItem) {
+    public void initUI() {
         System.out.println("ItemContainer::initUI");
         JPanel header = new JPanel(new MigLayout("",
                 "90[]10[][][][]",""));
@@ -112,14 +113,6 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
 
         //-----------------CONTENT--------------------------------
         content = new JPanel(new MigLayout());
-
-        ItemPanel first = new ItemPanel(this, firstItem);
-        items.add(first);
-        reverseItem.put(first, 0);
-
-        content.add(first, "wrap");
-        //content.add(new ItemPanel(this), "wrap");
-
         scroll = new JScrollPane(content);
 
         add(scroll, BorderLayout.CENTER);
@@ -180,7 +173,7 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
     public void scrollDown() {
         JViewport vp = scroll.getViewport();
         Rectangle rect = vp.getBounds();
-        rect.setLocation((int) rect.getX(),(int) rect.getY() + 100);
+        rect.setLocation((int) rect.getX(), (int) rect.getY() + 100);
         vp.scrollRectToVisible(rect);
     }
 
@@ -217,13 +210,11 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         else {
             //allocate new ones
             Item nuevoItem = new Item();
-            ItemPanel newOne = new ItemPanel(this, nuevoItem);
             documento.addItem(nuevoItem);
-            items.add(newOne);
-            content.add(newOne, "wrap");
+            addItemPanel(nuevoItem);
+
             content.revalidate();
-            reverseItem.put(newOne, current);
-            newOne.focus();
+            items.get(items.size() - 1).focus();
         }
     }
 
@@ -234,24 +225,22 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         return items;
     }
 
+    public void addItemPanel(Item item) {
+        ItemPanel first = new ItemPanel(this, item);
+        items.add(first);
+        reverseItem.put(first, 0);
+        content.add(first, "wrap");
+    }
 
     public void clear() {
         //save the first itemPanel
-        ItemPanel first = items.get(0);
-        first.clear();
-        //for (int i = 1; i < items.size(); i++)
-        //items.get(i)first;
-        //update new content
+        Item item = new Item();
+        items.clear();
         content.removeAll();
         content.repaint();
-        content.add(first, "wrap");
-        //update the records
-        items.clear();
-        items.add(first);
-        reverseItem.clear();
-        reverseItem.put(first, 0);
-
         documento.clear();
+        documento.addItem(item);
+        addItemPanel(item);
         scrollUp();
     }
 
@@ -266,5 +255,16 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
 
     public Documento getDocumento() {
         return documento;
+    }
+
+    public void update(Documento doc) {
+        documento = doc;
+        doc.addListener(this);
+        items.clear();
+        reverseItem.clear();
+
+        Item firstItem = new Item();
+        documento.addItem(firstItem);
+        initUI();
     }
 }

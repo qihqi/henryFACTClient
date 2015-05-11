@@ -3,6 +3,8 @@ package henry;
 /**
  * Created by han on 12/15/13.
  */
+import java.math.BigDecimal;
+
 public class Helpers {
     /** Imprimir centavos como dolares en 2 decimales
      *
@@ -26,5 +28,14 @@ public class Helpers {
         }
         String formatter = "%d.%0" + digitos + "d";
         return String.format(formatter, enteros, decimales);
+    }
+
+    public static int parseMilesimasFromString(String s) {
+        BigDecimal d = new BigDecimal(s).multiply(new BigDecimal(1000));
+        return d.intValue();
+    }
+    public static int parseCentavosFromString(String s) {
+        BigDecimal d = new BigDecimal(s).multiply(new BigDecimal(1000));
+        return d.intValue();
     }
 }

@@ -1,12 +1,15 @@
 package henry.api;
 
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import henry.model.Cliente;
 import henry.model.Documento;
 import henry.model.Item;
 import henry.model.Producto;
 import org.apache.http.HttpEntity;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -20,9 +23,13 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Scanner;
 
 import static henry.Helpers.displayAsMoney;
+import static henry.Helpers.parseMilesimasFromString;
+import static henry.Helpers.parseCentavosFromString;
 
 
 /**
@@ -135,6 +142,9 @@ public class FacturaInterfaceRest implements FacturaInterface {
         for (Item i : doc.getItems()) {
             if (i.getProducto() != null) {
                 items.add(prodToJsonArray(i.getProducto(), i.getCantidad()));
+                System.out.println("items added");
+            } else {
+                System.out.println("items is null");
             }
         }
         JsonObject factura = new JsonObject();
@@ -178,10 +188,27 @@ public class FacturaInterfaceRest implements FacturaInterface {
         try {
             URI uri = new URIBuilder().setScheme("http")
                     .setHost(baseUrl)
-                    .setPath(VENTA_URL_PATH)
-                    .setParameter("id", codigo).build();
+                    .setPath(VENTA_URL_PATH + "/" + codigo).build();
             String content = getUrl(uri);
-            return parser.parse(content, Documento.class);
+            System.out.println(content);
+
+            JsonObject documentObject = new Gson().fromJson(content, JsonObject.class);
+            Documento doc = new Documento();
+            JsonObject metadata = documentObject.get("meta").getAsJsonObject();
+            doc.setCliente(parser.parse(metadata.get("client").toString(), Cliente.class));
+            JsonArray items = documentObject.get("items").getAsJsonArray();
+            for (JsonElement e : items) {
+                JsonArray ja = e.getAsJsonArray();
+                Item item = new Item();
+                Producto p = new Producto();
+
+                p.setCodigo(ja.get(0).toString());
+                item.setCantidad(parseMilesimasFromString(ja.get(1).toString()));
+                p.setNombre(ja.get(2).toString());
+                p.setPrecio1(parseCentavosFromString(ja.get(3).toString()));
+                doc.addItem(item);
+            }
+            return doc; 
         }
         catch (URISyntaxException ex) {
             ex.printStackTrace();

@@ -1,10 +1,9 @@
 package henry.ui;
 
 import henry.api.FacturaInterface;
-import henry.model.Cliente;
 import henry.model.Documento;
+import henry.model.Item;
 import net.miginfocom.swing.MigLayout;
-import org.apache.http.client.params.ClientParamBean;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
@@ -130,8 +129,11 @@ public class FacturaVentana extends JFrame {
             Documento doc = FacturaInterface.INSTANCE.getPedidoPorCodigo(pedidoField.getText());
             contenido.clear();
             cliente.setCliente(doc.getCliente());
-
-
+            for (Item i : doc.getItems()) {
+                i.addListener(doc);
+            }
+            documento = doc;
+            contenido.update(doc);
         }
     }
 
@@ -139,8 +141,8 @@ public class FacturaVentana extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             Documento doc = contenido.getDocumento();
-            doc.setCliente(cliente.getCliente());
-            System.out.println("" + cliente.getCliente() == null);
+            // doc.setCliente(cliente.getCliente());
+             //System.out.println("" + cliente.getCliente() == null);
             FacturaInterface.INSTANCE.guardarDocumento(contenido.getDocumento());
         }
     }

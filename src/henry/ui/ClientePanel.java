@@ -6,6 +6,7 @@ import henry.api.FacturaInterface;
 import henry.api.SearchEngine;
 import henry.model.BaseModel;
 import henry.model.Cliente;
+import henry.model.Observable;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.JButton;
@@ -29,8 +30,7 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
 	private JTextField nombre;
 	private JCheckBox general;
 
-    @Getter @Setter
-    private Cliente cliente;
+    private Observable<Cliente> cliente;
 
     private class LoadCliente implements ActionListener {
         @Override
@@ -85,15 +85,15 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
 	}
 
 	public ClientePanel(Cliente cliente) {
-        this.cliente = cliente;
-        cliente.addListener(this);
+        this.cliente = new Observable<Cliente>();
+        this.cliente.setRef(cliente);
 		initUI();
 	}
 
     @Override
     public void onDataChanged() {
-        codigo.setText(cliente.getCodigo());
-        nombre.setText(cliente.toString());
+        codigo.setText(cliente.getRef().getCodigo());
+        nombre.setText(cliente.getRef().toString());
     }
 
     private void loadCliente(String cod) {
@@ -104,14 +104,12 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
         if (newCliente == null) {
             return;
         }
-        cliente.setApellidos(newCliente.getApellidos());
-        cliente.setCodigo(newCliente.getCodigo());
-        cliente.setNombres(newCliente.getNombres());
-        cliente.setDireccion(newCliente.getDireccion());
-        cliente.setTipo(newCliente.getTipo());
-        cliente.setTelefono(newCliente.getTelefono());
-        cliente.setCiudad(newCliente.getCiudad());
+        cliente.setRef(newCliente);
         cliente.notifyListeners();
+    }
+
+    public void setCliente(Cliente cliente) {
+        this.cliente.setRef(cliente);
     }
 
 }
