@@ -1,6 +1,8 @@
 package henry.ui;
 
+import henry.api.FacturaInterface;
 import henry.model.Documento;
+import henry.model.Usuario;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.JButton;
@@ -12,6 +14,7 @@ import javax.swing.border.EmptyBorder;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.nio.charset.Charset;
 
 @SuppressWarnings("serial")
 public class LoginPane extends JPanel implements ActionListener{
@@ -52,19 +55,18 @@ public class LoginPane extends JPanel implements ActionListener{
 
     }
 
-    public boolean validateUsuario() {
-        return true;
-    }
-
-    @Override 
+    @Override
     public void actionPerformed(ActionEvent e) {
-        if (!validateUsuario()) {
+        String username = user.getText();
+        String password = new String(pass.getPassword());
+        Usuario usuario = FacturaInterface.INSTANCE.authenticate(username, password);
+        if (usuario == null) {
             message.setText("Usuario o clave equivocado");
             user.setText("");
             pass.setText("");
             return;
         }
-        doc.setUser(user.getText());
+        doc.setUser(usuario);
         EventQueue.invokeLater(nextWindow);
     }
 

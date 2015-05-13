@@ -5,11 +5,10 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import henry.model.Cliente;
-import henry.model.Documento;
-import henry.model.Item;
-import henry.model.Producto;
+import henry.model.*;
 import org.apache.http.HttpEntity;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -17,6 +16,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,6 +41,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
     private static final String CLIENT_URL_PATH = "/api/cliente";
     private static final String VENTA_URL_PATH = "/api/nota";
     private static final String PROD_URL = "/api/alm/%s/producto/%s";
+    private static final String LOGIN_URL = "/api/authenticate";
 
     private Parser parser;
     private CloseableHttpClient httpClient;
@@ -216,6 +217,33 @@ public class FacturaInterfaceRest implements FacturaInterface {
         }
     }
 
+    @Override
+    public Usuario authenticate(String username, String password) {
+        try {
+            URI uri = new URIBuilder().setScheme("http")
+                    .setHost(baseUrl)
+                    .setPath(LOGIN_URL).build();
+            HttpPost req = new HttpPost(uri);
+            NameValuePair[] params = new NameValuePair[]{
+                new BasicNameValuePair("username", username),
+                new BasicNameValuePair("password", password),
+            };
+            req.setEntity(new UrlEncodedFormEntity(Arrays.asList(params)));
+            try (CloseableHttpResponse response = httpClient.execute(req)) {
+                HttpEntity entity = response.getEntity();
+                String result = toString(entity.getContent());
+                System.out.println(result);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     private static String toString(InputStream stream) {
         Scanner scanner = new Scanner(stream).useDelimiter("\\A");
         return scanner.hasNext() ? scanner.next() : null;
@@ -231,6 +259,6 @@ public class FacturaInterfaceRest implements FacturaInterface {
         catch (IOException e) {
             return null;
         }
-
     }
+
 }

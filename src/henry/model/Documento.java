@@ -16,7 +16,8 @@ public class Documento extends BaseModel implements BaseModel.Listener {
     @Getter private int subtotal;
     private int descuentoIndividual;
 
-    @Getter @Setter private String user;
+    @Getter @Setter private Usuario user;
+
 
     public Documento() {
         items = new ArrayList<Item>();

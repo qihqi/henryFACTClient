@@ -85,8 +85,9 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
 	}
 
 	public ClientePanel(Cliente cliente) {
-        this.cliente = new Observable<Cliente>();
+        this.cliente = new Observable<>();
         this.cliente.setRef(cliente);
+        this.cliente.addListener(this);
 		initUI();
 	}
 
@@ -101,6 +102,7 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
     }
 
     private void bindCliente(Cliente newCliente) {
+        System.out.println("I am here");
         if (newCliente == null) {
             return;
         }

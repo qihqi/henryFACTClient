@@ -3,6 +3,7 @@ package henry.ui;
 import henry.model.BaseModel;
 import henry.model.Documento;
 import henry.model.Item;
+import henry.model.Observable;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.JLabel;
@@ -52,14 +53,14 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
     private JTextField valorBruto;
     private JTextField valorNeto;
 
-    private Documento documento;
+    private Observable<Documento> documento;
 
     private class IvaUpdater implements ActionListener {
 
         @Override
         public void actionPerformed(ActionEvent e) {
            int iva = Integer.parseInt(ivaPorciento.getText());
-           documento.setIvaPorciento(iva);
+           documento.getRef().setIvaPorciento(iva);
            documento.notifyListeners();
         }
     }
@@ -72,14 +73,14 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         current = 0;
 
         reverseItem = new HashMap<ItemPanel, Integer>();
-        documento = new Documento();
-        documento.setIvaPorciento(DEFAULT_IVA);
+        documento = new Observable<>();
+        documento.setRef(new Documento());
+        documento.getRef().setIvaPorciento(DEFAULT_IVA);
         documento.addListener(this);
         Item firstItem = new Item();
-        documento.addItem(firstItem);
+        documento.getRef().addItem(firstItem);
         initUI();
         addItemPanel(firstItem);
-
     }
 
     public void initUI() {
@@ -210,7 +211,7 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         else {
             //allocate new ones
             Item nuevoItem = new Item();
-            documento.addItem(nuevoItem);
+            documento.getRef().addItem(nuevoItem);
             addItemPanel(nuevoItem);
 
             content.revalidate();
@@ -238,33 +239,32 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         items.clear();
         content.removeAll();
         content.repaint();
-        documento.clear();
-        documento.addItem(item);
         addItemPanel(item);
         scrollUp();
     }
 
     @Override
     public void onDataChanged() {
-        valorBruto.setText(displayAsMoney(documento.getSubtotal()));
-        descValor.setText(displayAsMoney(documento.getDescuento()));
-        valorNeto.setText(displayAsMoney(documento.getTotalNeto()));
-        ivaValor.setText(displayAsMoney(documento.getIva()));
-        totalValor.setText(displayAsMoney(documento.getTotal()));
+        Documento doc = documento.getRef();
+        valorBruto.setText(displayAsMoney(doc.getSubtotal()));
+        descValor.setText(displayAsMoney(doc.getDescuento()));
+        valorNeto.setText(displayAsMoney(doc.getTotalNeto()));
+        ivaValor.setText(displayAsMoney(doc.getIva()));
+        totalValor.setText(displayAsMoney(doc.getTotal()));
     }
 
     public Documento getDocumento() {
-        return documento;
+        return documento.getRef();
     }
 
     public void update(Documento doc) {
-        documento = doc;
-        doc.addListener(this);
+        documento.setRef(doc);
         items.clear();
         reverseItem.clear();
-
-        Item firstItem = new Item();
-        documento.addItem(firstItem);
-        initUI();
+        for (Item i : doc.getItems()) {
+            addItemPanel(i);
+        }
+        documento.getRef().onDataChanged();
+        documento.notifyListeners();
     }
 }
