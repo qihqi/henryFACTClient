@@ -2,10 +2,12 @@ import sys
 import os
 
 from bottle import run, static_file, Bottle
+from beaker.middleware import SessionMiddleware
 
 from henry.api_endpoints import api
 from henry.website.web_inventory import web_inventory_webapp
 from henry.website.accounting import accounting_webapp
+from henry.authentication import app as authapp
 
 
 app = Bottle()
@@ -18,6 +20,16 @@ def static(rest):
 app.merge(api)
 app.merge(web_inventory_webapp)
 app.merge(accounting_webapp)
+app.merge(authapp)
+session_opts = {
+    'session.type': 'file',
+    'session.cookie_expires': 300,
+    'session.data_dir': './data',
+    'session.auto': True
+}
+
+app = SessionMiddleware(app, session_opts)
+
 def main():
     sys.path.append(os.path.dirname(os.path.realpath(__file__)))
     from henry.layer1.schema import Base

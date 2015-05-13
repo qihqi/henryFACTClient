@@ -51,6 +51,7 @@ def search_prod_alm(almacen_id):
 
 
 @api.post('/api/ingreso')
+@auth_decorator
 @dbcontext
 def crear_ingreso():
     json_content = request.body.read()
@@ -61,6 +62,7 @@ def crear_ingreso():
 
 
 @api.put('/api/ingreso/<ingreso_id>')
+@auth_decorator
 @dbcontext
 def postear_ingreso(ingreso_id):
     t = transapi.commit(uid=ingreso_id)
@@ -98,6 +100,7 @@ def get_cliente(codigo):
 
 
 @api.put('/api/cliente/<codigo>')
+@auth_decorator
 @dbcontext
 def update_client(codigo):
     client_dict = json.parse(request.body)
@@ -107,6 +110,7 @@ def update_client(codigo):
 
 
 @api.post('/api/cliente/<codigo>')
+@auth_decorator
 def create_client(codigo):
     return update_client(codigo)
 
@@ -133,6 +137,7 @@ def get_invoice(inv_id):
 
 
 @api.post('/api/nota')
+@auth_decorator
 @dbcontext
 @auth_decorator
 def create_invoice():
@@ -155,8 +160,8 @@ def create_invoice():
 
 
 @api.put('/api/nota/<uid>')
-@dbcontext
 @auth_decorator
+@dbcontext
 def postear_invoice(uid):
     t = invapi.commit(uid=uid)
     return {'status': t.meta.status}

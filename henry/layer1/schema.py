@@ -180,6 +180,3 @@ class NDjangoSession(Base):
     session_data = Column(Text)
     expire_date = Column(DateTime)
 
-
-
-

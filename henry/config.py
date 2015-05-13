@@ -12,7 +12,8 @@ from henry.constants import CONN_STRING, INGRESO_PATH, INVOICE_PATH, ENV
 from henry.hack import fix_id_error
 from henry.misc import id_type, fix_id, validate_uid_and_ruc, abs_string
 from henry.constants import LOGIN_URL
-from henry.layer1.auth import AuthDecorator
+from henry.layer1.auth import real_auth
+from bottle import auth_basic 
 
 
 engine = create_engine(CONN_STRING)
@@ -34,7 +35,7 @@ jinja_env = Environment(loader=FileSystemLoader(template_paths))
 # for testing, make auth_decorator do nothing
 auth_decorator = lambda x: x
 if ENV == 'prod':
-    auth_decorator = AuthDecorator(sessionmanager, LOGIN_URL)
+    auth_decorator = auth_basic(real_auth)
 
 jinja_env.globals.update({
     'id_type': id_type,
