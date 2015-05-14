@@ -32,13 +32,12 @@ public class Main extends JFrame {
         setBounds(100, 100, 393, 172);
 
         documento = new Documento();
-        factura = new FacturaVentana(documento);
-        final FacturaVentana fact = factura;
         final Main self = this;
         contentPane = new LoginPane(documento, new Runnable () {
             @Override
             public void run() {
-                fact.setVisible(true);
+                self.factura = new FacturaVentana(self.documento);
+                self.factura.setVisible(true);
                 self.dispose();
             }
         });
@@ -46,8 +45,5 @@ public class Main extends JFrame {
 
         //aqui le puse el listener
         setContentPane(contentPane);
-
-        
-
     }
 }

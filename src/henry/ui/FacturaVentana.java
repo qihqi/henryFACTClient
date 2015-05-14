@@ -51,7 +51,7 @@ public class FacturaVentana extends JFrame {
         
         //mostrador de numero de factura;
         
-        //numero = user.getLastFactura();
+        numero = documento.getUser().getLastFactura();
         numeroLabel = new JLabel("" + numero);
         
         System.out.println("creating itemcontainer");

@@ -69,8 +69,4 @@ public class LoginPane extends JPanel implements ActionListener{
         doc.setUser(usuario);
         EventQueue.invokeLater(nextWindow);
     }
-
-    public void setMessage(String s) {
-        message.setText(s);
-    }
 }

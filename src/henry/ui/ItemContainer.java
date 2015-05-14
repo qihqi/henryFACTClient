@@ -32,7 +32,7 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
     private static final int DEFAULT_IVA = 12;
     private static final int VIEWABLE_ROW_COUNT = 6;
 
-    private int current; // the current selected item
+    private int current = 0; // the current selected item
     private ArrayList<ItemPanel> items;
     private Map<ItemPanel, Integer> reverseItem;
 
@@ -70,7 +70,6 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         super(new BorderLayout());
 
         items = new ArrayList<ItemPanel>();
-        current = 0;
 
         reverseItem = new HashMap<ItemPanel, Integer>();
         documento = new Observable<>();
@@ -199,6 +198,7 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
     public void getFocus() {
         int threshold = items.size() - 1;
         current++;
+        System.out.println("current " + current + " thres " + threshold);
         if (current < threshold) {
             //dont need to make new one
             System.out.println("didnt add new");
@@ -227,10 +227,10 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
     }
 
     public void addItemPanel(Item item) {
-        ItemPanel first = new ItemPanel(this, item);
-        items.add(first);
-        reverseItem.put(first, 0);
-        content.add(first, "wrap");
+        ItemPanel itemPanel = new ItemPanel(this, item);
+        items.add(itemPanel);
+        reverseItem.put(itemPanel, items.size() - 1);
+        content.add(itemPanel, "wrap");
     }
 
     public void clear() {

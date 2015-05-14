@@ -1,7 +1,6 @@
 package henry.ui;
 
 import henry.api.FacturaInterface;
-import henry.api.FacturaInterfaceImplSQL;
 import henry.api.SearchEngine;
 import henry.model.BaseModel;
 import henry.model.Item;

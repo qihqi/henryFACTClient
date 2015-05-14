@@ -233,6 +233,16 @@ public class FacturaInterfaceRest implements FacturaInterface {
                 HttpEntity entity = response.getEntity();
                 String result = toString(entity.getContent());
                 System.out.println(result);
+                JsonObject obj = new Gson().fromJson(result, JsonObject.class);
+                boolean status = obj.get("status").getAsBoolean();
+                if (status) {
+                    Usuario user = new Usuario();
+                    user.setNombre(username);
+                    user.setBodega(obj.get("bodega_factura_id").getAsInt());
+                    user.setLastFactura(obj.get("last_factura").getAsInt());
+                    return user;
+                }
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
