@@ -78,6 +78,7 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         documento.addListener(this);
         Item firstItem = new Item();
         documento.getRef().addItem(firstItem);
+        firstItem.addListener(documento.getRef());
         initUI();
         addItemPanel(firstItem);
     }
@@ -211,6 +212,7 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         else {
             //allocate new ones
             Item nuevoItem = new Item();
+            nuevoItem.addListener(documento.getRef());
             documento.getRef().addItem(nuevoItem);
             addItemPanel(nuevoItem);
 

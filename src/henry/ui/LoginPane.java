@@ -14,7 +14,6 @@ import javax.swing.border.EmptyBorder;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.nio.charset.Charset;
 
 @SuppressWarnings("serial")
 public class LoginPane extends JPanel implements ActionListener{
@@ -38,7 +37,13 @@ public class LoginPane extends JPanel implements ActionListener{
         
         JLabel userLabel = new JLabel("Usuario: ");
         JLabel passLabel = new JLabel("Clave: ");
-        
+
+        JLabel serverLabel = new JLabel("Servidor: ");
+        JLabel almacenLabel = new JLabel("Vendido por: ");
+
+        String [] serverOpts = new String[] {"192.168.0.23"};
+        String [] almacenOpts = new String[] {"corpesut", "quinal"};
+
         user = new JTextField();
         pass = new JPasswordField();
         

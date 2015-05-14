@@ -101,6 +101,7 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
             int cantReal = (int) Math.round(Double.parseDouble(cantString) * 1000);
             item.getRef().setCantidad(cantReal);
             item.notifyListeners();
+            parent.onDataChanged();
 
             parent.shiftEvent(ItemPanel.this);
             parent.scrollDown();

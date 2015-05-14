@@ -53,6 +53,7 @@ public class Documento extends BaseModel implements BaseModel.Listener {
             subtotal += i.getSubtotal();
             descuentoIndividual += i.getDescuento();
         }
+        System.out.println("doc onDatachanged");
         notifyListeners();
     }
 
