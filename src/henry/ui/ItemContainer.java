@@ -54,6 +54,7 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
     private JTextField valorNeto;
 
     private Observable<Documento> documento;
+    private BaseModel.Listener itemObserver;
 
     private class IvaUpdater implements ActionListener {
 
@@ -66,19 +67,18 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
     }
 
     //-------------------------------------------------------------------------------
-    public ItemContainer(boolean fact) {
+    public ItemContainer(boolean fact, Documento doc) {
         super(new BorderLayout());
 
         items = new ArrayList<ItemPanel>();
 
         reverseItem = new HashMap<ItemPanel, Integer>();
         documento = new Observable<>();
-        documento.setRef(new Documento());
+        documento.setRef(doc);
         documento.getRef().setIvaPorciento(DEFAULT_IVA);
-        documento.addListener(this);
+        itemObserver = new TotalController(documento.getRef());
         Item firstItem = new Item();
         documento.getRef().addItem(firstItem);
-        firstItem.addListener(documento.getRef());
         initUI();
         addItemPanel(firstItem);
     }
@@ -212,7 +212,6 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         else {
             //allocate new ones
             Item nuevoItem = new Item();
-            nuevoItem.addListener(documento.getRef());
             documento.getRef().addItem(nuevoItem);
             addItemPanel(nuevoItem);
 
@@ -231,6 +230,7 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
     public void addItemPanel(Item item) {
         ItemPanel itemPanel = new ItemPanel(this, item);
         items.add(itemPanel);
+        itemPanel.addItemLister(itemObserver);
         reverseItem.put(itemPanel, items.size() - 1);
         content.add(itemPanel, "wrap");
     }
@@ -266,7 +266,27 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         for (Item i : doc.getItems()) {
             addItemPanel(i);
         }
-        documento.getRef().onDataChanged();
+        itemObserver.onDataChanged();
         documento.notifyListeners();
+    }
+
+    private static class TotalController implements BaseModel.Listener {
+        private Documento documento;
+
+        public TotalController(Documento documento) {
+            this.documento = documento;
+        }
+
+        @Override
+        public void onDataChanged() {
+            int subtotal = 0;
+            int descuentoIndividual = 0;
+            for (Item i : documento.getItems()) {
+                subtotal += i.getSubtotal();
+                descuentoIndividual += i.getDescuento();
+            }
+            documento.setSubtotal(subtotal);
+            documento.setDescuentoIndividual(descuentoIndividual);
+        }
     }
 }

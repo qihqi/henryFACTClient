@@ -47,6 +47,10 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         initUI();
     }
 
+    public void addItemLister(BaseModel.Listener listener) {
+        item.addListener(listener);
+    }
+
     //this class notifies the parent about currently selected item
     private class ReFocusListener extends MouseAdapter {
         @Override
@@ -85,7 +89,12 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
                     if (prod != null) {
                         item.getRef().setProducto(prod);
                         item.notifyListeners();
-                        cantidad.requestFocus();
+                        if (item.getRef().getCantidad() >= 0) {
+                            loadNextRow();
+                        }
+                        else {
+                            cantidad.requestFocus();
+                        }
                     } else {
                         codigo.requestFocus();
                     }
@@ -101,11 +110,20 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
             int cantReal = (int) Math.round(Double.parseDouble(cantString) * 1000);
             item.getRef().setCantidad(cantReal);
             item.notifyListeners();
-            parent.onDataChanged();
-
-            parent.shiftEvent(ItemPanel.this);
-            parent.scrollDown();
+            if (item.getRef().getProducto() != null) {
+                // no point to notify listener now if product is not there yet
+                loadNextRow();
+            }
+            else {
+                codigo.requestFocus();
+            }
         }
+    }
+
+    private void loadNextRow() {
+        parent.onDataChanged();
+        parent.shiftEvent(ItemPanel.this);
+        parent.scrollDown();
     }
 
     private class SearchProducto implements ActionListener {
@@ -117,6 +135,12 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
             Producto result = dialog.getResult();
             item.getRef().setProducto(result);
             item.notifyListeners();
+            if (item.getRef().getCantidad() >= 0) {
+                // no point to notify listener now if product is not there yet
+                parent.onDataChanged();
+                parent.shiftEvent(ItemPanel.this);
+                parent.scrollDown();
+            }
         }
     }
     public void initUI() {
@@ -168,11 +192,18 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
     public void onDataChanged() {
         System.out.println("onDataChagned");
         Producto prod = item.getRef().getProducto();
-        codigo.setText(prod.getCodigo());
-        cantidad.setText(displayMilesimas(item.getRef().getCantidad()));
-        precio.setText(displayAsMoney(prod.getPrecio1()));
-        nombre.setText(prod.getNombre());
-        subtotal.setText(displayAsMoney(item.getRef().getSubtotal()));
+        int cant= item.getRef().getCantidad();
+        if (prod != null && cant >= 0) {
+            subtotal.setText(displayAsMoney(item.getRef().getSubtotal()));
+        }
+        if (prod!= null) {
+            codigo.setText(prod.getCodigo());
+            precio.setText(displayAsMoney(prod.getPrecio1()));
+            nombre.setText(prod.getNombre());
+        }
+        if (cant >= 0) {
+            cantidad.setText(displayMilesimas(item.getRef().getCantidad()));
+        }
     }
 
 }

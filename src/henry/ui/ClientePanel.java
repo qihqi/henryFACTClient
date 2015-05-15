@@ -114,4 +114,8 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
         this.cliente.setRef(cliente);
     }
 
+    public Cliente getCliente() {
+        return cliente.getRef();
+    }
+
 }

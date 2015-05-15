@@ -55,7 +55,7 @@ public class FacturaVentana extends JFrame {
         numeroLabel = new JLabel("" + numero);
         
         System.out.println("creating itemcontainer");
-        contenido = new ItemContainer(true);
+        contenido = new ItemContainer(true, documento);
         cliente = new ClientePanel(documento.getCliente());
 
         JButton buscarPorCliente = new JButton("Buscar por Cliente");
@@ -129,9 +129,6 @@ public class FacturaVentana extends JFrame {
             Documento doc = FacturaInterface.INSTANCE.getPedidoPorCodigo(pedidoField.getText());
             contenido.clear();
             cliente.setCliente(doc.getCliente());
-            for (Item i : doc.getItems()) {
-                i.addListener(doc);
-            }
             documento = doc;
             contenido.update(doc);
         }
@@ -141,7 +138,7 @@ public class FacturaVentana extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             Documento doc = contenido.getDocumento();
-            // doc.setCliente(cliente.getCliente());
+            doc.setCliente(cliente.getCliente());
              //System.out.println("" + cliente.getCliente() == null);
             FacturaInterface.INSTANCE.guardarDocumento(contenido.getDocumento());
         }

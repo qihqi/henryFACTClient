@@ -4,11 +4,17 @@ import lombok.Getter;
 import lombok.Setter;
 
 public class Item extends BaseModel {
-    @Getter @Setter private int cantidad;  // en milesimas
+    @Getter private int cantidad;  // en milesimas
     @Getter @Setter private Producto producto;
 
     public Item() {
-        cantidad = 0;
+        cantidad = -1;
+    }
+
+    public void setCantidad(int cantidad) {
+        if (cantidad >= 0) {
+            this.cantidad = cantidad;
+        }
     }
 
     public int getSubtotal() {

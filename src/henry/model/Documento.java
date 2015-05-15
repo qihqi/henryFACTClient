@@ -6,27 +6,24 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Documento extends BaseModel implements BaseModel.Listener {
+public class Documento {
     @Getter @Setter private Cliente cliente;
     @Getter private List<Item> items;
 
-    @Setter private int ivaPorciento;
-    @Setter private int descuentoGlobalPorciento;
-
-    @Getter private int subtotal;
-    private int descuentoIndividual;
+    @Getter @Setter private int subtotal;
+    @Getter @Setter private int descuentoIndividual;
 
     @Getter @Setter private Usuario user;
 
+    @Getter @Setter private int ivaPorciento;
+    @Getter @Setter private int descuentoGlobalPorciento;
 
     public Documento() {
         items = new ArrayList<Item>();
-        cliente = new Cliente();
     }
 
     public void addItem(Item item) {
         items.add(item);
-        item.addListener(this);
     }
 
     public int getDescuento() {
@@ -43,23 +40,5 @@ public class Documento extends BaseModel implements BaseModel.Listener {
 
     public int getTotal() {
         return getTotalNeto() + getIva();
-    }
-
-    @Override
-    public void onDataChanged() {
-        subtotal = 0;
-        descuentoIndividual = 0;
-        for (Item i : items) {
-            subtotal += i.getSubtotal();
-            descuentoIndividual += i.getDescuento();
-        }
-        System.out.println("doc onDatachanged");
-        notifyListeners();
-    }
-
-    public void clear() {
-        cliente.clear();
-        items.clear();
-        onDataChanged();
     }
 }

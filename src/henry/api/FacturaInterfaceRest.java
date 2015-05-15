@@ -14,6 +14,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
@@ -44,12 +45,14 @@ public class FacturaInterfaceRest implements FacturaInterface {
     private static final String LOGIN_URL = "/api/authenticate";
 
     private Parser parser;
+    private BasicCookieStore cookieStore;
     private CloseableHttpClient httpClient;
     private String baseUrl;
 
     public FacturaInterfaceRest(String baseUrl) {
         parser = new Parser();
-        httpClient = HttpClients.createDefault();
+        cookieStore = new BasicCookieStore();
+        httpClient = HttpClients.custom().setDefaultCookieStore(cookieStore).build();
         this.baseUrl = baseUrl;
     }
 
