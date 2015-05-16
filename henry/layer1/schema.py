@@ -162,6 +162,9 @@ class NNota(Base):
     user = Column(String(20))
     status = Column(String(10))
 
+    paid = Bolumn(Boolean)
+    paid_amount = Bolumn(Integer)
+
     subtotal = Column(Integer)
     total = Column(Integer)
     tax = Column(Integer)
