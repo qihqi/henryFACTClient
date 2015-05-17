@@ -81,7 +81,7 @@ class InvApiDB(DocumentApi):
             doc.meta.uid, doc.meta.codigo)
         for i in doc.items:
             prod_id, prod, cant, price = i
-            yield Transaction(doc.meta.bodega, prod_id, -cant, prod, reason)
+            yield Transaction(doc.meta.bodega, prod_id, -cant, prod, ref=reason)
 
     def create_document_from_request(self, req):
         inv = Invoice(req.meta)

@@ -1,6 +1,9 @@
+import fcntl
+import os
+from datetime import datetime
 from sqlalchemy.sql import bindparam
 from henry.layer1.schema import NProducto, NContenido, NTransferencia, NBodega
-from henry.helpers.serialization import SerializableMixin
+from henry.helpers.serialization import SerializableMixin, json_dump
 from henry.layer2.documents import DocumentApi, Status
 
 
@@ -44,20 +47,66 @@ class Product(SerializableMixin):
 
 
 class Transaction(SerializableMixin):
-    _name = ('bodega_id', 'prod_id', 'delta', 'name', 'ref')
+    _name = ('bodega_id', 'prod_id', 'delta', 'name', 'ref', 'fecha')
 
     def __init__(self, bodega_id=None,
                  prod_id=None, delta=None,
-                 name=None, ref=None):
+                 name=None, ref=None, fecha=None):
         self.bodega_id = bodega_id
         self.prod_id = prod_id
         self.delta = delta
         self.name = name
         self.ref = ref
+        if fecha is None:
+            fecha = datetime.now()
+        self.fecha = fecha
 
     def inverse(self):
         self.delta = -self.delta
         return self
+
+class LockClass:
+
+    def __init__(self, fileobj):
+        self.fileno = fileobj.fileno()
+
+    def __enter__(self):
+        fcntl.flock(self.fileno, fcntl.LOCK_EX)
+
+    def __exit__(self, type, value, stacktrace):
+        fcntl.flock(self.fileno, fcntl.LOCK_UN)
+
+
+class TransactionApi:
+
+    def __init__(self, root):
+        self.root = root
+
+    def save(self, transaction):
+        prod = transaction.prod_id
+        fecha = transaction.fecha.date().isoformat()
+        dirname = os.path.join(self.root, prod)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        final_path = os.path.join(dirname, fecha)
+        with open(final_path, 'a') as f:
+            with LockClass(f):
+                f.write(json_dump(transaction.serialize()))
+                f.flush()
+
+    # generator
+    def get_transactions_raw(self, prod_id, date_start, date_end):
+        while date_start < date_end:
+            fname = os.path.join(self.root, prod_id, date_start)
+            with open(fname) as f:
+                for line in f.readlines():
+                    yield line
+            date_start += timedelta(days=1)
+
+    def get_transactions(self, prod_id, date_start, date_end):
+        return imap(Transactions.deserialize,
+                    self.get_transactions_raw(prod_id, date_start, date_end))
+
 
 
 class ProductApiDB:
@@ -77,10 +126,11 @@ class ProductApiDB:
         NContenido.bodega_id,
     )
 
-    def __init__(self, sessionmanager):
+    def __init__(self, sessionmanager, transapi):
         self._prod_name_cache = {}
         self._prod_price_cache = {}
         self.db_session = sessionmanager
+        self.transapi = transapi
 
     def get_producto(self, prod_id, almacen_id=None, bodega_id=None):
         query_items = list(ProductApiDB._PROD_KEYS)
@@ -130,17 +180,11 @@ class ProductApiDB:
             session.add(x)
 
     def execute_transactions(self, trans):
-        session = self.db_session.session
-        t = NContenido.__table__.update().where(
-            NContenido.prod_id == bindparam('p')).where(
-            NContenido.bodega_id == bindparam('b'))
-        t = t.values({'cant': NContenido.cant + bindparam('c')})
-        substitute = [{'c': x.delta, 'p': x.prod_id, 'b': x.bodega_id}
-                      for x in trans]
-        result = session.execute(t, substitute)
-        return result.rowcount
+        return self.exec_transactions_with_session(self.db_session.session, trans)
 
     def exec_transactions_with_session(self, session, trans):
+        import pdb; pdb.set_trace()
+        trans = list(trans)
         t = NContenido.__table__.update().where(
             NContenido.prod_id == bindparam('p')).where(
             NContenido.bodega_id == bindparam('b'))
@@ -148,6 +192,8 @@ class ProductApiDB:
         substitute = [{'c': x.delta, 'p': x.prod_id, 'b': x.bodega_id}
                       for x in trans]
         result = session.execute(t, substitute)
+        for t in trans:
+            self.transapi.save(t)
         return result.rowcount
 
     def _construct_db_instance(self, prod):

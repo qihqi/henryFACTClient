@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from henry.layer1.schema import NProducto, NContenido, Base
 from henry.helpers.fileservice import FileService
-from henry.layer2.productos import Product, ProductApiDB, Transaction, TransApiDB, Transferencia, TransType, Metadata
+from henry.layer2.productos import Product, ProductApiDB, Transaction, TransApiDB, Transferencia, TransType, Metadata, TransactionApi
 from henry.layer2.documents import Status, DocumentCreationRequest
 from henry.layer2.invoice import Invoice, InvMetadata, InvApiDB
 from henry.layer2.client import Client
@@ -40,7 +40,8 @@ class ProductApiTest(unittest.TestCase):
         result = session.commit()
         cls.sessionmanager = SessionManager(sessionfactory)
         filemanager = FileService('/tmp')
-        cls.prod_api = ProductApiDB(cls.sessionmanager)
+        cls.transaction_api = TransactionApi('/tmp/transactions')
+        cls.prod_api = ProductApiDB(cls.sessionmanager, cls.transaction_api)
         cls.trans_api = TransApiDB(cls.sessionmanager, filemanager, cls.prod_api)
         cls.inv_api = InvApiDB(cls.sessionmanager, filemanager, cls.prod_api)
 

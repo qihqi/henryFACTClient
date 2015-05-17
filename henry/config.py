@@ -2,8 +2,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from jinja2 import Environment, FileSystemLoader
 from henry.helpers.fileservice import FileService
-from henry.layer2.productos import ProductApiDB, TransApiDB
 from henry.layer2.invoice import InvApiDB, InvApiOld, PedidoApi
+from henry.layer2.productos import ProductApiDB, TransApiDB, TransactionApi
 from henry.layer2.client import ClientApiDB
 from henry.layer1.session_manager import SessionManager
 from henry.layer1.db_context import DBContext
@@ -18,7 +18,8 @@ sessionfactory = sessionmaker(bind=engine)
 sessionmanager = SessionManager(sessionfactory)
 # this is a decorator
 dbcontext = DBContext(sessionmanager)
-prodapi = ProductApiDB(sessionmanager)
+transactionapi = TransactionApi('/tmp/transactions')
+prodapi = ProductApiDB(sessionmanager, transactionapi)
 
 transapi = TransApiDB(sessionmanager, FileService(INGRESO_PATH), prodapi)
 invapi = InvApiDB(sessionmanager, FileService(INVOICE_PATH), prodapi)

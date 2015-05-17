@@ -184,9 +184,30 @@ class NPedidoTemporal(Base):
     timestamp = Column(DateTime)
 
 
+class NStore(Base):
+    __tablename__ = 'almacenes'
+    almacen_id = Column(Integer, primary_key=True, autoincrement=True)
+    ruc = Column(Integer)
+    nombre = Column(Integer)
+
+
+class NPriceList(Base):
+    __tablename__ = 'lista_de_precios'
+    pid = Column(Integer, primary_key=True, autoincrement=True)
+    nombre = Column(String(100)) # display name
+    almancen_id = Column(Integer)
+    prod_id = Column(String(20), ForeignKey('productos.codigo'))
+    # Using int for money as in number of cents.
+    precio1 = Column(Integer)
+    precio2 = Column(Integer)
+    cant_mayorista = Column(Integer)
+    upi = Column(Integer, ForeignKey('contenido_de_bodegas.id'))
+    unidad = Column(String(20))
+    multiplicador = Column(Integer)
+
+
 class NDjangoSession(Base):
     __tablename__ = 'django_session'
     session_key = Column(String(40), primary_key=True)
     session_data = Column(Text)
     expire_date = Column(DateTime)
-
