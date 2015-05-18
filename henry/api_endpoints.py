@@ -6,11 +6,12 @@ from henry.config import prodapi, transapi, dbcontext, clientapi, invapi, auth_d
 from henry.helpers.serialization import json_dump
 from henry.layer2.client import Client
 from henry.layer2.productos import Transferencia
-from henry.layer2.invoice import InvMetadata 
+from henry.layer2.invoice import InvMetadata
 from henry.layer2.documents import DocumentCreationRequest
 
 
 api = Bottle()
+
 
 @api.get('/api/alm/<almacen_id>/producto/<prod_id>')
 @dbcontext
@@ -43,8 +44,10 @@ def search_prod():
 def search_prod_alm(almacen_id):
     prefijo = request.query.prefijo
     if prefijo:
-        return json_dump(list(prodapi.search_producto(prefix=prefijo,
-            almacen_id=almacen_id)))
+        return json_dump(
+            list(prodapi.search_producto(
+                prefix=prefijo,
+                almacen_id=almacen_id)))
     else:
         response.status = 400
         return None
@@ -86,10 +89,6 @@ def get_ingreso(ingreso_id):
     return json_dump(ing.serialize())
 
 
-
-
-
-
 @api.get('/api/cliente/<codigo>')
 @dbcontext
 def get_cliente(codigo):
@@ -114,16 +113,16 @@ def update_client(codigo):
 def create_client(codigo):
     return update_client(codigo)
 
+
 @api.get('/api/cliente')
 def search_client():
     prefijo = request.query.prefijo
-    if prefijo: 
+    if prefijo:
         return json_dump(list(clientapi.search(apellido=prefijo)))
     else:
         response.status = 400
         return None
 
-    
 
 @api.get('/api/nota/<inv_id>')
 @dbcontext
@@ -174,6 +173,7 @@ def delete_invoice(uid):
     t = invapi.delete(uid=uid)
     return {'status': t.meta.status}
 
+
 @api.post('/api/pedido')
 @dbcontext
 def save_pedido():
@@ -188,4 +188,3 @@ def get_pedido(uid):
     if f is None:
         response.status = 404
     return f
-

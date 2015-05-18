@@ -167,8 +167,8 @@ class PedidoApi:
         session = self.session.session
         timestamp = datetime.now()
         pedido = NPedidoTemporal(
-                user=user,
-                timestamp=timestamp)
+            user=user,
+            timestamp=timestamp)
         session.add(pedido)
         session.flush()
         codigo = str(pedido.id)
@@ -187,13 +187,3 @@ class PedidoApi:
             if f is not None:
                 return f
         return None
-
-        
-
-
-
-
-        
-
-
-

@@ -1,6 +1,8 @@
 ''' Miscellanous stuff'''
 
 import re
+from henry.hack import fix_id_error
+
 
 def id_type(uid):
     if uid == 'NA' or uid.startswith('9999'):
@@ -15,14 +17,16 @@ def id_type(uid):
         print 'error!! uid {} with length {}'.format(uid, len(uid))
     return '07'
 
+
 def fix_id(uid):
     uid = fix_id_error(uid)
     if uid == 'NA':
-        return '9' * 13 # si es consumidor final retorna 13 digitos de 9
+        return '9' * 13  # si es consumidor final retorna 13 digitos de 9
     uid = re.sub('[^\d]', '', uid)
     if not validate_uid_and_ruc(uid):
         return '9' * 13
     return uid
+
 
 def abs_string(string):
     if string.startswith('-'):
@@ -43,7 +47,7 @@ def validate_uid_and_ruc(uid):
     sum_old = 0
     for i, x in enumerate(uid):
         d = int(x)
-        if i % 2 == 1: # it is 0 indexed, so odd positions have even index
+        if i % 2 == 1:  # it is 0 indexed, so odd positions have even index
             if i == 9:
                 continue
             sum_even += d
@@ -58,6 +62,5 @@ def validate_uid_and_ruc(uid):
     validator = decena - sum_all
     if validator == 10:
         validator = 0
-    
-    return validator == int(uid[-1])
 
+    return validator == int(uid[-1])

@@ -47,7 +47,7 @@ class DocumentApi(object):
     saved in one row in the database, and have one field called uid for id,
     and another
     items_location as a logical location for where the content is stored.
-     
+
     API:
      * get_doc
      * commit
