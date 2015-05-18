@@ -2,6 +2,7 @@ package henry.ui;
 
 import henry.api.FacturaInterface;
 import henry.model.Documento;
+import henry.model.Usuario;
 import henry.model.Item;
 import net.miginfocom.swing.MigLayout;
 
@@ -27,6 +28,8 @@ public class FacturaVentana extends JFrame {
     private JTextField pago;
     private JTextField pedidoField;
     private ClientePanel cliente;
+
+    Usuario usuario;
     
     private long numero = 0;
     private static final String []
@@ -44,6 +47,7 @@ public class FacturaVentana extends JFrame {
      */
     public FacturaVentana(Documento documento) {
         this.documento = documento;
+        this.usuario = documento.getUser();
         System.out.println("creating itemcontainer");
         panel = new JPanel();
         getContentPane().add(panel);
@@ -82,17 +86,13 @@ public class FacturaVentana extends JFrame {
         ButtonGroup group = new ButtonGroup();
         JPanel buttons = new JPanel();
         buttons.setLayout(new MigLayout());
+        ActionListener formaDePagoListener = new FormaDePagoListener();
         for (int i = 0; i < PAGO_LABEL.length; i++) {
             JRadioButton rad = new JRadioButton(PAGO_LABEL[i]);
             if (i == 0) 
                 rad.setSelected(true);
             final int index = i;
-            rad.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent arg0) {
-        //            formaPago = FORMAS_DE_PAGO[index];
-                }
-            });
+            rad.addActionListener(formaDePagoListener);
             
             buttons.add(rad);
             group.add(rad);
@@ -139,7 +139,7 @@ public class FacturaVentana extends JFrame {
         public void actionPerformed(ActionEvent e) {
             Documento doc = contenido.getDocumento();
             doc.setCliente(cliente.getCliente());
-             //System.out.println("" + cliente.getCliente() == null);
+            doc.setUser(usuario);
             FacturaInterface.INSTANCE.guardarDocumento(contenido.getDocumento());
         }
     }
@@ -147,6 +147,17 @@ public class FacturaVentana extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             contenido.clear();
+        }
+    }
+
+    private class FormaDePagoListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (e.getSource() instanceof JRadioButton) {
+                JRadioButton button = (JRadioButton) e.getSource();
+                String text = button.getText();
+                formaPago = text;
+            }
         }
     }
 }

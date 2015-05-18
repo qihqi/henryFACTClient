@@ -40,7 +40,8 @@ public class FacturaInterfaceRest implements FacturaInterface {
 
     private static final String PROD_URL_PATH = "/api/producto";
     private static final String CLIENT_URL_PATH = "/api/cliente";
-    private static final String VENTA_URL_PATH = "/api/nota";
+    private static final String VENTA_URL_PATH = "/api/pedido";
+    private static final String FACTURA_URL_PATH = "/api/nota";
     private static final String PROD_URL = "/api/alm/%s/producto/%s";
     private static final String LOGIN_URL = "/api/authenticate";
 
@@ -48,12 +49,15 @@ public class FacturaInterfaceRest implements FacturaInterface {
     private BasicCookieStore cookieStore;
     private CloseableHttpClient httpClient;
     private String baseUrl;
+    private Gson gson;
 
     public FacturaInterfaceRest(String baseUrl) {
         parser = new Parser();
         cookieStore = new BasicCookieStore();
         httpClient = HttpClients.custom().setDefaultCookieStore(cookieStore).build();
         this.baseUrl = baseUrl;
+        parser = new Parser();
+        gson = parser.getGson();
     }
 
     @Override
@@ -134,28 +138,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
     @Override
     public void guardarDocumento(Documento doc) {
         System.out.println("guardarDocumento");
-        JsonObject meta = new JsonObject();
-        meta.addProperty("client_id", doc.getCliente().getCodigo());
-        meta.addProperty("user", "");
-        meta.addProperty("total", displayAsMoney(doc.getTotal()));
-        meta.addProperty("subtotal", displayAsMoney(doc.getSubtotal()));
-        meta.addProperty("discount", doc.getDescuento());
-        meta.addProperty("bodega", 1);
-        meta.addProperty("almacen", 1);
-        JsonArray items = new JsonArray();
-        for (Item i : doc.getItems()) {
-            if (i.getProducto() != null) {
-                items.add(prodToJsonArray(i.getProducto(), i.getCantidad()));
-                System.out.println("items added");
-            } else {
-                System.out.println("items is null");
-            }
-        }
-        JsonObject factura = new JsonObject();
-        factura.add("meta", meta);
-        factura.add("items", items);
-
-        Gson gson = new Gson();
+        JsonObject factura = serializeDocumento(doc);
         String content = gson.toJson(factura);
         System.out.println(content);
         try {
@@ -187,6 +170,65 @@ public class FacturaInterfaceRest implements FacturaInterface {
         return p;
     }
 
+
+    private JsonObject serializeDocumento(Documento doc) {
+        JsonObject meta = new JsonObject();
+        meta.addProperty("client_id", doc.getCliente().getCodigo());
+        meta.addProperty("user", doc.getUser().getNombre());
+        meta.addProperty("total", doc.getTotal());
+        meta.addProperty("subtotal", doc.getSubtotal());
+        meta.addProperty("discount", doc.getDescuento());
+
+        meta.addProperty("bodega", 1);
+        meta.addProperty("almacen", 1);
+
+        meta.addProperty("total", doc.getTotal());
+        meta.addProperty("subtotal", doc.getSubtotal());
+        meta.addProperty("iva", doc.getIva());
+        meta.addProperty("discount", doc.getDescuento());
+
+        JsonArray items = new JsonArray();
+        for (Item i : doc.getItems()) {
+            if (i.getProducto() != null) {
+                items.add(prodToJsonArray(i.getProducto(), i.getCantidad()));
+                System.out.println("items added");
+            } else {
+                System.out.println("items is null");
+            }
+        }
+        JsonObject factura = new JsonObject();
+        factura.add("meta", meta);
+        factura.add("items", items);
+        return factura;
+    }
+
+    Documento parseDocumento(JsonObject json) {
+        Documento doc = new Documento();
+        JsonObject metadata = json.get("meta").getAsJsonObject();
+        JsonElement clientObj = metadata.get("client"); 
+        if (clientObj != null) {
+            String clientString = clientObj.toString();
+            if (clientString.length() > 0) {
+                doc.setCliente(parser.parse(clientString, Cliente.class));
+            }
+        }
+        JsonArray items = json.get("items").getAsJsonArray();
+        for (JsonElement e : items) {
+            JsonArray ja = e.getAsJsonArray();
+            Item item = new Item();
+            Producto p = new Producto();
+            p.setCodigo(ja.get(0).getAsJsonPrimitive().getAsString());
+            item.setCantidad(ja.get(1).getAsJsonPrimitive().getAsInt());
+            p.setNombre(ja.get(2).getAsJsonPrimitive().getAsString());
+            p.setPrecio1(ja.get(3).getAsJsonPrimitive().getAsInt());
+            item.setProducto(p);
+            doc.addItem(item);
+        }
+        return doc;
+    }
+
+
+
     @Override
     public Documento getPedidoPorCodigo(String codigo) {
         try {
@@ -196,23 +238,8 @@ public class FacturaInterfaceRest implements FacturaInterface {
             String content = getUrl(uri);
             System.out.println(content);
 
-            JsonObject documentObject = new Gson().fromJson(content, JsonObject.class);
-            Documento doc = new Documento();
-            JsonObject metadata = documentObject.get("meta").getAsJsonObject();
-            doc.setCliente(parser.parse(metadata.get("client").toString(), Cliente.class));
-            JsonArray items = documentObject.get("items").getAsJsonArray();
-            for (JsonElement e : items) {
-                JsonArray ja = e.getAsJsonArray();
-                Item item = new Item();
-                Producto p = new Producto();
-
-                p.setCodigo(ja.get(0).toString());
-                item.setCantidad(parseMilesimasFromString(ja.get(1).toString()));
-                p.setNombre(ja.get(2).toString());
-                p.setPrecio1(parseCentavosFromString(ja.get(3).toString()));
-                doc.addItem(item);
-            }
-            return doc; 
+            JsonObject documentObject = gson.fromJson(content, JsonObject.class);
+            return parseDocumento(documentObject);
         }
         catch (URISyntaxException ex) {
             ex.printStackTrace();
@@ -273,5 +300,5 @@ public class FacturaInterfaceRest implements FacturaInterface {
             return null;
         }
     }
-
 }
+

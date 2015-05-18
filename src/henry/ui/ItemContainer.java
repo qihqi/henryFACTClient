@@ -228,6 +228,9 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
     }
 
     public void addItemPanel(Item item) {
+
+        System.out.println("ItemContainer::addItemPanel " + 
+                (item.getProducto() == null ? "null" : item.getProducto().getCodigo()));
         ItemPanel itemPanel = new ItemPanel(this, item);
         items.add(itemPanel);
         itemPanel.addItemLister(itemObserver);
@@ -260,12 +263,17 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
     }
 
     public void update(Documento doc) {
+        System.out.println("ItemContainer::update");
         documento.setRef(doc);
+        content.removeAll();
         items.clear();
         reverseItem.clear();
         for (Item i : doc.getItems()) {
             addItemPanel(i);
         }
+        addItemPanel(new Item());
+        content.revalidate();
+        items.get(items.size() - 1).focus();
         itemObserver.onDataChanged();
         documento.notifyListeners();
     }

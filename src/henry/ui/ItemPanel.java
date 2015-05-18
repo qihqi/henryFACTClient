@@ -45,6 +45,9 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         this.item.setRef(item);
         this.item.addListener(this);
         initUI();
+        if (item != null && item.getProducto() != null) {
+            onDataChanged();
+        }
     }
 
     public void addItemLister(BaseModel.Listener listener) {

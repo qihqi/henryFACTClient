@@ -22,6 +22,10 @@ public class Parser {
                    .create();
     }
 
+    Gson getGson() {
+        return gson;
+    }
+
     public <T> T parse(String json, Class<T> type) {
         return gson.fromJson(json, type);
     }
