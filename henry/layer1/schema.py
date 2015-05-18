@@ -162,8 +162,8 @@ class NNota(Base):
     user = Column(String(20))
     status = Column(String(10))
 
-    paid = Bolumn(Boolean)
-    paid_amount = Bolumn(Integer)
+    #paid = Column(Boolean)
+    #paid_amount = Column(Integer)
 
     subtotal = Column(Integer)
     total = Column(Integer)
@@ -177,6 +177,13 @@ class NNota(Base):
     items_location = Column(String(200))
 
 
+class NPedidoTemporal(Base):
+    __tablename__ = 'pedidos_temporales'
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    user = Column(String(20))
+    timestamp = Column(DateTime)
+
+    
 class NDjangoSession(Base):
     __tablename__ = 'django_session'
     session_key = Column(String(40), primary_key=True)

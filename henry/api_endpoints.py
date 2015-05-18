@@ -2,11 +2,11 @@ import json
 
 from bottle import Bottle, response, request, abort
 
-from henry.config import prodapi, transapi, dbcontext, clientapi, invapi, auth_decorator
+from henry.config import prodapi, transapi, dbcontext, clientapi, invapi, auth_decorator, pedidoapi
 from henry.helpers.serialization import json_dump
 from henry.layer2.client import Client
 from henry.layer2.productos import Transferencia
-from henry.layer2.invoice import InvMetadata
+from henry.layer2.invoice import InvMetadata 
 from henry.layer2.documents import DocumentCreationRequest
 
 
@@ -173,4 +173,19 @@ def postear_invoice(uid):
 def delete_invoice(uid):
     t = invapi.delete(uid=uid)
     return {'status': t.meta.status}
+
+@api.post('/api/pedido')
+@dbcontext
+def save_pedido():
+    json_content = request.body.read()
+    uid = pedidoapi.save(json_content)
+    return {'codigo': uid}
+
+
+@api.get('/api/pedido/<uid>')
+def get_pedido(uid):
+    f = pedidoapi.get(uid)
+    if f is None:
+        response.status = 404
+    return f
 

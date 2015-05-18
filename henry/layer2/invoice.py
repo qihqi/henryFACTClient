@@ -1,4 +1,6 @@
-from henry.layer1.schema import NNota, NOrdenDespacho
+import os
+from datetime import datetime, date, timedelta
+from henry.layer1.schema import NNota, NOrdenDespacho, NPedidoTemporal
 from henry.helpers.serialization import SerializableMixin
 from henry.layer2.documents import DocumentApi, Status
 from henry.layer2.productos import Transaction
@@ -153,3 +155,45 @@ class InvApiOld(object):
             dbmeta = dbmeta.filter_by(vendedor_id=seller)
 
         return dbmeta
+
+
+class PedidoApi:
+
+    def __init__(self, sessionmanager, filemanager):
+        self.session = sessionmanager
+        self.filemanager = filemanager
+
+    def save(self, raw_content, user=None):
+        session = self.session.session
+        timestamp = datetime.now()
+        pedido = NPedidoTemporal(
+                user=user,
+                timestamp=timestamp)
+        session.add(pedido)
+        session.flush()
+        codigo = str(pedido.id)
+        filename = os.path.join(timestamp.date().isoformat(), codigo)
+        self.filemanager.put_file(filename, raw_content)
+        return codigo
+
+    def get(self, uid):
+        current_date = date.today()
+        look_back = 7
+        uid = str(uid)
+        for i in range(look_back):
+            cur_date = current_date - timedelta(days=i)
+            filename = os.path.join(cur_date.isoformat(), uid)
+            f = self.filemanager.get_file(filename)
+            if f is not None:
+                return f
+        return None
+
+        
+
+
+
+
+        
+
+
+
