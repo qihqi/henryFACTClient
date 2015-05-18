@@ -76,7 +76,8 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         documento = new Observable<>();
         documento.setRef(doc);
         documento.getRef().setIvaPorciento(DEFAULT_IVA);
-        itemObserver = new TotalController(documento.getRef());
+        documento.addListener(this);
+        itemObserver = new TotalController();
         Item firstItem = new Item();
         documento.getRef().addItem(firstItem);
         initUI();
@@ -275,26 +276,23 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         content.revalidate();
         items.get(items.size() - 1).focus();
         itemObserver.onDataChanged();
+
         documento.notifyListeners();
     }
 
-    private static class TotalController implements BaseModel.Listener {
-        private Documento documento;
-
-        public TotalController(Documento documento) {
-            this.documento = documento;
-        }
-
+    private class TotalController implements BaseModel.Listener {
         @Override
         public void onDataChanged() {
+            Documento doc = ItemContainer.this.documento.getRef();
             int subtotal = 0;
             int descuentoIndividual = 0;
-            for (Item i : documento.getItems()) {
+            for (Item i : doc.getItems()) {
                 subtotal += i.getSubtotal();
                 descuentoIndividual += i.getDescuento();
+                System.out.println("Descuento es "  + i.getDescuento());
             }
-            documento.setSubtotal(subtotal);
-            documento.setDescuentoIndividual(descuentoIndividual);
+            doc.setSubtotal(subtotal);
+            doc.setDescuentoIndividual(descuentoIndividual);
         }
     }
 }

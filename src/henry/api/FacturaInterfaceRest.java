@@ -5,6 +5,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.google.gson.GsonBuilder;
 import henry.model.*;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
@@ -45,19 +46,18 @@ public class FacturaInterfaceRest implements FacturaInterface {
     private static final String PROD_URL = "/api/alm/%s/producto/%s";
     private static final String LOGIN_URL = "/api/authenticate";
 
-    private Parser parser;
     private BasicCookieStore cookieStore;
     private CloseableHttpClient httpClient;
     private String baseUrl;
     private Gson gson;
 
     public FacturaInterfaceRest(String baseUrl) {
-        parser = new Parser();
         cookieStore = new BasicCookieStore();
         httpClient = HttpClients.custom().setDefaultCookieStore(cookieStore).build();
         this.baseUrl = baseUrl;
-        parser = new Parser();
-        gson = parser.getGson();
+        gson = new GsonBuilder()
+                   .excludeFieldsWithoutExposeAnnotation()
+                   .create();
     }
 
     @Override
@@ -69,7 +69,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
                                           .setPath(url)
                                           .build();
             String content = getUrl(prodUri);
-            return parser.parse(content, Producto.class);
+            return gson.fromJson(content, Producto.class);
         } catch (URISyntaxException e) {
             e.printStackTrace();
             return null;
@@ -77,10 +77,6 @@ public class FacturaInterfaceRest implements FacturaInterface {
     }
 
     public static void main(String [] s) throws Exception {
-        Parser parser = new Parser();
-        System.out.println(parser.parse(
-              "{\"apellidos\": \"Consumidor Final\", \"nombres\": \"\", \"ciudad\": null, \"codigo\": \"NA\", \"direccion\": null}",
-              Cliente.class));
 
     }
 
@@ -95,7 +91,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
                     .setParameter("bodega_id", "1").build();
             System.out.println(prodUri.toString());
             String content = getUrl(prodUri);
-            return Arrays.asList(parser.parse(content, Producto[].class));
+            return Arrays.asList(gson.fromJson(content, Producto[].class));
         }
         catch (URISyntaxException ex) {
             ex.printStackTrace();
@@ -111,7 +107,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
                     .setPath(CLIENT_URL_PATH + "/" + codigo)
                     .build();
             String content = getUrl(uri);
-            return parser.parse(content, Cliente.class);
+            return gson.fromJson(content, Cliente.class);
         }
         catch (URISyntaxException e) {
             e.printStackTrace();
@@ -127,7 +123,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
                     .setPath(CLIENT_URL_PATH)
                     .setParameter("prefijo", prefijo).build();
             String content = getUrl(uri);
-            return Arrays.asList(parser.parse(content, Cliente[].class));
+            return Arrays.asList(gson.fromJson(content, Cliente[].class));
         }
         catch (URISyntaxException ex) {
             ex.printStackTrace();
@@ -190,10 +186,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
         JsonArray items = new JsonArray();
         for (Item i : doc.getItems()) {
             if (i.getProducto() != null) {
-                items.add(prodToJsonArray(i.getProducto(), i.getCantidad()));
-                System.out.println("items added");
-            } else {
-                System.out.println("items is null");
+                items.add(gson.fromJson(gson.toJson(i), JsonElement.class));
             }
         }
         JsonObject factura = new JsonObject();
@@ -209,20 +202,16 @@ public class FacturaInterfaceRest implements FacturaInterface {
         if (clientObj != null) {
             String clientString = clientObj.toString();
             if (clientString.length() > 0) {
-                doc.setCliente(parser.parse(clientString, Cliente.class));
+                doc.setCliente(gson.fromJson(clientString, Cliente.class));
             }
         }
         JsonArray items = json.get("items").getAsJsonArray();
         for (JsonElement e : items) {
-            JsonArray ja = e.getAsJsonArray();
-            Item item = new Item();
-            Producto p = new Producto();
-            p.setCodigo(ja.get(0).getAsJsonPrimitive().getAsString());
-            item.setCantidad(ja.get(1).getAsJsonPrimitive().getAsInt());
-            p.setNombre(ja.get(2).getAsJsonPrimitive().getAsString());
-            p.setPrecio1(ja.get(3).getAsJsonPrimitive().getAsInt());
-            item.setProducto(p);
-            doc.addItem(item);
+            JsonObject obj = e.getAsJsonObject();
+            Item item = gson.fromJson(obj.toString(), Item.class);
+            if (item != null) {
+                doc.addItem(item);
+            }
         }
         return doc;
     }
