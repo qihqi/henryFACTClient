@@ -34,7 +34,7 @@ jinja_env = Environment(loader=FileSystemLoader(template_paths))
 # for testing, make auth_decorator do nothing
 auth_decorator = lambda x: x
 if ENV == 'prod':
-    auth_decorator = AuthDecorator(LOGIN_URL)
+    auth_decorator = AuthDecorator(LOGIN_URL, sessionmanager)
 
 jinja_env.globals.update({
     'id_type': id_type,
