@@ -1,21 +1,37 @@
 from bottle import request, redirect
 from henry.layer1.schema import NDjangoSession
 
-def is_logged_in_by_django(request):
+
+def is_logged_in_by_django():
     session_key = request.get_cookie('sessionid', None)
     if session_key is not None:
         key = self.db.session.query(
         NDjangoSession).filter_by(
         session_key=session_key).first()
-        return key is not None
+        if key is not None:
+            return True
     return False
 
 
-def is_logged_in_by_beaker(request):
+def is_logged_in_by_beaker():
     session = request.environ['beaker.session']
     if session is not None:
         return 'loginin' in session
     return False
 
-real_auth = (lambda r: is_logged_in_by_beaker(r) and
-                       is_logged_in_by_django(r))
+
+class AuthDecorator:
+
+    def __init__(self, redirect_url):
+        self.redirect = redirect_url
+
+    def __call__(self, func):
+        def wrapped(*args, **kwargs):
+            if is_logged_in_by_beaker() or is_logged_in_by_django():
+                return func(*args, **kwargs)
+            else:
+                redirect(self.redirect)
+        return wrapped
+                
+               
+

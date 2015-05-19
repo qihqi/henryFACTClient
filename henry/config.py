@@ -7,9 +7,9 @@ from henry.layer2.productos import ProductApiDB, TransApiDB, TransactionApi
 from henry.layer2.client import ClientApiDB
 from henry.layer1.session_manager import SessionManager
 from henry.layer1.db_context import DBContext
-from henry.constants import CONN_STRING, INGRESO_PATH, INVOICE_PATH, ENV
+from henry.constants import CONN_STRING, INGRESO_PATH, INVOICE_PATH, ENV, LOGIN_URL
 from henry.misc import id_type, fix_id, abs_string
-from henry.layer1.auth import real_auth
+from henry.layer1.auth import AuthDecorator
 from bottle import auth_basic
 
 
@@ -34,7 +34,7 @@ jinja_env = Environment(loader=FileSystemLoader(template_paths))
 # for testing, make auth_decorator do nothing
 auth_decorator = lambda x: x
 if ENV == 'prod':
-    auth_decorator = auth_basic(real_auth)
+    auth_decorator = AuthDecorator(LOGIN_URL)
 
 jinja_env.globals.update({
     'id_type': id_type,

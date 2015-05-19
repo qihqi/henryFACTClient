@@ -3,9 +3,13 @@ from henry.layer1.schema import NVenta, NItemVenta, NOrdenDespacho, NItemDespach
 from henry.layer1.schema import NProducto, NContenido, NCliente
 from henry.config import new_session
 
-def get_all_users():
-    session = sessionfactory()
-    return session.query(NUsuario)
+def authenticate(username, password, userinfo):
+    s = sha.new(password)
+    return s.hexdigest() == userinfo.password
+
+
+def get_user_info(session, username):
+    return session.query(NUsuario).filter_by(username=username).first()
 
 
 def get_cliente_by_id(cliente_id):
