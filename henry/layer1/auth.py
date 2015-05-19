@@ -18,4 +18,4 @@ def is_logged_in_by_beaker(request):
     return False
 
 real_auth = (lambda r: is_logged_in_by_beaker(r) and
-                       is_logged_in_by_beaker(r))
+                       is_logged_in_by_django(r))

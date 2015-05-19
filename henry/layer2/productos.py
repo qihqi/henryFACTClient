@@ -150,7 +150,10 @@ class ProductApiDB:
         for f in filter_items:
             item = item.filter(f)
         if item.first() is not None:
-            return Product().merge_from(item.first())
+            p = Product().merge_from(item.first())
+            p.precio1 = int(p.precio1 * 100)
+            p.precio2 = int(p.precio2 * 100)
+            return p 
         return None
 
     def search_producto(self, prefix, almacen_id=None, bodega_id=None):
