@@ -4,6 +4,7 @@ import os
 from bottle import run, static_file, Bottle
 from beaker.middleware import SessionMiddleware
 
+from henry.constants import BEAKER_DIR
 from henry.api_endpoints import api
 from henry.website.web_inventory import web_inventory_webapp
 from henry.website.accounting import accounting_webapp
@@ -24,7 +25,7 @@ app.merge(authapp)
 session_opts = {
     'session.type': 'file',
     'session.cookie_expires': 300,
-    'session.data_dir': './data',
+    'session.data_dir': BEAKER_DIR,
     'session.auto': True
 }
 
