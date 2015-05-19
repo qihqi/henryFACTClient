@@ -1,6 +1,8 @@
 package henry.ui;
 
 import henry.model.Documento;
+import henry.api.FacturaInterface;
+import henry.api.FacturaInterfaceRest;
 
 import javax.swing.JFrame;
 import java.awt.EventQueue;
@@ -29,20 +31,10 @@ public class Main extends JFrame {
 
     public Main() {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setBounds(100, 100, 393, 172);
+        setBounds(100, 100, 393, 200);
 
         documento = new Documento();
-        final Main self = this;
-        contentPane = new LoginPane(documento, new Runnable () {
-            @Override
-            public void run() {
-                self.factura = new FacturaVentana(self.documento);
-                self.factura.setVisible(true);
-                self.dispose();
-            }
-        });
-
-
+        contentPane = new LoginPane();
         //aqui le puse el listener
         setContentPane(contentPane);
     }

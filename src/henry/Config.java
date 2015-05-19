@@ -44,11 +44,11 @@ public final class Config {
 
 
 
-    private Config(/*String filename*/)
+    private Config(String filename)
             throws ParserConfigurationException, SAXException, IOException
     {
 
-        File fXmlFile = new File("config.xml");
+        File fXmlFile = new File(filename);
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
         Document doc = dBuilder.parse(fXmlFile);
@@ -98,24 +98,19 @@ public final class Config {
             allocate();
         }catch (Exception e) {
             e.printStackTrace();
-
         }
         return config;
     }
 
     private static String getTagValue(String sTag, Element eElement) {
         NodeList nlList = eElement.getElementsByTagName(sTag).item(0).getChildNodes();
-
         Node nValue = nlList.item(0);
-
         return nValue.getNodeValue();
     }
 
     private static void allocate()
             throws ParserConfigurationException, SAXException, IOException
     {
-        if (config == null)
-            config = new Config();
     }
 
     public float getLibre() {
@@ -182,9 +177,10 @@ public final class Config {
 
     public static void main(String [] s) throws Exception {
         //new Config();
-        double [] res = Config.getConfig().getImpresionPos("title");
+        Config config = new Config("config.xml");
+        double [] res = config.getImpresionPos("title");
         System.out.printf("%f, %f", res[0], res[1]);
-        System.out.println(Config.getConfig().getLinesPerFactura());
+        System.out.println(config.getLinesPerFactura());
     }
 
 
@@ -266,12 +262,10 @@ public final class Config {
     }
 
     public int getMaxDesc() {
-        // TODO Auto-generated method stub
         return maxDesc;
     }
     public int getMaxCliente() {
         return maxCliente;
     }
-
 }
 

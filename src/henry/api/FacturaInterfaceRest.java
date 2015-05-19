@@ -169,11 +169,14 @@ public class FacturaInterfaceRest implements FacturaInterface {
 
     private JsonObject serializeDocumento(Documento doc) {
         JsonObject meta = new JsonObject();
-        meta.addProperty("client_id", doc.getCliente().getCodigo());
+        meta.add("client", gson.toJsonTree(doc.getCliente()));
         meta.addProperty("user", doc.getUser().getNombre());
         meta.addProperty("total", doc.getTotal());
         meta.addProperty("subtotal", doc.getSubtotal());
         meta.addProperty("discount", doc.getDescuento());
+
+        meta.addProperty("iva_porciento", doc.getIvaPorciento());
+        meta.addProperty("descuento_global_porciento", doc.getDescuentoGlobalPorciento());
 
         meta.addProperty("bodega", 1);
         meta.addProperty("almacen", 1);
@@ -212,6 +215,14 @@ public class FacturaInterfaceRest implements FacturaInterface {
             if (item != null) {
                 doc.addItem(item);
             }
+        }
+        JsonElement iva_porciento = metadata.get("iva_porciento");
+        if (iva_porciento != null) {
+            doc.setIvaPorciento(iva_porciento.getAsInt());
+        }
+        JsonElement descuentoGlobal= metadata.get("descuento_global_porciento");
+        if (descuentoGlobal != null) {
+            doc.setDescuentoGlobalPorciento(descuentoGlobal.getAsInt());
         }
         return doc;
     }

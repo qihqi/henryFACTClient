@@ -246,6 +246,11 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         content.removeAll();
         content.repaint();
         addItemPanel(item);
+        valorBruto.setText("");
+        descValor.setText("");
+        valorNeto.setText("");
+        ivaValor.setText("");
+        totalValor.setText("");
         scrollUp();
     }
 

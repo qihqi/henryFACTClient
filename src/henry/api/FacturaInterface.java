@@ -18,5 +18,5 @@ public interface FacturaInterface {
     Documento getPedidoPorCodigo(String codigo);
 
     Usuario authenticate(String username, String password);
-    public static final FacturaInterface INSTANCE = new FacturaInterfaceRest("localhost:8080");
+    public static final FacturaInterface INSTANCE = new FacturaInterfaceRest("192.168.0.23");
 }

@@ -104,18 +104,13 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
         bindCliente(FacturaInterface.INSTANCE.getClientePorCodigo(cod));
     }
 
-    private void bindCliente(Cliente newCliente) {
+    public void bindCliente(Cliente newCliente) {
         System.out.println("I am here");
         if (newCliente == null) {
             return;
         }
         cliente.setRef(newCliente);
         cliente.notifyListeners();
-    }
-
-    public void setCliente(Cliente cliente) {
-        this.cliente.setRef(cliente);
-        this.cliente.notifyListeners();
     }
 
     public Cliente getCliente() {

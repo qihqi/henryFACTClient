@@ -29,6 +29,8 @@ public class FacturaVentana extends JFrame {
     private JTextField pedidoField;
     private ClientePanel cliente;
 
+    private FacturaInterface api;
+    private int almacenId;
     Usuario usuario;
     
     private long numero = 0;
@@ -45,9 +47,11 @@ public class FacturaVentana extends JFrame {
     /**
      * Create the application.
      */
-    public FacturaVentana(Documento documento) {
-        this.documento = documento;
-        this.usuario = documento.getUser();
+    public FacturaVentana(FacturaInterface api, int almacenId, Usuario usuario) {
+        this.api = api;
+        this.almacenId = almacenId;
+        this.usuario = usuario;
+        this.documento = new Documento();
         System.out.println("creating itemcontainer");
         panel = new JPanel();
         getContentPane().add(panel);
@@ -55,7 +59,7 @@ public class FacturaVentana extends JFrame {
         
         //mostrador de numero de factura;
         
-        numero = documento.getUser().getLastFactura();
+        numero = usuario.getLastFactura();
         numeroLabel = new JLabel("" + numero);
         
         System.out.println("creating itemcontainer");
@@ -129,7 +133,7 @@ public class FacturaVentana extends JFrame {
             Documento doc = FacturaInterface.INSTANCE.getPedidoPorCodigo(pedidoField.getText());
             contenido.clear();
             cliente.clear();
-            cliente.setCliente(doc.getCliente());
+            cliente.bindCliente(doc.getCliente());
             documento = doc;
             contenido.update(doc);
         }
@@ -144,10 +148,12 @@ public class FacturaVentana extends JFrame {
             FacturaInterface.INSTANCE.guardarDocumento(contenido.getDocumento());
         }
     }
+
     private class CancelarActionListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
             contenido.clear();
+            cliente.clear();
         }
     }
 
