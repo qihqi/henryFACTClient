@@ -118,9 +118,8 @@ class NIngresoItem(Base):
 class NTransform(Base):
     __tablename__ = 'transformas'
 
-    id = Column(Integer, primary_key=True)
-    origin = Column(String(20))
-    dest = Column(String(20))
+    origin_id = Column(String(20), primary_key=True)
+    dest_id = Column(String(20))
     multiplier = Column(Numeric(10, 3))
 
 
@@ -195,7 +194,7 @@ class NPriceList(Base):
     __tablename__ = 'lista_de_precios'
     pid = Column(Integer, primary_key=True, autoincrement=True)
     nombre = Column(String(100)) # display name
-    almancen_id = Column(Integer)
+    almacen_id = Column(Integer)
     prod_id = Column(String(20), ForeignKey('productos.codigo'))
     # Using int for money as in number of cents.
     precio1 = Column(Integer)
