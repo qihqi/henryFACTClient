@@ -128,6 +128,7 @@ public class FacturaVentana extends JFrame {
         public void actionPerformed(ActionEvent e) {
             Documento doc = FacturaInterface.INSTANCE.getPedidoPorCodigo(pedidoField.getText());
             contenido.clear();
+            cliente.clear();
             cliente.setCliente(doc.getCliente());
             documento = doc;
             contenido.update(doc);

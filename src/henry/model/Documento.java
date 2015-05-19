@@ -35,7 +35,9 @@ public class Documento {
     }
 
     public int getIva() {
-        return (getTotalNeto() * ivaPorciento) / 100;
+        // integer division will throw away the reminder.
+        // Adding 50 makes sure that 0.005 or above get rounded up instead of down
+        return (getTotalNeto() * ivaPorciento + 50) / 100;
     }
 
     public int getTotal() {

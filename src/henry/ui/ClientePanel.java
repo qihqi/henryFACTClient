@@ -93,8 +93,11 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
 
     @Override
     public void onDataChanged() {
-        codigo.setText(cliente.getRef().getCodigo());
-        nombre.setText(cliente.getRef().toString());
+        Cliente c = cliente.getRef();
+        if (c != null) {
+            codigo.setText(c.getCodigo());
+            nombre.setText(c.toString());
+        }
     }
 
     private void loadCliente(String cod) {
@@ -112,10 +115,15 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
 
     public void setCliente(Cliente cliente) {
         this.cliente.setRef(cliente);
+        this.cliente.notifyListeners();
     }
 
     public Cliente getCliente() {
         return cliente.getRef();
     }
 
+    public void clear() {
+        codigo.setText("");
+        nombre.setText("");
+    }
 }
