@@ -17,6 +17,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.List;
 
 public class ClientePanel extends JPanel implements BaseModel.Listener {
 
@@ -31,6 +32,8 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
 	private JCheckBox general;
 
     private Observable<Cliente> cliente;
+    private FacturaInterface api;
+    private SearchEngine<Cliente> searchEngine;
 
     private class LoadCliente implements ActionListener {
         @Override
@@ -48,12 +51,25 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
     }
 
 	private void initUI() {
+
+        searchEngine = new SearchEngine<Cliente>() {
+            @Override
+            public List<Cliente> search(String prefijo) {
+                return api.buscarCliente(prefijo);
+            }
+
+            @Override
+            public String toString() {
+                return "Cliente";
+            }
+        };
+
 		buscar = new JButton();
 		buscar.setText("Bus");
         buscar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                SearchDialog<Cliente> dialog = new SearchDialog<>(SearchEngine.CLIENTE);
+                SearchDialog<Cliente> dialog = new SearchDialog<>(searchEngine);
                 dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
                 dialog.setVisible(true);
                 Cliente result = dialog.getResult();
@@ -84,10 +100,11 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
 		add(general, "cell 1 1");
 	}
 
-	public ClientePanel(Cliente cliente) {
+	public ClientePanel(Cliente cliente, FacturaInterface api) {
         this.cliente = new Observable<>();
         this.cliente.setRef(cliente);
         this.cliente.addListener(this);
+        this.api = api;
 		initUI();
 	}
 
@@ -101,7 +118,7 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
     }
 
     private void loadCliente(String cod) {
-        bindCliente(FacturaInterface.INSTANCE.getClientePorCodigo(cod));
+        bindCliente(api.getClientePorCodigo(cod));
     }
 
     public void bindCliente(Cliente newCliente) {

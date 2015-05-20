@@ -5,6 +5,7 @@ import henry.api.SearchEngine;
 import henry.model.BaseModel;
 import henry.model.Item;
 import henry.model.Observable;
+import henry.api.FacturaInterface;
 import henry.model.Producto;
 import net.miginfocom.swing.MigLayout;
 
@@ -38,12 +39,14 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
 
     private ItemContainer parent;
     private Observable<Item> item;
+    private FacturaInterface api;
 
-    public ItemPanel(ItemContainer parent_, Item item) {
+    public ItemPanel(ItemContainer parent_, Item item, FacturaInterface api) {
         parent = parent_;
         this.item = new Observable<>();
         this.item.setRef(item);
         this.item.addListener(this);
+        this.api = api;
         initUI();
         if (item != null && item.getProducto() != null) {
             onDataChanged();
@@ -87,7 +90,7 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
                     System.out.println("Started requesting");
-                    Producto prod = FacturaInterface.INSTANCE.getProductoPorCodigo(code);
+                    Producto prod = api.getProductoPorCodigo(code);
                     System.out.println("Finished requesting");
                     if (prod != null) {
                         item.getRef().setProducto(prod);

@@ -36,17 +36,8 @@ public class FacturaVentana extends JFrame {
     private long numero = 0;
     private static final String []
             PAGO_LABEL = {"efectivo", "tarjeta", "cheque", "deposito", "credito", "varios"};
-//    private static final String [] 
-//            FORMAS_DE_PAGO = {Factura.EFECTIVO,
-//                              Factura.TARGETA_CREDITO,
-//                              Factura.CHEQUE,
-//                              Factura.DEPOSITO,
-//                              Factura.CREDITO,
-//                              Factura.VARIOS};
-    private String formaPago = "";//Factura.EFECTIVO;
-    /**
-     * Create the application.
-     */
+    private String formaPago = "efectivo";
+
     public FacturaVentana(FacturaInterface api, int almacenId, Usuario usuario) {
         this.api = api;
         this.almacenId = almacenId;
@@ -63,8 +54,8 @@ public class FacturaVentana extends JFrame {
         numeroLabel = new JLabel("" + numero);
         
         System.out.println("creating itemcontainer");
-        contenido = new ItemContainer(true, documento);
-        cliente = new ClientePanel(documento.getCliente());
+        contenido = new ItemContainer(true, documento, this.api);
+        cliente = new ClientePanel(documento.getCliente(), this.api);
 
         JButton buscarPorCliente = new JButton("Buscar por Cliente");
         pedidoField = new JTextField();
@@ -130,7 +121,7 @@ public class FacturaVentana extends JFrame {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            Documento doc = FacturaInterface.INSTANCE.getPedidoPorCodigo(pedidoField.getText());
+            Documento doc = api.getPedidoPorCodigo(pedidoField.getText());
             contenido.clear();
             cliente.clear();
             cliente.bindCliente(doc.getCliente());
@@ -145,7 +136,7 @@ public class FacturaVentana extends JFrame {
             Documento doc = contenido.getDocumento();
             doc.setCliente(cliente.getCliente());
             doc.setUser(usuario);
-            FacturaInterface.INSTANCE.guardarDocumento(contenido.getDocumento());
+            api.guardarDocumento(contenido.getDocumento());
         }
     }
 

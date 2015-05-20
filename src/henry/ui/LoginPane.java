@@ -28,7 +28,9 @@ public class LoginPane extends JPanel implements ActionListener{
     private Documento doc;
     private JComboBox serverbox;
     private JComboBox almacenbox;
-    private static final String[] SERVER_OPTS = new String[] {"192.168.0.23"};
+    private static final String[] SERVER_OPTS = new String[] {
+        "192.168.0.23", "localhost:8080"
+    };
     private static final String[] ALMACEN_OPTS = new String[] {
         "quinal", "bodega", "corpesut"
     };
@@ -74,9 +76,11 @@ public class LoginPane extends JPanel implements ActionListener{
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        FacturaInterface api = new FacturaInterfaceRest(
+                serverbox.getSelectedItem().toString());
         String username = user.getText();
         String password = new String(pass.getPassword());
-        Usuario usuario = FacturaInterface.INSTANCE.authenticate(username, password);
+        Usuario usuario = api.authenticate(username, password);
         if (usuario == null) {
             message.setText("Usuario o clave equivocado");
             user.setText("");
@@ -87,8 +91,6 @@ public class LoginPane extends JPanel implements ActionListener{
         System.out.println(serverbox.getSelectedItem());
         int almacenId = almacenbox.getSelectedIndex();
         System.out.println("index " + serverbox.getSelectedIndex());
-        FacturaInterface api = new FacturaInterfaceRest(
-                serverbox.getSelectedItem().toString());
         FacturaVentana factura = new FacturaVentana(api, almacenId, usuario);
         factura.setVisible(true);
         SwingUtilities.getWindowAncestor(this).dispose();
