@@ -39,14 +39,17 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
 
     private ItemContainer parent;
     private Observable<Item> item;
+    private SearchDialog<Producto> dialog;
     private FacturaInterface api;
 
-    public ItemPanel(ItemContainer parent_, Item item, FacturaInterface api) {
+    public ItemPanel(ItemContainer parent_, Item item, FacturaInterface api, 
+                     SearchDialog<Producto> searchDialog) {
         parent = parent_;
         this.item = new Observable<>();
         this.item.setRef(item);
         this.item.addListener(this);
         this.api = api;
+        this.dialog = searchDialog;
         initUI();
         if (item != null && item.getProducto() != null) {
             onDataChanged();
@@ -135,8 +138,6 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
     private class SearchProducto implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
-            SearchDialog<Producto> dialog = new SearchDialog<>(SearchEngine.PRODUCTO);
-            dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
             dialog.setVisible(true);
             Producto result = dialog.getResult();
             item.getRef().setProducto(result);
@@ -149,6 +150,7 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
             }
         }
     }
+
     public void initUI() {
         codigo = new JTextField();
         cantidad = new JTextField();

@@ -73,9 +73,9 @@ public class SearchDialog<T> extends JDialog {
     /**
      * Create the dialog.
      */
-    public SearchDialog(SearchEngine<T> type) {
+    public SearchDialog(SearchEngine<T> engine) {
         super(null, Dialog.ModalityType.APPLICATION_MODAL);
-        engine = type;
+        this.engine = engine;
         initUI();
     }
 
@@ -104,11 +104,17 @@ public class SearchDialog<T> extends JDialog {
         display.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
-            if (resultList.isEmpty()) {
-                return;
-            }
-            selectedIndex = display.getSelectedIndex();
-            dispose();
+                if (resultList.isEmpty()) {
+                    return;
+                }
+                int index = display.getSelectedIndex();
+                System.out.println("index " + selectedIndex);
+                if (index != -1) {
+                    selectedIndex = index;
+                    display.clearSelection();
+                    setVisible(false); 
+                }
+                //dispose();
             }
         });
         contentPanel.add(new JScrollPane(display), "span, width :456:");

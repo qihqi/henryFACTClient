@@ -4,7 +4,6 @@ import henry.model.BaseModel;
 import henry.model.Documento;
 import henry.model.Item;
 import henry.model.Observable;
-import henry.api.FacturaInterface;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.JLabel;
@@ -56,7 +55,7 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
 
     private Observable<Documento> documento;
     private BaseModel.Listener itemObserver;
-    private FacturaInterface api;
+    private ItemPanelFactory itemFactory;
 
     private class IvaUpdater implements ActionListener {
 
@@ -69,9 +68,9 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
     }
 
     //-------------------------------------------------------------------------------
-    public ItemContainer(boolean fact, Documento doc, FacturaInterface api) {
+    public ItemContainer(boolean fact, Documento doc, ItemPanelFactory itemFactory) {
         super(new BorderLayout());
-        this.api = api;
+        this.itemFactory = itemFactory;
 
         items = new ArrayList<ItemPanel>();
 
@@ -235,7 +234,7 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
 
         System.out.println("ItemContainer::addItemPanel " + 
                 (item.getProducto() == null ? "null" : item.getProducto().getCodigo()));
-        ItemPanel itemPanel = new ItemPanel(this, item, this.api);
+        ItemPanel itemPanel = itemFactory.make(this, item);
         items.add(itemPanel);
         itemPanel.addItemLister(itemObserver);
         reverseItem.put(itemPanel, items.size() - 1);

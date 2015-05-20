@@ -4,6 +4,9 @@ import henry.api.FacturaInterface;
 import henry.model.Documento;
 import henry.model.Usuario;
 import henry.model.Item;
+import henry.model.Producto;
+import henry.model.Cliente;
+import henry.api.SearchEngine;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.ButtonGroup;
@@ -16,6 +19,7 @@ import javax.swing.JTextField;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.List;
 
 @SuppressWarnings("serial")
 public class FacturaVentana extends JFrame {
@@ -29,7 +33,7 @@ public class FacturaVentana extends JFrame {
     private JTextField pedidoField;
     private ClientePanel cliente;
 
-    private FacturaInterface api;
+    final private FacturaInterface api;
     private int almacenId;
     Usuario usuario;
     
@@ -38,11 +42,39 @@ public class FacturaVentana extends JFrame {
             PAGO_LABEL = {"efectivo", "tarjeta", "cheque", "deposito", "credito", "varios"};
     private String formaPago = "efectivo";
 
-    public FacturaVentana(FacturaInterface api, int almacenId, Usuario usuario) {
+    private SearchDialog<Producto> prodSearchDialog = 
+        new SearchDialog<>(new SearchEngine<Producto>() {
+            @Override
+            public List<Producto> search(String prefijo) {
+                return api.buscarProducto(prefijo);
+            }
+
+            @Override
+            public String toString() {
+                return "Producto";
+            }
+        });
+    private SearchDialog<Cliente> clienteSearchDialog = 
+        new SearchDialog<>(new SearchEngine<Cliente>() {
+            @Override
+            public List<Cliente> search(String prefijo) {
+                return api.buscarCliente(prefijo);
+            }
+
+            @Override
+            public String toString() {
+                return "Cliente";
+            }
+        });
+
+    public FacturaVentana(final FacturaInterface api, int almacenId, Usuario usuario) {
         this.api = api;
         this.almacenId = almacenId;
         this.usuario = usuario;
         this.documento = new Documento();
+
+        ItemPanelFactory itemFactory = new ItemPanelFactory(api, prodSearchDialog);
+
         System.out.println("creating itemcontainer");
         panel = new JPanel();
         getContentPane().add(panel);
@@ -54,8 +86,8 @@ public class FacturaVentana extends JFrame {
         numeroLabel = new JLabel("" + numero);
         
         System.out.println("creating itemcontainer");
-        contenido = new ItemContainer(true, documento, this.api);
-        cliente = new ClientePanel(documento.getCliente(), this.api);
+        contenido = new ItemContainer(true, documento, itemFactory);
+        cliente = new ClientePanel(this.api, clienteSearchDialog);
 
         JButton buscarPorCliente = new JButton("Buscar por Cliente");
         pedidoField = new JTextField();

@@ -33,7 +33,8 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
 
     private Observable<Cliente> cliente;
     private FacturaInterface api;
-    private SearchEngine<Cliente> searchEngine;
+
+    private SearchDialog<Cliente> searchDialog;
 
     private class LoadCliente implements ActionListener {
         @Override
@@ -52,27 +53,13 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
 
 	private void initUI() {
 
-        searchEngine = new SearchEngine<Cliente>() {
-            @Override
-            public List<Cliente> search(String prefijo) {
-                return api.buscarCliente(prefijo);
-            }
-
-            @Override
-            public String toString() {
-                return "Cliente";
-            }
-        };
-
 		buscar = new JButton();
 		buscar.setText("Bus");
         buscar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                SearchDialog<Cliente> dialog = new SearchDialog<>(searchEngine);
-                dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-                dialog.setVisible(true);
-                Cliente result = dialog.getResult();
+                searchDialog.setVisible(true);
+                Cliente result = searchDialog.getResult();
                 bindCliente(result);
             }
         });
@@ -100,10 +87,10 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
 		add(general, "cell 1 1");
 	}
 
-	public ClientePanel(Cliente cliente, FacturaInterface api) {
+	public ClientePanel(FacturaInterface api, SearchDialog<Cliente> dialog) {
         this.cliente = new Observable<>();
-        this.cliente.setRef(cliente);
         this.cliente.addListener(this);
+        this.searchDialog = dialog;
         this.api = api;
 		initUI();
 	}
