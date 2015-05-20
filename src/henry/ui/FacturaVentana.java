@@ -1,5 +1,7 @@
 package henry.ui;
 
+import static henry.Helpers.displayAsMoney;
+
 import henry.api.FacturaInterface;
 import henry.model.Documento;
 import henry.model.Usuario;
@@ -66,6 +68,8 @@ public class FacturaVentana extends JFrame {
                 return "Cliente";
             }
         });
+
+    private SimpleDialog dialog = new SimpleDialog();
 
     public FacturaVentana(final FacturaInterface api, int almacenId, Usuario usuario) {
         this.api = api;
@@ -166,8 +170,30 @@ public class FacturaVentana extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             Documento doc = contenido.getDocumento();
+            int pagado;
+            if (formaPago.equals("efectivo")) {
+                try {
+                    pagado = (int) Math.round(
+                        Double.parseDouble(pago.getText()) * 100);
+                } 
+                catch(NumberFormatException exception) {
+                    dialog.setText("Ingrese un numero \nen el valor pagado");
+                    dialog.setVisible(true);
+                    return;
+                }
+                int total = doc.getTotal();
+                if (pagado < total) {
+                    dialog.setText("El valor pagado debe\nser mayor al total");
+                    dialog.setVisible(true);
+                    return;
+                }
+                doc.setPagado(pagado);
+                dialog.setText("El cambio es \n" + displayAsMoney(pagado - total));
+                dialog.setVisible(true);
+            }
             doc.setCliente(cliente.getCliente());
             doc.setUser(usuario);
+            doc.setFormaPago(formaPago);
             api.guardarDocumento(contenido.getDocumento());
         }
     }

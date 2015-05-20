@@ -18,6 +18,10 @@ public class Documento {
     @Getter @Setter private int ivaPorciento;
     @Getter @Setter private int descuentoGlobalPorciento;
 
+    @Getter @Setter private String formaPago;
+    @Getter @Setter private int pagado;
+    @Getter @Setter private int cambio;
+
     public Documento() {
         items = new ArrayList<Item>();
     }

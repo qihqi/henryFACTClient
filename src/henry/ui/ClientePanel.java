@@ -21,9 +21,6 @@ import java.util.List;
 
 public class ClientePanel extends JPanel implements BaseModel.Listener {
 
-	/**
-	 *
-	 */
 	private static final long serialVersionUID = 8993493064487143324L;
 	private JButton buscar;
 	private JLabel label;
