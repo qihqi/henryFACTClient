@@ -22,6 +22,8 @@ public class Documento {
     @Getter @Setter private int pagado;
     @Getter @Setter private int cambio;
 
+    @Getter @Setter private int codigo;
+
     public Documento() {
         items = new ArrayList<Item>();
     }

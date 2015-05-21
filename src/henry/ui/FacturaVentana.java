@@ -9,6 +9,7 @@ import henry.model.Item;
 import henry.model.Producto;
 import henry.model.Cliente;
 import henry.api.SearchEngine;
+import henry.printing.FacturaPrinter;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.ButtonGroup;
@@ -43,6 +44,7 @@ public class FacturaVentana extends JFrame {
     private static final String []
             PAGO_LABEL = {"efectivo", "tarjeta", "cheque", "deposito", "credito", "varios"};
     private String formaPago = "efectivo";
+    private FacturaPrinter printer;
 
     private SearchDialog<Producto> prodSearchDialog = 
         new SearchDialog<>(new SearchEngine<Producto>() {
@@ -71,10 +73,15 @@ public class FacturaVentana extends JFrame {
 
     private SimpleDialog dialog = new SimpleDialog();
 
-    public FacturaVentana(final FacturaInterface api, int almacenId, Usuario usuario) {
+    public FacturaVentana(
+            final FacturaInterface api, 
+            int almacenId, 
+            Usuario usuario, 
+            FacturaPrinter printer) {
         this.api = api;
         this.almacenId = almacenId;
         this.usuario = usuario;
+        this.printer = printer;
         this.documento = new Documento();
 
         ItemPanelFactory itemFactory = new ItemPanelFactory(api, prodSearchDialog);
@@ -194,7 +201,10 @@ public class FacturaVentana extends JFrame {
             doc.setCliente(cliente.getCliente());
             doc.setUser(usuario);
             doc.setFormaPago(formaPago);
-            api.guardarDocumento(contenido.getDocumento());
+            printer.setDocumento(doc);
+            if (printer.printFactura()) {
+//                api.guardarDocumento(doc);
+            }
         }
     }
 

@@ -4,6 +4,8 @@ package henry;
  * Created by han on 12/15/13.
  */
 import java.math.BigDecimal;
+import java.io.InputStream;
+import java.util.Scanner;
 
 public class Helpers {
     /** Imprimir centavos como dolares en 2 decimales
@@ -37,5 +39,9 @@ public class Helpers {
     public static int parseCentavosFromString(String s) {
         BigDecimal d = new BigDecimal(s).multiply(new BigDecimal(1000));
         return d.intValue();
+    }
+    public static String streamToString(InputStream stream) {
+        Scanner scanner = new Scanner(stream).useDelimiter("\\A");
+        return scanner.hasNext() ? scanner.next() : null;
     }
 }

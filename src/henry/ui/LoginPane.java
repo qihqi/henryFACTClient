@@ -1,9 +1,12 @@
 package henry.ui;
 
+import static henry.Helpers.streamToString;
 import henry.api.FacturaInterface;
 import henry.api.FacturaInterfaceRest;
 import henry.model.Documento;
 import henry.model.Usuario;
+import henry.printing.FacturaPrinter;
+import henry.printing.Config;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.JButton;
@@ -17,10 +20,15 @@ import javax.swing.SwingUtilities;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 @SuppressWarnings("serial")
 public class LoginPane extends JPanel implements ActionListener{
 
+    static final String CONFIG_PATH = "config.json";
     private JLabel message;
     private JTextField user;
     private JPasswordField pass;
@@ -91,7 +99,20 @@ public class LoginPane extends JPanel implements ActionListener{
         System.out.println(serverbox.getSelectedItem());
         int almacenId = almacenbox.getSelectedIndex();
         System.out.println("index " + serverbox.getSelectedIndex());
-        FacturaVentana factura = new FacturaVentana(api, almacenId, usuario);
+
+
+        FacturaPrinter printer;
+        try (InputStream stream = new FileInputStream(CONFIG_PATH)) {
+            Config config = Config.getConfigFromJson(streamToString(stream));
+            printer = new FacturaPrinter(config);
+        } 
+        catch (FileNotFoundException exception) {
+            throw new RuntimeException(exception);
+        }
+        catch(IOException exception) {
+            throw new RuntimeException(exception);
+        }
+        FacturaVentana factura = new FacturaVentana(api, almacenId, usuario, printer);
         factura.setVisible(true);
         SwingUtilities.getWindowAncestor(this).dispose();
     }

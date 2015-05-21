@@ -1,8 +1,11 @@
-package henry.printer;
+package henry.printing;
 
+import henry.printing.Config.ImpressionConfig;
 import henry.model.Documento;
 import henry.model.Cliente;
 import henry.model.Item;
+
+import lombok.Setter;
 
 import java.awt.Font;
 import java.awt.Graphics;
@@ -15,101 +18,121 @@ import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Date;
+import java.text.SimpleDateFormat;
 
 public class FacturaPrinter implements Printable  {
 
+    @Setter
     private Documento documento;
-    public void printFactura() {
+    private Config config;
+    private Font font;
+    private SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+    
+    public FacturaPrinter(Config config) {
+        this.config = config;
+        font = new Font(config.getFontFamily(),
+                        Font.PLAIN, 
+                        config.getFontSize());
+    }
+
+    public boolean printFactura() {
         PrinterJob job = PrinterJob.getPrinterJob();
         job.setPrintable(this);
         boolean ok = job.printDialog();
+        System.out.println("printing");
         if (ok) {
             try {
                 setPaperSize(job);
                 job.print();
             } catch (PrinterException e) {
                 e.printStackTrace();
+                return false;
             }
         }
+        return true;
     }
     
     @Override
     public int print(Graphics g, PageFormat fmt, int page)
             throws PrinterException 
     {
+        int totalPages = 
+              (documento.getItems().size() - 1) 
+            / config.getImpression().getLineas() 
+            + 1;
         if (page >= totalPages ) //>= porq es 0 indexed
             return NO_SUCH_PAGE;
-        
-        
-        Font font = new Font(Config.getConfig().getFontFamily(),
-                             Font.PLAIN, 
-                             Config.getConfig().getFontSize());
-        
         g.setFont(font);
         int lineWidth = g.getFontMetrics(font).getHeight();
         Graphics2D g2d = (Graphics2D)g;
         g2d.translate(fmt.getImageableX(), fmt.getImageableY());
         
-        printTitle(g2d);
-        printClient(g2d);
+        printTitle(g2d, documento.getCodigo());
+        printClient(g2d, documento.getCliente());
+        /*
         if (printContent(g2d, page, lineWidth)) {// ya no hay mas paginas
             printValues(g2d);
             printFirma(g2d);
         }
+
+        */
        
         return PAGE_EXISTS;
     }
+
+    private void printTitle(Graphics2D g2d, int codigo) {
+        if (!config.isFacturaBlanco()) {//titulos ya estan impresas
+            return;
+        }
+        double[] titlePos = config.getImpression().getTitle();
+        String value = (config.isFactura() ? "Orden De Despacho: " :
+                                             "Nota De Pedido: ") + codigo;
+        g2d.drawString(value, (float) titlePos[0], (float) titlePos[1]);
+        
+    }
+
+    private void drawElement(Graphics2D g2d,
+            double[] pos, double[] delta, String label, String content) {
+        if (content == null) {
+            content = "";
+        }
+        if (config.isFacturaBlanco()) {
+            content = String.format("%s: %s", label.toUpperCase(), content);
+            pos[0] += delta[0];
+            pos[1] += delta[1];
+        }
+        g2d.drawString(content, (float) pos[0], (float) pos[1]);
+    }
     
-    private void printClient(Graphics2D g2d) {
-        String [] titles = {"ruc", 
-                            "cliente", 
-                            "telf", 
-                            "direccion",
-                            "fecha",
-                            //"remision",
-                            };
+    private void printClient(Graphics2D g2d, Cliente cliente) {
         int x = 0;
         int y = 0;
-        Cliente cliente = documento.getCliente();
-        for (String s : titles) {
-            double [] pos = Config.getConfig().getImpresionPos(s);
-            String value = null;
-            if (s.equals("ruc"))
-                value = client.getCodigo();
-            else if (s.equals("cliente")) {
-                value = client.getApellidos() + " " + client.getNombres();
-            }
-            else if (s.equals("telf"))
-                value = client.getTelefono();
-            else if (s.equals("direccion")){
-                value = client.getDireccion();
-                if (value == null)
-                    value = "";
-                if (!facturaBlanco && value.length() > 20)
-                    value = value.substring(0, 20);
-                y = (int) (pos[1] + 10);
-                x = (int) (pos[0] - 60); 
-            }
-            else if (s.equals("fecha")) {
-                DateTimeFormatter fmt = DateTimeFormat.forPattern("dd/MM/yy");
-                value = fmt.print(DateTime.now());
-            }
-            if (value == null)
-                value = "";
-            
-            if (facturaBlanco) {
-                double [] delta = Config.getConfig().getRawImpresionPos(s+"_delta");
-                delta[0] += pos[0];
-                delta[1] += pos[1];
-                g2d.drawString(s.toUpperCase() + ": ", (float) delta[0], (float) delta[1]);
-            }
-            g2d.drawString(value, (float) pos[0], (float) pos[1]);
+        ImpressionConfig impConfig = config.getImpression();
+
+        drawElement(g2d, impConfig.getRuc(), impConfig.getRucDelta(),
+                    "RUC", cliente.getCodigo());
+        drawElement(g2d, impConfig.getCliente(), impConfig.getClienteDelta(),
+                    "cliente", cliente.toString());
+        drawElement(g2d, impConfig.getTelf(), impConfig.getTelfDelta(),
+                    "telf", cliente.getTelefono());
+        String direccion = cliente.getDireccion();
+        if (direccion == null) {
+            direccion = "";
         }
+        if (direccion.length() > 20) {
+            direccion = direccion.substring(0, 20);
+        }
+        drawElement(g2d, impConfig.getDireccion(), impConfig.getDireccionDelta(),
+                    "direccion", direccion);
+        drawElement(g2d, impConfig.getFecha(), impConfig.getFechaDelta(),
+                    "fecha", format.format(new Date()));
         
-        
-        if (facturaBlanco) 
+        if (config.isFacturaBlanco()) {
             g2d.drawLine(x, (int) y, x+500,(int)y);
+        }
     }
+/*
     private boolean printContent(Graphics2D g2d, int page, int lineWidth) {
         int start = page * lines;
                 
@@ -218,35 +241,21 @@ public class FacturaPrinter implements Printable  {
     }
     
     //print the titles
-    private void printTitle(Graphics2D g2d) {
-        if (!facturaBlanco) //titulos ya estan impresas
-            return;
-        
-        double [] titlePos = Config.getConfig().getImpresionPos("title");
-        if (Config.getConfig().isFactura()) {
-            g2d.drawString("Orden De Despacho: " + codigo, 
-                    (float) titlePos[0], (float) titlePos[1]);
-        }
-        else {
-            g2d.drawString("Nota De Pedido: " + codigo, 
-                    (float) titlePos[0], (float) titlePos[1]);
-        
-        }
-    }
     
+    */
     
     public void setPaperSize(PrinterJob job) {
         
-        if (facturaBlanco) {
+        if (config.isFacturaBlanco()) {
             return;
         }
         
-        double [] size = Config.getConfig().getImpresionPos("tamano");
+        double[] size = config.getImpression().getTamano();
         PageFormat fmt = job.defaultPage();
         Paper paper = fmt.getPaper();
         paper.setImageableArea(0, 0, (float) size[0], size[1]);
         fmt.setPaper(paper);
-        //fmt = job.pageDialog(fmt);
+        // fmt = job.pageDialog(fmt);
         Book book = new Book();
         book.append(this, fmt);
         job.setPageable(book);

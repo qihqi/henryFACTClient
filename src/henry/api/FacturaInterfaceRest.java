@@ -1,5 +1,7 @@
 package henry.api;
 
+import static henry.Helpers.streamToString;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -27,7 +29,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
 
 import static henry.Helpers.displayAsMoney;
 import static henry.Helpers.parseMilesimasFromString;
@@ -144,7 +145,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
             req.setEntity(new StringEntity(content));
             try (CloseableHttpResponse response = httpClient.execute(req)) {
                 HttpEntity entity = response.getEntity();
-                String result = toString(entity.getContent());
+                String result = streamToString(entity.getContent());
                 System.out.println(result);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -261,7 +262,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
             req.setEntity(new UrlEncodedFormEntity(Arrays.asList(params)));
             try (CloseableHttpResponse response = httpClient.execute(req)) {
                 HttpEntity entity = response.getEntity();
-                String result = toString(entity.getContent());
+                String result = streamToString(entity.getContent());
                 System.out.println(result);
                 JsonObject obj = new Gson().fromJson(result, JsonObject.class);
                 boolean status = obj.get("status").getAsBoolean();
@@ -284,16 +285,12 @@ public class FacturaInterfaceRest implements FacturaInterface {
         return null;
     }
 
-    private static String toString(InputStream stream) {
-        Scanner scanner = new Scanner(stream).useDelimiter("\\A");
-        return scanner.hasNext() ? scanner.next() : null;
-    }
 
     private String getUrl(URI uri) {
         HttpGet req = new HttpGet(uri);
         try (CloseableHttpResponse response = httpClient.execute(req)) {
             HttpEntity entity = response.getEntity();
-            String content = toString(entity.getContent());
+            String content = streamToString(entity.getContent());
             return content;
         }
         catch (IOException e) {
