@@ -14,15 +14,14 @@ import java.io.FileInputStream;
 public final class Config {
      public static class ContenidoConfig {
          @Getter
-         int[] pos;
+         double[] pos;
          @Getter
-         int[] sp;
+         double[] sp;
          @Getter
-         int vsp;
+         double vsp;
     }
 
     public static class ImpressionConfig {
-         @Getter
          double[] disp;
          @Getter
          double[] tamano;
@@ -64,6 +63,12 @@ public final class Config {
          int lineas;
          @Getter
          ContenidoConfig contenido;
+         @Getter
+         double[] firma1;
+         @Getter
+         double[] firma2;
+         @Getter
+         double[] firma3;
     }
 
     @Getter
@@ -85,7 +90,32 @@ public final class Config {
     ImpressionConfig impression;
 
     public static Config getConfigFromJson(String json) {
-        return new Gson().fromJson(json, Config.class);
+        Config config = new Gson().fromJson(json, Config.class);
+        addDisplacement(config.impression);
+        return config;
+    }
+
+    private static void addDisplacement(ImpressionConfig imp) {
+         addto(imp.ruc, imp.disp);
+         addto(imp.cliente, imp.disp);
+         addto(imp.remision, imp.disp);
+         addto(imp.direccion, imp.disp);
+         addto(imp.fecha, imp.disp);
+         addto(imp.telf, imp.disp);
+         addto(imp.bruto, imp.disp);
+         addto(imp.desc, imp.disp);
+         addto(imp.neto, imp.disp);
+         addto(imp.iva, imp.disp);
+         addto(imp.total, imp.disp);
+         addto(imp.title, imp.disp);
+         addto(imp.firma1, imp.disp);
+         addto(imp.firma2, imp.disp);
+         addto(imp.firma3, imp.disp);
+         addto(imp.contenido.pos, imp.disp);
+    }
+    public static void addto(double[] a, double[] b) {
+        a[0] += b[0];
+        a[1] += b[1];
     }
     public static void main(String[] args) throws Exception {
         String content;

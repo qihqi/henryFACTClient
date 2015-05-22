@@ -201,8 +201,7 @@ public class FacturaVentana extends JFrame {
             doc.setCliente(cliente.getCliente());
             doc.setUser(usuario);
             doc.setFormaPago(formaPago);
-            printer.setDocumento(doc);
-            if (printer.printFactura()) {
+            if (printer.printFactura(doc)) {
 //                api.guardarDocumento(doc);
             }
         }
