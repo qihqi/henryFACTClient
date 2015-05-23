@@ -152,8 +152,6 @@ class ProductApiDB:
             item = item.filter(f)
         if item.first() is not None:
             p = Product().merge_from(item.first())
-            p.precio1 = int(p.precio1 * 100)
-            p.precio2 = int(p.precio2 * 100)
             return p
         return None
 
@@ -162,8 +160,8 @@ class ProductApiDB:
         filters = [NProducto.nombre.startswith(prefix)]
         if almacen_id is not None:
             query_items.extend(ProductApiDB._PROD_PRICE_KEYS)
-            filters.append(NContenido.prod_id == NProducto.codigo)
-            filters.append(NContenido.bodega_id == almacen_id)
+            filters.append(NPriceList.prod_id == NProducto.codigo)
+            filters.append(NPriceList.almacen_id== almacen_id)
         if bodega_id is not None:
             query_items.extend(ProductApiDB._PROD_CANT_KEYS)
         result_proxy = self.db_session.session.query(*query_items)
@@ -224,7 +222,7 @@ class ProductApiDB:
                 categoria_id=product_core.categoria)
         session.add(prod)
         # price list = (almacen_id -> precios
-        for almacen, (p1, p2) in price_list.items():
+        for almacen, (p1, p2, thres) in price_list.items():
             bodega_id = almacen
             cont = NContenido(
                     prod_id=product_core.codigo,
@@ -234,7 +232,8 @@ class ProductApiDB:
                     prod_id=product_core.codigo,
                     almacen_id=almacen,
                     precio1=p1,
-                    precio2=p2)
+                    precio2=p2,
+                    cant_mayorista=thres)
             alm.cantidad = cont
             session.add(alm)
         session.commit()

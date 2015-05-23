@@ -42,8 +42,8 @@ class ProductApiTest(unittest.TestCase):
                 p.categoria = 1
                 cls.prod_api.create_product(
                         p, {
-                            0: (p1, p2),
-                            1: (p1, p2)
+                            0: (int(p1), int(p2), thres),
+                            1: (int(p1), int(p2), thres)
                         })
 
     def test_get_producto(self):
@@ -52,13 +52,13 @@ class ProductApiTest(unittest.TestCase):
             y = self.prod_api.get_producto('0', almacen_id=1)
 
             self.assertEqual(x.nombre, 'prueba 0')
-            self.assertEqual(y.precio1, Decimal('20.23'))
+            self.assertEqual(y.precio1, 20)
             self.assertEqual(y.threshold, 0)
 
     def test_search(self):
         with self.sessionmanager:
             prods = self.prod_api.search_producto('prueba')
-            assert len(list(prods)) == 6
+            self.assertEquals(6, len(list(prods)));
             for x in prods:
                 self.assertTrue(x.nombre.startswith('prueba'))
 
@@ -68,8 +68,8 @@ class ProductApiTest(unittest.TestCase):
             assert len(list(prods)) == 6
             for x in prods:
                 self.assertTrue(x.nombre.startswith('prueba'))
-                self.assertTrue(x.precio1 == Decimal('20.23'))
-                self.assertTrue(x.precio2 == Decimal('10'))
+                self.assertTrue(x.precio1 == 20)
+                self.assertTrue(x.precio2 == 10)
 
     def test_transaction(self):
         with self.sessionmanager:
