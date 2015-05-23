@@ -3,7 +3,7 @@ import json
 from bottle import Bottle, response, request, abort
 
 from henry.config import prodapi, transapi, dbcontext, clientapi, invapi, auth_decorator, pedidoapi
-from henry.helpers.serialization import json_dump
+from henry.helpers.serialization import json_dump, json_loads
 from henry.layer2.client import Client
 from henry.layer2.productos import Transferencia
 from henry.layer2.invoice import InvMetadata
@@ -58,7 +58,7 @@ def search_prod_alm(almacen_id):
 @dbcontext
 def crear_ingreso():
     json_content = request.body.read()
-    content = json.loads(json_content)
+    content = json_loads(json_content)
     ingreso = Transferencia.deserialize(content)
     codigo = transapi.create(ingreso)
     return {'codigo': codigo}
@@ -110,11 +110,13 @@ def update_client(codigo):
 
 @api.post('/api/cliente/<codigo>')
 @auth_decorator
+@dbcontext
 def create_client(codigo):
     return update_client(codigo)
 
 
 @api.get('/api/cliente')
+@dbcontext
 def search_client():
     prefijo = request.query.prefijo
     if prefijo:
@@ -136,12 +138,11 @@ def get_invoice(inv_id):
 
 
 @api.post('/api/nota')
-@auth_decorator
 @dbcontext
 @auth_decorator
 def create_invoice():
     json_content = request.body.read()
-    content = json.loads(json_content)
+    content = json_loads(json_content)
 
     meta = InvMetadata.deserialize(content['meta'])
     doc_request = DocumentCreationRequest(meta)
@@ -150,11 +151,12 @@ def create_invoice():
         if cant > 0:
             doc_request.add(prod_id, cant)
 
-    client_id = content['meta']['client_id']
-    client = clientapi.get(client_id)
+    client = Client().deserialize(content['meta'])
+    # client = clientapi.get(client_id)
     doc_request.meta.client = client
     doc = invapi.create_document_from_request(doc_request)
     invoice = invapi.save(doc)
+    print {'codigo': invoice.meta.uid}
     return {'codigo': invoice.meta.uid}
 
 
@@ -176,6 +178,7 @@ def delete_invoice(uid):
 
 @api.post('/api/pedido')
 @dbcontext
+@auth_decorator
 def save_pedido():
     json_content = request.body.read()
     uid = pedidoapi.save(json_content)

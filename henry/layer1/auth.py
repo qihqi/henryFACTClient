@@ -33,7 +33,7 @@ class AuthDecorator:
     def is_logged_in_by_beaker(self):
         session = request.environ['beaker.session']
         if session is not None:
-            return 'loginin' in session
+            return 'login_info' in session
         return False
                 
                

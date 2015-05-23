@@ -18,6 +18,10 @@ def json_dump(content):
             encoding=DB_ENCODING)
 
 
+def json_loads(content):
+    return json.loads(content, encoding=DB_ENCODING)
+
+
 class ModelEncoder(json.JSONEncoder):
     def __init__(self, use_int_repr=False, decimal_places=2, *args, **kwargs):
         super(ModelEncoder, self).__init__(*args, **kwargs)

@@ -25,8 +25,8 @@ def make_lista_precio(item, unidad='unidad', multiplicador=1):
             nombre=item.nombre,
             almacen_id=item.bodega_id,
             prod_id=item.codigo,
-            precio1=item.precio,
-            precio2=item.precio2,
+            precio1=int(item.precio*100),
+            precio2=int(item.precio2*100),
             cant_mayorista=item.cant_mayorista,
             upi=item.id,
             unidad='unidad',
@@ -51,7 +51,7 @@ def main():
                     new_item.unidad = 'paquete grande'
                 session.add(new_item)
                 counter += 1
-                if counter % 100:
+                if counter % 100 == 0:
                     print 'processed ', counter
     finally:
         print 'total processed', counter
