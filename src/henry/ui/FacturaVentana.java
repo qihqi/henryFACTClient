@@ -5,11 +5,10 @@ import static henry.Helpers.displayAsMoney;
 import henry.api.FacturaInterface;
 import henry.model.Documento;
 import henry.model.Usuario;
-import henry.model.Item;
 import henry.model.Producto;
 import henry.model.Cliente;
 import henry.api.SearchEngine;
-import henry.printing.FacturaPrinter;
+import henry.printing.GenericPrinter;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.ButtonGroup;
@@ -44,7 +43,7 @@ public class FacturaVentana extends JFrame {
     private static final String []
             PAGO_LABEL = {"efectivo", "tarjeta", "cheque", "deposito", "credito", "varios"};
     private String formaPago = "efectivo";
-    private FacturaPrinter printer;
+    private GenericPrinter printer;
 
     private SearchDialog<Producto> prodSearchDialog = 
         new SearchDialog<>(new SearchEngine<Producto>() {
@@ -73,16 +72,20 @@ public class FacturaVentana extends JFrame {
 
     private SimpleDialog dialog = new SimpleDialog();
 
+    private boolean isFactura;
+
     public FacturaVentana(
             final FacturaInterface api, 
             int almacenId, 
             Usuario usuario, 
-            FacturaPrinter printer) {
+            GenericPrinter printer,
+            boolean isFactura) {
         this.api = api;
         this.almacenId = almacenId;
         this.usuario = usuario;
         this.printer = printer;
         this.documento = new Documento();
+        this.isFactura = isFactura;
 
         ItemPanelFactory itemFactory = new ItemPanelFactory(api, prodSearchDialog);
 
@@ -201,8 +204,15 @@ public class FacturaVentana extends JFrame {
             doc.setCliente(cliente.getCliente());
             doc.setUser(usuario);
             doc.setFormaPago(formaPago);
-            if (printer.printFactura(doc)) {
-//                api.guardarDocumento(doc);
+            if (isFactura) {
+                if (printer.printFactura(doc)) {
+                    api.guardarDocumento(doc, isFactura);
+                }
+            }
+            else {
+                int codigo = api.guardarDocumento(doc, isFactura);
+                dialog.setText("El codigo es " + codigo);
+                dialog.setVisible(true);
             }
         }
     }

@@ -14,7 +14,7 @@ public interface FacturaInterface {
     Cliente getClientePorCodigo(String codigo);
     List<Cliente> buscarCliente(String prefijo);
 
-    void guardarDocumento(Documento doc);
+    int guardarDocumento(Documento doc, boolean isFactura);
     Documento getPedidoPorCodigo(String codigo);
 
     Usuario authenticate(String username, String password);

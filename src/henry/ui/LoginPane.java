@@ -7,6 +7,8 @@ import henry.model.Documento;
 import henry.model.Usuario;
 import henry.printing.FacturaPrinter;
 import henry.printing.Config;
+import henry.printing.GenericPrinter;
+import henry.printing.MinoristaPrinter;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.JButton;
@@ -36,6 +38,7 @@ public class LoginPane extends JPanel implements ActionListener{
     private Documento doc;
     private JComboBox serverbox;
     private JComboBox almacenbox;
+    private String configpath;
     private static final String[] SERVER_OPTS = new String[] {
         "192.168.0.23", "localhost:8080"
     };
@@ -45,12 +48,14 @@ public class LoginPane extends JPanel implements ActionListener{
     /**
      * Create the panel.
      */
-    public LoginPane() {
+    public LoginPane(String configpath) {
         setBorder(new EmptyBorder(5, 5, 5, 5));
         setLayout(new MigLayout("", "[100][200]", ""));
 
         message = new JLabel();
-        
+
+        this.configpath = configpath == null ? CONFIG_PATH : configpath;
+
         JLabel userLabel = new JLabel("Usuario: ");
         JLabel passLabel = new JLabel("Clave: ");
 
@@ -101,10 +106,18 @@ public class LoginPane extends JPanel implements ActionListener{
         System.out.println("index " + serverbox.getSelectedIndex());
 
 
-        FacturaPrinter printer;
-        try (InputStream stream = new FileInputStream(CONFIG_PATH)) {
-            Config config = Config.getConfigFromJson(streamToString(stream));
-            printer = new FacturaPrinter(config);
+        GenericPrinter printer;
+        Config config;
+        try (InputStream stream = new FileInputStream(configpath)) {
+            config = Config.getConfigFromJson(streamToString(stream));
+            if (config.isMatrixPrinter()) {
+                printer = new MinoristaPrinter(config);
+                System.out.println("menorista printer");
+            }
+            else {
+                printer = new FacturaPrinter(config);
+                System.out.println("factura printer");
+            }
         } 
         catch (FileNotFoundException exception) {
             throw new RuntimeException(exception);
@@ -112,7 +125,7 @@ public class LoginPane extends JPanel implements ActionListener{
         catch(IOException exception) {
             throw new RuntimeException(exception);
         }
-        FacturaVentana factura = new FacturaVentana(api, almacenId, usuario, printer);
+        FacturaVentana factura = new FacturaVentana(api, almacenId, usuario, printer, config.isFactura());
         factura.setVisible(true);
         SwingUtilities.getWindowAncestor(this).dispose();
     }

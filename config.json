@@ -6,6 +6,7 @@
     "libre": 80,
     "max_cliente": 30,
     "max_desc": 30,
+    "impresora_matriz": false,
     "impression": {
         "disp": [0, -50],
         "tamano": [475, 529],

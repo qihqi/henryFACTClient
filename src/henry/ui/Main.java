@@ -12,8 +12,12 @@ public class Main extends JFrame {
     private LoginPane contentPane;
     private FacturaVentana factura;
     private Documento documento;
+    private static String configpath;
 
     public static void main(String[] args) {
+        if (args.length > 0) {
+            configpath = args[0];
+        }
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 try {
@@ -32,9 +36,8 @@ public class Main extends JFrame {
     public Main() {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setBounds(100, 100, 393, 200);
-
         documento = new Documento();
-        contentPane = new LoginPane();
+        contentPane = new LoginPane(configpath);
         //aqui le puse el listener
         setContentPane(contentPane);
     }

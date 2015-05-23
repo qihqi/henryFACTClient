@@ -89,7 +89,11 @@ public final class Config {
     @Getter
     ImpressionConfig impression;
 
+    @Getter @SerializedName("impresora_matriz")
+    boolean matrixPrinter;
+
     public static Config getConfigFromJson(String json) {
+        System.out.println(json);
         Config config = new Gson().fromJson(json, Config.class);
         addDisplacement(config.impression);
         return config;

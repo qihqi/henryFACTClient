@@ -8,6 +8,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.GsonBuilder;
+import com.google.gson.annotations.Expose;
 import henry.model.*;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
@@ -132,29 +133,39 @@ public class FacturaInterfaceRest implements FacturaInterface {
         }
     }
 
+    static class Codigo {
+        @Expose
+        int codigo;
+    }
+
     @Override
-    public void guardarDocumento(Documento doc) {
+    public int guardarDocumento(Documento doc, boolean isFactura) {
         System.out.println("guardarDocumento");
         JsonObject factura = serializeDocumento(doc);
         String content = gson.toJson(factura);
         System.out.println(content);
+        String path = isFactura ? FACTURA_URL_PATH : VENTA_URL_PATH;
         try {
             URI uri = new URIBuilder().setScheme("http").setHost(baseUrl)
-                    .setPath(VENTA_URL_PATH).build();
+                    .setPath(path).build();
             HttpPost req = new HttpPost(uri);
             req.setEntity(new StringEntity(content));
             try (CloseableHttpResponse response = httpClient.execute(req)) {
-                HttpEntity entity = response.getEntity();
-                String result = streamToString(entity.getContent());
-                System.out.println(result);
+                if (response.getStatusLine().getStatusCode() == 200) {
+                    HttpEntity entity = response.getEntity();
+                    String result = streamToString(entity.getContent());
+
+                    int codigo = gson.fromJson(result, Codigo.class).codigo;
+                    return codigo;
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
         }
         catch (URISyntaxException|UnsupportedEncodingException ex) {
             ex.printStackTrace();
         }
+        return -1;
 
     }
 
@@ -238,7 +249,6 @@ public class FacturaInterfaceRest implements FacturaInterface {
                     .setPath(VENTA_URL_PATH + "/" + codigo).build();
             String content = getUrl(uri);
             System.out.println(content);
-
             JsonObject documentObject = gson.fromJson(content, JsonObject.class);
             return parseDocumento(documentObject);
         }

@@ -1,0 +1,40 @@
+{
+    "fontsize": 10,
+    "fontfamily": "Courier New",
+    "factura": true,
+    "factura_blanco": false,
+    "libre": 80,
+    "max_cliente": 25,
+    "max_desc": 30,
+    "impresora_matriz": true,
+    "impression": {
+        "disp": [0, 0],
+        "tamano": [49, 31],
+        "ruc" : [3, 4],
+        "cliente": [3, 5],
+        "direccion": [4, 6],
+        "fecha": [30, 4],
+        "remision":[0, 6],
+        "telf": [30, 6],
+        "ruc_delta": [-50, 0],
+        "direccion_delta": [-60, 0],
+        "fecha_delta": [-50, 0],
+        "telf_delta": [-50, 0],
+        "cliente_delta": [-50, 0],
+        "contenido": {
+            "pos": [5, 9],
+            "sp":[7, 5, 23, 6],
+            "vsp":1
+        },
+        "bruto": [0, 27],
+        "desc": [9, 27],
+        "neto": [15, 27],
+        "iva": [41, 27],
+        "total": [41, 28], 
+        "title": [-2, 30],
+        "firma1": [-2, 30],
+        "firma3": [-2, 30],
+        "firma2": [-2, 30],
+        "lineas": 35
+    }
+} 
