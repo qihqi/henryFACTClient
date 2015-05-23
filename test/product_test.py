@@ -20,6 +20,12 @@ class ProductApiTest(unittest.TestCase):
         sessionfactory = sessionmaker(bind=engine)
         session = sessionfactory()
         Base.metadata.create_all(engine)
+        cls.sessionmanager = SessionManager(sessionfactory)
+        filemanager = FileService('/tmp')
+        cls.transaction_api = TransactionApi('/tmp/transactions')
+        cls.prod_api = ProductApiDB(cls.sessionmanager, cls.transaction_api)
+        cls.trans_api = TransApiDB(cls.sessionmanager, filemanager, cls.prod_api)
+        cls.inv_api = InvApiDB(cls.sessionmanager, filemanager, cls.prod_api)
         cls.productos = [
             ('0', 'prueba 0', Decimal('20.23'), Decimal('10'), 0),
             ('1', 'prueba 1', Decimal('20.23'), Decimal('10'), 0),
@@ -27,23 +33,18 @@ class ProductApiTest(unittest.TestCase):
             ('3', 'prueba 3', Decimal('20.23'), Decimal('10'), 0),
             ('4', 'prueba 4', Decimal('20.23'), Decimal('10'), 0),
             ('5', 'prueba 5', Decimal('20.23'), Decimal('10'), 0)]
-        for p in cls.productos:
-            codigo, nombre, p1, p2, thres = p
-            x = NProducto(codigo=codigo, nombre=nombre)
-            x.contenidos.append(
-                NContenido(prod_id=codigo, precio=p1, precio2=p2, cant_mayorista=thres,
-                           bodega_id=1, cant=0))
-            x.contenidos.append(
-                NContenido(prod_id=codigo, precio=p1, precio2=p2, cant_mayorista=thres,
-                           bodega_id=2, cant=0))
-            session.add(x)
-        result = session.commit()
-        cls.sessionmanager = SessionManager(sessionfactory)
-        filemanager = FileService('/tmp')
-        cls.transaction_api = TransactionApi('/tmp/transactions')
-        cls.prod_api = ProductApiDB(cls.sessionmanager, cls.transaction_api)
-        cls.trans_api = TransApiDB(cls.sessionmanager, filemanager, cls.prod_api)
-        cls.inv_api = InvApiDB(cls.sessionmanager, filemanager, cls.prod_api)
+        with cls.sessionmanager:
+            for p in cls.productos:
+                codigo, nombre, p1, p2, thres = p
+                p = Product()
+                p.codigo = codigo
+                p.nombre = nombre
+                p.categoria = 1
+                cls.prod_api.create_product(
+                        p, {
+                            0: (p1, p2),
+                            1: (p1, p2)
+                        })
 
     def test_get_producto(self):
         with self.sessionmanager:

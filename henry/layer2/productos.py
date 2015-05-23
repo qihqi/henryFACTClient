@@ -2,7 +2,8 @@ import fcntl
 import os
 from datetime import datetime
 from sqlalchemy.sql import bindparam
-from henry.layer1.schema import NProducto, NContenido, NTransferencia, NBodega
+from henry.layer1.schema import (NProducto, NContenido,
+                                 NTransferencia, NBodega, NPriceList)
 from henry.helpers.serialization import SerializableMixin, json_dump
 from henry.layer2.documents import DocumentApi, Status
 
@@ -116,10 +117,10 @@ class ProductApiDB:
         NProducto.nombre,
     )
     _PROD_PRICE_KEYS = (
-        NContenido.bodega_id.label('almacen_id'),
-        NContenido.precio.label('precio1'),
-        NContenido.precio2,
-        NContenido.cant_mayorista.label('threshold')
+        NPriceList.almacen_id,
+        NPriceList.precio1,
+        NPriceList.precio2,
+        NPriceList.cant_mayorista.label('threshold')
     )
     _PROD_CANT_KEYS = (
         NContenido.cant.label('cantidad'),
@@ -137,14 +138,14 @@ class ProductApiDB:
         filter_items = [NProducto.codigo == prod_id]
         has_alm = almacen_id is not None
         has_bod = bodega_id is not None
-        if has_alm or has_bod:
-            filter_items.append(NContenido.prod_id == NProducto.codigo)
         if has_alm:
             query_items.extend(ProductApiDB._PROD_PRICE_KEYS)
-            filter_items.append(NContenido.bodega_id == almacen_id)
+            filter_items.append(NPriceList.almacen_id == almacen_id)
+            filter_items.append(NPriceList.prod_id == prod_id )
         if has_bod:
             query_items.extend(ProductApiDB._PROD_CANT_KEYS)
             filter_items.append(NContenido.bodega_id == bodega_id)
+            filter_items.append(NContenido.prod_id == prod_id )
 
         item = self.db_session.session.query(*query_items)
         for f in filter_items:
@@ -153,7 +154,7 @@ class ProductApiDB:
             p = Product().merge_from(item.first())
             p.precio1 = int(p.precio1 * 100)
             p.precio2 = int(p.precio2 * 100)
-            return p 
+            return p
         return None
 
     def search_producto(self, prefix, almacen_id=None, bodega_id=None):
@@ -186,7 +187,6 @@ class ProductApiDB:
         return self.exec_transactions_with_session(self.db_session.session, trans)
 
     def exec_transactions_with_session(self, session, trans):
-        import pdb; pdb.set_trace()
         trans = list(trans)
         t = NContenido.__table__.update().where(
             NContenido.prod_id == bindparam('p')).where(
@@ -214,6 +214,31 @@ class ProductApiDB:
 
     def get_bodegas(self):
         return self.db_session.session.query(NBodega)
+
+    def create_product(self, product_core, price_list):
+        #insert product in db
+        session = self.db_session.session
+        prod = NProducto(
+                nombre=product_core.nombre,
+                codigo=product_core.codigo,
+                categoria_id=product_core.categoria)
+        session.add(prod)
+        # price list = (almacen_id -> precios
+        for almacen, (p1, p2) in price_list.items():
+            bodega_id = almacen
+            cont = NContenido(
+                    prod_id=product_core.codigo,
+                    bodega_id=bodega_id,
+                    cant=0)
+            alm = NPriceList(
+                    prod_id=product_core.codigo,
+                    almacen_id=almacen,
+                    precio1=p1,
+                    precio2=p2)
+            alm.cantidad = cont
+            session.add(alm)
+        session.commit()
+
 
 
 class Metadata(SerializableMixin):

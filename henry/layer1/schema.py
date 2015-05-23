@@ -19,6 +19,7 @@ class NProducto(Base):
     nombre = Column(String(200))
     categoria_id = Column(Integer)
     contenidos = relationship('NContenido', backref=backref('producto'))
+    prices = relationship('NPriceList', backref=backref('producto'))
 
 
 class NContenido(Base):
@@ -30,6 +31,7 @@ class NContenido(Base):
     precio = Column(Numeric(20, 2))
     precio2 = Column(Numeric(20, 2))
     cant_mayorista = Column(Integer)
+    pricelist = relationship('NPriceList', backref=backref('cantidad'))
 
 
 class NVenta(Base):
