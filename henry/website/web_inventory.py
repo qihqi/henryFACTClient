@@ -2,8 +2,9 @@ import datetime
 
 from bottle import request, Bottle, abort, redirect
 from henry.config import jinja_env, transapi, prodapi
-from henry.layer2.productos import (TransType, Metadata)
+from henry.layer2.productos import (TransType, Metadata, Product)
 from henry.layer2.documents import DocumentCreationRequest
+from henry.layer1.schema import NCategory
 from henry.config import dbcontext, auth_decorator
 
 w = Bottle()
@@ -63,3 +64,42 @@ def post_crear_ingreso():
         abort(400, str(e))
 
     redirect('/app/ingreso/{}'.format(transferencia.meta.uid))
+
+
+@w.get('/app/crear_producto')
+@dbcontext
+@auth_decorator
+def create_prod_form():
+    temp = jinja_env.get_template('crear_producto.html')
+    stores = prodapi.get_stores()
+    categorias = prodapi.get_category()
+    return temp.render(almacenes=stores, categorias=categorias)
+
+
+@w.post('/app/crear_producto')
+@dbcontext
+@auth_decorator
+def create_prod_form():
+    print request.forms.__dict__
+
+    p = Product()
+    p.codigo = request.forms.codigo
+    p.nombre = request.forms.nombre
+    p.categoria = request.forms.categoria
+
+    precios = {}
+    for alm in prodapi.get_stores():
+        p1 = request.forms.get('{}-precio1'.format(alm.almacen_id))
+        p2 = request.forms.get('{}-precio2'.format(alm.almacen_id))
+        thres = request.forms.get('{}-thres'.format(alm.almacen_id))
+        precios[alm.almacen_id] = (p1, p2, thres)
+
+    prodapi.create_product(p, precios)
+    redirect('/app/crear_producto')
+
+
+
+
+
+
+

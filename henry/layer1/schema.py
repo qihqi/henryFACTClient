@@ -5,6 +5,11 @@ from henry.helpers.serialization import SerializableMixin
 
 Base = declarative_base()
 
+class NCategory(Base):
+    __tablename__ = 'categorias'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    nombre = Column(String(100))
+
 class NBodega(Base):
     __tablename__ = 'bodegas'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -187,8 +192,9 @@ class NPedidoTemporal(Base):
 class NStore(Base):
     __tablename__ = 'almacenes'
     almacen_id = Column(Integer, primary_key=True, autoincrement=True)
-    ruc = Column(Integer)
-    nombre = Column(Integer)
+    ruc = Column(String(20))
+    nombre = Column(String(20))
+    bodega_id = Column(Integer)
 
 
 class NPriceList(Base):
@@ -211,3 +217,5 @@ class NDjangoSession(Base):
     session_key = Column(String(40), primary_key=True)
     session_data = Column(Text)
     expire_date = Column(DateTime)
+
+

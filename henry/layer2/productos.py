@@ -2,7 +2,7 @@ import fcntl
 import os
 from datetime import datetime
 from sqlalchemy.sql import bindparam
-from henry.layer1.schema import (NProducto, NContenido,
+from henry.layer1.schema import (NProducto, NContenido, NStore, NCategory,
                                  NTransferencia, NBodega, NPriceList)
 from henry.helpers.serialization import SerializableMixin, json_dump
 from henry.layer2.documents import DocumentApi, Status
@@ -203,8 +203,8 @@ class ProductApiDB:
             nombre=prod.nombre,
             categoria=prod.categoria)
         if prod.almacen_id:
-            c = NContenido(
-                bodega_id=prod.almacen_id,
+            c = NPriceList(
+                almacen_id=prod.almacen_id,
                 precio=prod.precio1,
                 precio2=prod.precio2)
             p.contenidos.add(c)
@@ -212,6 +212,12 @@ class ProductApiDB:
 
     def get_bodegas(self):
         return self.db_session.session.query(NBodega)
+
+    def get_stores(self):
+        return self.db_session.session.query(NStore)
+
+    def get_category(self):
+        return self.db_session.session.query(NCategory)
 
     def create_product(self, product_core, price_list):
         #insert product in db
@@ -221,20 +227,25 @@ class ProductApiDB:
                 codigo=product_core.codigo,
                 categoria_id=product_core.categoria)
         session.add(prod)
-        # price list = (almacen_id -> precios
+
+        # this is a many-to-one relationship
+        alm_to_bodega = {x.almacen_id: x.bodega_id for x in self.get_stores()}
+        cantidad_items = {}  # to dedup cantidad items
         for almacen, (p1, p2, thres) in price_list.items():
-            bodega_id = almacen
-            cont = NContenido(
-                    prod_id=product_core.codigo,
-                    bodega_id=bodega_id,
-                    cant=0)
+            bodega_id = almacenes[almacen]
             alm = NPriceList(
                     prod_id=product_core.codigo,
                     almacen_id=almacen,
                     precio1=p1,
                     precio2=p2,
                     cant_mayorista=thres)
-            alm.cantidad = cont
+            if bodega_id not in contenidos_creados:
+                cont = NContenido(
+                        prod_id=product_core.codigo,
+                        bodega_id=bodega_id,
+                        cant=0)
+                contenidos_creados[bodega_id] = cont
+            alm.cantidad = contenidos_creados[bodega_id]
             session.add(alm)
         session.commit()
 
