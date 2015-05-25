@@ -69,3 +69,10 @@ class InvoiceApi:
 
         self.filemanager.put_file(filepath, inv.to_json())
         return inv
+
+    def items_to_transactions(cls, doc):
+        reason = 'factura: id={} codigo={}'.format(
+            doc.meta.uid, doc.meta.codigo)
+        for prod, cant in doc.items:
+            yield Transaction(doc.meta.bodega, prod.codigo, -cant, prod.nombre, 
+                              ref=reason, doc.meta.timestamp)
