@@ -38,6 +38,34 @@ class ModelEncoder(json.JSONEncoder):
         return super(ModelEncoder, self).default(obj)
 
 
+class DbMixin(object):
+    @classmethod
+    def _get_name_pairs(cls, names):
+        if isinstance(names, dict):
+            return names.items()
+        else:
+            return map(lambda x: (x, x), names) 
+
+    def db_instance(self):
+        x = self._db_class()
+        for thisname, dbname in DbMixin._get_name_pairs(self._db_attr):
+            if not thisname in self._excluded_vars: 
+                value = getattr(self, thisname, None)
+                if value is not None:
+                    setattr(x, dbname, value)
+        return x 
+
+    @classmethod 
+    def from_db_instance(cls, db_instance):
+        y = cls()
+        for thisname, dbname in self._get_name_pairs(self._db_attr):
+            if not thisname in self._excluded_vars: 
+                value = getattr(db_instance, dbname, None)
+                if value is not None:
+                    setattr(y, thisname, value)
+        return y
+
+
 class SerializableMixin(object):
 
     def merge_from(self, obj):
@@ -56,10 +84,7 @@ class SerializableMixin(object):
 
     @classmethod
     def deserialize(cls, dict_input):
-        obj = cls()
-        obj.__dict__ = {key: dict_input.get(key, None) for key in cls._name}
-        return obj
-
+        return cls().merge_from(dict_input)
 
     @staticmethod
     def _serialize_helper(obj, names):

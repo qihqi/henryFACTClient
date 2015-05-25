@@ -84,20 +84,7 @@ class InvApiDB(DocumentApi):
             yield Transaction(doc.meta.bodega, prod_id, -cant, prod, ref=reason)
 
     def create_document_from_request(self, req):
-        inv = Invoice(req.meta)
-        items = []
-        for i in req.items:
-            prod_id = i[0]
-            p = self.prod_api.get_producto(prod_id)
-            if p is None:
-                raise ValueError('producto {} no existe'.format(prod_id))
-            if i[1] < 0:
-                raise ValueError(
-                    'Cantidad de producto {} es negativo'.format(prod_id))
-            if i[1] > 0:
-                items.append(i)
-        inv.items = items
-        return inv
+        return req
 
     def set_codigo(self, uid, codigo):
         self.db_session.session.query(

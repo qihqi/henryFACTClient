@@ -12,6 +12,7 @@ from henry.misc import id_type, fix_id, abs_string
 from henry.layer1.auth import AuthDecorator
 from bottle import auth_basic
 
+from henry.dao.invoice import InvoiceApi
 
 engine = create_engine(CONN_STRING)
 sessionfactory = sessionmaker(bind=engine)
@@ -25,6 +26,7 @@ transapi = TransApiDB(sessionmanager, FileService(INGRESO_PATH), prodapi)
 invapi = InvApiDB(sessionmanager, FileService(INVOICE_PATH), prodapi)
 pedidoapi = PedidoApi(sessionmanager, FileService('/tmp/pedidos'))
 invapi2 = InvApiOld(sessionmanager)
+newinvapi = InvoiceApi(sessionmanager, FileService(INVOICE_PATH))
 clientapi = ClientApiDB(sessionmanager)
 
 

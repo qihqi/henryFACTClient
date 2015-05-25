@@ -154,13 +154,12 @@ class NTransferencia(Base):
 
 
 class NNota(Base):
-    __tablename__ = 'nota'
+    __tablename__ = 'notas'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     codigo = Column(String(20))
-    date = Column(DateTime)
     client_id = Column(String(20))
-    user = Column(String(20))
+    user_id = Column(String(20))
     status = Column(String(10))
 
     paid = Column(Boolean)
@@ -171,8 +170,8 @@ class NNota(Base):
     tax = Column(Integer)
     discount = Column(Integer)
 
-    bodega = Column(Integer)
-    almacen = Column(Integer)
+    bodega_id = Column(Integer)
+    almacen_id = Column(Integer)
     timestamp = Column(DateTime)
     # unix filepath where the items is stored
     items_location = Column(String(200))
