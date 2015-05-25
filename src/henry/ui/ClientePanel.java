@@ -22,7 +22,8 @@ import java.util.List;
 public class ClientePanel extends JPanel implements BaseModel.Listener {
 
 	private static final long serialVersionUID = 8993493064487143324L;
-	private JButton buscar;
+    private MessageDisplay messageDisplay;
+    private JButton buscar;
 	private JLabel label;
 	private JTextField codigo;
 	private JTextField nombre;
@@ -84,11 +85,12 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
 		add(general, "cell 1 1");
 	}
 
-	public ClientePanel(FacturaInterface api, SearchDialog<Cliente> dialog) {
+	public ClientePanel(FacturaInterface api, SearchDialog<Cliente> dialog, MessageDisplay messageDisplay) {
         this.cliente = new Observable<>();
         this.cliente.addListener(this);
         this.searchDialog = dialog;
         this.api = api;
+        this.messageDisplay = messageDisplay;
 		initUI();
 	}
 
@@ -102,11 +104,17 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
     }
 
     private void loadCliente(String cod) {
-        bindCliente(api.getClientePorCodigo(cod));
+        System.out.println("ClientePanel::loadCliente");
+        try {
+            bindCliente(api.getClientePorCodigo(cod));
+        } catch (FacturaInterface.NotFoundException e) {
+            codigo.requestFocus();
+            codigo.selectAll();
+            messageDisplay.setMessage("Cliente no encontrado");
+        }
     }
 
     public void bindCliente(Cliente newCliente) {
-        System.out.println("I am here");
         if (newCliente == null) {
             return;
         }

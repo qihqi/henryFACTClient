@@ -41,17 +41,6 @@ public class SearchDialog<T> extends JDialog {
     static class Box {
         public Object obj;
     }
-    public static void main(String[] args) {
-        try {
-            final Box box = new Box();
-            SearchDialog dialog = new SearchDialog(SearchEngine.PRODUCTO);
-            dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-            dialog.setVisible(true);
-            System.out.println(dialog.getResult());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     public class SearchAction implements ActionListener {
         @Override

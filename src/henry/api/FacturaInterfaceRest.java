@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -63,7 +64,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
     }
 
     @Override
-    public Producto getProductoPorCodigo(String codigo) {
+    public Producto getProductoPorCodigo(String codigo) throws NotFoundException {
         try {
             String url = String.format(PROD_URL, "1", codigo);
             URI prodUri = new URIBuilder().setScheme("http")
@@ -71,17 +72,15 @@ public class FacturaInterfaceRest implements FacturaInterface {
                                           .setPath(url)
                                           .build();
             String content = getUrl(prodUri);
+            if (content == null) {
+                throw new NotFoundException(String.format("Producto %s no encontrado", codigo));
+            }
             return gson.fromJson(content, Producto.class);
         } catch (URISyntaxException e) {
             e.printStackTrace();
             return null;
         }
     }
-
-    public static void main(String [] s) throws Exception {
-
-    }
-
 
     @Override
     public List<Producto> buscarProducto(String prefijo) {
@@ -93,6 +92,9 @@ public class FacturaInterfaceRest implements FacturaInterface {
                     .setParameter("bodega_id", "1").build();
             System.out.println(prodUri.toString());
             String content = getUrl(prodUri);
+            if (content == null) {
+                return new ArrayList<>();
+            }
             return Arrays.asList(gson.fromJson(content, Producto[].class));
         }
         catch (URISyntaxException ex) {
@@ -102,18 +104,21 @@ public class FacturaInterfaceRest implements FacturaInterface {
     }
 
     @Override
-    public Cliente getClientePorCodigo(String codigo) {
+    public Cliente getClientePorCodigo(String codigo) throws NotFoundException {
         try {
             URI uri = new URIBuilder().setScheme("http")
                     .setHost(baseUrl)
                     .setPath(CLIENT_URL_PATH + "/" + codigo)
                     .build();
             String content = getUrl(uri);
+            if (content == null) {
+                throw new NotFoundException("cliente not found");
+            }
             return gson.fromJson(content, Cliente.class);
         }
         catch (URISyntaxException e) {
             e.printStackTrace();
-            return null;
+            throw new NotFoundException("");
         }
     }
 
@@ -125,6 +130,9 @@ public class FacturaInterfaceRest implements FacturaInterface {
                     .setPath(CLIENT_URL_PATH)
                     .setParameter("prefijo", prefijo).build();
             String content = getUrl(uri);
+            if (content == null) {
+                return new ArrayList<>();
+            }
             return Arrays.asList(gson.fromJson(content, Cliente[].class));
         }
         catch (URISyntaxException ex) {
@@ -154,7 +162,6 @@ public class FacturaInterfaceRest implements FacturaInterface {
                 if (response.getStatusLine().getStatusCode() == 200) {
                     HttpEntity entity = response.getEntity();
                     String result = streamToString(entity.getContent());
-
                     int codigo = gson.fromJson(result, Codigo.class).codigo;
                     return codigo;
                 }
@@ -168,16 +175,6 @@ public class FacturaInterfaceRest implements FacturaInterface {
         return -1;
 
     }
-
-    private static JsonArray prodToJsonArray(Producto producto, int cantidad) {
-        JsonArray p = new JsonArray();
-        p.add(new JsonPrimitive(producto.getCodigo()));
-        p.add(new JsonPrimitive(cantidad));
-        p.add(new JsonPrimitive(producto.getNombre()));
-        p.add(new JsonPrimitive(producto.getPrecio1()));
-        return p;
-    }
-
 
     private JsonObject serializeDocumento(Documento doc) {
         JsonObject meta = new JsonObject();
@@ -239,16 +236,16 @@ public class FacturaInterfaceRest implements FacturaInterface {
         return doc;
     }
 
-
-
     @Override
-    public Documento getPedidoPorCodigo(String codigo) {
+    public Documento getPedidoPorCodigo(String codigo) throws NotFoundException {
         try {
             URI uri = new URIBuilder().setScheme("http")
                     .setHost(baseUrl)
                     .setPath(VENTA_URL_PATH + "/" + codigo).build();
             String content = getUrl(uri);
-            System.out.println(content);
+            if (content == null) {
+                throw new NotFoundException(String.format("Pedido numero %s no encontrado", codigo));
+            }
             JsonObject documentObject = gson.fromJson(content, JsonObject.class);
             return parseDocumento(documentObject);
         }
@@ -300,12 +297,14 @@ public class FacturaInterfaceRest implements FacturaInterface {
         HttpGet req = new HttpGet(uri);
         try (CloseableHttpResponse response = httpClient.execute(req)) {
             HttpEntity entity = response.getEntity();
-            String content = streamToString(entity.getContent());
-            return content;
+            if (response.getStatusLine().getStatusCode() == 200) {
+                String content = streamToString(entity.getContent());
+                return content;
+            }
         }
         catch (IOException e) {
-            return null;
         }
+        return null;
     }
 }
 

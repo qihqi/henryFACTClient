@@ -101,7 +101,7 @@ public class FacturaVentana extends JFrame {
         
         System.out.println("creating itemcontainer");
         contenido = new ItemContainer(true, documento, itemFactory);
-        cliente = new ClientePanel(this.api, clienteSearchDialog);
+        cliente = new ClientePanel(this.api, clienteSearchDialog, contenido);
 
         JButton buscarPorCliente = new JButton("Buscar por Cliente");
         pedidoField = new JTextField();
@@ -130,8 +130,9 @@ public class FacturaVentana extends JFrame {
         ActionListener formaDePagoListener = new FormaDePagoListener();
         for (int i = 0; i < PAGO_LABEL.length; i++) {
             JRadioButton rad = new JRadioButton(PAGO_LABEL[i]);
-            if (i == 0) 
+            if (i == 0) {
                 rad.setSelected(true);
+            }
             final int index = i;
             rad.addActionListener(formaDePagoListener);
             
@@ -163,11 +164,20 @@ public class FacturaVentana extends JFrame {
         pedidoField.addActionListener(new LoadPedidoActionListener());
     }
 
+    // This class is called when we load a note using it's id
     private class LoadPedidoActionListener implements ActionListener {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            Documento doc = api.getPedidoPorCodigo(pedidoField.getText());
+            Documento doc = null;
+            try {
+                doc = api.getPedidoPorCodigo(pedidoField.getText());
+            } catch (FacturaInterface.NotFoundException e1) {
+                pedidoField.requestFocus();
+                pedidoField.selectAll();
+                contenido.setMessage("Nota de pedido no encontrado");
+                return;
+            }
             contenido.clear();
             cliente.clear();
             cliente.bindCliente(doc.getCliente());
@@ -176,6 +186,7 @@ public class FacturaVentana extends JFrame {
         }
     }
 
+    // This class is used to handle the event of clicking "aceptar"
     private class AceptarActionLister implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -205,6 +216,9 @@ public class FacturaVentana extends JFrame {
             doc.setUser(usuario);
             doc.setFormaPago(formaPago);
             if (isFactura) {
+                if (!validateFactura(doc)) {
+                    return;
+                }
                 if (printer.printFactura(doc)) {
                     api.guardarDocumento(doc, isFactura);
                 }
@@ -216,6 +230,17 @@ public class FacturaVentana extends JFrame {
             }
         }
     }
+
+    private boolean validateFactura(Documento doc) {
+        // check that has cliente
+        if (doc.getCliente() == null) {
+            dialog.setText("Por favor ingrese cliente");
+            dialog.setVisible(true);
+            return false;
+        }
+        return true;
+    }
+
 
     private class CancelarActionListener implements ActionListener {
         @Override

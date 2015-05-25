@@ -11,9 +11,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JViewport;
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.Rectangle;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -22,7 +20,8 @@ import java.util.Map;
 
 import static henry.Helpers.displayAsMoney;
 @SuppressWarnings("serial")
-public class ItemContainer extends JPanel implements BaseModel.Listener {
+public class ItemContainer extends JPanel
+        implements BaseModel.Listener, MessageDisplay {
 
     /** Tiene arreglo de itemPanel, representa los contenidos
      *  de una factura/nota
@@ -52,6 +51,7 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
 
     private JTextField valorBruto;
     private JTextField valorNeto;
+    private JLabel message;
 
     private Observable<Documento> documento;
     private BaseModel.Listener itemObserver;
@@ -125,7 +125,7 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         JPanel totales = new JPanel();
 
         add(totales, BorderLayout.PAGE_END);
-        totales.setLayout(new MigLayout("", "400[right][30][][100]","[][][][][]"));
+        totales.setLayout(new MigLayout("", "[400][right][30][][100]","[][][][][]"));
 
         JLabel ivaLabel = new JLabel("IVA: ");
         JLabel totalLabel = new JLabel("Total: ");
@@ -143,35 +143,39 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         ivaPorciento.addActionListener(new IvaUpdater());
 
 
-        totales.add(subLabel, "cell 0 0");
+        message = new JLabel();
+        message.setForeground(Color.red);
+        message.setText("Soy un mensaje");
+        totales.add(message, "cell 0 0, width :400:");
+
+        totales.add(subLabel, "cell 1 0");
 
         valorBruto = new JTextField();
         valorBruto.setEditable(false);
 
-
-        totales.add(valorBruto, "cell 3 0,width :100:");
+        totales.add(valorBruto, "cell 4 0,width :100:");
 
         descValor = new JTextField();
         descValor.setEditable(false);
 
-        totales.add(descLabel, "cell 0 1");
-        totales.add(descValor, "cell 3 1, width :100:");
+        totales.add(descLabel, "cell 1 1");
+        totales.add(descValor, "cell 4 1, width :100:");
 
         valorNeto = new JTextField();
         valorNeto.setEditable(false);
 
-        totales.add(netLabel, "cell 0 2");
-        totales.add(valorNeto, "cell 3 2, width :100:");
+        totales.add(netLabel, "cell 1 2");
+        totales.add(valorNeto, "cell 4 2, width :100:");
 
-        totales.add(ivaLabel, "cell 0 3");
-        totales.add(ivaPorciento, "cell 1 3,width :30:");
-        totales.add(porciento, "cell 2 3");
-        totales.add(ivaValor, "cell 3 3,width :100:");
+        totales.add(ivaLabel, "cell 1 3");
+        totales.add(ivaPorciento, "cell 2 3,width :30:");
+        totales.add(porciento, "cell 3 3");
+        totales.add(ivaValor, "cell 4 3,width :100:");
 
-        totales.add(totalLabel, "cell 0 4" );
+        totales.add(totalLabel, "cell 1 4" );
         totalValor = new JTextField();
         totalValor.setEditable(false);
-        totales.add(totalValor, "cell 3 4,width :100:");
+        totales.add(totalValor, "cell 4 4,width :100:");
     }
 
     public void scrollDown() {
@@ -285,6 +289,10 @@ public class ItemContainer extends JPanel implements BaseModel.Listener {
         itemObserver.onDataChanged();
 
         documento.notifyListeners();
+    }
+
+    public void setMessage(String messageText) {
+        message.setText(messageText);
     }
 
     private class TotalController implements BaseModel.Listener {

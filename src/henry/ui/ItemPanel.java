@@ -93,7 +93,15 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
                     System.out.println("Started requesting");
-                    Producto prod = api.getProductoPorCodigo(code);
+                    Producto prod = null;
+                    try {
+                        prod = api.getProductoPorCodigo(code);
+                    } catch (FacturaInterface.NotFoundException e1) {
+                        codigo.requestFocus();
+                        codigo.selectAll();
+                        parent.setMessage("Codigo no existe");
+                        return;
+                    }
                     System.out.println("Finished requesting");
                     if (prod != null) {
                         item.getRef().setProducto(prod);
@@ -116,7 +124,14 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         @Override
         public void actionPerformed(ActionEvent e) {
             String cantString = cantidad.getText();
-            int cantReal = (int) Math.round(Double.parseDouble(cantString) * 1000);
+            int cantReal;
+            try {
+                cantReal = (int) Math.round(Double.parseDouble(cantString) * 1000);
+            }
+            catch (NumberFormatException e1) {
+                parent.setMessage("Cantidad debe ser un numero");
+                return;
+            }
             item.getRef().setCantidad(cantReal);
             item.notifyListeners();
             if (item.getRef().getProducto() != null) {
