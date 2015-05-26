@@ -31,10 +31,14 @@ class MetaItemSet(SerializableMixin):
 
     def __init__(self, meta=None, items=None):
         self.meta = meta
-        self.items = list(items)
+        self.items = list(items) if items else list()
+
+    def items_to_transaction(self):
+        raise NotImplementedError()
 
     @classmethod
     def deserialize(cls, the_dict):
-        raise NotImplementedError(
-            'MetaItemSet cannot be deserialized. We don\'t know'
-            'the correct type of meta')
+        x = cls()
+        x.meta = cls._metadata_cls.deserialize(the_dict['meta'])
+        x.items = map(Item.deserialize, the_dict['items'])
+        return x

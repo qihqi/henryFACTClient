@@ -6,7 +6,8 @@ from henry.helpers.serialization import DbMixin, SerializableMixin
 from henry.layer1.schema import NNota
 from henry.helpers.serialization import json_loads
 from henry.layer2.client import Client
-from henry.dao.item_set import Item, MetaItemSet
+from henry.layer2.productos import Transaction
+from henry.dao.item_set import MetaItemSet
 
 
 class InvMetadata(SerializableMixin, DbMixin):
@@ -28,11 +29,46 @@ class InvMetadata(SerializableMixin, DbMixin):
 
     _name = _db_attr.keys()
 
-class InvoiceApi:
+    @classmethod
+    def deserialize(cls, the_dict):
+        x = cls().merge_from(the_dict)
+        client = Client.deserialize(the_dict['client'])
+        x.client = client
+        return x
 
-    def __init__(self, sessionmanager, filemanager):
+
+
+class Invoice(MetaItemSet):
+    _metadata_cls = InvMetadata
+
+    def items_to_transaction(self):
+        reason = 'factura: id={} codigo={}'.format(
+            self.meta.uid, self.meta.codigo)
+        for prod, cant in self.items:
+            yield Transaction(self.meta.bodega, prod.codigo, -cant, prod.nombre,
+                              reason, self.meta.timestamp)
+
+    def validate(self):
+        if getattr(self.meta, 'codigo', None) is None:
+            raise ValueError('codigo cannot be None to save an invoice')
+
+    @property
+    def filepath_format(self):
+        return os.path.join(
+            self.meta.timestamp.date().isoformat(), self.meta.codigo)
+
+
+
+class DocumentApi:
+
+    def __init__(self, sessionmanager, filemanager, object_cls):
         self.db_session = sessionmanager
         self.filemanager = filemanager
+
+        self.cls = object_cls
+        self.metadata_cls = object_cls._metadata_cls
+        self.db_class = self.metadata_cls._db_class
+
 
     def get_doc(self, uid):
         """
@@ -40,39 +76,29 @@ class InvoiceApi:
         returns Transferencia object
         """
         session = self.db_session.session
-        db_instance = session.query(InvMetadata._db_class).filter_by(id=uid).first()
+        db_instance = session.query(self.db_class).filter_by(id=uid).first()
         content = json_loads(self.filemanager.get_file(db_instance.item_location))
-        meta = InvMetadata()
-        meta.merge_from(content['meta'])
-        meta.client = Client.deserialize(meta.client)
-        meta.merge_from(InvMetadata.from_db_instance(db_instance))
-        items = map(Item.deserialize, content['items'])
-        return MetaItemSet(meta, items)
+        doc = self.cls.deserialize(content)
+        #  sometimes db has more updated information
+        meta_from_db = self.metadata_cls.from_db_instance(db_instance)
+        doc.meta.merge_from(meta_from_db)
+        return doc
 
-    def save(self, inv):
-        meta = inv.meta
+    def save(self, doc):
+        meta = doc.meta
         if not hasattr(meta, 'timestamp'):
             meta.timestamp = datetime.datetime.now()
-        if getattr(meta, 'codigo', None) is None:
-            raise ValueError('codigo cannot be None to save an invoice')
-        filepath = os.path.join(
-            self.filemanager.root,
-            meta.timestamp.date().isoformat(), meta.codigo)
 
+        doc.validate()
+        filepath = doc.filepath_format
         session = self.db_session.session
         db_entry = meta.db_instance()
-        db_entry.item_location = filepath
+        db_entry.items_location = filepath
         session.add(db_entry)
         session.flush()  # flush to get the autoincrement id
         meta.status = Status.NEW
-        inv.meta.uid = db_entry.id
+        doc.meta.uid = db_entry.id
 
-        self.filemanager.put_file(filepath, inv.to_json())
-        return inv
+        self.filemanager.put_file(filepath, doc.to_json())
+        return doc
 
-    def items_to_transactions(cls, doc):
-        reason = 'factura: id={} codigo={}'.format(
-            doc.meta.uid, doc.meta.codigo)
-        for prod, cant in doc.items:
-            yield Transaction(doc.meta.bodega, prod.codigo, -cant, prod.nombre, 
-                              ref=reason, doc.meta.timestamp)

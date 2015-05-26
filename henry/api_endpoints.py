@@ -7,10 +7,10 @@ from henry.config import prodapi, transapi, dbcontext, clientapi, invapi, auth_d
 from henry.helpers.serialization import json_dump, json_loads
 from henry.layer2.client import Client
 from henry.layer2.productos import Transferencia, Product
-from henry.layer2.invoice import InvMetadata, Invoice
+#from henry.layer2.invoice import InvMetadata, Invoice
 from henry.layer2.documents import DocumentCreationRequest
 
-from henry.dao.invoice import InvMetadata as NewInvMetadata
+from henry.dao.invoice import Invoice
 from henry.dao.item_set import MetaItemSet, Item
 
 
@@ -146,23 +146,20 @@ def get_invoice(inv_id):
 @auth_decorator
 def create_invoice():
     json_content = request.body.read()
+
     content = json_loads(json_content)
+    inv = Invoice.deserialize(content)
 
-    meta = NewInvMetadata.deserialize(content['meta'])
-    items = []
-    for item in content['items']:
-        producto = Product.deserialize(item['producto'])
-        cant = item['cantidad']
-        cant = Decimal(cant) / 1000
-        if cant > 0:
-           items.append(Item(producto, cant))
+    for item in inv.items:
+        if item.cant < 0:
+            del item
+        else:
+            item.cant = Decimal(item.cant) / 1000
 
-    client = Client.deserialize(content['meta']['client'])
-    # client = clientapi.get(client_id)
-    meta.client = client
-    invoice = newinvapi.save(MetaItemSet(meta, items))
-    print {'codigo': invoice.meta.uid}
-    return {'codigo': invoice.meta.uid}
+    inv = newinvapi.save(inv)
+
+    print {'codigo': inv.meta.uid}
+    return {'codigo': inv.meta.uid}
 
 
 @api.put('/api/nota/<uid>')
