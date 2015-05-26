@@ -1,35 +1,30 @@
 package henry.ui;
 
-import static henry.Helpers.streamToString;
 import henry.api.FacturaInterface;
 import henry.api.FacturaInterfaceRest;
 import henry.model.Documento;
 import henry.model.Usuario;
-import henry.printing.FacturaPrinter;
 import henry.printing.Config;
+import henry.printing.FacturaPrinter;
 import henry.printing.GenericPrinter;
 import henry.printing.MinoristaPrinter;
-import net.miginfocom.swing.MigLayout;
-
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
-import javax.swing.JComboBox;
-import javax.swing.border.EmptyBorder;
 import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
+import net.miginfocom.swing.MigLayout;
 
-import java.awt.event.KeyEvent;
-import java.awt.EventQueue;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.KeyEventDispatcher;
-import java.awt.KeyboardFocusManager;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import static henry.Helpers.streamToString;
 
 @SuppressWarnings("serial")
 public class LoginPane extends JPanel implements ActionListener{
@@ -43,6 +38,7 @@ public class LoginPane extends JPanel implements ActionListener{
     private JComboBox serverbox;
     private JComboBox almacenbox;
     private String configpath;
+    private Config config;
     private static final String[] SERVER_OPTS = new String[] {
         "192.168.0.23", "localhost:8080"
     };
@@ -65,10 +61,9 @@ public class LoginPane extends JPanel implements ActionListener{
 
         JLabel serverLabel = new JLabel("Servidor: ");
         JLabel almacenLabel = new JLabel("Vendido por: ");
-
-
-        serverbox = new JComboBox(SERVER_OPTS);
-        almacenbox = new JComboBox(ALMACEN_OPTS);
+        config = loadConfig(this.configpath);
+        serverbox = new JComboBox(config.getServersOpts());
+        almacenbox = new JComboBox(config.getStoreOpts());
 
         user = new JTextField();
         pass = new JPasswordField();
@@ -91,6 +86,18 @@ public class LoginPane extends JPanel implements ActionListener{
 
     }
 
+    private Config loadConfig(String configpath) {
+        try (InputStream stream = new FileInputStream(configpath)) {
+            return Config.getConfigFromJson(streamToString(stream));
+        }
+        catch (FileNotFoundException exception) {
+            throw new RuntimeException(exception);
+        }
+        catch(IOException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
         FacturaInterface api = new FacturaInterfaceRest(
@@ -108,30 +115,17 @@ public class LoginPane extends JPanel implements ActionListener{
         System.out.println(serverbox.getSelectedItem());
         int almacenId = almacenbox.getSelectedIndex();
         System.out.println("index " + serverbox.getSelectedIndex());
-
-
         GenericPrinter printer;
-        Config config;
-        try (InputStream stream = new FileInputStream(configpath)) {
-            config = Config.getConfigFromJson(streamToString(stream));
-            if (config.isMatrixPrinter()) {
-                printer = new MinoristaPrinter(config);
-                System.out.println("menorista printer");
-            }
-            else {
-                printer = new FacturaPrinter(config);
-                System.out.println("factura printer");
-            }
-        } 
-        catch (FileNotFoundException exception) {
-            throw new RuntimeException(exception);
+        if (config.isMatrixPrinter()) {
+            printer = new MinoristaPrinter(config);
+            System.out.println("menorista printer");
         }
-        catch(IOException exception) {
-            throw new RuntimeException(exception);
+        else {
+            printer = new FacturaPrinter(config);
+            System.out.println("factura printer");
         }
         FacturaVentana factura = new FacturaVentana(api, almacenId, usuario, printer, config.isFactura());
         factura.setVisible(true);
         SwingUtilities.getWindowAncestor(this).dispose();
     }
-
 }

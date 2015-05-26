@@ -89,6 +89,12 @@ public final class Config {
     @Getter
     ImpressionConfig impression;
 
+    @Getter @SerializedName("servidores")
+    String[] serversOpts;
+
+    @Getter @SerializedName("almacenes")
+    String[] storeOpts;
+
     @Getter @SerializedName("impresora_matriz")
     boolean matrixPrinter;
 
