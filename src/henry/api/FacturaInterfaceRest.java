@@ -198,7 +198,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
         JsonArray items = new JsonArray();
         for (Item i : doc.getItems()) {
             if (i.getProducto() != null) {
-                items.add(gson.fromJson(gson.toJson(i), JsonElement.class));
+                items.add(gson.toJsonTree(i));
             }
         }
         JsonObject factura = new JsonObject();

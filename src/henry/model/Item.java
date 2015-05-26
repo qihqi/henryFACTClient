@@ -1,13 +1,14 @@
 package henry.model;
 
 import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 import lombok.Getter;
 import lombok.Setter;
 
 public class Item extends BaseModel {
-    @Expose
+    @Expose @SerializedName("cant");
     @Getter private int cantidad;  // en milesimas
-    @Expose
+    @Expose @SerializedName("prod");
     @Getter @Setter private Producto producto;
 
     public Item() {
