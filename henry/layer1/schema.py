@@ -146,7 +146,7 @@ class NTransferencia(Base):
     __tablename__ = 'transacciones'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    date = Column(DateTime)
+    timestamp = Column(DateTime)
     origin = Column(Integer)
     dest = Column(Integer)
 

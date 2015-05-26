@@ -8,18 +8,6 @@ from henry.helpers.serialization import SerializableMixin, json_dump
 from henry.layer2.documents import DocumentApi, Status
 
 
-class TransType:
-    INGRESS = 'INGRESO'
-    TRANSFER = 'TRANSFER'
-    REPACKAGE = 'REEMPAQUE'
-    EXTERNAL = 'EXTERNA'
-
-    names = (INGRESS,
-             TRANSFER,
-             REPACKAGE,
-             EXTERNAL)
-
-
 class Product(SerializableMixin):
     _name = ('nombre',
              'codigo',

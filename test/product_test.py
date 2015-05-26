@@ -6,9 +6,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from henry.layer1.schema import NProducto, NContenido, Base
 from henry.helpers.fileservice import FileService
-from henry.layer2.productos import Product, ProductApiDB, Transaction, TransApiDB, Transferencia, TransType, Metadata, TransactionApi
-from henry.layer2.documents import Status, DocumentCreationRequest
-from henry.layer2.invoice import Invoice, InvMetadata, InvApiDB
+from henry.dao.productos import ProductApiDB, Product
+from henry.dao.document import DocumentApi, TransMetadata, Transferencia, Invoice, InvMetadata
 from henry.layer2.client import Client
 from henry.layer1.session_manager import SessionManager
 
@@ -23,9 +22,11 @@ class ProductApiTest(unittest.TestCase):
         cls.sessionmanager = SessionManager(sessionfactory)
         filemanager = FileService('/tmp')
         cls.transaction_api = TransactionApi('/tmp/transactions')
+
         cls.prod_api = ProductApiDB(cls.sessionmanager, cls.transaction_api)
-        cls.trans_api = TransApiDB(cls.sessionmanager, filemanager, cls.prod_api)
-        cls.inv_api = InvApiDB(cls.sessionmanager, filemanager, cls.prod_api)
+        cls.trans_api = DocumentApi(cls.sessionmanager, filemanager, Transferencia)
+        cls.inv_api = DocumentApi(cls.sessionmanager, filemanager, Invoice)
+
         cls.productos = [
             ('0', 'prueba 0', Decimal('20.23'), Decimal('10'), 0),
             ('1', 'prueba 1', Decimal('20.23'), Decimal('10'), 0),
@@ -160,7 +161,6 @@ class ProductApiTest(unittest.TestCase):
                     ('1', 'name', 5, 0.01)
                     ]
             invoice = self.inv_api.save(inv)
-            print invoice.meta.uid
             self.inv_api.set_codigo(invoice.meta.uid, '123')
             self.assertEquals(self.inv_api.get_doc(invoice.meta.uid).meta.codigo, '123')
 

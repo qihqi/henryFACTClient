@@ -1,9 +1,10 @@
+import uuid
 import datetime
 import os
 
+from henry.layer1.schema import NNota, NTransferencia
 from henry.layer2.documents import Status
 from henry.helpers.serialization import DbMixin, SerializableMixin
-from henry.layer1.schema import NNota
 from henry.helpers.serialization import json_loads
 from henry.layer2.client import Client
 from henry.layer2.productos import Transaction
@@ -37,7 +38,6 @@ class InvMetadata(SerializableMixin, DbMixin):
         return x
 
 
-
 class Invoice(MetaItemSet):
     _metadata_cls = InvMetadata
 
@@ -58,6 +58,74 @@ class Invoice(MetaItemSet):
             self.meta.timestamp.date().isoformat(), self.meta.codigo)
 
 
+class TransType:
+    INGRESS = 'INGRESO'
+    TRANSFER = 'TRANSFER'
+    REPACKAGE = 'REEMPAQUE'
+    EXTERNAL = 'EXTERNA'
+
+    names = (INGRESS,
+             TRANSFER,
+             REPACKAGE,
+             EXTERNAL)
+
+
+class TransMetadata(SerializableMixin, DbMixin):
+    _db_attr = {
+        'uid': 'id',
+        'origin': 'origin',
+        'dest': 'dest',
+        'user': 'user',
+        'trans_type': 'trans_type',
+        'ref': 'ref',
+        'timestamp': 'timestamp',
+        'status': 'status'}
+    _name = _db_attr.keys()
+    _db_class = NTransferencia
+
+    def __init__(self,
+                 trans_type=None,
+                 uid=None,
+                 origin=None,
+                 dest=None,
+                 user=None,
+                 ref=None,
+                 status=None,
+                 timestamp=None):
+        self.uid = uid
+        self.origin = origin
+        self.dest = dest
+        self.user = user
+        self.trans_type = trans_type
+        self.ref = ref
+        self.timestamp = timestamp
+        self.status = status
+
+    @property
+    def filepath_format(self):
+        return os.path.join(
+            self.meta.timestamp.date().isoformat(), uuid.uuid1().hex)
+
+
+class Transferencia(MetaItemSet):
+    _metadata_cls = TransMetadata
+
+    def items_to_transaction(self):
+        reason = 'ingreso: codigo={}'
+        if self.trans_type == TransType.TRANSFER:
+            reason = 'transferencia: codigo = {}'
+        reason = reason.format(self.meta.uid)
+        for prod, cant in self.items:
+            if self.meta.origin:
+                yield Transaction(self.meta.origin, prod.codigo, -cant, prod.nombre,
+                                  reason, self.meta.timestamp)
+            if self.meta.dest:
+                yield Transaction(self.meta.dest, prod.codigo, cant, prod.nombre,
+                                  reason, self.meta.timestamp)
+
+    def validate(self):
+        pass
+
 
 class DocumentApi:
 
@@ -68,7 +136,6 @@ class DocumentApi:
         self.cls = object_cls
         self.metadata_cls = object_cls._metadata_cls
         self.db_class = self.metadata_cls._db_class
-
 
     def get_doc(self, uid):
         """
@@ -101,4 +168,3 @@ class DocumentApi:
 
         self.filemanager.put_file(filepath, doc.to_json())
         return doc
-
