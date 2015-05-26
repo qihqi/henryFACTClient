@@ -6,9 +6,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 public class Item extends BaseModel {
-    @Expose @SerializedName("cant");
+    @Expose @SerializedName("cant")
     @Getter private int cantidad;  // en milesimas
-    @Expose @SerializedName("prod");
+    @Expose @SerializedName("prod")
     @Getter @Setter private Producto producto;
 
     public Item() {

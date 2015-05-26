@@ -39,7 +39,7 @@ public class FacturaVentana extends JFrame {
     private int almacenId;
     Usuario usuario;
     
-    private long numero = 0;
+    private int numero = 0;
     private static final String []
             PAGO_LABEL = {"efectivo", "tarjeta", "cheque", "deposito", "credito", "varios"};
     private String formaPago = "efectivo";
@@ -95,9 +95,8 @@ public class FacturaVentana extends JFrame {
         panel.setLayout(new MigLayout("", "[][][][]",""));
         
         //mostrador de numero de factura;
-        
         numero = usuario.getLastFactura();
-        numeroLabel = new JLabel("" + numero);
+        numeroLabel = new JLabel();
         
         System.out.println("creating itemcontainer");
         contenido = new ItemContainer(true, documento, itemFactory);
@@ -113,8 +112,16 @@ public class FacturaVentana extends JFrame {
         //poner boton q busca por cliente
         panel.add(buscarPorCliente);
         
-        //poner numero de factura
-        panel.add(new JLabel("No. de Factura: "));
+        setTitle("Nota de Pedido");
+        String displayFacturaText = "";
+        if (isFactura) {
+            setTitle("Orden de Despacho");
+            //poner numero de factura
+            panel.setBackground(Color.RED);
+            displayFacturaText = "No. de Factura: ";
+            numeroLabel.setText("" + numero);
+        }
+        panel.add(new JLabel(displayFacturaText));
         panel.add(numeroLabel, "cell 3 0, wrap, width :100:");
         
         panel.add(cliente, "wrap, span");
@@ -153,8 +160,7 @@ public class FacturaVentana extends JFrame {
                 "F7=Pagar  F8=Aceptar  F9=Cancelar");
         panel.add(hotkeys, "span");
         
-        setTitle("Orden de Despacho");
-        panel.setBackground(Color.RED);
+
         setBounds(100, 100, 735, 655);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -191,27 +197,6 @@ public class FacturaVentana extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             Documento doc = contenido.getDocumento();
-            int pagado;
-            if (formaPago.equals("efectivo")) {
-                try {
-                    pagado = (int) Math.round(
-                        Double.parseDouble(pago.getText()) * 100);
-                } 
-                catch(NumberFormatException exception) {
-                    dialog.setText("Ingrese un numero \nen el valor pagado");
-                    dialog.setVisible(true);
-                    return;
-                }
-                int total = doc.getTotal();
-                if (pagado < total) {
-                    dialog.setText("El valor pagado debe\nser mayor al total");
-                    dialog.setVisible(true);
-                    return;
-                }
-                doc.setPagado(pagado);
-                dialog.setText("El cambio es \n" + displayAsMoney(pagado - total));
-                dialog.setVisible(true);
-            }
             doc.setCliente(cliente.getCliente());
             doc.setUser(usuario);
             doc.setFormaPago(formaPago);
@@ -219,14 +204,24 @@ public class FacturaVentana extends JFrame {
                 if (!validateFactura(doc)) {
                     return;
                 }
-                if (printer.printFactura(doc)) {
-                    api.guardarDocumento(doc, isFactura);
+                doc.setCodigo(numero);
+                if (api.guardarDocumento(doc, isFactura) > 0) {
+                    if (printer.printFactura(doc)) {
+                        numero++;
+                        numeroLabel.setText("" + numero);
+                    }
+                    clear();
+                } 
+                else {
+                    contenido.setMessage("Factura no se guardo");
                 }
             }
             else {
                 int codigo = api.guardarDocumento(doc, isFactura);
                 dialog.setText("El codigo es " + codigo);
                 dialog.setVisible(true);
+                clear();
+                contenido.setMessage("Nota de pedido que se hizo fue " + codigo);
             }
         }
     }
@@ -238,15 +233,39 @@ public class FacturaVentana extends JFrame {
             dialog.setVisible(true);
             return false;
         }
+        if (formaPago.equals("efectivo")) {
+            int pagado;
+            try {
+                pagado = (int) Math.round(
+                        Double.parseDouble(pago.getText()) * 100);
+                doc.setPagado(pagado);
+            } 
+            catch(NumberFormatException exception) {
+                dialog.setText("Ingrese un numero \nen el valor pagado");
+                dialog.setVisible(true);
+                return false;
+            }
+            int total = doc.getTotal();
+            if (pagado < total) {
+                dialog.setText("El valor pagado debe\nser mayor al total");
+                dialog.setVisible(true);
+                return false;
+            }
+            dialog.setText("El cambio es \n" + displayAsMoney(pagado - total));
+            dialog.setVisible(true);
+        }
         return true;
     }
 
+    private void clear() {
+        contenido.clear();
+        cliente.clear();
+    }
 
     private class CancelarActionListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
-            contenido.clear();
-            cliente.clear();
+            FacturaVentana.this.clear();
         }
     }
 

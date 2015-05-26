@@ -194,6 +194,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
         meta.addProperty("subtotal", doc.getSubtotal());
         meta.addProperty("iva", doc.getIva());
         meta.addProperty("discount", doc.getDescuento());
+        meta.addProperty("codigo", "" + doc.getCodigo());
 
         JsonArray items = new JsonArray();
         for (Item i : doc.getItems()) {

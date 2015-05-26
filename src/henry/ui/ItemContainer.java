@@ -145,7 +145,6 @@ public class ItemContainer extends JPanel
 
         message = new JLabel();
         message.setForeground(Color.red);
-        message.setText("Soy un mensaje");
         totales.add(message, "cell 0 0, width :400:");
 
         totales.add(subLabel, "cell 1 0");
