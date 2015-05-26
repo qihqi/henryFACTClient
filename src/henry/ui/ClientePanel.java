@@ -49,6 +49,12 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
         }
     }
 
+    public void showSearchDialog() {
+        searchDialog.setVisible(true);
+        Cliente result = searchDialog.getResult();
+        bindCliente(result);
+    }
+
 	private void initUI() {
 
 		buscar = new JButton();
@@ -56,9 +62,7 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
         buscar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                searchDialog.setVisible(true);
-                Cliente result = searchDialog.getResult();
-                bindCliente(result);
+                showSearchDialog();
             }
         });
 

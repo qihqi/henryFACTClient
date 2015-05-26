@@ -108,8 +108,7 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
                         item.notifyListeners();
                         if (item.getRef().getCantidad() >= 0) {
                             loadNextRow();
-                        }
-                        else {
+                        } else {
                             cantidad.requestFocus();
                         }
                     } else {
@@ -153,16 +152,20 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
     private class SearchProducto implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
-            dialog.setVisible(true);
-            Producto result = dialog.getResult();
-            item.getRef().setProducto(result);
-            item.notifyListeners();
-            if (item.getRef().getCantidad() >= 0) {
-                // no point to notify listener now if product is not there yet
-                parent.onDataChanged();
-                parent.shiftEvent(ItemPanel.this);
-                parent.scrollDown();
-            }
+            showSearchDialog();
+        }
+    }
+
+    public void showSearchDialog() {
+        dialog.setVisible(true);
+        Producto result = dialog.getResult();
+        item.getRef().setProducto(result);
+        item.notifyListeners();
+        if (item.getRef().getCantidad() >= 0) {
+            // no point to notify listener now if product is not there yet
+            parent.onDataChanged();
+            parent.shiftEvent(ItemPanel.this);
+            parent.scrollDown();
         }
     }
 

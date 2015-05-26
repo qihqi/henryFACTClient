@@ -19,9 +19,13 @@ import javax.swing.JTextField;
 import javax.swing.JComboBox;
 import javax.swing.border.EmptyBorder;
 import javax.swing.SwingUtilities;
+
+import java.awt.event.KeyEvent;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.KeyEventDispatcher;
+import java.awt.KeyboardFocusManager;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.FileNotFoundException;
@@ -129,4 +133,5 @@ public class LoginPane extends JPanel implements ActionListener{
         factura.setVisible(true);
         SwingUtilities.getWindowAncestor(this).dispose();
     }
+
 }

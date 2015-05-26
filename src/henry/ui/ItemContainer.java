@@ -294,6 +294,11 @@ public class ItemContainer extends JPanel
         message.setText(messageText);
     }
 
+    public void triggerSearchOnLastItem() {
+        ItemPanel last = items.get(items.size() - 1);
+        last.showSearchDialog();
+    }
+
     private class TotalController implements BaseModel.Listener {
         @Override
         public void onDataChanged() {
