@@ -309,8 +309,6 @@ public class FacturaVentana extends JFrame {
         }
         @Override
         public boolean dispatchKeyEvent(KeyEvent e) {
-            System.out.println(" " + e.getID());
-            System.out.println(" " + e.getKeyCode());
             if (e.getID() == KeyEvent.KEY_RELEASED) {
                 return false;
             }

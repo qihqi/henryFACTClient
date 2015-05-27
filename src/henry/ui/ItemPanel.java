@@ -90,32 +90,28 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         @Override
         public void actionPerformed(ActionEvent e) {
             final String code = codigo.getText();
-            EventQueue.invokeLater(new Runnable() {
-                public void run() {
-                    System.out.println("Started requesting");
-                    Producto prod = null;
-                    try {
-                        prod = api.getProductoPorCodigo(code);
-                    } catch (FacturaInterface.NotFoundException e1) {
-                        codigo.requestFocus();
-                        codigo.selectAll();
-                        parent.setMessage("Codigo no existe");
-                        return;
-                    }
-                    System.out.println("Finished requesting");
-                    if (prod != null) {
-                        item.getRef().setProducto(prod);
-                        item.notifyListeners();
-                        if (item.getRef().getCantidad() >= 0) {
-                            loadNextRow();
-                        } else {
-                            cantidad.requestFocus();
-                        }
-                    } else {
-                        codigo.requestFocus();
-                    }
+            System.out.println("Started requesting");
+            Producto prod = null;
+            try {
+                prod = api.getProductoPorCodigo(code);
+            } catch (FacturaInterface.NotFoundException e1) {
+                codigo.requestFocus();
+                codigo.selectAll();
+                parent.setMessage("Codigo no existe");
+                return;
+            }
+            System.out.println("Finished requesting");
+            if (prod != null) {
+                item.getRef().setProducto(prod);
+                item.notifyListeners();
+                if (item.getRef().getCantidad() > 0) {
+                    loadNextRow();
+                } else {
+                    cantidad.requestFocus();
                 }
-            });
+            } else {
+                codigo.requestFocus();
+            }
         }
     }
 
@@ -156,12 +152,19 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         }
     }
 
+    private class EraseRow implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            eraseRow();
+        }
+    }
+
     public void showSearchDialog() {
         dialog.setVisible(true);
         Producto result = dialog.getResult();
         item.getRef().setProducto(result);
         item.notifyListeners();
-        if (item.getRef().getCantidad() >= 0) {
+        if (item.getRef().getCantidad() > 0) {
             // no point to notify listener now if product is not there yet
             parent.onDataChanged();
             parent.shiftEvent(ItemPanel.this);
@@ -182,8 +185,9 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         JButton buscar = new JButton("Bus");
         buscar.setFont(new Font("Dialog", Font.BOLD, 10));
         buscar.addActionListener(new SearchProducto());
-        final JButton newPrice = new JButton();
-
+        final JButton eraserow = new JButton();
+        eraserow.setText("-");
+        eraserow.addActionListener(new EraseRow());
         codigo.addFocusListener(new HighlightFocusListener(codigo));
         codigo.addMouseListener(new ReFocusListener());
         codigo.addActionListener(new ProductoLoader());
@@ -199,11 +203,17 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         add(nombre, "width :200:");
         add(precio, "width :80: ");
         add(subtotal, "width :100:");
-        add(newPrice, "width :15:,height :20:");
+        add(eraserow, "width :15:,height :20:");
     }
 
     public void focus() {
         codigo.requestFocus();
+    }
+
+    public void eraseRow() {
+        item.getRef().setProducto(null);
+        item.getRef().setCantidad(0);
+        clear();
     }
 
     public void clear() {
@@ -212,7 +222,6 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         precio.setText("");
         nombre.setText("");
         subtotal.setText("");
-
     }
 
     public void onDataChanged() {
@@ -222,7 +231,7 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         if (prod != null && cant >= 0) {
             subtotal.setText(displayAsMoney(item.getRef().getSubtotal()));
         }
-        if (prod!= null) {
+        if (prod != null) {
             codigo.setText(prod.getCodigo());
             precio.setText(displayAsMoney(prod.getPrecio1()));
             nombre.setText(prod.getNombre());
