@@ -93,7 +93,7 @@ class TransactionApi:
             with open(fname) as f:
                 for line in f.readlines():
                     yield line
-            date_start += timedelta(days=1)
+            date_start += datetime.timedelta(days=1)
 
     def get_transactions(self, prod_id, date_start, date_end):
         return imap(Transaction.deserialize,

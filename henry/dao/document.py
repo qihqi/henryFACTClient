@@ -1,6 +1,7 @@
 import uuid
 import datetime
 import os
+from decimal import Decimal
 from itertools import imap
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -32,7 +33,7 @@ class Item(SerializableMixin):
     @classmethod
     def deserialize(cls, the_dict):
         prod = Product.deserialize(the_dict['prod'])
-        cant = the_dict['cant']
+        cant = Decimal(the_dict['cant'])
         return cls(prod, cant)
 
 
@@ -73,7 +74,8 @@ class InvMetadata(SerializableMixin, DbMixin):
 
     _name = _db_attr.keys()
 
-    def __init__(self,
+    def __init__(
+            self,
             uid=None,
             codigo=None,
             client=None,
@@ -88,15 +90,15 @@ class InvMetadata(SerializableMixin, DbMixin):
             almacen=None):
         self.uid = uid
         self.codigo = codigo
-        self.client = client 
-        self.user = user 
+        self.client = client
+        self.user = user
         self.timestamp = timestamp if timestamp else datetime.datetime.now()
-        self.status = status 
-        self.total = total  
-        self.tax = tax 
+        self.status = status
+        self.total = total
+        self.tax = tax
         self.subtotal = subtotal
-        self.discount = discount 
-        self.bodega = bodega 
+        self.discount = discount
+        self.bodega = bodega
         self.almacen = almacen
 
     @classmethod
@@ -114,7 +116,7 @@ class Invoice(MetaItemSet):
         reason = 'factura: id={} codigo={}'.format(
             self.meta.uid, self.meta.codigo)
         for item in self.items:
-            yield Transaction(self.meta.bodega, item.prod.codigo, -item.cant, item.prod.nombre,
+            yield Transaction(self.meta.bodega, item.prod.codigo, -(item.cant), item.prod.nombre,
                               reason, self.meta.timestamp)
 
     def validate(self):
@@ -215,7 +217,15 @@ class DocumentApi:
         """
         session = self.db_session.session
         db_instance = session.query(self.db_class).filter_by(id=uid).first()
-        content = json_loads(self.filemanager.get_file(db_instance.items_location))
+        if db_instance is None:
+            print 'cannot find document in table ', self.db_class.__tablename__, 
+            print ' with id ', uid 
+            return None
+        file_content = self.filemanager.get_file(db_instance.items_location)
+        if file_content is None:
+            print 'could not find file at ', file_content
+            return None
+        content = json_loads(file_content)
         doc = self.cls.deserialize(content)
         #  sometimes db has more updated information
         meta_from_db = self.metadata_cls.from_db_instance(db_instance)
@@ -262,8 +272,10 @@ class DocumentApi:
         session = self.db_session.session
         try:
             items = list(doc.items_to_transaction())
-            if inverse_transaction:
-                items = imap(lambda i: i.inverse(), items)
+            for i in items:
+                i.ref = '{}: {}'.format(new_status, i.ref)
+                if inverse_transaction:
+                    i.inverse()
             self.prodapi.execute_transactions(items)
             session.query(self.db_class).filter_by(
                 id=doc.meta.uid).update({'status': new_status})

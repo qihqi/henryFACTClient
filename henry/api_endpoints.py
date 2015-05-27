@@ -162,16 +162,18 @@ def create_invoice():
 @auth_decorator
 @dbcontext
 def postear_invoice(uid):
-    t = invapi.commit(uid=uid)
-    return {'status': t.meta.status}
+    inv = invapi.get_doc(uid)
+    invapi.commit(inv)
+    return {'status': inv.meta.status}
 
 
 @api.delete('/api/nota/<uid>')
 @dbcontext
 @auth_decorator
 def delete_invoice(uid):
-    t = invapi.delete(uid=uid)
-    return {'status': t.meta.status}
+    inv = invapi.get_doc(uid)
+    invapi.delete(inv)
+    return {'status': inv.meta.status}
 
 
 @api.post('/api/pedido')
