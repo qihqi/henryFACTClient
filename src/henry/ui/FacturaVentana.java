@@ -212,6 +212,7 @@ public class FacturaVentana extends JFrame {
                     numeroLabel.setText("" + numero);
                 }
                 clear();
+                contenido.setMessage("");
             }
             else {
                 contenido.setMessage("Factura no se guardo");
@@ -219,10 +220,15 @@ public class FacturaVentana extends JFrame {
         }
         else {
             int codigo = api.guardarDocumento(doc, isFactura);
-            dialog.setText("El codigo es " + codigo);
-            dialog.setVisible(true);
-            clear();
-            contenido.setMessage("Nota de pedido que se hizo fue " + codigo);
+            if (codigo > 0) {
+                dialog.setText("El codigo es " + codigo);
+                dialog.setVisible(true);
+                clear();
+                contenido.setMessage("Nota de pedido que se hizo fue " + codigo);
+            }
+            else {
+                contenido.setMessage("Nota de pedido no fue guardada, guarde de nuevo");
+            }
         }
     }
 
