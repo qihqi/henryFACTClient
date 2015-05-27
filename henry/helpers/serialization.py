@@ -1,9 +1,9 @@
 import json
 import decimal
-import datetime
 
 # encoding of the database
 DB_ENCODING = 'latin1'
+
 
 def decode(s, codec=DB_ENCODING):
     if s is None:
@@ -13,9 +13,9 @@ def decode(s, codec=DB_ENCODING):
 
 def json_dump(content):
     return json.dumps(
-            content,
-            cls=ModelEncoder,
-            encoding=DB_ENCODING)
+        content,
+        cls=ModelEncoder,
+        encoding=DB_ENCODING)
 
 
 def json_loads(content):
@@ -44,22 +44,24 @@ class DbMixin(object):
         if isinstance(names, dict):
             return names.items()
         else:
-            return map(lambda x: (x, x), names) 
+            return map(lambda x: (x, x), names)
 
     def db_instance(self):
         x = self._db_class()
+        excluded = getattr(self, '_excluded_vars', [])
         for thisname, dbname in DbMixin._get_name_pairs(self._db_attr):
-            if not thisname in self._excluded_vars: 
+            if not thisname in excluded:
                 value = getattr(self, thisname, None)
                 if value is not None:
                     setattr(x, dbname, value)
-        return x 
+        return x
 
-    @classmethod 
+    @classmethod
     def from_db_instance(cls, db_instance):
         y = cls()
-        for thisname, dbname in self._get_name_pairs(self._db_attr):
-            if not thisname in self._excluded_vars: 
+        excluded = getattr(cls, '_excluded_vars', [])
+        for thisname, dbname in cls._get_name_pairs(cls._db_attr):
+            if not thisname in excluded:
                 value = getattr(db_instance, dbname, None)
                 if value is not None:
                     setattr(y, thisname, value)

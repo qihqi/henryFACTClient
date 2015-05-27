@@ -3,16 +3,10 @@ from decimal import Decimal
 
 from bottle import Bottle, response, request, abort
 
-from henry.config import prodapi, transapi, dbcontext, clientapi, invapi, auth_decorator, pedidoapi, newinvapi
+from henry.config import (prodapi, transapi, dbcontext, clientapi, 
+                          invapi, auth_decorator, pedidoapi)
 from henry.helpers.serialization import json_dump, json_loads
-from henry.layer2.client import Client
-from henry.layer2.productos import Transferencia, Product
-#from henry.layer2.invoice import InvMetadata, Invoice
-from henry.layer2.documents import DocumentCreationRequest
-
-from henry.dao.invoice import Invoice
-from henry.dao.item_set import MetaItemSet, Item
-
+from henry.dao import Client, Invoice, Transferencia
 
 api = Bottle()
 
@@ -146,19 +140,14 @@ def get_invoice(inv_id):
 @auth_decorator
 def create_invoice():
     json_content = request.body.read()
-
     content = json_loads(json_content)
     inv = Invoice.deserialize(content)
-
+    inv.items = filter(lambda x: x.cant >= 0, inv.items)
+    # convert cant into a decimal. cant is send as int,
+    # treating it as a decimal of 3 decimal places
     for item in inv.items:
-        if item.cant < 0:
-            del item
-        else:
-            item.cant = Decimal(item.cant) / 1000
-
+        item.cant = Decimal(item.cant) / 1000
     inv = newinvapi.save(inv)
-
-    print {'codigo': inv.meta.uid}
     return {'codigo': inv.meta.uid}
 
 

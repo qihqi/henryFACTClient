@@ -1,23 +1,11 @@
 import fcntl
 import os
+import datetime
 from itertools import imap
-from datetime import datetime, timedelta
 from sqlalchemy.sql import bindparam
 from henry.layer1.schema import (NProducto, NContenido, NStore, NCategory,
                                  NBodega, NPriceList)
 from henry.helpers.serialization import SerializableMixin, json_dump
-
-
-class TransType:
-    INGRESS = 'INGRESO'
-    TRANSFER = 'TRANSFER'
-    REPACKAGE = 'REEMPAQUE'
-    EXTERNAL = 'EXTERNA'
-
-    names = (INGRESS,
-             TRANSFER,
-             REPACKAGE,
-             EXTERNAL)
 
 
 class Product(SerializableMixin):
@@ -61,7 +49,7 @@ class Transaction(SerializableMixin):
         self.name = name
         self.ref = ref
         if fecha is None:
-            fecha = datetime.now()
+            fecha = datetime.datetime.now()
         self.fecha = fecha
 
     def inverse(self):
@@ -138,7 +126,7 @@ class ProductApiDB:
     def get_producto(self, prod_id, almacen_id=None, bodega_id=None):
         filter_items, query_items = self._get_db_filters_and_keys(almacen_id, bodega_id)
         filter_items.append(NProducto.codigo == prod_id)
-        query_items.extend(_PROD_KEYS)
+        query_items.extend(ProductApiDB._PROD_KEYS)
         item = self.db_session.session.query(*query_items)
         for f in filter_items:
             item = item.filter(f)
@@ -161,11 +149,11 @@ class ProductApiDB:
         return filter_items, query_items
 
     def search_producto(self, prefix, almacen_id=None, bodega_id=None):
-        query_items = list(ProductApiDB._PROD_KEYS)
         filter_items, query_items = self._get_db_filters_and_keys(almacen_id, bodega_id)
         filter_items.append(NProducto.nombre.startswith(prefix))
+        query_items.extend(ProductApiDB._PROD_KEYS)
         result_proxy = self.db_session.session.query(*query_items)
-        for f in filters:
+        for f in filter_items:
             result_proxy = result_proxy.filter(f)
         for r in result_proxy:
             yield Product().merge_from(r)

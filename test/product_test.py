@@ -4,11 +4,12 @@ from decimal import Decimal
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from henry.layer1.schema import NProducto, NContenido, Base
+from henry.layer1.schema import NProducto, NContenido, Base, NBodega, NStore
 from henry.helpers.fileservice import FileService
 from henry.dao.productos import ProductApiDB, Product
-from henry.dao.document import DocumentApi, TransMetadata, Transferencia, Invoice, InvMetadata
-from henry.layer2.client import Client
+from henry.dao import (DocumentApi, TransMetadata, Transferencia, Invoice, 
+                      InvMetadata, TransactionApi, Transaction, TransType, Item, Status)
+from henry.dao.client import Client
 from henry.layer1.session_manager import SessionManager
 
 class ProductApiTest(unittest.TestCase):
@@ -24,8 +25,9 @@ class ProductApiTest(unittest.TestCase):
         cls.transaction_api = TransactionApi('/tmp/transactions')
 
         cls.prod_api = ProductApiDB(cls.sessionmanager, cls.transaction_api)
-        cls.trans_api = DocumentApi(cls.sessionmanager, filemanager, Transferencia)
-        cls.inv_api = DocumentApi(cls.sessionmanager, filemanager, Invoice)
+        cls.trans_api = DocumentApi(cls.sessionmanager, filemanager, cls.prod_api, Transferencia)
+        cls.inv_api = DocumentApi(cls.sessionmanager, filemanager, cls.prod_api, Invoice)
+
 
         cls.productos = [
             ('0', 'prueba 0', Decimal('20.23'), Decimal('10'), 0),
@@ -34,6 +36,18 @@ class ProductApiTest(unittest.TestCase):
             ('3', 'prueba 3', Decimal('20.23'), Decimal('10'), 0),
             ('4', 'prueba 4', Decimal('20.23'), Decimal('10'), 0),
             ('5', 'prueba 5', Decimal('20.23'), Decimal('10'), 0)]
+
+        with cls.sessionmanager as s:
+            b = NBodega(nombre='test1', nivel=0)
+            s.add(b)
+            store = NStore(nombre='store1', ruc='123')
+            store.bodega = b
+            s.add(store)
+            store2 = NStore(nombre='store2', ruc='123')
+            store2.bodega = b
+            s.add(store2)
+            s.commit()
+
         with cls.sessionmanager:
             for p in cls.productos:
                 codigo, nombre, p1, p2, thres = p
@@ -43,8 +57,8 @@ class ProductApiTest(unittest.TestCase):
                 p.categoria = 1
                 cls.prod_api.create_product(
                         p, {
-                            0: (int(p1), int(p2), thres),
-                            1: (int(p1), int(p2), thres)
+                            1: (int(p1), int(p2), thres),
+                            2: (int(p1), int(p2), thres)
                         })
 
     def test_get_producto(self):
@@ -74,8 +88,9 @@ class ProductApiTest(unittest.TestCase):
 
     def test_transaction(self):
         with self.sessionmanager:
-            starting = self.prod_api.get_producto('0', bodega_id=1).cantidad
-            t = Transaction(prod_id='0', bodega_id=1, delta=10)
+            prod = self.prod_api.get_producto('0', bodega_id=1)
+            starting = prod.cantidad
+            t = Transaction(bodega_id=1, prod_id='0', name=prod.nombre, delta=10, ref='test')
             d = self.prod_api.execute_transactions([t])
         with self.sessionmanager:
             prod = self.prod_api.get_producto('0', bodega_id=1)
@@ -84,21 +99,21 @@ class ProductApiTest(unittest.TestCase):
     def test_ingress(self):
         with self.sessionmanager:
             init_prod_cant = self.prod_api.get_producto('1', bodega_id=1).cantidad
-            t = Metadata(
-                    origin=1,
+            t = TransMetadata(
+                    origin=None,
                     dest=1,
                     user=0,
                     trans_type=TransType.INGRESS,
                     ref='hello world')
-            req = DocumentCreationRequest(t)
-            req.add('1' , 10)
-            req.add('2' , 10)
-
-            trans = self.trans_api.save(req)
+            items = []
+            items.append(Item(self.prod_api.get_producto('1') , 10))
+            items.append(Item(self.prod_api.get_producto('2') , 10))
+            transfer = Transferencia(t, items)
+            trans = self.trans_api.save(transfer)
             self.assertEquals(t.status, Status.NEW)
 
         with self.sessionmanager:
-            trans = self.trans_api.commit(trans.meta.uid)
+            trans = self.trans_api.commit(trans)
             self.assertEquals(trans.meta.status, Status.COMITTED)
 
         with self.sessionmanager:
@@ -106,7 +121,7 @@ class ProductApiTest(unittest.TestCase):
             self.assertEquals(Decimal(10), post_prod_cant - init_prod_cant)
 
         with self.sessionmanager:
-            trans = self.trans_api.delete(trans.meta.uid)
+            trans = self.trans_api.delete(trans)
         with self.sessionmanager:
             last_cant = self.prod_api.get_producto('1', bodega_id=1).cantidad
             self.assertEquals(trans.meta.status, Status.DELETED)
@@ -115,23 +130,24 @@ class ProductApiTest(unittest.TestCase):
     def test_transfer(self):
         with self.sessionmanager:
             init_prod_cant = self.prod_api.get_producto('1', bodega_id=1).cantidad
-            t = Metadata(
+            t = TransMetadata(
                     origin=2,
                     dest=1,
                     user=0,
                     trans_type=TransType.TRANSFER,
                     ref='hello world')
-            req = DocumentCreationRequest(t)
-            req.add('1' , 10)
+            items = []
+            items.append(Item(self.prod_api.get_producto('1') , 10))
+            transfer = Transferencia(t, items)
+            trans = self.trans_api.save(transfer)
 
-            trans = self.trans_api.save(req)
             self.assertEquals(t.status, Status.NEW)
-            trans = self.trans_api.commit(trans.meta.uid)
+            trans = self.trans_api.commit(trans)
             self.assertEquals(trans.meta.status, Status.COMITTED)
             post_prod_cant = self.prod_api.get_producto('1', bodega_id=1).cantidad
             self.assertEquals(Decimal(10), post_prod_cant - init_prod_cant)
 
-            trans = self.trans_api.delete(trans.meta.uid)
+            trans = self.trans_api.delete(trans)
             last_cant = self.prod_api.get_producto('1', bodega_id=1).cantidad
             self.assertEquals(trans.meta.status, Status.DELETED)
             self.assertEquals(init_prod_cant, last_cant)
@@ -146,7 +162,7 @@ class ProductApiTest(unittest.TestCase):
 
             t = InvMetadata(
                     client=client,
-                    codigo=None,
+                    codigo='123', 
                     user='asdf',
                     total=123,
                     subtotal=123,
@@ -155,46 +171,23 @@ class ProductApiTest(unittest.TestCase):
                     bodega=1,
                     almacen=1
                     )
-            inv = DocumentCreationRequest()
+            inv = Invoice()
             inv.meta = t
             inv.items = [
-                    ('1', 'name', 5, 0.01)
+                    Item(self.prod_api.get_producto('1'), 5)
                     ]
             invoice = self.inv_api.save(inv)
-            self.inv_api.set_codigo(invoice.meta.uid, '123')
             self.assertEquals(self.inv_api.get_doc(invoice.meta.uid).meta.codigo, '123')
 
-            doc = self.inv_api.get_doc_by_codigo(alm=1, codigo='123')
-            self.assertEquals(invoice.meta.uid, doc.meta.uid)
-
-            x = self.inv_api.commit(invoice.meta.uid)
+            x = self.inv_api.commit(invoice)
             self.assertEquals(Status.COMITTED, x.meta.status)
             new_inv = self.prod_api.get_producto('1', bodega_id=1).cantidad
             self.assertEquals(-5, new_inv - init_prod_cant)
 
-            x = self.inv_api.delete(invoice.meta.uid)
+            x = self.inv_api.delete(invoice)
             self.assertEquals(Status.DELETED, x.meta.status)
             new_inv = self.prod_api.get_producto('1', bodega_id=1).cantidad
             self.assertEquals(0, new_inv - init_prod_cant)
-
-            now = datetime.datetime.now()
-            tomorrow = now + datetime.timedelta(days=1)
-            all_inv = list(self.inv_api.get_dated_report(
-                    start_date=now.date(),
-                    end_date=tomorrow.date(),
-                    almacen=1, status=None))
-            self.assertEquals(1, len(all_inv))
-            all_inv = list(self.inv_api.get_dated_report(
-                    start_date=now.date(),
-                    end_date=tomorrow.date(),
-                    almacen=1))
-            self.assertEquals(0, len(all_inv))
-
-            all_inv = list(self.inv_api.get_dated_report(
-                    start_date=now.date(),
-                    end_date=tomorrow.date(),
-                    almacen=1, status=[Status.COMITTED, Status.DELETED]))
-            self.assertEquals(1, len(all_inv))
 
 
 if __name__ == '__main__':

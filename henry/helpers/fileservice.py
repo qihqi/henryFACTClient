@@ -21,6 +21,6 @@ class FileService:
             filename = os.path.join(self.root, filename)
         if not os.path.exists(filename):
             return None
-        with open(name) as f:
+        with open(filename) as f:
             return f.read()
 

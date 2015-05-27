@@ -3,7 +3,7 @@ from decimal import Decimal, ROUND_HALF_DOWN
 from collections import defaultdict
 
 from bottle import request, Bottle, response
-from henry.layer2.documents import Status
+from henry.dao import Status
 from henry.layer1.schema import NUsuario
 from henry.config import sessionmanager, jinja_env, invapi2, dbcontext, fix_id
 from henry.constants import RUC
@@ -29,6 +29,7 @@ def get_all_users():
 def extract_subtotal_from_total(total):
     return (total / Decimal('1.12')).quantize(Decimal('.01'),
                                               rounding=ROUND_HALF_DOWN)
+
 
 def group_by_customer(inv):
     result = defaultdict(CustomerSell)

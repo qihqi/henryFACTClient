@@ -194,7 +194,8 @@ class NStore(Base):
     almacen_id = Column(Integer, primary_key=True, autoincrement=True)
     ruc = Column(String(20))
     nombre = Column(String(20))
-    bodega_id = Column(Integer)
+    bodega_id = Column(Integer, ForeignKey('bodegas.id'))
+    bodega = relationship('NBodega')
 
 
 class NPriceList(Base):
