@@ -68,15 +68,15 @@ public class ItemContainer extends JPanel
     }
 
     //-------------------------------------------------------------------------------
-    public ItemContainer(boolean fact, Documento doc, ItemPanelFactory itemFactory) {
+    public ItemContainer(boolean fact, ItemPanelFactory itemFactory) {
         super(new BorderLayout());
         this.itemFactory = itemFactory;
 
-        items = new ArrayList<ItemPanel>();
+        items = new ArrayList<>();
 
-        reverseItem = new HashMap<ItemPanel, Integer>();
+        reverseItem = new HashMap<>();
         documento = new Observable<>();
-        documento.setRef(doc);
+        documento.setRef(new Documento());
         documento.getRef().setIvaPorciento(DEFAULT_IVA);
         documento.addListener(this);
         itemObserver = new TotalController();
@@ -187,7 +187,6 @@ public class ItemContainer extends JPanel
     public void scrollUp() {
         JViewport vp = scroll.getViewport();
         Rectangle rect = vp.getBounds();
-        //System.out.printf("%d %d", rect.getX(), rect.getY());
         rect.setLocation((int) rect.getX(),0);
         vp.scrollRectToVisible(rect);
     }
@@ -228,9 +227,6 @@ public class ItemContainer extends JPanel
 
     public void setCurrent(ItemPanel item) {
         current = reverseItem.get(item).intValue();
-    }
-    public ArrayList<ItemPanel> getItems() {
-        return items;
     }
 
     public void addItemPanel(Item item) {
@@ -308,7 +304,6 @@ public class ItemContainer extends JPanel
             for (Item i : doc.getItems()) {
                 subtotal += i.getSubtotal();
                 descuentoIndividual += i.getDescuento();
-                System.out.println("Descuento es "  + i.getDescuento());
             }
             doc.setSubtotal(subtotal);
             doc.setDescuentoIndividual(descuentoIndividual);

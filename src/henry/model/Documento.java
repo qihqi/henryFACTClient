@@ -25,7 +25,7 @@ public class Documento {
     @Getter @Setter private int codigo;
 
     public Documento() {
-        items = new ArrayList<Item>();
+        items = new ArrayList<>();
     }
 
     public void addItem(Item item) {

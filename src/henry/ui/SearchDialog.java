@@ -30,17 +30,11 @@ public class SearchDialog<T> extends JDialog {
     private JList display;
     private DefaultListModel listContent;
 
-    public BaseModel result;
-
     private SearchEngine<T> engine;
 
     private List<T> resultList;
     private final JPanel contentPanel = new JPanel();
     private int selectedIndex;
-
-    static class Box {
-        public Object obj;
-    }
 
     public class SearchAction implements ActionListener {
         @Override
@@ -103,7 +97,6 @@ public class SearchDialog<T> extends JDialog {
                     display.clearSelection();
                     setVisible(false); 
                 }
-                //dispose();
             }
         });
         contentPanel.add(new JScrollPane(display), "span, width :456:");

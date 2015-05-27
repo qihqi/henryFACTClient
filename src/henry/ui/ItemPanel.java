@@ -1,20 +1,16 @@
 package henry.ui;
 
 import henry.api.FacturaInterface;
-import henry.api.SearchEngine;
 import henry.model.BaseModel;
 import henry.model.Item;
 import henry.model.Observable;
-import henry.api.FacturaInterface;
 import henry.model.Producto;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
-import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;

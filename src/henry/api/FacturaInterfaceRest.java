@@ -1,17 +1,22 @@
 package henry.api;
 
-import static henry.Helpers.streamToString;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
-import henry.model.*;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -23,18 +28,13 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import henry.model.Cliente;
+import henry.model.Documento;
+import henry.model.Item;
+import henry.model.Producto;
+import henry.model.Usuario;
 
-import static henry.Helpers.displayAsMoney;
-import static henry.Helpers.parseMilesimasFromString;
-import static henry.Helpers.parseCentavosFromString;
+import static henry.Helpers.streamToString;
 
 
 /**
@@ -53,11 +53,21 @@ public class FacturaInterfaceRest implements FacturaInterface {
     private CloseableHttpClient httpClient;
     private String baseUrl;
     private Gson gson;
+    private int almacenId;
+    private static int TIMEOUT_MILLIS = 30000;
+    private RequestConfig timeoutConfig;
 
-    public FacturaInterfaceRest(String baseUrl) {
+    public FacturaInterfaceRest(String baseUrl, int almacenId) {
+        timeoutConfig = RequestConfig.custom()
+            .setConnectionRequestTimeout(TIMEOUT_MILLIS)
+            .setConnectTimeout(TIMEOUT_MILLIS)
+            .setSocketTimeout(TIMEOUT_MILLIS)
+            .build();
+
         cookieStore = new BasicCookieStore();
         httpClient = HttpClients.custom().setDefaultCookieStore(cookieStore).build();
         this.baseUrl = baseUrl;
+        this.almacenId = almacenId;
         gson = new GsonBuilder()
                    .excludeFieldsWithoutExposeAnnotation()
                    .create();
@@ -157,6 +167,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
             URI uri = new URIBuilder().setScheme("http").setHost(baseUrl)
                     .setPath(path).build();
             HttpPost req = new HttpPost(uri);
+            req.setConfig(timeoutConfig);
             req.setEntity(new StringEntity(content));
             try (CloseableHttpResponse response = httpClient.execute(req)) {
                 if (response.getStatusLine().getStatusCode() == 200) {
@@ -263,6 +274,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
                     .setHost(baseUrl)
                     .setPath(LOGIN_URL).build();
             HttpPost req = new HttpPost(uri);
+            req.setConfig(timeoutConfig);
             NameValuePair[] params = new NameValuePair[]{
                 new BasicNameValuePair("username", username),
                 new BasicNameValuePair("password", password),
@@ -296,6 +308,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
 
     private String getUrl(URI uri) {
         HttpGet req = new HttpGet(uri);
+        req.setConfig(timeoutConfig);
         try (CloseableHttpResponse response = httpClient.execute(req)) {
             HttpEntity entity = response.getEntity();
             if (response.getStatusLine().getStatusCode() == 200) {

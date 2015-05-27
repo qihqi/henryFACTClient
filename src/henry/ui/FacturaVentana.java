@@ -29,9 +29,7 @@ import java.util.List;
 public class FacturaVentana extends JFrame {
     private JPanel panel;
 
-    private Documento documento;
 
-    @Getter
     private ItemContainer contenido;
     private JLabel numeroLabel;
     private JTextField pago;
@@ -87,7 +85,6 @@ public class FacturaVentana extends JFrame {
         this.almacenId = almacenId;
         this.usuario = usuario;
         this.printer = printer;
-        this.documento = new Documento();
         this.isFactura = isFactura;
 
         ItemPanelFactory itemFactory = new ItemPanelFactory(api, prodSearchDialog);
@@ -102,7 +99,7 @@ public class FacturaVentana extends JFrame {
         numeroLabel = new JLabel();
 
         System.out.println("creating itemcontainer");
-        contenido = new ItemContainer(true, documento, itemFactory);
+        contenido = new ItemContainer(true, itemFactory);
         cliente = new ClientePanel(this.api, clienteSearchDialog, contenido);
 
         JButton buscarPorCliente = new JButton("Buscar por Cliente");
@@ -182,10 +179,11 @@ public class FacturaVentana extends JFrame {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            Documento doc = null;
+            Documento doc;
             try {
                 doc = api.getPedidoPorCodigo(pedidoField.getText());
-            } catch (FacturaInterface.NotFoundException e1) {
+            }
+            catch (FacturaInterface.NotFoundException e1) {
                 pedidoField.requestFocus();
                 pedidoField.selectAll();
                 contenido.setMessage("Nota de pedido no encontrado");
@@ -194,7 +192,6 @@ public class FacturaVentana extends JFrame {
             contenido.clear();
             cliente.clear();
             cliente.bindCliente(doc.getCliente());
-            documento = doc;
             contenido.update(doc);
         }
     }

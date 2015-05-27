@@ -104,6 +104,8 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
         if (c != null) {
             codigo.setText(c.getCodigo());
             nombre.setText(c.toString());
+        } else {
+            clear();
         }
     }
 

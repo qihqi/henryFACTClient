@@ -100,8 +100,10 @@ public class LoginPane extends JPanel implements ActionListener{
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        FacturaInterface api = new FacturaInterfaceRest(
-                serverbox.getSelectedItem().toString());
+        int almacenId = almacenbox.getSelectedIndex();
+        String serverIp = serverbox.getSelectedItem().toString();
+        FacturaInterface api = new FacturaInterfaceRest(serverIp, almacenId);
+
         String username = user.getText();
         String password = new String(pass.getPassword());
         Usuario usuario = api.authenticate(username, password);
@@ -113,7 +115,6 @@ public class LoginPane extends JPanel implements ActionListener{
         }
         System.out.println(almacenbox.getSelectedItem());
         System.out.println(serverbox.getSelectedItem());
-        int almacenId = almacenbox.getSelectedIndex();
         System.out.println("index " + serverbox.getSelectedIndex());
         GenericPrinter printer;
         if (config.isMatrixPrinter()) {
@@ -124,7 +125,8 @@ public class LoginPane extends JPanel implements ActionListener{
             printer = new FacturaPrinter(config);
             System.out.println("factura printer");
         }
-        FacturaVentana factura = new FacturaVentana(api, almacenId, usuario, printer, config.isFactura());
+        FacturaVentana factura = new FacturaVentana(
+                api, almacenId, usuario, printer, config.isFactura());
         factura.setVisible(true);
         SwingUtilities.getWindowAncestor(this).dispose();
     }

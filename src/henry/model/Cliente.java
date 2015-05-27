@@ -4,7 +4,7 @@ import com.google.gson.annotations.Expose;
 import lombok.Getter;
 import lombok.Setter;
 
-public class Cliente extends BaseModel {
+public class Cliente {
     @Expose
     @Getter @Setter
     private String codigo;
@@ -36,17 +36,6 @@ public class Cliente extends BaseModel {
     @Override
     public String toString() {
         return apellidos + " " + nombres;
-    }
-
-    public void clear() {
-        tipo = "";
-        telefono = "";
-        codigo = "";
-        nombres = "";
-        apellidos = "";
-        direccion = "";
-        ciudad = "";
-        notifyListeners();
     }
 }
 
