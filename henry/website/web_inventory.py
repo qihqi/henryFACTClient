@@ -2,8 +2,8 @@ import datetime
 
 from bottle import request, Bottle, abort, redirect
 from henry.config import jinja_env, transapi, prodapi
-from henry.layer2.productos import (TransType, Metadata, Product)
-from henry.layer2.documents import DocumentCreationRequest
+from henry.dao.document import TransType, TransMetadata, Transferencia, Invoice
+from henry.dao.productos import Product
 from henry.layer1.schema import NCategory
 from henry.config import dbcontext, auth_decorator
 
@@ -38,13 +38,13 @@ def crear_ingreso():
 @dbcontext
 @auth_decorator
 def post_crear_ingreso():
-    meta = Metadata()
+    meta = TransMetadata
     meta.dest = int(request.forms.get('dest'))
     meta.origin = int(request.forms.get('origin'))
     meta.meta_type = request.forms.get('meta_type')
     meta.trans_type = request.forms.get('trans_type')
     meta.timestamp = datetime.datetime.now()
-    trans = DocumentCreationRequest(meta)
+    meta.items = []
     for cant, prod_id in zip(
             request.forms.getlist('cant'),
             request.forms.getlist('codigo')):
@@ -52,12 +52,12 @@ def post_crear_ingreso():
             # skip empty lines
             continue
         try:
-            cant = int(cant)
+            cant = Decimal(cant)
         except ValueError:
             abort(400, 'cantidad debe ser entero positivo')
         if cant < 0:
             abort(400, 'cantidad debe ser entero positivo')
-        trans.add(prod_id, cant)
+        trans.items.append((prodapi.get_producto(prod_id), cant))
     try:
         transferencia = transapi.save(trans)
     except ValueError as e:
@@ -80,8 +80,6 @@ def create_prod_form():
 @dbcontext
 @auth_decorator
 def create_prod_form():
-    print request.forms.__dict__
-
     p = Product()
     p.codigo = request.forms.codigo
     p.nombre = request.forms.nombre
