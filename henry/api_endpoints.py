@@ -3,10 +3,12 @@ from decimal import Decimal
 
 from bottle import Bottle, response, request, abort
 
-from henry.config import (prodapi, transapi, dbcontext, clientapi, 
-                          invapi, auth_decorator, pedidoapi)
+from henry.layer1.schema import NUsuario
+from henry.config import (prodapi, transapi, dbcontext, clientapi,
+                          invapi, auth_decorator, pedidoapi, sessionmanager)
 from henry.helpers.serialization import json_dump, json_loads
 from henry.dao import Client, Invoice, Transferencia
+from henry.authentication import get_session
 
 api = Bottle()
 
@@ -147,7 +149,12 @@ def create_invoice():
     # treating it as a decimal of 3 decimal places
     for item in inv.items:
         item.cant = Decimal(item.cant) / 1000
-    inv = newinvapi.save(inv)
+    inv = invapi.save(inv)
+
+    #increment the next invoice's number
+    user = inv.meta.user
+    sessionmanager.session.query(NUsuario).filter_by(username=user).update(
+        {NUsuario.last_factura: int(inv.meta.codigo) + 1})
     return {'codigo': inv.meta.uid}
 
 

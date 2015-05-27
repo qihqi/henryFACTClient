@@ -285,7 +285,7 @@ class PedidoApi:
 
     def save(self, raw_content, user=None):
         session = self.session.session
-        timestamp = datetime.now()
+        timestamp = datetime.datetime.now()
         pedido = NPedidoTemporal(
             user=user,
             timestamp=timestamp)
