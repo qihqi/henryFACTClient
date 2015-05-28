@@ -13,7 +13,7 @@ from henry.layer1.db_context import DBContext
 from henry.constants import (CONN_STRING, INGRESO_PATH, INVOICE_PATH, ENV,
                              LOGIN_URL, TRANSACTION_PATH, PEDIDO_PATH)
 
-from henry.misc import id_type, fix_id, abs_string
+from henry.misc import id_type, fix_id, abs_string, value_from_cents, get_total
 
 engine = create_engine(CONN_STRING)
 sessionfactory = sessionmaker(bind=engine)
@@ -42,4 +42,6 @@ jinja_env.globals.update({
     'id_type': id_type,
     'fix_id': fix_id,
     'abs': abs_string,
+    'value_from_cents': value_from_cents,
+    'get_total': get_total,
 })

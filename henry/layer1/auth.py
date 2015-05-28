@@ -2,10 +2,6 @@ from bottle import request, redirect
 from henry.layer1.schema import NDjangoSession
 
 
-
-
-
-
 class AuthDecorator:
 
     def __init__(self, redirect_url, db):
@@ -23,11 +19,12 @@ class AuthDecorator:
     def is_logged_in_by_django(self):
         session_key = request.get_cookie('sessionid', None)
         if session_key is not None:
-            key = self.db.session.query(
-            NDjangoSession).filter_by(
-            session_key=session_key).first()
-            if key is not None:
-                return True
+            with self.db as session:
+                key = session.query(
+                NDjangoSession).filter_by(
+                session_key=session_key).first()
+                if key is not None:
+                    return True
         return False
 
     def is_logged_in_by_beaker(self):

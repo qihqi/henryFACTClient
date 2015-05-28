@@ -64,3 +64,12 @@ def validate_uid_and_ruc(uid):
         validator = 0
 
     return validator == int(uid[-1])
+
+
+def value_from_cents(cents):
+    return '{}.{}'.format(cents // 100, cents % 100)
+
+
+def get_total(items):
+    return value_from_cents(sum((i.total for i in items)))
+

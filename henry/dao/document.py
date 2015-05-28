@@ -22,6 +22,22 @@ class Status:
              COMITTED,
              DELETED)
 
+class PaymentFormat:
+    CASH = "efectivo"
+    CARD = "tarjeta"
+    CHECK = "cheque"
+    DEPOSIT = "deposito"
+    CREDIT = "credito"
+    VARIOUS = "varios"
+    names = (
+        CASH,
+        CARD,
+        CHECK,
+        DEPOSIT,
+        CREDIT,
+        VARIOUS,
+    )
+
 
 class Item(SerializableMixin):
     _name = ('prod', 'cant')
@@ -61,18 +77,22 @@ class InvMetadata(SerializableMixin, DbMixin):
     _db_attr = {
         'uid': 'id',
         'codigo': 'codigo',
-        'client': 'client',
-        'user': 'user',
+        'user': 'user_id',
         'timestamp': 'timestamp',
         'status': 'status',
         'total': 'total',
         'tax': 'tax',
+        'tax_percent': 'tax_percent',
+        'discount_percent': 'discount_percent',
         'subtotal': 'subtotal',
         'discount': 'discount',
-        'bodega': 'bodega',
-        'almacen': 'almacen'}
+        'bodega_id': 'bodega_id',
+        'paid': 'paid',
+        'paid_amount': 'paid_amount',
+        'almacen_id': 'almacen_id', 
+        'payment_format': 'payment_format'}
 
-    _name = _db_attr.keys()
+    _name = tuple(_db_attr.keys()) + ('client', )
 
     def __init__(
             self,
@@ -86,8 +106,13 @@ class InvMetadata(SerializableMixin, DbMixin):
             tax=None,
             subtotal=None,
             discount=None,
-            bodega=None,
-            almacen=None):
+            bodega_id=None,
+            tax_percent=None,
+            discount_percent=None,
+            paid=None,
+            paid_amount=None,
+            payment_format=None,
+            almacen_id=None):
         self.uid = uid
         self.codigo = codigo
         self.client = client
@@ -98,8 +123,13 @@ class InvMetadata(SerializableMixin, DbMixin):
         self.tax = tax
         self.subtotal = subtotal
         self.discount = discount
-        self.bodega = bodega
-        self.almacen = almacen
+        self.bodega_id = bodega_id
+        self.almacen_id = almacen_id
+        self.tax_percent = tax_percent
+        self.discount_percent = discount_percent
+        self.paid = paid
+        self.payment_format = payment_format
+        self.paid_amount = paid_amount
 
     @classmethod
     def deserialize(cls, the_dict):
@@ -107,6 +137,17 @@ class InvMetadata(SerializableMixin, DbMixin):
         client = Client.deserialize(the_dict['client'])
         x.client = client
         return x
+
+    def db_instance(self):
+        db_instance = super(InvMetadata, self).db_instance()
+        db_instance.client_id = self.client.codigo
+        return db_instance
+
+    @classmethod
+    def from_db_instance(cls, db_instance):
+        this = super(InvMetadata, cls).from_db_instance(db_instance)
+        this.client = Client(codigo=db_instance.client_id)
+        return this
 
 
 class Invoice(MetaItemSet):
@@ -116,7 +157,7 @@ class Invoice(MetaItemSet):
         reason = 'factura: id={} codigo={}'.format(
             self.meta.uid, self.meta.codigo)
         for item in self.items:
-            yield Transaction(self.meta.bodega, item.prod.codigo, -(item.cant), item.prod.nombre,
+            yield Transaction(self.meta.bodega_id, item.prod.codigo, -(item.cant), item.prod.nombre,
                               reason, self.meta.timestamp)
 
     def validate(self):
@@ -218,8 +259,8 @@ class DocumentApi:
         session = self.db_session.session
         db_instance = session.query(self.db_class).filter_by(id=uid).first()
         if db_instance is None:
-            print 'cannot find document in table ', self.db_class.__tablename__, 
-            print ' with id ', uid 
+            print 'cannot find document in table ', self.db_class.__tablename__,
+            print ' with id ', uid
             return None
         file_content = self.filemanager.get_file(db_instance.items_location)
         if file_content is None:
@@ -236,7 +277,7 @@ class DocumentApi:
         meta = doc.meta
         if not hasattr(meta, 'timestamp'):
             meta.timestamp = datetime.datetime.now()
-
+        meta.status = Status.NEW
         doc.validate()
         filepath = doc.filepath_format
         session = self.db_session.session
@@ -244,7 +285,6 @@ class DocumentApi:
         db_entry.items_location = filepath
         session.add(db_entry)
         session.flush()  # flush to get the autoincrement id
-        meta.status = Status.NEW
         doc.meta.uid = db_entry.id
 
         self.filemanager.put_file(filepath, doc.to_json())
@@ -287,6 +327,17 @@ class DocumentApi:
             traceback.print_exc()
             session.rollback()
             return False
+
+    def search_metadata_by_date_range(self, start, end, status=None, other_filters=None):
+        session = self.db_session.session
+        query = session.query(self.db_class).filter(
+            self.db_class.timestamp >= start).filter(
+            self.db_class.timestamp <= end)
+        if status is not None:
+            query = query.filter_by(status=status)
+        if other_filters is not None:
+            query = query.filter_by(**other_filters)
+        return imap(self.metadata_cls.from_db_instance, query)
 
 
 class PedidoApi:

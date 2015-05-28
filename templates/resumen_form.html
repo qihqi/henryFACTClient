@@ -1,0 +1,49 @@
+{%extends "base.html"%}
+{%block title%}Resumen de Venta {%endblock%}
+{%block script%}
+<style>
+.baseform {
+    left-margin: auto;
+    right-margin: auto;
+    width: auto;
+    float: left;
+}
+.prod_label {
+    width: 50%;
+    float: left;
+}
+</style>
+{%endblock%}
+
+{%block content%}
+<form class="baseform" action="/app/resumen" method="get">
+    <h5>{{ message }}</h5>
+    <h4>Resumen de Venta</h4>
+    <p>
+        <label class="prod_label" for="nombre">Desde:</label>
+        <input class="prod_input" name="start_date" />
+    </p>
+    <p>
+        <label class="prod_label" for="codigo">Hasta:</label>
+        <input class="prod_input" name="end_date" />
+    </p>
+    <p>
+        <label class="prod_label" for="almacen">Almacen:</label>
+        <select name="almacen">
+            {%for x in almacenes%}
+            <option value="{{x.id}}">{{x.nombre}}</option>
+            {%endfor%}
+        </select>
+    </p>
+    <p>
+        <label class="prod_label" for="vendedor">Vendido Por:</label>
+        <select name="vendedor">
+            {%for x in users%}
+            <option value="{{x.username}}">{{x.username}}</option>
+            {%endfor%}
+        </select>
+    </p>
+    <br/>        
+    <input name="Aceptar" type="submit"/>
+</form>
+{%endblock%}

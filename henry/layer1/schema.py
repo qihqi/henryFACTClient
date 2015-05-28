@@ -143,7 +143,7 @@ class NUsuario(Base):
 # below are stuff that are not in prod yet
 
 class NTransferencia(Base):
-    __tablename__ = 'transacciones'
+    __tablename__ = 'transferencias'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     timestamp = Column(DateTime)
@@ -169,11 +169,14 @@ class NNota(Base):
 
     paid = Column(Boolean)
     paid_amount = Column(Integer)
+    payment_format = Column(String(20))
 
     subtotal = Column(Integer)
     total = Column(Integer)
     tax = Column(Integer)
     discount = Column(Integer)
+    tax_percent = Column(Integer)
+    discount_percent = Column(Integer)
 
     bodega_id = Column(Integer)
     almacen_id = Column(Integer)

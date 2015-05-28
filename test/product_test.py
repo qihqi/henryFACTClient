@@ -16,7 +16,7 @@ class ProductApiTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        engine = create_engine('sqlite:///:memory:', echo=True)
+        engine = create_engine('sqlite:///:memory:', echo=False)
         sessionfactory = sessionmaker(bind=engine)
         session = sessionfactory()
         Base.metadata.create_all(engine)
@@ -188,6 +188,12 @@ class ProductApiTest(unittest.TestCase):
             self.assertEquals(Status.DELETED, x.meta.status)
             new_inv = self.prod_api.get_producto('1', bodega_id=1).cantidad
             self.assertEquals(0, new_inv - init_prod_cant)
+
+            today = datetime.datetime.now()
+            yesterday = today - datetime.timedelta(days=1)
+            searched = list(self.inv_api.search_metadata_by_date_range(start=yesterday, end=today))
+            print searched
+            self.assertEquals(1, len(searched))
 
 
 if __name__ == '__main__':

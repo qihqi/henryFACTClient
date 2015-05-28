@@ -65,14 +65,14 @@
         <button onClick="window.print();" > Imprimir </button>
         <button onClick="window.location='/r';" > Regresar al principio </button>
         <h3>
-            {% if ingreso.trans_type == 'TRANSFER' %}
-            Transferencia: {{ingreso.origin}} a {{ingreso.dest}}
+            {% if ingreso.meta.trans_type == 'TRANSFER' %}
+            Transferencia: {{ingreso.meta.origin}} a {{ingreso.meta.dest}}
             {%else%}
             Ingresos :
             {%endif%}
             {{ingreso.dest}}  
         </h3>
-        <h4> Codigo: {{ingreso.uid}}</h4>
+        <h4> Codigo: {{ingreso.meta.uid}}</h4>
         <table align="center" width=600>
             <tr>
                 <th width=100>Fecha</th>
@@ -88,17 +88,15 @@
         <hr />
         <table width=600 align="center">
             <tr>
-                <th width=100 class="codigo">Bodega</th>
                 <th width=100 class="codigo">Codigo</th>
                 <th>Nombre</th>
                 <th width=150 class="cant">Cambio de Cantidad</th>
             </tr>
             {% for i in ingreso.items %}
             <tr>
-                <td width=100>{{bodega_mapping[i[0]]}}</td> 
-                <td width=100>{{i[1]}}</td> 
-                <td>{{i[3]}}</td> 
-                <td width=100 class="cant">{{i[2]}}</td> 
+                <td width=100>{{i.prod.codigo}}</td> 
+                <td>{{i.prod.nombre}}</td> 
+                <td width=100 class="cant">{{i.cant}}</td> 
             </tr>
             {%endfor %}
         </table>

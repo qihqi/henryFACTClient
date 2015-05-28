@@ -1,3 +1,4 @@
+import datetime
 import json
 from decimal import Decimal
 
@@ -54,8 +55,8 @@ def search_prod_alm(almacen_id):
 
 
 @api.post('/api/ingreso')
-@auth_decorator
 @dbcontext
+@auth_decorator
 def crear_ingreso():
     json_content = request.body.read()
     content = json_loads(json_content)
@@ -65,18 +66,20 @@ def crear_ingreso():
 
 
 @api.put('/api/ingreso/<ingreso_id>')
-@auth_decorator
 @dbcontext
+@auth_decorator
 def postear_ingreso(ingreso_id):
-    t = transapi.commit(uid=ingreso_id)
-    return {'status': t.meta.status}
+    trans = transapi.get_doc(ingreso_id)
+    transapi.commit(trans)
+    return {'status': trans.meta.status}
 
 
 @api.delete('/api/ingreso/<ingreso_id>')
 @dbcontext
 def delete_ingreso(ingreso_id):
-    t = transapi.delete(uid=ingreso_id)
-    return {'status': t.meta.status}
+    trans = transapi.get_doc(ingreso_id)
+    transapi.delete(trans)
+    return {'status': trans.meta.status}
 
 
 @api.get('/api/ingreso/<ingreso_id>')
@@ -99,8 +102,8 @@ def get_cliente(codigo):
 
 
 @api.put('/api/cliente/<codigo>')
-@auth_decorator
 @dbcontext
+@auth_decorator
 def update_client(codigo):
     client_dict = json.parse(request.body)
     client = Client.deserialize(client_dict)
@@ -109,8 +112,8 @@ def update_client(codigo):
 
 
 @api.post('/api/cliente/<codigo>')
-@auth_decorator
 @dbcontext
+@auth_decorator
 def create_client(codigo):
     return update_client(codigo)
 
@@ -137,14 +140,31 @@ def get_invoice(inv_id):
     return json_dump(doc.serialize())
 
 
+@api.get('/api/nota')
+@dbcontext
+def get_invoice_by_date():
+    start = request.query.get('start_date')
+    end = request.query.get('end_date')
+    if start is None or end is None:
+        abort(400, 'invalid input')
+    datestrp = datetime.datetime.strptime
+    start_date = datestrp(start, "%Y-%m-%d")
+    end_date = datestrp(end, "%Y-%m-%d")
+    status = request.query.get('status')
+    result = invapi.search_metadata_by_date_range(start_date, end_date, status)
+    return json_dump(list(result))
+
+
 @api.post('/api/nota')
 @dbcontext
 @auth_decorator
 def create_invoice():
-    json_content = request.body.read()
+    json_content = request.body.read() 
     content = json_loads(json_content)
     inv = Invoice.deserialize(content)
     inv.items = filter(lambda x: x.cant >= 0, inv.items)
+    inv.meta.bodega_id = prodapi.get_store_by_id(inv.meta.almacen_id).bodega_id
+    inv.meta.paid = True
     # convert cant into a decimal. cant is send as int,
     # treating it as a decimal of 3 decimal places
     for item in inv.items:
@@ -159,8 +179,8 @@ def create_invoice():
 
 
 @api.put('/api/nota/<uid>')
-@auth_decorator
 @dbcontext
+@auth_decorator
 def postear_invoice(uid):
     inv = invapi.get_doc(uid)
     invapi.commit(inv)

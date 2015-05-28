@@ -121,6 +121,8 @@ class ProductApiDB:
     def __init__(self, sessionmanager, transapi):
         self._prod_name_cache = {}
         self._prod_price_cache = {}
+        self._stores = {}
+        self._bodegas = {}
         self.db_session = sessionmanager
         self.transapi = transapi
 
@@ -199,10 +201,24 @@ class ProductApiDB:
         return p
 
     def get_bodegas(self):
-        return self.db_session.session.query(NBodega)
+        if not self._bodegas:
+            bodegas = self.db_session.session.query(NBodega)
+            self._bodegas = {b.id: b for b in bodegas}
+        return self._bodegas.values()
+
+    def get_bodega_by_id(self, uid):
+        self.get_bodegas()
+        return self._bodegas[uid]
 
     def get_stores(self):
-        return self.db_session.session.query(NStore)
+        if not self._bodegas:
+            stores = self.db_session.session.query(NStore)
+            self._stores = {b.almacen_id: b for b in stores}
+        return self._stores.values()
+
+    def get_store_by_id(self, uid):
+        self.get_stores()
+        return self._stores[uid]
 
     def get_category(self):
         return self.db_session.session.query(NCategory)
@@ -231,6 +247,8 @@ class ProductApiDB:
                 cont = NContenido(
                     prod_id=product_core.codigo,
                     bodega_id=bodega_id,
+                    precio=p1,
+                    precio2=p2,
                     cant=0)
                 contenidos_creados[bodega_id] = cont
             alm.cantidad = contenidos_creados[bodega_id]
