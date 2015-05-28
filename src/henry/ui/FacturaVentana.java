@@ -206,10 +206,12 @@ public class FacturaVentana extends JFrame {
                 return;
             }
             doc.setCodigo(numero);
-            if (api.guardarDocumento(doc, isFactura) > 0) {
+            int id = api.guardarDocumento(doc, isFactura);
+            if (id > 0) {
                 if (printer.printFactura(doc)) {
                     numero++;
                     numeroLabel.setText("" + numero);
+                    api.commitDocument(id);
                 }
                 clear();
                 contenido.setMessage("");

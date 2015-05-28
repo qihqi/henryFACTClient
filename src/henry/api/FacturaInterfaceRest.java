@@ -21,6 +21,7 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCookieStore;
@@ -264,6 +265,27 @@ public class FacturaInterfaceRest implements FacturaInterface {
         catch (URISyntaxException ex) {
             ex.printStackTrace();
             return null;
+        }
+    }
+
+    public void commitDocument(int docId) {
+        URI uri = null;
+        try {
+            uri = new URIBuilder().setScheme("http")
+                .setHost(baseUrl)
+                .setPath(String.format("%s/%d", FACTURA_URL_PATH, docId))
+                .build();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        HttpPut req = new HttpPut(uri);
+        try (CloseableHttpResponse response = httpClient.execute(req)) {
+            if (response.getStatusLine().getStatusCode() == 200) {
+                return;
+            }
+        }
+        catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
