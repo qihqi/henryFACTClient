@@ -100,7 +100,8 @@ public class LoginPane extends JPanel implements ActionListener{
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        int almacenId = almacenbox.getSelectedIndex();
+        //almacenId in server uses index starting from 1
+        int almacenId = almacenbox.getSelectedIndex() + 1; 
         String serverIp = serverbox.getSelectedItem().toString();
         FacturaInterface api = new FacturaInterfaceRest(serverIp, almacenId);
 

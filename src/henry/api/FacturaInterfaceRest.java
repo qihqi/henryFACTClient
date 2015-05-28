@@ -196,17 +196,19 @@ public class FacturaInterfaceRest implements FacturaInterface {
         meta.addProperty("subtotal", doc.getSubtotal());
         meta.addProperty("discount", doc.getDescuento());
 
-        meta.addProperty("iva_porciento", doc.getIvaPorciento());
-        meta.addProperty("descuento_global_porciento", doc.getDescuentoGlobalPorciento());
+        meta.addProperty("tax_percent", doc.getIvaPorciento());
+        meta.addProperty("discount_percent", doc.getDescuentoGlobalPorciento());
 
-        meta.addProperty("bodega", 1);
-        meta.addProperty("almacen", 1);
+        meta.addProperty("almacen_id", almacenId);
 
         meta.addProperty("total", doc.getTotal());
         meta.addProperty("subtotal", doc.getSubtotal());
-        meta.addProperty("iva", doc.getIva());
+        meta.addProperty("tax", doc.getIva());
         meta.addProperty("discount", doc.getDescuento());
         meta.addProperty("codigo", "" + doc.getCodigo());
+        meta.addProperty("paid_amount", doc.getPagado());
+        meta.addProperty("change", doc.getCambio());
+        meta.addProperty("payment_format", doc.getFormaPago());
 
         JsonArray items = new JsonArray();
         for (Item i : doc.getItems()) {

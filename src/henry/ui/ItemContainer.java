@@ -246,6 +246,8 @@ public class ItemContainer extends JPanel
         items.clear();
         content.removeAll();
         content.repaint();
+        documento.setRef(new Documento());
+        documento.getRef().addItem(item);
         addItemPanel(item);
         valorBruto.setText("");
         descValor.setText("");
@@ -298,12 +300,14 @@ public class ItemContainer extends JPanel
     private class TotalController implements BaseModel.Listener {
         @Override
         public void onDataChanged() {
+            System.out.println("TotalController::OnItemChanged");
             Documento doc = ItemContainer.this.documento.getRef();
             int subtotal = 0;
             int descuentoIndividual = 0;
             for (Item i : doc.getItems()) {
                 subtotal += i.getSubtotal();
                 descuentoIndividual += i.getDescuento();
+                System.out.println("inner loop " + subtotal);
             }
             doc.setSubtotal(subtotal);
             doc.setDescuentoIndividual(descuentoIndividual);
