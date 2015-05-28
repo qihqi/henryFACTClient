@@ -84,6 +84,7 @@ class TransactionApi:
         with open(final_path, 'a') as f:
             with LockClass(f):
                 f.write(json_dump(transaction.serialize()))
+                f.write('\n')
                 f.flush()
 
     # generator
