@@ -1,5 +1,6 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Numeric, Date, DateTime, Boolean, ForeignKey, Text
+from sqlalchemy.schema import Index
 from sqlalchemy.orm import relationship, backref
 from henry.helpers.serialization import SerializableMixin
 
@@ -142,15 +143,25 @@ class NUsuario(Base):
 ############################################################3
 # below are stuff that are not in prod yet
 
+class NStore(Base):
+    __tablename__ = 'almacenes'
+    almacen_id = Column(Integer, primary_key=True, autoincrement=True)
+    ruc = Column(String(20))
+    nombre = Column(String(20))
+    bodega_id = Column(Integer, ForeignKey('bodegas.id'))
+    bodega = relationship('NBodega')
+
+
 class NTransferencia(Base):
     __tablename__ = 'transferencias'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    timestamp = Column(DateTime)
+    timestamp = Column(DateTime, index=True)
+    status = Column(String(10))
+
     origin = Column(Integer)
     dest = Column(Integer)
 
-    status = Column(String(10))
     trans_type = Column(String(10))
     ref = Column(String(100))
 
@@ -162,11 +173,15 @@ class NNota(Base):
     __tablename__ = 'notas'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    codigo = Column(String(20))
-    client_id = Column(String(20))
-    user_id = Column(String(20))
+    timestamp = Column(DateTime, index=True)
     status = Column(String(10))
 
+    # this pair should be unique
+    codigo = Column(String(20))
+    almacen_id = Column(Integer, ForeignKey(NStore.almacen_id))
+
+    client_id = Column(String(20))
+    user_id = Column(String(20))
     paid = Column(Boolean)
     paid_amount = Column(Integer)
     payment_format = Column(String(20))
@@ -178,27 +193,19 @@ class NNota(Base):
     tax_percent = Column(Integer)
     discount_percent = Column(Integer)
 
-    bodega_id = Column(Integer)
-    almacen_id = Column(Integer)
-    timestamp = Column(DateTime)
+    bodega_id = Column(Integer, ForeignKey(NBodega.id))
     # unix filepath where the items is stored
     items_location = Column(String(200))
+Index('ix_notas_2', NNota.almacen_id, NNota.codigo)
 
 
 class NPedidoTemporal(Base):
     __tablename__ = 'pedidos_temporales'
     id = Column(Integer, autoincrement=True, primary_key=True)
+    client_lastname = Column(String(20), index=True)
     user = Column(String(20))
+    total = Column(Integer)
     timestamp = Column(DateTime)
-
-
-class NStore(Base):
-    __tablename__ = 'almacenes'
-    almacen_id = Column(Integer, primary_key=True, autoincrement=True)
-    ruc = Column(String(20))
-    nombre = Column(String(20))
-    bodega_id = Column(Integer, ForeignKey('bodegas.id'))
-    bodega = relationship('NBodega')
 
 
 class NPriceList(Base):
@@ -206,14 +213,15 @@ class NPriceList(Base):
     pid = Column(Integer, primary_key=True, autoincrement=True)
     nombre = Column(String(100)) # display name
     almacen_id = Column(Integer)
-    prod_id = Column(String(20), ForeignKey('productos.codigo'))
+    prod_id = Column(String(20), ForeignKey(NProducto.codigo))
     # Using int for money as in number of cents.
     precio1 = Column(Integer)
     precio2 = Column(Integer)
     cant_mayorista = Column(Integer)
-    upi = Column(Integer, ForeignKey('contenido_de_bodegas.id'))
+    upi = Column(Integer, ForeignKey(NContenido.id))
     unidad = Column(String(20))
     multiplicador = Column(Integer)
+Index('ix_lista_de_precio_2', NPriceList.almacen_id, NPriceList.prod_id)
 
 
 class NDjangoSession(Base):
@@ -221,5 +229,3 @@ class NDjangoSession(Base):
     session_key = Column(String(40), primary_key=True)
     session_data = Column(Text)
     expire_date = Column(DateTime)
-
-

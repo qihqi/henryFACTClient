@@ -5,13 +5,210 @@ import time
 
 import requests
 
-HUGE_REQUEST_NOTA = ''
+HUGE_REQUEST_NOTA = '''
+{
+    "items": [
+        {
+            "cant": 8000,
+            "prod": {
+                "codigo": "HCX50M",
+                "nombre": "HILO CUERO 2mm PQTE",
+                "precio1": 813,
+                "precio2": 650,
+                "threshold": 3
+            }
+        },
+        {
+            "cant": 20000,
+            "prod": {
+                "codigo": "COR2CMXT",
+                "nombre": "CORDON 2mm X ROLLO",
+                "precio1": 500,
+                "precio2": 400,
+                "threshold": 1
+            }
+        },
+        {
+            "cant": 20000,
+            "prod": {
+                "codigo": "COR3CXR",
+                "nombre": "CORDON 3mm x ROLLO",
+                "precio1": 480,
+                "precio2": 480,
+                "threshold": 0
+            }
+        },
+        {
+            "cant": 8000,
+            "prod": {
+                "codigo": "REATXR",
+                "nombre": "REATA x ROLLO",
+                "precio1": 1200,
+                "precio2": 960,
+                "threshold": 6
+            }
+        },
+        {
+            "cant": 14000,
+            "prod": {
+                "codigo": "SEPMEAF",
+                "nombre": "SEP METALICO A FDA/GDE",
+                "precio1": 1856,
+                "precio2": 1485,
+                "threshold": 3
+            }
+        },
+        {
+            "cant": 15000,
+            "prod": {
+                "codigo": "PJAP6",
+                "nombre": "PERLA JAPONESA 0.6",
+                "precio1": 81,
+                "precio2": 65,
+                "threshold": 6
+            }
+        },
+        {
+            "cant": 30000,
+            "prod": {
+                "codigo": "PJAP8",
+                "nombre": "PERLA JAPONESA 0.8",
+                "precio1": 94,
+                "precio2": 75,
+                "threshold": 6
+            }
+        },
+        {
+            "cant": 15000,
+            "prod": {
+                "codigo": "PJAP10",
+                "nombre": "PERLA JAPONESA # 10",
+                "precio1": 138,
+                "precio2": 110,
+                "threshold": 6
+            }
+        },
+        {
+            "cant": 10000,
+            "prod": {
+                "codigo": "PJAP12",
+                "nombre": "PERLA JAPONESA # 12",
+                "precio1": 169,
+                "precio2": 135,
+                "threshold": 6
+            }
+        },
+        {
+            "cant": 5000,
+            "prod": {
+                "codigo": "TAPLASF",
+                "nombre": "TAPA ARETE PLAST F/G",
+                "precio1": 240,
+                "precio2": 200,
+                "threshold": 3
+            }
+        },
+        {
+            "cant": 48000,
+            "prod": {
+                "codigo": "PINMUL",
+                "nombre": "PINZA MULTIUSO",
+                "precio1": 225,
+                "precio2": 180,
+                "threshold": 6
+            }
+        },
+        {
+            "cant": 48000,
+            "prod": {
+                "codigo": "PINFPP",
+                "nombre": "PINZA FINA PUNTA PLANA",
+                "precio1": 225,
+                "precio2": 180,
+                "threshold": 6
+            }
+        },
+        {
+            "cant": 1000,
+            "prod": {
+                "codigo": "TTCBXPT",
+                "nombre": "TIRA TREN.C/BRILLO x PTQ",
+                "precio1": 5625,
+                "precio2": 4500,
+                "threshold": 3
+            }
+        },
+        {
+            "cant": 200000,
+            "prod": {
+                "codigo": "TPP",
+                "nombre": "TERMINAL DE PULSERA PEQ",
+                "precio1": 38,
+                "precio2": 30,
+                "threshold": 6
+            }
+        },
+        {
+            "cant": 2000,
+            "prod": {
+                "codigo": "DIAD2N",
+                "nombre": "DIADEMA NIQUEL 2cmx12",
+                "precio1": 338,
+                "precio2": 270,
+                "threshold": 3
+            }
+        },
+        {
+            "cant": 2000,
+            "prod": {
+                "codigo": "SEPMEAF",
+                "nombre": "SEP METALICO A FDA/GDE",
+                "precio1": 1856,
+                "precio2": 1485,
+                "threshold": 3
+            }
+        },
+        {
+            "cant": 1000,
+            "prod": {
+                "codigo": "ATCHPF",
+                "nombre": "ATACHE PEGABLES F/G",
+                "precio1": 1200,
+                "precio2": 1000,
+                "threshold": 3
+            }
+        }
+    ],
+    "meta": {
+        "almacen_id": 1,
+        "bodega_id": 1,
+        "client": {
+            "apellidos": "GOMEZ AGUIRRE",
+            "ciudad": "QUITO HAGA Y VENDA BISUTERIA",
+            "codigo": "1703215549001",
+            "direccion": " NACIONES UNIDAS Y JAPON C.C.N.U. LOCAL MZ-6 ",
+            "nombres": "ADRIANA",
+            "telefono": " 022449153-2641831-2446395-0984258949-0984258947",
+            "tipo": "B"
+        },
+        "codigo": "111111111",
+        "descuento_global_porciento": 0,
+        "discount": 20311,
+        "iva": 10894,
+        "iva_porciento": 12,
+        "subtotal": 111096,
+        "total": 101679,
+        "user": "yu"
+    }
+}
+'''
 
 
 class PerformanceTest(unittest.TestCase):
 
     def setUp(self):
-        self.addr = '192.168.0.23'
+        #self.addr = '192.168.0.23'
+        self.addr = 'localhost:8080'
         self.url_base = 'http://%s/api' % self.addr
         self._url = 'http://%s/api/producto' % self.addr
 
@@ -38,8 +235,9 @@ class PerformanceTest(unittest.TestCase):
     def test_nota(self):
         url = self.url_base + '/nota'
         content = HUGE_REQUEST_NOTA
+        assert len(content) > 0
         start = time.time()
-        r = requests.post(url, data=json.dumps(content))
+        r = requests.post(url, data=content)
         print >>sys.stderr, r.text
         end = time.time()
         print 'post factura ', end - start
@@ -48,7 +246,7 @@ class PerformanceTest(unittest.TestCase):
         url = self.url_base + '/pedido'
         content = HUGE_REQUEST_NOTA
         start = time.time()
-        r = requests.post(url, data=json.dumps(content))
+        r = requests.post(url, data=content)
         print >>sys.stderr, r.text
         end = time.time()
         print 'post pedido', end - start
@@ -64,200 +262,3 @@ class PerformanceTest(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main()
 
-HUGE_REQUEST_NOTA = '''
-{
-    "items": [
-        {
-            "cantidad": 8000,
-            "producto": {
-                "codigo": "HCX50M",
-                "nombre": "HILO CUERO 2mm PQTE",
-                "precio1": 813,
-                "precio2": 650,
-                "threshold": 3
-            }
-        },
-        {
-            "cantidad": 20000,
-            "producto": {
-                "codigo": "COR2CMXT",
-                "nombre": "CORDON 2mm X ROLLO",
-                "precio1": 500,
-                "precio2": 400,
-                "threshold": 1
-            }
-        },
-        {
-            "cantidad": 20000,
-            "producto": {
-                "codigo": "COR3CXR",
-                "nombre": "CORDON 3mm x ROLLO",
-                "precio1": 480,
-                "precio2": 480,
-                "threshold": 0
-            }
-        },
-        {
-            "cantidad": 8000,
-            "producto": {
-                "codigo": "REATXR",
-                "nombre": "REATA x ROLLO",
-                "precio1": 1200,
-                "precio2": 960,
-                "threshold": 6
-            }
-        },
-        {
-            "cantidad": 14000,
-            "producto": {
-                "codigo": "SEPMEAF",
-                "nombre": "SEP METALICO A FDA/GDE",
-                "precio1": 1856,
-                "precio2": 1485,
-                "threshold": 3
-            }
-        },
-        {
-            "cantidad": 15000,
-            "producto": {
-                "codigo": "PJAP6",
-                "nombre": "PERLA JAPONESA 0.6",
-                "precio1": 81,
-                "precio2": 65,
-                "threshold": 6
-            }
-        },
-        {
-            "cantidad": 30000,
-            "producto": {
-                "codigo": "PJAP8",
-                "nombre": "PERLA JAPONESA 0.8",
-                "precio1": 94,
-                "precio2": 75,
-                "threshold": 6
-            }
-        },
-        {
-            "cantidad": 15000,
-            "producto": {
-                "codigo": "PJAP10",
-                "nombre": "PERLA JAPONESA # 10",
-                "precio1": 138,
-                "precio2": 110,
-                "threshold": 6
-            }
-        },
-        {
-            "cantidad": 10000,
-            "producto": {
-                "codigo": "PJAP12",
-                "nombre": "PERLA JAPONESA # 12",
-                "precio1": 169,
-                "precio2": 135,
-                "threshold": 6
-            }
-        },
-        {
-            "cantidad": 5000,
-            "producto": {
-                "codigo": "TAPLASF",
-                "nombre": "TAPA ARETE PLAST F/G",
-                "precio1": 240,
-                "precio2": 200,
-                "threshold": 3
-            }
-        },
-        {
-            "cantidad": 48000,
-            "producto": {
-                "codigo": "PINMUL",
-                "nombre": "PINZA MULTIUSO",
-                "precio1": 225,
-                "precio2": 180,
-                "threshold": 6
-            }
-        },
-        {
-            "cantidad": 48000,
-            "producto": {
-                "codigo": "PINFPP",
-                "nombre": "PINZA FINA PUNTA PLANA",
-                "precio1": 225,
-                "precio2": 180,
-                "threshold": 6
-            }
-        },
-        {
-            "cantidad": 1000,
-            "producto": {
-                "codigo": "TTCBXPT",
-                "nombre": "TIRA TREN.C/BRILLO x PTQ",
-                "precio1": 5625,
-                "precio2": 4500,
-                "threshold": 3
-            }
-        },
-        {
-            "cantidad": 200000,
-            "producto": {
-                "codigo": "TPP",
-                "nombre": "TERMINAL DE PULSERA PEQ",
-                "precio1": 38,
-                "precio2": 30,
-                "threshold": 6
-            }
-        },
-        {
-            "cantidad": 2000,
-            "producto": {
-                "codigo": "DIAD2N",
-                "nombre": "DIADEMA NIQUEL 2cmx12",
-                "precio1": 338,
-                "precio2": 270,
-                "threshold": 3
-            }
-        },
-        {
-            "cantidad": 2000,
-            "producto": {
-                "codigo": "SEPMEAF",
-                "nombre": "SEP METALICO A FDA/GDE",
-                "precio1": 1856,
-                "precio2": 1485,
-                "threshold": 3
-            }
-        },
-        {
-            "cantidad": 1000,
-            "producto": {
-                "codigo": "ATCHPF",
-                "nombre": "ATACHE PEGABLES F/G",
-                "precio1": 1200,
-                "precio2": 1000,
-                "threshold": 3
-            }
-        }
-    ],
-    "meta": {
-        "almacen": 1,
-        "bodega": 1,
-        "client": {
-            "apellidos": "GOMEZ AGUIRRE",
-            "ciudad": "QUITO HAGA Y VENDA BISUTERIA",
-            "codigo": "1703215549001",
-            "direccion": " NACIONES UNIDAS Y JAPON C.C.N.U. LOCAL MZ-6 ",
-            "nombres": "ADRIANA",
-            "telefono": " 022449153-2641831-2446395-0984258949-0984258947",
-            "tipo": "B"
-        },
-        "codigo": "111111111",
-        "descuento_global_porciento": 0,
-        "discount": 20311,
-        "iva": 10894,
-        "iva_porciento": 12,
-        "subtotal": 111096,
-        "total": 101679,
-        "user": "yu"
-    }
-}
-'''

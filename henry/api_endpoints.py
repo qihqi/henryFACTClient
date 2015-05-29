@@ -1,3 +1,4 @@
+import sys
 import datetime
 import json
 from decimal import Decimal
@@ -10,6 +11,7 @@ from henry.config import (prodapi, transapi, dbcontext, clientapi,
 from henry.helpers.serialization import json_dump, json_loads
 from henry.dao import Client, Invoice, Transferencia
 from henry.authentication import get_session
+from henry.helpers.connection import timed
 
 api = Bottle()
 
@@ -160,6 +162,8 @@ def get_invoice_by_date():
 @auth_decorator
 def create_invoice():
     json_content = request.body.read() 
+    if not json_content:
+        return ''
     content = json_loads(json_content)
     inv = Invoice.deserialize(content)
     inv.items = filter(lambda x: x.cant >= 0, inv.items)
