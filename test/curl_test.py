@@ -207,8 +207,8 @@ HUGE_REQUEST_NOTA = '''
 class PerformanceTest(unittest.TestCase):
 
     def setUp(self):
-        #self.addr = '192.168.0.23'
-        self.addr = 'localhost:8080'
+        self.addr = '192.168.0.23'
+        #self.addr = 'localhost:8080'
         self.url_base = 'http://%s/api' % self.addr
         self._url = 'http://%s/api/producto' % self.addr
 
