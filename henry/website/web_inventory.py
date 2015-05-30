@@ -129,7 +129,7 @@ def get_resumen():
 
     datestrp = datetime.datetime.strptime
     start = datestrp(start, '%Y-%m-%d')
-    end = datestrp(end, '%Y-%m-%d')
+    end = datestrp(end, '%Y-%m-%d') + datetime.timedelta(days=1)
     store = int(store)
 
     session = sessionmanager.session
