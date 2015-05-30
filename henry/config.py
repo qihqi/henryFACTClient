@@ -1,3 +1,4 @@
+import datetime
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from jinja2 import Environment, FileSystemLoader
@@ -44,4 +45,5 @@ jinja_env.globals.update({
     'abs': abs_string,
     'value_from_cents': value_from_cents,
     'get_total': get_total,
+    'today': datetime.date.today
 })

@@ -21,23 +21,23 @@
     <h4>Resumen de Venta</h4>
     <p>
         <label class="prod_label" for="nombre">Desde:</label>
-        <input class="prod_input" name="start_date" />
+        <input class="prod_input" name="start_date" value="{{today().isoformat()}}"/>
     </p>
     <p>
         <label class="prod_label" for="codigo">Hasta:</label>
-        <input class="prod_input" name="end_date" />
+        <input class="prod_input" name="end_date" value="{{today().isoformat()}}" />
     </p>
     <p>
         <label class="prod_label" for="almacen">Almacen:</label>
         <select name="almacen">
             {%for x in almacenes%}
-            <option value="{{x.id}}">{{x.nombre}}</option>
+            <option value="{{x.almacen_id}}">{{x.nombre}}</option>
             {%endfor%}
         </select>
     </p>
     <p>
-        <label class="prod_label" for="vendedor">Vendido Por:</label>
-        <select name="vendedor">
+        <label class="prod_label" for="user">Vendido Por:</label>
+        <select name="user">
             {%for x in users%}
             <option value="{{x.username}}">{{x.username}}</option>
             {%endfor%}
