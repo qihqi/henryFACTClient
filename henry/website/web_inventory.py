@@ -45,6 +45,8 @@ def post_crear_ingreso():
     meta.origin = int(request.forms.get('origin'))
     meta.meta_type = request.forms.get('meta_type')
     meta.trans_type = request.forms.get('trans_type')
+    if meta.trans_type == TransType.INGRESS:
+        meta.origin = None  # ingress does not have origin
     meta.timestamp = datetime.datetime.now()
     for cant, prod_id in zip(
             request.forms.getlist('cant'),

@@ -207,8 +207,8 @@ HUGE_REQUEST_NOTA = '''
 class PerformanceTest(unittest.TestCase):
 
     def setUp(self):
-        self.addr = '192.168.0.23'
-        #self.addr = 'localhost:8080'
+        #self.addr = '192.168.0.23'
+        self.addr = 'localhost:8080'
         self.url_base = 'http://%s/api' % self.addr
         self._url = 'http://%s/api/producto' % self.addr
 
@@ -257,6 +257,24 @@ class PerformanceTest(unittest.TestCase):
         print 'cliente ', r.text
         # r = requests.get(url, params={'prefijo': 'A'})
         #print 'cliente ', r.text
+
+    def test_crear_ingreso(self):
+        ing = {
+            'meta': {
+                'origin': 1,
+                'dest': 2,
+                'trans_type': 'TRANSFER',
+                'user': 'yu',
+            },
+            'items': [
+                {'prod': {'codigo': '123', 'nombre': 'prueba'}, 'cant': '1'},
+                {'prod': {'codigo': '12', 'nombre': 'prueba'}, 'cant': '2'}
+            ]
+        }
+
+        url = self.url_base + '/ingreso'
+        r = requests.post(url, data=json.dumps(ing))
+        print 'test ingreso ', r.content
 
 
 if __name__ == '__main__':

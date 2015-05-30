@@ -232,7 +232,14 @@ class Transferencia(MetaItemSet):
                                   reason, self.meta.timestamp)
 
     def validate(self):
-        pass
+        if self.meta.dest is None:
+            raise ValueError('dest is none')
+        if self.meta.trans_type == TransType.TRANSFER:
+            if self.meta.origin is None:
+                raise ValueError('origin is none for transfer')
+        if self.meta.trans_type == TransType.INGRESS:
+            self.meta.origin = None
+
 
     @property
     def filepath_format(self):

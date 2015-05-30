@@ -61,10 +61,11 @@ def search_prod_alm(almacen_id):
 @auth_decorator
 def crear_ingreso():
     json_content = request.body.read()
+    print json_content
     content = json_loads(json_content)
     ingreso = Transferencia.deserialize(content)
-    codigo = transapi.create(ingreso)
-    return {'codigo': codigo}
+    ingreso = transapi.save(ingreso)
+    return {'codigo': ingreso.meta.uid}
 
 
 @api.put('/api/ingreso/<ingreso_id>')
