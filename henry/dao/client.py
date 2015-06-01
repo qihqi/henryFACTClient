@@ -13,6 +13,16 @@ class Client(SerializableMixin, NCliente):
         'tipo',
         'cliente_desde',)
 
+    @property
+    def fullname(self):
+        nombres = self.nombres
+        if not nombres:
+            nombres = ''
+        apellidos = self.apellidos
+        if not apellidos:
+            apellidos = ''
+        return apellidos + ' ' + nombres
+
 
 class ClientApiDB(object):
 

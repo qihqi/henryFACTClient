@@ -1,5 +1,7 @@
-import json
+import datetime
 import decimal
+import json
+import re
 
 # encoding of the database
 DB_ENCODING = 'latin1'
@@ -16,6 +18,10 @@ def json_dump(content):
         content,
         cls=ModelEncoder,
         encoding=DB_ENCODING)
+
+
+def parse_iso_date(datestring):
+    return datetime.datetime(*map(int, re.split('[^\d]', datestring)[:-1]))
 
 
 def json_loads(content):

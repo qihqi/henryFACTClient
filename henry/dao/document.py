@@ -7,7 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from henry.layer1.schema import NNota, NTransferencia, NPedidoTemporal, NOrdenDespacho
 from henry.helpers.serialization import DbMixin, SerializableMixin
-from henry.helpers.serialization import json_loads
+from henry.helpers.serialization import json_loads, parse_iso_date
 
 from .client import Client
 from .productos import Product, Transaction
@@ -134,6 +134,8 @@ class InvMetadata(SerializableMixin, DbMixin):
     @classmethod
     def deserialize(cls, the_dict):
         x = cls().merge_from(the_dict)
+        if not isinstance(x.timestamp, datetime.datetime):
+            x.timestamp = parse_iso_date(x.timestamp)
         client = Client.deserialize(the_dict['client'])
         x.client = client
         return x
@@ -240,6 +242,13 @@ class Transferencia(MetaItemSet):
         if self.meta.trans_type == TransType.INGRESS:
             self.meta.origin = None
 
+    @classmethod
+    def deserialize(cls, the_dict):
+        x = super(cls, TransMetadata).deserialize(the_dict)
+        if not isinstance(x.timestamp, datetime.datetime):
+            x.timestamp = parse_iso_date(x.timestamp)
+        return x
+
 
     @property
     def filepath_format(self):
@@ -277,7 +286,7 @@ class DocumentApi:
         doc = self.cls.deserialize(content)
         #  sometimes db has more updated information
         meta_from_db = self.metadata_cls.from_db_instance(db_instance)
-        doc.meta.merge_from(meta_from_db)
+        doc.meta.status = meta_from_db.status
         return doc
 
     def save(self, doc):

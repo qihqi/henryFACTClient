@@ -42,8 +42,12 @@ def main():
     #setup_testdata()
     #print get_cliente_by_id('NA')
   #  print json.dumps(Venta.get(86590).serialize(), cls=ModelEncoder)
-    host = sys.argv[1] if len(sys.argv) > 1 else '0.0.0.0'
-    run(app, host=host, debug=True, port=8080)
+    host, port = '0.0.0.0', 8080
+    if len(sys.argv) > 1:
+        url = sys.argv[1]
+        host, port = url.split(':')
+        port = int(port)
+    run(app, host=host, debug=True, port=port)
     return 'http://localhost:8080'
 
 

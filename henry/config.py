@@ -15,6 +15,7 @@ from henry.constants import (CONN_STRING, INGRESO_PATH, INVOICE_PATH, ENV,
                              LOGIN_URL, TRANSACTION_PATH, PEDIDO_PATH)
 
 from henry.misc import id_type, fix_id, abs_string, value_from_cents, get_total
+from henry.externalapi import ExternalApi
 
 engine = create_engine(CONN_STRING)
 sessionfactory = sessionmaker(bind=engine)
@@ -30,6 +31,7 @@ clientapi = ClientApiDB(sessionmanager)
 transapi = DocumentApi(sessionmanager, FileService(INGRESO_PATH), prodapi, object_cls=Transferencia)
 invapi = DocumentApi(sessionmanager, FileService(INVOICE_PATH), prodapi, object_cls=Invoice)
 invapi2 = InvApiOld(sessionmanager)
+externaltransapi = ExternalApi('http://localhost:8080/api', 'ingreso', 'yu', 'yu')
 
 template_paths = ['./templates']
 jinja_env = Environment(loader=FileSystemLoader(template_paths))

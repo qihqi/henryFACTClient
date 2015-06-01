@@ -3,7 +3,7 @@ from decimal import Decimal
 from sqlalchemy.exc import IntegrityError
 
 from bottle import request, Bottle, abort, redirect
-from henry.config import jinja_env, transapi, prodapi, invapi
+from henry.config import jinja_env, transapi, prodapi, invapi, externaltransapi
 from henry.config import dbcontext, auth_decorator, sessionmanager
 from henry.dao import Item, TransType, TransMetadata, Transferencia, Product, Status, InvMetadata
 from henry.layer1.schema import NUsuario, NNota, NCliente
@@ -25,6 +25,15 @@ def get_ingreso(uid):
     else:
         return 'Documento con codigo {} no existe'.format(uid)
 
+@w.get('/app/nota/<uid>')
+@dbcontext
+@auth_decorator
+def get_ingreso(uid):
+    doc = invapi.get_doc(uid)
+    if doc:
+        temp = jinja_env.get_template('nota.html')
+        return temp.render(inv=doc)
+    return 'Documento con codigo {} no existe'.format(uid)
 
 @w.get('/app/crear_ingreso')
 @dbcontext
@@ -35,22 +44,11 @@ def crear_ingreso():
     return temp.render(bodegas=bodegas, types=TransType.names)
 
 
-@w.post('/app/crear_ingreso')
-@dbcontext
-@auth_decorator
-def post_crear_ingreso():
-    meta = TransMetadata()
+def items_from_form(form):
     items = []
-    meta.dest = int(request.forms.get('dest'))
-    meta.origin = int(request.forms.get('origin'))
-    meta.meta_type = request.forms.get('meta_type')
-    meta.trans_type = request.forms.get('trans_type')
-    if meta.trans_type == TransType.INGRESS:
-        meta.origin = None  # ingress does not have origin
-    meta.timestamp = datetime.datetime.now()
     for cant, prod_id in zip(
-            request.forms.getlist('cant'),
-            request.forms.getlist('codigo')):
+            form.getlist('cant'),
+            form.getlist('codigo')):
         if not cant.strip() or not prod_id.strip():
             # skip empty lines
             continue
@@ -61,10 +59,34 @@ def post_crear_ingreso():
         if cant < 0:
             abort(400, 'cantidad debe ser entero positivo')
         items.append(Item(prodapi.get_producto(prod_id), cant))
+    return items
+
+
+def transmetadata_from_form(form):
+    meta = TransMetadata()
+    meta.dest = int(form.get('dest'))
+    meta.origin = int(form.get('origin'))
+    meta.meta_type = form.get('meta_type')
+    meta.trans_type = form.get('trans_type')
+    if meta.trans_type == TransType.INGRESS:
+        meta.origin = None  # ingress does not have origin
+    meta.timestamp = datetime.datetime.now()
+    return meta
+
+
+@w.post('/app/crear_ingreso')
+@dbcontext
+@auth_decorator
+def post_crear_ingreso():
+    meta = transmetadata_from_form(request.forms)
+    items = items_from_form(request.forms)
     try:
         transferencia = Transferencia(meta, items)
         transferencia = transapi.save(transferencia)
+        if meta.trans_type == TransType.EXTERNAL:
+            transferencia = externaltransapi.save(transferencia)
     except ValueError as e:
+        import traceback; traceback.print_exc()
         abort(400, str(e))
 
     redirect('/app/ingreso/{}'.format(transferencia.meta.uid))
@@ -125,7 +147,7 @@ def get_resumen():
     store = request.query.get('almacen')
 
     if start is None or end is None:
-        pass
+        abort(400, 'Hay que ingresar las fechas')
 
     datestrp = datetime.datetime.strptime
     start = datestrp(start, '%Y-%m-%d')
