@@ -1,0 +1,66 @@
+{%extends "base.html"%}
+{%block title%}Eliminar Factura{%endblock%}
+{%block script%}
+<style>
+.baseform {
+    left-margin: auto;
+    right-margin: auto;
+    width: auto;
+    float: left;
+}
+.prod_label {
+    width: 30%;
+    float: left;
+}
+.prod_input {
+    float: left;
+    width: 70%;
+}
+.precios {
+    width:100%;
+}
+</style>
+{%endblock%}
+
+{%block content%}
+<form class="baseform" action="/app/eliminar_factura" method="post">
+    <h5>{{ message }}</h5>
+    <h4>Eliminar Factura</h4>
+    <table>
+        <tr>
+            <th>
+                <label for="almacen">Almacen:</label>
+            </th>
+            <td>
+                <select name="almacen" id="almancen">
+                    {% for x in almacenes %}
+                    <option value="{{x.almacen_id}}">{{x.nombre}}</option>
+                    {% endfor %}
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th>
+                <label for="id_no_de_factura">No de factura:</label>
+            </th>
+            <td>
+                <input type="text" name="codigo" id="id_no_de_factura" />
+            </td>
+        </tr>
+        <tr>
+            <th>
+                <label for="id_motivo">Motivo:</label>
+            </th>
+            <td>
+                <textarea id="id_motivo" rows="10" cols="40" name="motivo">
+                </textarea>
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><input type="submit" value="Eliminar" />
+                <input type="button" value="Cancelar" /> </td>
+        </tr>
+    </table>
+</form>
+{%endblock%}

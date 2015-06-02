@@ -252,8 +252,11 @@ class Transferencia(MetaItemSet):
 
     @property
     def filepath_format(self):
-        return os.path.join(
-            self.meta.timestamp.date().isoformat(), uuid.uuid1().hex)
+        path = getattr(self, '_path', None)
+        if path is None:
+            self._path = os.path.join(
+                self.meta.timestamp.date().isoformat(), uuid.uuid1().hex)
+        return self._path
 
 
 class DocumentApi:
@@ -278,16 +281,19 @@ class DocumentApi:
             print 'cannot find document in table ', self.db_class.__tablename__,
             print ' with id ', uid
             return None
-        file_content = self.filemanager.get_file(db_instance.items_location)
+        doc = self.get_doc_from_file(db_instance.items_location)
+        doc.meta.status = db_instance.status
+        return doc
+
+    def get_doc_from_file(self, filename):
+        file_content = self.filemanager.get_file(filename)
         if file_content is None:
             print 'could not find file at ', file_content
             return None
         content = json_loads(file_content)
         doc = self.cls.deserialize(content)
-        #  sometimes db has more updated information
-        meta_from_db = self.metadata_cls.from_db_instance(db_instance)
-        doc.meta.status = meta_from_db.status
         return doc
+
 
     def save(self, doc):
         meta = doc.meta
@@ -309,6 +315,7 @@ class DocumentApi:
     def commit(self, doc):
         meta = doc.meta
         if meta.status and meta.status != Status.NEW:
+            logging.info('attempt to commit doc {} in wrong status'.format(doc.meta.uid))
             return None
         if self._set_status_and_update_prod_count(
                 doc, Status.COMITTED, inverse_transaction=False):
@@ -317,6 +324,7 @@ class DocumentApi:
 
     def delete(self, doc):
         if doc.meta.status != Status.COMITTED:
+            logging.info('attempt to delete doc {} which is not committed'.format(doc.meta.uid))
             return None
         if self._set_status_and_update_prod_count(
                 doc, Status.DELETED, inverse_transaction=True):
@@ -385,6 +393,7 @@ class PedidoApi:
             f = self.filemanager.get_file(filename)
             if f is not None:
                 return f
+        logging.info('Could not find pedido within {} days of lookback'.format(lookback))
         return None
 
 

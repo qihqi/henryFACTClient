@@ -189,3 +189,40 @@ def get_resumen():
         depositos=depositos,
         gtotal=gtotal,
         eliminados=deleted)
+
+@w.get('/app/eliminar_factura')
+@dbcontext
+@auth_decorator
+def eliminar_factura_form(message=None):
+    almacenes = list(prodapi.get_stores())
+    print almacenes
+    temp = jinja_env.get_template('eliminar_factura.html')
+    return temp.render(almacenes=almacenes, message=message)
+
+
+@w.post('/app/eliminar_factura')
+@dbcontext
+@auth_decorator
+def eliminar_factura():
+    almacen = int(request.forms.get('almacen'))
+    codigo = request.forms.get('codigo').strip()
+    ref = request.forms.get('ref')
+    print almacen, codigo
+    db_instance = sessionmanager.session.query(
+        NNota.id, NNota.status, NNota.items_location).filter_by(
+        almacen_id=almacen, codigo=codigo).first()
+    if db_instance is None:
+        return eliminar_factura_form('Factura no existe')
+    doc = invapi.get_doc_from_file(db_instance.items_location)
+    doc.meta.status = db_instance.status
+
+    try:
+        invapi.delete(doc)
+    except ValueError:
+        abort(400)
+
+    redirect('/app/nota/{}'.format(db_instance.id))
+    
+
+
+
