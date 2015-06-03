@@ -1,4 +1,3 @@
-import fcntl
 import os
 import datetime
 from itertools import imap
@@ -6,6 +5,7 @@ from sqlalchemy.sql import bindparam
 from henry.layer1.schema import (NProducto, NContenido, NStore, NCategory,
                                  NBodega, NPriceList)
 from henry.helpers.serialization import SerializableMixin, json_dump
+from henry.helpers.fileservice import LockClass
 
 
 class Product(SerializableMixin):
@@ -57,16 +57,6 @@ class Transaction(SerializableMixin):
         return self
 
 
-class LockClass:
-
-    def __init__(self, fileobj):
-        self.fileno = fileobj.fileno()
-
-    def __enter__(self):
-        fcntl.flock(self.fileno, fcntl.LOCK_EX)
-
-    def __exit__(self, type, value, stacktrace):
-        fcntl.flock(self.fileno, fcntl.LOCK_UN)
 
 
 class TransactionApi:

@@ -1,4 +1,5 @@
 import os
+import fcntl
 
 class FileService:
 
@@ -24,3 +25,14 @@ class FileService:
         with open(filename) as f:
             return f.read()
 
+
+class LockClass:
+
+    def __init__(self, fileobj):
+        self.fileno = fileobj.fileno()
+
+    def __enter__(self):
+        fcntl.flock(self.fileno, fcntl.LOCK_EX)
+
+    def __exit__(self, type, value, stacktrace):
+        fcntl.flock(self.fileno, fcntl.LOCK_UN)

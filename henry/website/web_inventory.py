@@ -39,6 +39,7 @@ def get_ingreso(uid):
 @dbcontext
 @auth_decorator
 def crear_ingreso():
+    print request.remote_addr
     temp = jinja_env.get_template('crear_ingreso.html')
     bodegas = prodapi.get_bodegas()
     return temp.render(bodegas=bodegas, types=TransType.names)

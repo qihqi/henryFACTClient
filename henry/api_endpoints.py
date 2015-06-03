@@ -7,9 +7,11 @@ from bottle import Bottle, response, request, abort
 
 from henry.layer1.schema import NUsuario
 from henry.config import (prodapi, transapi, dbcontext, clientapi,
-                          invapi, auth_decorator, pedidoapi, sessionmanager)
+                          invapi, auth_decorator, pedidoapi, sessionmanager, 
+                          actionlogged)
 from henry.helpers.serialization import json_dump, json_loads
 from henry.dao import Client, Invoice, Transferencia
+from henry.dao.actionlog import ActionLog
 from henry.authentication import get_session
 from henry.helpers.connection import timed
 
@@ -18,6 +20,7 @@ api = Bottle()
 
 @api.get('/api/alm/<almacen_id>/producto/<prod_id>')
 @dbcontext
+@actionlogged
 def get_prod_from_inv(almacen_id, prod_id):
     prod = prodapi.get_producto(prod_id=prod_id, almacen_id=almacen_id)
     if prod is None:
@@ -27,12 +30,14 @@ def get_prod_from_inv(almacen_id, prod_id):
 
 @api.get('/api/producto/<prod_id>')
 @dbcontext
+@actionlogged
 def get_prod(prod_id):
     return get_prod_from_inv(None, prod_id)
 
 
 @api.get('/api/producto')
 @dbcontext
+@actionlogged
 def search_prod():
     prefijo = request.query.prefijo
     if prefijo:
@@ -44,6 +49,7 @@ def search_prod():
 
 @api.get('/api/alm/<almacen_id>/producto')
 @dbcontext
+@actionlogged
 def search_prod_alm(almacen_id):
     prefijo = request.query.prefijo
     if prefijo:
@@ -59,6 +65,7 @@ def search_prod_alm(almacen_id):
 @api.post('/api/ingreso')
 @dbcontext
 @auth_decorator
+@actionlogged
 def crear_ingreso():
     json_content = request.body.read()
     print json_content
@@ -71,6 +78,7 @@ def crear_ingreso():
 @api.put('/api/ingreso/<ingreso_id>')
 @dbcontext
 @auth_decorator
+@actionlogged
 def postear_ingreso(ingreso_id):
     trans = transapi.get_doc(ingreso_id)
     transapi.commit(trans)
@@ -79,6 +87,7 @@ def postear_ingreso(ingreso_id):
 
 @api.delete('/api/ingreso/<ingreso_id>')
 @dbcontext
+@actionlogged
 def delete_ingreso(ingreso_id):
     trans = transapi.get_doc(ingreso_id)
     transapi.delete(trans)
@@ -87,6 +96,7 @@ def delete_ingreso(ingreso_id):
 
 @api.get('/api/ingreso/<ingreso_id>')
 @dbcontext
+@actionlogged
 def get_ingreso(ingreso_id):
     ing = transapi.get_doc(ingreso_id)
     if ing is None:
@@ -97,6 +107,7 @@ def get_ingreso(ingreso_id):
 
 @api.get('/api/cliente/<codigo>')
 @dbcontext
+@actionlogged
 def get_cliente(codigo):
     client = clientapi.get(codigo)
     if client is None:
@@ -107,6 +118,7 @@ def get_cliente(codigo):
 @api.put('/api/cliente/<codigo>')
 @dbcontext
 @auth_decorator
+@actionlogged
 def update_client(codigo):
     client_dict = json.parse(request.body)
     client = Client.deserialize(client_dict)
@@ -117,12 +129,14 @@ def update_client(codigo):
 @api.post('/api/cliente/<codigo>')
 @dbcontext
 @auth_decorator
+@actionlogged
 def create_client(codigo):
     return update_client(codigo)
 
 
 @api.get('/api/cliente')
 @dbcontext
+@actionlogged
 def search_client():
     prefijo = request.query.prefijo
     if prefijo:
@@ -135,6 +149,7 @@ def search_client():
 @api.get('/api/nota/<inv_id>')
 @dbcontext
 @auth_decorator
+@actionlogged
 def get_invoice(inv_id):
     doc = invapi.get_doc(inv_id)
     if doc is None:
@@ -145,6 +160,7 @@ def get_invoice(inv_id):
 
 @api.get('/api/nota')
 @dbcontext
+@actionlogged
 def get_invoice_by_date():
     start = request.query.get('start_date')
     end = request.query.get('end_date')
@@ -161,6 +177,7 @@ def get_invoice_by_date():
 @api.post('/api/nota')
 @dbcontext
 @auth_decorator
+@actionlogged
 def create_invoice():
     json_content = request.body.read() 
     if not json_content:
@@ -186,6 +203,7 @@ def create_invoice():
 @api.put('/api/nota/<uid>')
 @dbcontext
 @auth_decorator
+@actionlogged
 def postear_invoice(uid):
     inv = invapi.get_doc(uid)
     invapi.commit(inv)
@@ -195,6 +213,7 @@ def postear_invoice(uid):
 @api.delete('/api/nota/<uid>')
 @dbcontext
 @auth_decorator
+@actionlogged
 def delete_invoice(uid):
     inv = invapi.get_doc(uid)
     invapi.delete(inv)
@@ -204,6 +223,7 @@ def delete_invoice(uid):
 @api.post('/api/pedido')
 @dbcontext
 @auth_decorator
+@actionlogged
 def save_pedido():
     json_content = request.body.read()
     uid = pedidoapi.save(json_content)
@@ -211,6 +231,7 @@ def save_pedido():
 
 
 @api.get('/api/pedido/<uid>')
+@actionlogged
 def get_pedido(uid):
     f = pedidoapi.get(uid)
     if f is None:
