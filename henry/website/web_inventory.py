@@ -160,7 +160,7 @@ def get_resumen():
         m.client.nombres = db_raw.nombres
         m.client.apellidos = db_raw.apellidos
         return m
-        
+
     result = session.query(NNota, NCliente.nombres, NCliente.apellidos).filter_by(
         user_id=user,
         almacen_id=store).filter(
@@ -222,7 +222,35 @@ def eliminar_factura():
         abort(400)
 
     redirect('/app/nota/{}'.format(db_instance.id))
-    
+
+
+@w.get('/app/ver_factura_form')
+@dbcontext
+@auth_decorator
+def get_nota_form(message=None):
+    almacenes = list(prodapi.get_stores())
+    temp = jinja_env.get_template('ver_factura_form.html')
+    return temp.render(almacenes=almacenes, message=message)
+
+
+@w.get('/app/ver_factura')
+@dbcontext
+@auth_decorator
+def ver_factura():
+    almacen = int(request.query.get('almacen'))
+    codigo = request.query.get('codigo').strip()
+    ref = request.query.get('ref')
+    print almacen, codigo
+    db_instance = sessionmanager.session.query(
+        NNota.id, NNota.status, NNota.items_location).filter_by(
+        almacen_id=almacen, codigo=codigo).first()
+    if db_instance is None:
+        return get_nota_form('Factura no existe')
+    redirect('/app/nota/{}'.format(db_instance.id))
+
+
+
+
 
 
 

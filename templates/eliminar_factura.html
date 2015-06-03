@@ -24,7 +24,7 @@
 
 {%block content%}
 <form class="baseform" action="/app/eliminar_factura" method="post">
-    <h5>{{ message }}</h5>
+    <h5>{% if message %} {{ message }} {% endif %}</h5>
     <h4>Eliminar Factura</h4>
     <table>
         <tr>
