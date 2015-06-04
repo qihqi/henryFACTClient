@@ -1,0 +1,40 @@
+{%extends "base.html" %}
+{% block script %}
+<script src="/static/jquery-1.7.2.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.editar').click(function() {
+            var alm_id = $(this).attr('alm');
+            $('#p1').removeAttr('disabled');
+            $('#p2').removeAttr('disabled');
+            $('#cant_mayorista').removeAttr('disabled');
+            $('.guardar').show();
+            $(this).hide();
+        });
+    });
+</script>
+{% endblock %}
+
+{%block content%}
+
+<div>
+    <h4>Producto: {{prod.codigo}}</h4>
+    <ul>
+    <li><h4>{{prod.nombre}}</h4></li>
+    {% for x, y in prods.items() %}
+    <li>
+        {{x.nombre}} <button class="editar" alm="{{x.almacen_id}}">Editar</button>
+        <button style="display:none;" class="guardar" alm="{{x.almacen_id}}">Guardar</button>
+        <ul>
+            <li>Precio1: <input id="p1" disabled value="{{value_from_cents(y.precio1)}}"/></li>
+            <li>Precio2: <input id="p2" disabled value="{{value_from_cents(y.precio2)}}"/></li>
+            <li>Cant Mayorista: <input id="cant_mayorista" disabled value="{{y.cant_mayorista}}"/></li>
+        </ul>
+    </li>
+    {% endfor %}
+    </ul>
+    </table>
+</div>
+
+{% endblock %}

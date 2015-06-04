@@ -11,9 +11,6 @@ from henry.config import (prodapi, transapi, dbcontext, clientapi,
                           actionlogged)
 from henry.helpers.serialization import json_dump, json_loads
 from henry.dao import Client, Invoice, Transferencia
-from henry.dao.actionlog import ActionLog
-from henry.authentication import get_session
-from henry.helpers.connection import timed
 
 api = Bottle()
 

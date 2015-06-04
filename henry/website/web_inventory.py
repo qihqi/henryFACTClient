@@ -250,8 +250,24 @@ def ver_factura():
     redirect('/app/nota/{}'.format(db_instance.id))
 
 
+@w.get('/app/ver_producto_form')
+@auth_decorator
+def ver_producto_form():
+    return jinja_env.get_template('ver_productos.html').render()
 
 
+@w.get('/app/producto/:uid')
+@dbcontext
+@auth_decorator
+def ver_producto(uid):
+    stores = prodapi.get_stores()
+    prods = {}
+    prod = None
+    for s in stores:
+        prod = prodapi.get_producto(uid, almacen_id=s.almacen_id)
+        prods[s] = prod
+    temp = jinja_env.get_template('producto.html')
+    return temp.render(prods=prods, prod=prod)
 
 
 
