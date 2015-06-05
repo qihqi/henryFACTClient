@@ -15,7 +15,7 @@ public class Documento {
 
     @Getter @Setter private Usuario user;
 
-    @Getter @Setter private int ivaPorciento;
+    @Getter @Setter private int ivaPorciento = 12;
     @Getter @Setter private int descuentoGlobalPorciento;
 
     @Getter @Setter private String formaPago;
