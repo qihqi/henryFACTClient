@@ -1,15 +1,24 @@
-GET /documentos/:id
-PUT /documentos
-POST /documentos/:id
-DELETE /documentos/:id
+GET /pedido/<id>
+POST /pedido
 
-GET /productos/:id
-PUT /productos/:id #crear producto 
-POST /productos/:id #cambiar precio etc
-DELETE /productos/:id #eliminar
+GET /nota/<id>
+POST /nota
+PUT /nota/<id> #commit a nota
+DELETE /nota/<id>
 
-GET /cliente/:id
-PUT /cliente
-POST /cliente/:id
-DELETE /cliente/:id
+# lista de precio
+GET /alm/<almacen_id>/producto/<prod_id>
+PUT /alm/<almacen_id>/producto/<prod_id>
+DELETE /alm/<almacen_id>/producto/<prod_id>
+POST /alm/<almacen_id>/producto/<prod_id>
+
+GET /producto/:id
+PUT /producto/:id #crear producto 
+POST /producto/:id #cambiar precio etc
+DELETE /producto/:id #eliminar
+
+GET /cliente/<id>
+POST /cliente/<id>
+PUT /cliente/<id>
+DELETE /cliente/<id>
 
