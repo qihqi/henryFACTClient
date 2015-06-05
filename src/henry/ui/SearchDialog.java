@@ -2,6 +2,8 @@ package henry.ui;
 
 import henry.api.SearchEngine;
 import henry.model.BaseModel;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowFocusListener;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.DefaultListModel;
@@ -95,14 +97,29 @@ public class SearchDialog<T> extends JDialog {
                 if (index != -1) {
                     selectedIndex = index;
                     display.clearSelection();
-                    setVisible(false); 
+                    setVisible(false);
                 }
             }
         });
         contentPanel.add(new JScrollPane(display), "span, width :456:");
+
+        this.addWindowFocusListener(new WindowFocusListener() {
+            @Override
+            public void windowGainedFocus(WindowEvent e) {
+                SearchDialog.this.focus();
+            }
+
+            @Override
+            public void windowLostFocus(WindowEvent e) {}
+        });
     }
 
     public T getResult() {
         return resultList.get(selectedIndex);
+    }
+
+    public void focus() {
+        searchInput.requestFocus();
+        searchInput.selectAll();
     }
 }

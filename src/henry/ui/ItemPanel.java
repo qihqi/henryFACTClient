@@ -165,6 +165,9 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
             parent.onDataChanged();
             parent.shiftEvent(ItemPanel.this);
             parent.scrollDown();
+        } 
+        else {
+            cantidad.requestFocus();
         }
     }
 
@@ -218,6 +221,7 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         precio.setText("");
         nombre.setText("");
         subtotal.setText("");
+        codigo.requestFocus();
     }
 
     public void onDataChanged() {

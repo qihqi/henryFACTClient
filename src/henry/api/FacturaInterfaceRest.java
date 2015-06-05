@@ -43,7 +43,7 @@ import static henry.Helpers.streamToString;
  */
 public class FacturaInterfaceRest implements FacturaInterface {
 
-    private static final String PROD_URL_PATH = "/api/producto";
+    private static final String PROD_URL_PATH = "/api/alm/%s/producto";
     private static final String CLIENT_URL_PATH = "/api/cliente";
     private static final String VENTA_URL_PATH = "/api/pedido";
     private static final String FACTURA_URL_PATH = "/api/nota";
@@ -96,17 +96,18 @@ public class FacturaInterfaceRest implements FacturaInterface {
     @Override
     public List<Producto> buscarProducto(String prefijo) {
         try {
+            String url = String.format(PROD_URL_PATH, almacenId);
             URI prodUri = new URIBuilder().setScheme("http")
                     .setHost(baseUrl)
-                    .setPath(PROD_URL_PATH)
-                    .setParameter("prefijo", prefijo)
-                    .setParameter("bodega_id", "1").build();
+                    .setPath(url)
+                    .setParameter("prefijo", prefijo).build();
             System.out.println(prodUri.toString());
             String content = getUrl(prodUri);
             if (content == null) {
                 return new ArrayList<>();
             }
-            return Arrays.asList(gson.fromJson(content, Producto[].class));
+            Producto[] ps = gson.fromJson(content, Producto[].class);
+            return Arrays.asList(ps);
         }
         catch (URISyntaxException ex) {
             ex.printStackTrace();
@@ -338,8 +339,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
             if (response.getStatusLine().getStatusCode() == 200) {
                 String content = streamToString(entity.getContent());
                 return content;
-            }
-        }
+            }        }
         catch (IOException e) {
         }
         return null;

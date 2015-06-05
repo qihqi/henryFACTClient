@@ -61,6 +61,12 @@ public class MinoristaPrinter extends GenericPrinter{
         if ( posy >= data.length) {
             posy = data.length - 1;
         }
+        if (posx < 0) {
+            posx = 0;
+        }
+        if (posy < 0) {
+            posy = 0;
+        }
         int length = (content.length() + posx >= data[posy].length) ?
                 data[posy].length - posx - 1 : content.length();
         System.arraycopy(content.toCharArray(), 0, data[posy], posx, length);

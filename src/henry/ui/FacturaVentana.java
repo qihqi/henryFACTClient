@@ -102,7 +102,7 @@ public class FacturaVentana extends JFrame {
         contenido = new ItemContainer(true, itemFactory);
         cliente = new ClientePanel(this.api, clienteSearchDialog, contenido);
 
-        JButton buscarPorCliente = new JButton("Buscar por Cliente");
+        JButton buscarPorCliente = new JButton("");
         pedidoField = new JTextField();
 
         //poner llamador de nota de pedido
