@@ -18,6 +18,10 @@ public class MinoristaPrinter extends GenericPrinter{
         super(config);
         double[] tamano = config.getImpression().getTamano();
         data = new char[(int) tamano[1]][(int) tamano[0]];
+        cleanData();
+    }
+
+    private void cleanData() {
         for (char[] x : data) {
             for (int i = 0; i < x.length; i++) {
                 x[i] = ' ';
@@ -47,6 +51,7 @@ public class MinoristaPrinter extends GenericPrinter{
         Doc doc = new SimpleDoc(b, flavour, null);
         try {
             job.print(doc, null);
+            cleanData();
             return true;
         } catch (PrintException e1) {
             e1.printStackTrace();
