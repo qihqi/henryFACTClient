@@ -280,7 +280,9 @@ public class ItemContainer extends JPanel
         for (Item i : doc.getItems()) {
             addItemPanel(i);
         }
-        addItemPanel(new Item());
+        Item next = new Item();
+        addItemPanel(next);
+        documento.getRef().addItem(next);
         content.revalidate();
         items.get(items.size() - 1).focus();
         itemObserver.onDataChanged();

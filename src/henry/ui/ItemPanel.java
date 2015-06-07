@@ -212,6 +212,8 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
     public void eraseRow() {
         item.getRef().setProducto(null);
         item.getRef().setCantidad(0);
+        item.notifyListeners();
+        parent.onDataChanged();
         clear();
     }
 
