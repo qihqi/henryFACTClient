@@ -103,6 +103,12 @@ def create_prod_form(message=''):
     return temp.render(almacenes=stores, categorias=categorias, message=message)
 
 
+def convert_to_cent(dec):
+    if not isinstance(dec, Decimal):
+        dec = Decimal(dec)
+    return int(dec * 100)
+
+
 @w.post('/app/crear_producto')
 @dbcontext
 @auth_decorator
@@ -117,8 +123,9 @@ def create_prod():
         p1 = request.forms.get('{}-precio1'.format(alm.almacen_id))
         p2 = request.forms.get('{}-precio2'.format(alm.almacen_id))
         thres = request.forms.get('{}-thres'.format(alm.almacen_id))
+        p1 = convert_to_cent(p1)
+        p2 = convert_to_cent(p2)
         precios[alm.almacen_id] = (p1, p2, thres)
-
     try:
         prodapi.create_product(p, precios)
         message = 'producto con codigo "{}" creado'.format(p.codigo)

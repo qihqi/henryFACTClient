@@ -58,7 +58,6 @@ class Transaction(SerializableMixin):
 
 
 
-
 class TransactionApi:
 
     def __init__(self, root):
@@ -232,7 +231,8 @@ class ProductApiDB:
                 almacen_id=almacen,
                 precio1=p1,
                 precio2=p2,
-                cant_mayorista=thres)
+                cant_mayorista=thres,
+                multiplicador=1)
             if bodega_id not in contenidos_creados:
                 cont = NContenido(
                     prod_id=product_core.codigo,
