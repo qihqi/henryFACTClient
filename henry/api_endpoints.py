@@ -73,6 +73,15 @@ def crear_producto(alm_id, pid):
     content = json_loads(request.body.read())
     prodapi.update_price(alm_id, pid, content)
 
+
+@api.get('/api/producto/<pid>')
+@dbcontext
+@auth_decorator
+@actionlogged
+def crear_producto(alm_id, pid):
+    content = json_loads(request.body.read())
+    prodapi.update_price(alm_id, pid, content)
+
 # ################# INGRESO ###########################3
 @api.post('/api/ingreso')
 @dbcontext
