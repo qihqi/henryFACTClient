@@ -1,5 +1,3 @@
-from sqlalchemy import create_engine
-import sys
 import time
 
 def timed(ostream):
@@ -13,4 +11,3 @@ def timed(ostream):
             return result
         return ff
     return inner
-

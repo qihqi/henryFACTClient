@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from sqlalchemy.orm import sessionmaker 
 from sqlalchemy import create_engine
-from henry.layer1.schema import NOrdenDespacho
+from henry.base.schema import NOrdenDespacho
 
 
 CONN_STRING = 'mysql+mysqldb://root:wolverineaccess@localhost/henry'
@@ -48,10 +48,6 @@ def main():
     print 'avg', avg_dict(by_date), avg_dict(by_week), avg_dict(by_month)
 
 #    plot_all(by_month)
-
-def plot_all(d):
-    plt.plot(d.keys(), d.values())
-    plt.show()
 
 def print_dict(d):
     for x, y in d.items():

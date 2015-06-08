@@ -1,4 +1,5 @@
 import datetime
+
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from jinja2 import Environment, FileSystemLoader
@@ -7,14 +8,11 @@ from henry.dao import (DocumentApi, Transferencia, Invoice,
                        ProductApiDB, PedidoApi, ClientApiDB,
                        TransactionApi, InvApiOld)
 from henry.dao.actionlog import ActionLogApi, ActionLogApiDecor
-
-from henry.helpers.fileservice import FileService
-from henry.layer1.auth import AuthDecorator
-from henry.layer1.session_manager import SessionManager
-from henry.layer1.db_context import DBContext
+from henry.base.fileservice import FileService
+from henry.base.auth import AuthDecorator
+from henry.base.session_manager import SessionManager, DBContext
 from henry.constants import (CONN_STRING, INGRESO_PATH, INVOICE_PATH, ENV,
                              LOGIN_URL, TRANSACTION_PATH, PEDIDO_PATH, ACTION_LOG_PATH)
-
 from henry.misc import id_type, fix_id, abs_string, value_from_cents, get_total
 from henry.externalapi import ExternalApi
 

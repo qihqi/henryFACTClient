@@ -1,21 +1,21 @@
 import time
 import unittest
-from henry.layer1.schema import NProducto, NContenido
+from henry.base.schema import NProducto, NContenido
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-class SpeedTest(unittest.TestCase):
 
+class SpeedTest(unittest.TestCase):
     def setUp(self):
         self.engine = create_engine('mysql+mysqldb://root:no jodas@localhost/henry')
         self.sessionmaker = sessionmaker(bind=self.engine)
-
 
     def test_1query(self):
 
         session = self.sessionmaker()
         start = time.time()
-        result = session.query(NProducto, NContenido).filter(NContenido.prod_id == NProducto.codigo).filter(NProducto.codigo == 'AAAA')
+        result = session.query(NProducto, NContenido).filter(NContenido.prod_id == NProducto.codigo).filter(
+            NProducto.codigo == 'AAAA')
         for x in result:
             print x.__dict__
         end = time.time()
@@ -25,7 +25,8 @@ class SpeedTest(unittest.TestCase):
 
         session = self.sessionmaker()
         start = time.time()
-        result = session.query(NProducto, NContenido).filter(NContenido.prod_id == NProducto.codigo).filter(NProducto.codigo == 'AAAA')
+        result = session.query(NProducto, NContenido).filter(NContenido.prod_id == NProducto.codigo).filter(
+            NProducto.codigo == 'AAAA')
         for x in result:
             print x.__dict__
         end = time.time()
@@ -44,7 +45,8 @@ class SpeedTest(unittest.TestCase):
     def atest_join(self):
         session = self.sessionmaker()
         start = time.time()
-        result = session.query(NProducto).join(NContenido, NContenido.prod_id==NProducto.codigo).filter(NProducto.nombre.startswith('a'))
+        result = session.query(NProducto).join(NContenido, NContenido.prod_id == NProducto.codigo).filter(
+            NProducto.nombre.startswith('a'))
         for x in result:
             print x.__dict__
         end = time.time()

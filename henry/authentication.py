@@ -1,14 +1,14 @@
-import sha
+from hashlib import sha1
 import bottle
 from bottle import request
-from henry.layer1.schema import NUsuario
+from henry.base.schema import NUsuario
 from henry.config import sessionmanager
 
 app = bottle.Bottle()
 
 
-def authenticate(username, password, userinfo):
-    s = sha.new(password)
+def authenticate(password, userinfo):
+    s = sha1.new(password)
     return s.hexdigest() == userinfo.password
 
 
@@ -29,7 +29,7 @@ def post_authenticate():
         info = get_user_info(session, username)
         if info is None:
             return {'status': False, 'message': 'Usuario no encontrado'}
-        if authenticate(username, password, info):
+        if authenticate(password, info):
             data = {
                 'status': True,
                 'last_factura': info.last_factura,

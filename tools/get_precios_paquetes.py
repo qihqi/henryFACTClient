@@ -1,4 +1,4 @@
-from henry.layer1.schema import NContenido, NTransform
+from henry.base.schema import NContenido, NTransform
 from henry.config import sessionmanager
 
 def get_all_productos(session, all_reglas):

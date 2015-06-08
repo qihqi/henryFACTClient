@@ -13,9 +13,12 @@ class FileService:
         if not os.path.exists(dirname):
             os.makedirs(dirname)
         fullpath = os.path.join(dirname, name)
+        if not override and os.path.exists(fullpath):
+            return False
         with open(fullpath, 'w') as f:
             f.write(content)
             f.flush()
+            return True
 
     def get_file(self, filename):
         if not filename.startswith('/'):
@@ -34,5 +37,5 @@ class LockClass:
     def __enter__(self):
         fcntl.flock(self.fileno, fcntl.LOCK_EX)
 
-    def __exit__(self, type, value, stacktrace):
+    def __exit__(self, _, unused, enused2):
         fcntl.flock(self.fileno, fcntl.LOCK_UN)

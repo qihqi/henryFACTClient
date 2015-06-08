@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from bottle import request, Bottle, response
 from henry.dao import Status
-from henry.layer1.schema import NUsuario
+from henry.base.schema import NUsuario
 from henry.config import sessionmanager, jinja_env, invapi2, dbcontext, fix_id
 from henry.constants import RUC
 

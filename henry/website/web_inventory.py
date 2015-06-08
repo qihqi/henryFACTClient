@@ -6,7 +6,7 @@ from bottle import request, Bottle, abort, redirect
 from henry.config import jinja_env, transapi, prodapi, invapi, externaltransapi
 from henry.config import dbcontext, auth_decorator, sessionmanager
 from henry.dao import Item, TransType, TransMetadata, Transferencia, Product, Status, InvMetadata
-from henry.layer1.schema import NUsuario, NNota, NCliente
+from henry.base.schema import NUsuario, NNota, NCliente
 
 w = Bottle()
 web_inventory_webapp = w
@@ -268,6 +268,3 @@ def ver_producto(uid):
         prods[s] = prod
     temp = jinja_env.get_template('producto.html')
     return temp.render(prods=prods, prod=prod)
-
-
-

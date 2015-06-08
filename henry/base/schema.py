@@ -2,7 +2,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Numeric, Date, DateTime, Boolean, ForeignKey, Text
 from sqlalchemy.schema import Index
 from sqlalchemy.orm import relationship, backref
-from henry.helpers.serialization import SerializableMixin
 
 Base = declarative_base()
 

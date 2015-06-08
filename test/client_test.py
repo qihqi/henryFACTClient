@@ -1,14 +1,14 @@
 import unittest
 import datetime
-from decimal import Decimal
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from henry.layer1.schema import NProducto, NContenido, Base
-from henry.helpers.fileservice import FileService
+
+from henry.base.schema import Base
 from henry.layer2.client import Client, ClientApiDB
-from henry.layer1.session_manager import SessionManager
+from henry.base.session_manager import SessionManager
 from henry.config import validate_uid_and_ruc
+
 
 class ClientTest(unittest.TestCase):
 
@@ -97,4 +97,3 @@ class ClientTest(unittest.TestCase):
             
 if __name__ == '__main__':
     unittest.main()
-

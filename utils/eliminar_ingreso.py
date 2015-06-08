@@ -1,5 +1,4 @@
-from henry.layer1.schema import *
+from henry.base.schema import *
 
 def main():
     codigo = sys.argv[1]
-

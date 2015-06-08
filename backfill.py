@@ -1,45 +1,47 @@
-from henry.layer1.schema import NProducto, NContenido, NPriceList, NTransform
+from henry.base.schema import NProducto, NContenido, NPriceList, NTransform
 from henry.config import sessionmanager
 
 
 def get_all_contenidos(session):
     return session.query(
-            NProducto.codigo,
-            NProducto.nombre,
-            NContenido.precio,
-            NContenido.precio2,
-            NContenido.bodega_id,
-            NContenido.cant_mayorista,
-            NContenido.id).filter(
-                    NProducto.codigo == NContenido.prod_id)
+        NProducto.codigo,
+        NProducto.nombre,
+        NContenido.precio,
+        NContenido.precio2,
+        NContenido.bodega_id,
+        NContenido.cant_mayorista,
+        NContenido.id).filter(
+        NProducto.codigo == NContenido.prod_id)
+
 
 def get_reglas(session, prod_id):
     return session.query(NTransform.origin_id,
-            NTransform.dest_id,
-            NTransform.multiplier).filter_by(origin_id=prod_id).first()
-
+                         NTransform.dest_id,
+                         NTransform.multiplier).filter_by(origin_id=prod_id).first()
 
 
 def make_lista_precio(item, unidad='unidad', multiplicador=1):
     return NPriceList(
-            nombre=item.nombre,
-            almacen_id=item.bodega_id,
-            prod_id=item.codigo,
-            precio1=int(item.precio*100),
-            precio2=int(item.precio2*100),
-            cant_mayorista=item.cant_mayorista,
-            upi=item.id,
-            unidad='unidad',
-            multiplicador=1)
+        nombre=item.nombre,
+        almacen_id=item.bodega_id,
+        prod_id=item.codigo,
+        precio1=int(item.precio * 100),
+        precio2=int(item.precio2 * 100),
+        cant_mayorista=item.cant_mayorista,
+        upi=item.id,
+        unidad='unidad',
+        multiplicador=1)
+
 
 def get_contenido_id(session, prod_id, bodega_id):
     return session.query(NContenido.id).filter_by(
-            prod_id=prod_id, bodega_id=bodega_id).first().id
+        prod_id=prod_id, bodega_id=bodega_id).first().id
+
 
 def main():
+    counter = 0
+    last_id = None
     try:
-        counter = 0
-        last_id = None
         with sessionmanager as session:
             for item in get_all_contenidos(session):
                 last_id = item.id
@@ -60,5 +62,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-

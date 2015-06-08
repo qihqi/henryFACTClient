@@ -1,7 +1,10 @@
 import os
 from urlparse import urljoin
+
 import requests
-from henry.helpers.serialization import json_dump
+
+from henry.base.serialization import json_dump
+
 
 class ExternalApi:
 

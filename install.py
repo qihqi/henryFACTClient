@@ -5,6 +5,7 @@ import shutil
 APP_NAME = 'api'
 STATIC = 'static'
 
+
 def main():
     deploy_path = os.environ['DEPLOYMENT_ROOT']
     deploy_path = os.path.join(deploy_path, APP_NAME)
@@ -34,10 +35,10 @@ def backup_dir(from_dir, to_dir, backup=True):
             shutil.copytree(to_dir, old_path)
         shutil.rmtree(to_dir)
 
-    print 'copiando desde', from_dir,'hasta', to_dir
+    print 'copiando desde', from_dir, 'hasta', to_dir
     shutil.copytree(from_dir, to_dir)
     print 'exitoso!'
 
+
 if __name__ == '__main__':
     sys.exit(main())
-

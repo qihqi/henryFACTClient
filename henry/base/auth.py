@@ -1,5 +1,5 @@
 from bottle import request, redirect
-from henry.layer1.schema import NDjangoSession
+from henry.base.schema import NDjangoSession
 
 
 class AuthDecorator:
@@ -32,6 +32,3 @@ class AuthDecorator:
         if session is not None:
             return 'login_info' in session
         return False
-                
-               
-

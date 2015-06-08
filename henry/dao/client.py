@@ -1,5 +1,5 @@
-from henry.helpers.serialization import SerializableMixin
-from henry.layer1.schema import NCliente
+from henry.base.serialization import SerializableMixin
+from henry.base.schema import NCliente
 
 
 class Client(SerializableMixin, NCliente):
@@ -40,7 +40,7 @@ class ClientApiDB(object):
             NCliente.apellidos.startswith(apellido))
         return clientes
 
-    def save(self, cliente):
+    def create(self, cliente):
         newc = cliente
         if not isinstance(cliente, NCliente):
             newc = NCliente(codigo=cliente.codigo,
@@ -55,3 +55,8 @@ class ClientApiDB(object):
         session = self.manager.session
         session.add(newc)
         session.flush()
+
+    def update(self, client_id, new_content):
+        self.manager.session.query(
+            NCliente).filter_by(codigo=client_id).update(
+            new_content)

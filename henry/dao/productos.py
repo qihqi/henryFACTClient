@@ -1,11 +1,13 @@
 import os
 import datetime
 from itertools import imap
+
 from sqlalchemy.sql import bindparam
-from henry.layer1.schema import (NProducto, NContenido, NStore, NCategory,
-                                 NBodega, NPriceList)
-from henry.helpers.serialization import SerializableMixin, json_dump
-from henry.helpers.fileservice import LockClass
+
+from henry.base.schema import (NProducto, NContenido, NStore, NCategory,
+                               NBodega, NPriceList)
+from henry.base.serialization import SerializableMixin, json_dump
+from henry.base.fileservice import LockClass
 
 
 class Product(SerializableMixin):
@@ -57,10 +59,7 @@ class Transaction(SerializableMixin):
         return self
 
 
-
-
 class TransactionApi:
-
     def __init__(self, root):
         self.root = root
 
@@ -92,7 +91,6 @@ class TransactionApi:
 
 
 class ProductApiDB:
-
     _PROD_KEYS = (
         NProducto.codigo,
         NProducto.nombre,
@@ -128,7 +126,8 @@ class ProductApiDB:
             return p
         return None
 
-    def _get_db_filters_and_keys(self, almacen_id, bodega_id):
+    @staticmethod
+    def _get_db_filters_and_keys(almacen_id, bodega_id):
         query_items = []
         filter_items = []
         if almacen_id is not None:
@@ -151,16 +150,6 @@ class ProductApiDB:
         for r in result_proxy:
             yield Product().merge_from(r)
 
-    def save(self, prod):
-        p = self._construct_db_instance(prod)
-        self.db_session.session.add(p)
-
-    def save_batch(self, prods):
-        session = self.db_session.session
-        for p in prods:
-            x = self._construct_db_instance(p)
-            session.add(x)
-
     def execute_transactions(self, trans):
         return self.exec_transactions_with_session(self.db_session.session, trans)
 
@@ -176,19 +165,6 @@ class ProductApiDB:
         for t in trans:
             self.transapi.save(t)
         return result.rowcount
-
-    def _construct_db_instance(self, prod):
-        p = NProducto(
-            codigo=prod.codigo,
-            nombre=prod.nombre,
-            categoria=prod.categoria)
-        if prod.almacen_id:
-            c = NPriceList(
-                almacen_id=prod.almacen_id,
-                precio=prod.precio1,
-                precio2=prod.precio2)
-            p.contenidos.add(c)
-        return p
 
     def get_bodegas(self):
         if not self._bodegas:
@@ -214,7 +190,7 @@ class ProductApiDB:
         return self.db_session.session.query(NCategory)
 
     def create_product(self, product_core, price_list):
-        #insert product in db
+        # insert product in db
         session = self.db_session.session
         prod = NProducto(
             nombre=product_core.nombre,
@@ -244,3 +220,14 @@ class ProductApiDB:
             alm.cantidad = contenidos_creados[bodega_id]
             session.add(alm)
         session.commit()
+
+    def update_prod(self, pid, content_dict):
+        session = self.db_session.session
+        session.query(NProducto).filter_by(codigo=pid).update(
+            content_dict)
+
+    def update_price(self, alm_id, pid, content_dict):
+        session = self.db_session.session
+        session.query(NPriceList).filter_by(
+            codigo=pid, almacen_id=alm_id).update(
+            content_dict)

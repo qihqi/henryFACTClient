@@ -1,20 +1,19 @@
-import sys
 import datetime
-import json
 from decimal import Decimal
 
 from bottle import Bottle, response, request, abort
 
-from henry.layer1.schema import NUsuario
+from henry.base.schema import NUsuario
 from henry.config import (prodapi, transapi, dbcontext, clientapi,
-                          invapi, auth_decorator, pedidoapi, sessionmanager, 
+                          invapi, auth_decorator, pedidoapi, sessionmanager,
                           actionlogged)
-from henry.helpers.serialization import json_dump, json_loads
-from henry.dao import Client, Invoice, Transferencia
+from henry.base.serialization import json_dump, json_loads
+from henry.dao import Invoice, Transferencia, Client
 
 api = Bottle()
 
 
+# ######### PRODUCT ########################
 @api.get('/api/alm/<almacen_id>/producto/<prod_id>')
 @dbcontext
 @actionlogged
@@ -39,9 +38,8 @@ def search_prod():
     prefijo = request.query.prefijo
     if prefijo:
         return json_dump(list(prodapi.search_producto(prefix=prefijo)))
-    else:
-        response.status = 400
-        return None
+    response.status = 400
+    return None
 
 
 @api.get('/api/alm/<almacen_id>/producto')
@@ -54,20 +52,35 @@ def search_prod_alm(almacen_id):
             list(prodapi.search_producto(
                 prefix=prefijo,
                 almacen_id=almacen_id)))
-    else:
-        response.status = 400
-        return None
+    response.status = 400
+    return None
 
 
+@api.put('/api/producto/<pid>')
+@dbcontext
+@auth_decorator
+@actionlogged
+def crear_producto(pid):
+    content = json_loads(request.body.read())
+    prodapi.update_prod(pid, content)
+
+
+@api.put('/api/alm/<alm_id>/producto/<pid>')
+@dbcontext
+@auth_decorator
+@actionlogged
+def crear_producto(alm_id, pid):
+    content = json_loads(request.body.read())
+    prodapi.update_price(alm_id, pid, content)
+
+# ################# INGRESO ###########################3
 @api.post('/api/ingreso')
 @dbcontext
 @auth_decorator
 @actionlogged
 def crear_ingreso():
     json_content = request.body.read()
-    print json_content
-    content = json_loads(json_content)
-    ingreso = Transferencia.deserialize(content)
+    ingreso = Transferencia.deserialize(json_content)
     ingreso = transapi.save(ingreso)
     return {'codigo': ingreso.meta.uid}
 
@@ -102,6 +115,7 @@ def get_ingreso(ingreso_id):
     return json_dump(ing.serialize())
 
 
+# ################ CLIENT ############################
 @api.get('/api/cliente/<codigo>')
 @dbcontext
 @actionlogged
@@ -117,10 +131,8 @@ def get_cliente(codigo):
 @auth_decorator
 @actionlogged
 def update_client(codigo):
-    client_dict = json.parse(request.body)
-    client = Client.deserialize(client_dict)
-    clientapi.save(client)
-    return {'codigo': client.codigo}
+    client_dict = json_loads(request.body.read())
+    clientapi.update(codigo, client_dict)
 
 
 @api.post('/api/cliente/<codigo>')
@@ -128,7 +140,9 @@ def update_client(codigo):
 @auth_decorator
 @actionlogged
 def create_client(codigo):
-    return update_client(codigo)
+    client = Client.deserialize(json_loads(request.body.read()))
+    client.codigo = codigo
+    clientapi.create(client)
 
 
 @api.get('/api/cliente')
@@ -138,11 +152,11 @@ def search_client():
     prefijo = request.query.prefijo
     if prefijo:
         return json_dump(list(clientapi.search(apellido=prefijo)))
-    else:
-        response.status = 400
-        return None
+    response.status = 400
+    return None
 
 
+# ########## NOTA ############################
 @api.get('/api/nota/<inv_id>')
 @dbcontext
 @auth_decorator
@@ -176,7 +190,7 @@ def get_invoice_by_date():
 @auth_decorator
 @actionlogged
 def create_invoice():
-    json_content = request.body.read() 
+    json_content = request.body.read()
     if not json_content:
         return ''
     content = json_loads(json_content)
@@ -190,7 +204,7 @@ def create_invoice():
         item.cant = Decimal(item.cant) / 1000
     inv = invapi.save(inv)
 
-    #increment the next invoice's number
+    # increment the next invoice's number
     user = inv.meta.user
     sessionmanager.session.query(NUsuario).filter_by(username=user).update(
         {NUsuario.last_factura: int(inv.meta.codigo) + 1})
@@ -217,6 +231,7 @@ def delete_invoice(uid):
     return {'status': inv.meta.status}
 
 
+# ####################### PEDIDO ############################
 @api.post('/api/pedido')
 @dbcontext
 @auth_decorator

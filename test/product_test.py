@@ -4,16 +4,17 @@ from decimal import Decimal
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from henry.layer1.schema import NProducto, NContenido, Base, NBodega, NStore
-from henry.helpers.fileservice import FileService
+
+from henry.base.schema import Base, NBodega, NStore
+from henry.base.fileservice import FileService
 from henry.dao.productos import ProductApiDB, Product
-from henry.dao import (DocumentApi, TransMetadata, Transferencia, Invoice, 
-                      InvMetadata, TransactionApi, Transaction, TransType, Item, Status)
+from henry.dao import (DocumentApi, TransMetadata, Transferencia, Invoice,
+                       InvMetadata, TransactionApi, Transaction, TransType, Item, Status)
 from henry.dao.client import Client
-from henry.layer1.session_manager import SessionManager
+from henry.base.session_manager import SessionManager
+
 
 class ProductApiTest(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         engine = create_engine('sqlite:///:memory:', echo=False)
@@ -27,7 +28,6 @@ class ProductApiTest(unittest.TestCase):
         cls.prod_api = ProductApiDB(cls.sessionmanager, cls.transaction_api)
         cls.trans_api = DocumentApi(cls.sessionmanager, filemanager, cls.prod_api, Transferencia)
         cls.inv_api = DocumentApi(cls.sessionmanager, filemanager, cls.prod_api, Invoice)
-
 
         cls.productos = [
             ('0', 'prueba 0', Decimal('20.23'), Decimal('10'), 0),
@@ -56,10 +56,10 @@ class ProductApiTest(unittest.TestCase):
                 p.nombre = nombre
                 p.categoria = 1
                 cls.prod_api.create_product(
-                        p, {
-                            1: (int(p1), int(p2), thres),
-                            2: (int(p1), int(p2), thres)
-                        })
+                    p, {
+                        1: (int(p1), int(p2), thres),
+                        2: (int(p1), int(p2), thres)
+                    })
 
     def test_get_producto(self):
         with self.sessionmanager:
@@ -73,7 +73,7 @@ class ProductApiTest(unittest.TestCase):
     def test_search(self):
         with self.sessionmanager:
             prods = self.prod_api.search_producto('prueba')
-            self.assertEquals(6, len(list(prods)));
+            self.assertEquals(6, len(list(prods)))
             for x in prods:
                 self.assertTrue(x.nombre.startswith('prueba'))
 
@@ -100,14 +100,13 @@ class ProductApiTest(unittest.TestCase):
         with self.sessionmanager:
             init_prod_cant = self.prod_api.get_producto('1', bodega_id=1).cantidad
             t = TransMetadata(
-                    origin=None,
-                    dest=1,
-                    user=0,
-                    trans_type=TransType.INGRESS,
-                    ref='hello world')
-            items = []
-            items.append(Item(self.prod_api.get_producto('1') , 10))
-            items.append(Item(self.prod_api.get_producto('2') , 10))
+                origin=None,
+                dest=1,
+                user=0,
+                trans_type=TransType.INGRESS,
+                ref='hello world')
+            items = [Item(self.prod_api.get_producto('1'), 10),
+                     Item(self.prod_api.get_producto('2'), 10)]
             transfer = Transferencia(t, items)
             trans = self.trans_api.save(transfer)
             self.assertEquals(t.status, Status.NEW)
@@ -131,13 +130,12 @@ class ProductApiTest(unittest.TestCase):
         with self.sessionmanager:
             init_prod_cant = self.prod_api.get_producto('1', bodega_id=1).cantidad
             t = TransMetadata(
-                    origin=2,
-                    dest=1,
-                    user=0,
-                    trans_type=TransType.TRANSFER,
-                    ref='hello world')
-            items = []
-            items.append(Item(self.prod_api.get_producto('1') , 10))
+                origin=2,
+                dest=1,
+                user=0,
+                trans_type=TransType.TRANSFER,
+                ref='hello world')
+            items = [Item(self.prod_api.get_producto('1'), 10)]
             transfer = Transferencia(t, items)
             trans = self.trans_api.save(transfer)
 
@@ -152,7 +150,6 @@ class ProductApiTest(unittest.TestCase):
             self.assertEquals(trans.meta.status, Status.DELETED)
             self.assertEquals(init_prod_cant, last_cant)
 
-
     def test_inv(self):
         with self.sessionmanager:
             init_prod_cant = self.prod_api.get_producto('1', bodega_id=1).cantidad
@@ -161,21 +158,21 @@ class ProductApiTest(unittest.TestCase):
             client.codigo = '123'
 
             t = InvMetadata(
-                    client=client,
-                    codigo='123', 
-                    user='asdf',
-                    total=123,
-                    subtotal=123,
-                    tax=123,
-                    discount=0,
-                    bodega=1,
-                    almacen=1
-                    )
+                client=client,
+                codigo='123',
+                user='asdf',
+                total=123,
+                subtotal=123,
+                tax=123,
+                discount=0,
+                bodega_id=1,
+                almacen_id=1
+            )
             inv = Invoice()
             inv.meta = t
             inv.items = [
-                    Item(self.prod_api.get_producto('1'), 5)
-                    ]
+                Item(self.prod_api.get_producto('1'), 5)
+            ]
             invoice = self.inv_api.save(inv)
             self.assertEquals(self.inv_api.get_doc(invoice.meta.uid).meta.codigo, '123')
 

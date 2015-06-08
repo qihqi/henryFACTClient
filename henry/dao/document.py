@@ -1,14 +1,15 @@
+import logging
 import uuid
 import datetime
 import os
 from decimal import Decimal
 from itertools import imap
+
 from sqlalchemy.exc import SQLAlchemyError
 
-from henry.layer1.schema import NNota, NTransferencia, NPedidoTemporal, NOrdenDespacho
-from henry.helpers.serialization import DbMixin, SerializableMixin
-from henry.helpers.serialization import json_loads, parse_iso_date
-
+from henry.base.schema import NNota, NTransferencia, NPedidoTemporal, NOrdenDespacho
+from henry.base.serialization import DbMixin, SerializableMixin
+from henry.base.serialization import json_loads, parse_iso_date
 from .client import Client
 from .productos import Product, Transaction
 
@@ -244,7 +245,7 @@ class Transferencia(MetaItemSet):
 
     @classmethod
     def deserialize(cls, the_dict):
-        x = super(cls, TransMetadata).deserialize(the_dict)
+        x = super(cls, Transferencia).deserialize(the_dict)
         if not isinstance(x.timestamp, datetime.datetime):
             x.timestamp = parse_iso_date(x.timestamp)
         return x
@@ -393,7 +394,7 @@ class PedidoApi:
             f = self.filemanager.get_file(filename)
             if f is not None:
                 return f
-        logging.info('Could not find pedido within {} days of lookback'.format(lookback))
+        logging.info('Could not find pedido within {} days of lookback'.format(look_backback))
         return None
 
 

@@ -1,4 +1,4 @@
-''' Miscellanous stuff'''
+""" Miscellanous stuff"""
 
 import re
 from henry.hack import fix_id_error
@@ -73,4 +73,3 @@ def value_from_cents(cents):
 
 def get_total(items):
     return value_from_cents(sum((i.total for i in items)))
-

@@ -45,6 +45,8 @@ class ModelEncoder(json.JSONEncoder):
 
 
 class DbMixin(object):
+    _db_class = None
+    _db_attr = ()
     @classmethod
     def _get_name_pairs(cls, names):
         if isinstance(names, dict):
@@ -75,7 +77,7 @@ class DbMixin(object):
 
 
 class SerializableMixin(object):
-
+    _name = ()
     def merge_from(self, obj):
         for key in self._name:
             try:
