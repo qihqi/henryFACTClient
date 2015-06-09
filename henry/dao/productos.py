@@ -126,6 +126,20 @@ class ProductApiDB:
             return p
         return None
 
+    def get_producto_full(self, prod_id):
+        items = self.db_session.session.query(
+            *(self._PROD_KEYS + self._PROD_PRICE_KEYS +
+              (NStore.almacen_id, NStore.nombre.label('almacen_name'), ))).filter(
+            NProducto.codigo == prod_id).filter(
+            NPriceList.prod_id == prod_id).filter(
+            NStore.almacen_id == NPriceList.almacen_id)
+        contents = list(items)
+        if not contents:
+            return None
+        p = Product(codigo=contents[0].codigo, nombre=contents[0].nombre)
+        p.precios = contents
+        return p
+
     @staticmethod
     def _get_db_filters_and_keys(almacen_id, bodega_id):
         query_items = []

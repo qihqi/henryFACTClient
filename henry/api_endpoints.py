@@ -18,7 +18,7 @@ api = Bottle()
 @dbcontext
 @actionlogged
 def get_prod_from_inv(almacen_id, prod_id):
-    prod = prodapi.get_producto(prod_id=prod_id, almacen_id=almacen_id)
+    prod = prodapi.get_prod_price(prod_id, almacen_id)
     if prod is None:
         response.status = 404
     return json_dump(prod)
@@ -28,6 +28,19 @@ def get_prod_from_inv(almacen_id, prod_id):
 @dbcontext
 @actionlogged
 def get_prod(prod_id):
+    options = request.query.options
+    if options == 'all':
+        result = prodapi.get_producto_full(prod_id)
+        result_dict = result.serialize()
+        result_dict['precios'] = [
+            (x.almacen_id, x.almacen_name, x.precio1, x.precio2, x.threshold)
+            for x in result.precios]
+        return json_dump(result_dict)
+
+    prod = prodapi.get_producto(prod_id=prod_id)
+    if prod is None:
+        response.status = 404
+    return json_dump(prod)
     return get_prod_from_inv(None, prod_id)
 
 
@@ -69,16 +82,7 @@ def crear_producto(pid):
 @dbcontext
 @auth_decorator
 @actionlogged
-def crear_producto(alm_id, pid):
-    content = json_loads(request.body.read())
-    prodapi.update_price(alm_id, pid, content)
-
-
-@api.get('/api/producto/<pid>')
-@dbcontext
-@auth_decorator
-@actionlogged
-def crear_producto(alm_id, pid):
+def crear_producto_alm(alm_id, pid):
     content = json_loads(request.body.read())
     prodapi.update_price(alm_id, pid, content)
 

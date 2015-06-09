@@ -7,8 +7,47 @@
     <script src="/static/prod.js"></script>
 </head>
 <body>
+    <h3>Ver Productos</h3>
+    <table>
+        <tr>
+            <td><label for="codigo">Codigo</label></td>
+            <td><input id="codigo" name="codigo"/></td>
+            <td><button id="buscar_por_codigo">Buscar por Codigo</button></td>
+        </tr>
+        <tr>
+            <td><label for="nombre">Nombre</label></td>
+            <td><input id="nombre" name="nombre"/></td>
+            <td><button id="buscar_por_nombre">Buscar por Nombre</button></td>
+        </tr>
+    </table>
+    <div id="dest"></div>
     <script>
+        function create_prod_table(prod){
+            var table = $('<table>');
+            var nombre = $('<tr>');
+            nombre.append($('<td>Nombre</td>'));
+            nombre.append($('<td>' + prod.nombre + '</td>'));
+            var codigo = $('<tr>');
+            codigo.append($('<td>Codigo</td>'));
+            codigo.append($('<td>' + prod.codigo+ '</td>'));
+            table.append(nombre);
+            table.append(codigo);
+            return table;
+        }
 
+        var data = {};
+        $(document).ready(function() {
+            $('#buscar_por_codigo').click(function() {
+                var id = $('#codigo').val();
+                var url = '/api/producto/' + id + '?options=all';
+                getRequest(url, function(status, result) {
+                    var codigo = result.codigo;
+                    data[codigo] = result;
+                    var prod = create_prod_table(result);
+                    $('#dest').append(prod);
+                });
+            });
+        });
     </script>
 </body>
 </html>
