@@ -135,5 +135,6 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
     public void clear() {
         codigo.setText("");
         nombre.setText("");
+        cliente.setRef(null);
     }
 }

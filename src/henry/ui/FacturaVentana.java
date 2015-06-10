@@ -226,6 +226,7 @@ public class FacturaVentana extends JFrame {
                 dialog.setText("El codigo es " + codigo);
                 dialog.setVisible(true);
                 clear();
+                dialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
                 contenido.setMessage("Nota de pedido que se hizo fue " + codigo);
             }
             else {
@@ -249,6 +250,9 @@ public class FacturaVentana extends JFrame {
             dialog.setVisible(true);
             return false;
         }
+        if (doc.getTotal() == 0) {
+            return false;
+        }
         if (formaPago.equals("efectivo")) {
             int pagado;
             try {
@@ -267,6 +271,7 @@ public class FacturaVentana extends JFrame {
                 dialog.setVisible(true);
                 return false;
             }
+            dialog.setModalityType(Dialog.ModalityType.MODELESS);
             dialog.setText("El cambio es \n" + displayAsMoney(pagado - total));
             dialog.setVisible(true);
         }
