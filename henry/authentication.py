@@ -8,7 +8,8 @@ app = bottle.Bottle()
 
 
 def authenticate(password, userinfo):
-    s = sha1.new(password)
+    s = sha1()
+    s.update(password)
     return s.hexdigest() == userinfo.password
 
 

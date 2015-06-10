@@ -3,13 +3,39 @@
 <script src="/static/jquery-1.7.2.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 <script>
+    var prod_id = '{{prod.codigo}}';
     $(document).ready(function() {
         $('.editar').click(function() {
             var alm_id = $(this).attr('alm');
-            $('#p1').removeAttr('disabled');
-            $('#p2').removeAttr('disabled');
-            $('#cant_mayorista').removeAttr('disabled');
-            $('.guardar').show();
+            $('#p1-' + alm_id).prop('disabled', false);
+            $('#p2-' + alm_id).prop('disabled', false);
+            $('#cant_mayorista-' + alm_id).prop('disabled', false);
+            $('#guardar-' + alm_id).show();
+            $(this).hide();
+        });
+        $('.guardar').click(function() {
+            var alm_id = $(this).attr('alm');
+            var p1 = $('#p1-' + alm_id).val();
+            var p2 = $('#p2-' + alm_id).val();
+            var cant_mayorista = $('#cant_mayorista-' + alm_id).val();
+            var url = '/api/alm/' + alm_id + '/producto/' + prod_id;
+            $.ajax({
+                url: url,
+                method: 'PUT',
+                data: JSON.stringfy({
+                    precio1: p1,
+                    precio2: p2,
+                    cant_mayorista: cant_mayorista
+                }),
+                success: function() {
+                    alert('success');
+                }
+            });
+
+            $('#p1-' + alm_id).prop('disabled', true);
+            $('#p2-' + alm_id).prop('disabled', true);
+            $('#cant_mayorista-' + alm_id).prop('disabled', true);
+            $('#editar-' + alm_id).show();
             $(this).hide();
         });
     });
@@ -22,14 +48,14 @@
     <h4>Producto: {{prod.codigo}}</h4>
     <ul>
     <li><h4>{{prod.nombre}}</h4></li>
-    {% for x, y in prods.items() %}
+    {% for x in prod.precios %}
     <li>
-        {{x.nombre}} <button class="editar" alm="{{x.almacen_id}}">Editar</button>
-        <button style="display:none;" class="guardar" alm="{{x.almacen_id}}">Guardar</button>
+        {{x.almacen_name}} <button class="editar" id="editar-{{x.almacen_id}}" alm="{{x.almacen_id}}">Editar</button>
+        <button style="display:none;" class="guardar" id="guardar-{{x.almacen_id}}" alm="{{x.almacen_id}}">Guardar</button>
         <ul>
-            <li>Precio1: <input id="p1" disabled value="{{value_from_cents(y.precio1)}}"/></li>
-            <li>Precio2: <input id="p2" disabled value="{{value_from_cents(y.precio2)}}"/></li>
-            <li>Cant Mayorista: <input id="cant_mayorista" disabled value="{{y.cant_mayorista}}"/></li>
+            <li>Precio1: <input id="p1-{{x.almacen_id}}" disabled value="{{value_from_cents(x.precio1)}}"/></li>
+            <li>Precio2: <input id="p2-{{x.almacen_id}}" disabled value="{{value_from_cents(x.precio2)}}"/></li>
+            <li>Cant Mayorista: <input id="cant_mayorista-{{x.almacen_id}}" disabled value="{{x.threshold}}"/></li>
         </ul>
     </li>
     {% endfor %}
