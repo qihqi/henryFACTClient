@@ -19,24 +19,28 @@
             var p2 = $('#p2-' + alm_id).val();
             var cant_mayorista = $('#cant_mayorista-' + alm_id).val();
             var url = '/api/alm/' + alm_id + '/producto/' + prod_id;
+            var self = $(this);
             $.ajax({
                 url: url,
                 method: 'PUT',
-                data: JSON.stringfy({
-                    precio1: p1,
-                    precio2: p2,
+                data: JSON.stringify({
+                    precio1: p1*100,
+                    precio2: p2*100,
                     cant_mayorista: cant_mayorista
                 }),
                 success: function() {
-                    alert('success');
+                    alert('Precio Guardado');
+                    $('#p1-' + alm_id).prop('disabled', true);
+                    $('#p2-' + alm_id).prop('disabled', true);
+                    $('#cant_mayorista-' + alm_id).prop('disabled', true);
+                    $('#editar-' + alm_id).show();
+                    self.hide();
+                },
+                failure: function() {
+                    alert('Fallo en Guardar, entente de nuevo');
                 }
             });
 
-            $('#p1-' + alm_id).prop('disabled', true);
-            $('#p2-' + alm_id).prop('disabled', true);
-            $('#cant_mayorista-' + alm_id).prop('disabled', true);
-            $('#editar-' + alm_id).show();
-            $(this).hide();
         });
     });
 </script>

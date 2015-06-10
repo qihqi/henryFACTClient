@@ -15,6 +15,9 @@ from henry.constants import (CONN_STRING, INGRESO_PATH, INVOICE_PATH, ENV,
                              LOGIN_URL, TRANSACTION_PATH, PEDIDO_PATH, ACTION_LOG_PATH)
 from henry.misc import id_type, fix_id, abs_string, value_from_cents, get_total
 from henry.externalapi import ExternalApi
+import sys
+reload(sys)
+sys.setdefaultencoding('latin1')
 
 engine = create_engine(CONN_STRING)
 sessionfactory = sessionmaker(bind=engine)

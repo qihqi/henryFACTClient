@@ -263,3 +263,14 @@ def ver_producto(uid):
     prod = prodapi.get_producto_full(uid)
     temp = jinja_env.get_template('producto.html')
     return temp.render(prod=prod)
+
+@w.get('/app/producto')
+@dbcontext
+@auth_decorator
+def buscar_producto_result():
+    prefix = request.query.prefijo
+    if prefix is None:
+        redirect('/app/ver_producto_form')
+    prods = prodapi.search_producto(prefix)
+    temp = jinja_env.get_template('buscar_producto_result.html')
+    return temp.render(prods=prods)

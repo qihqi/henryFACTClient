@@ -1,0 +1,15 @@
+{%extends "base.html" %}
+{%block content%}
+<div>
+    <table>
+        {% for p in prods %}
+        <tr>
+            <td>{{p.codigo}}</td>
+            <td>{{p.nombre}}</td>
+            <td><a href="/app/producto/{{p.codigo}}">Ver Detalle</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}

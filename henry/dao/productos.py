@@ -243,5 +243,5 @@ class ProductApiDB:
     def update_price(self, alm_id, pid, content_dict):
         session = self.db_session.session
         session.query(NPriceList).filter_by(
-            codigo=pid, almacen_id=alm_id).update(
+            prod_id=pid, almacen_id=alm_id).update(
             content_dict)

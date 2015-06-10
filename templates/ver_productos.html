@@ -11,6 +11,11 @@
             var newurl = '/app/producto/' + codigo;
             window.location = newurl;
         });
+        $('#buscar_por_nombre').click(function() {
+            var nom = $('#nombre').val();
+            var newurl = '/app/producto?prefijo=' + nom;
+            window.location = newurl;
+        });
     });
 
 </script>
