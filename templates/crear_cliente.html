@@ -1,0 +1,50 @@
+{%extends "base.html" %}
+{% block content %}
+<h3>Crear Cliente</h3>
+<h4>{% if message %}{{ message }}{% endif %}</h4>
+<form method="post" action="{{action}}">
+<table>
+    <tr>
+        <th><label for="id_codigo">No de Cedula:</label></th>
+        <td><input id="id_codigo" type="text" name="codigo" maxlength="20" value="{{client.codigo}}"/></td>
+    </tr>
+    <tr>
+        <th><label for="id_nombres">Nombres:</label></th>
+        <td><input id="id_nombres" type="text" name="nombres" value="{{client.nombres}}" maxlength="100" /></td>
+    </tr>
+    <tr>
+        <th><label for="id_apellidos">Apellidos:</label></th>
+        <td><input id="id_apellidos" type="text" name="apellidos" value="{{client.apellidos}}" maxlength="100" />
+    </td></tr>
+    <tr>
+        <th><label for="id_direccion">Direccion:</label></th>
+        <td><input id="id_direccion" type="text" name="direccion" value="{{client.direccion}}" maxlength="300" /></td>
+    </tr>
+    <tr>
+        <th><label for="id_ciudad">Ciudad:</label></th>
+        <td><input id="id_ciudad" type="text" name="ciudad" value="{{client.ciudad}}" maxlength="50" /></td>
+    </tr>
+    <tr>
+        <th><label for="id_telefono">Telefono:</label></th>
+        <td><input id="id_telefono" type="text" name="telefono" value="{{client.telefono}}" maxlength="50" /></td>
+    </tr>
+    <tr>
+        <th><label for="id_tipo_0">Tipo:</label></th>
+        <td>
+            <ul>
+                <li><label for="id_tipo_0">
+                    <input type="radio" id="id_tipo_0" value="A" name="tipo" /> Menorista</label></li>
+                <li><label for="id_tipo_1"><input type="radio" id="id_tipo_1" value="B" name="tipo" /> Mayorista</label></li>
+            </ul>
+    </tr>
+    <tr>
+        <td></td>
+        <td><input type="submit" value="{{button_text}}" />
+        <input type="button" value="Cancelar" /> </td>
+    </tr>
+</table>
+</form>
+<div style="float:top;">
+    <p>Nota: Numero de cedula SIN guion</p>
+</div>
+{% endblock %}

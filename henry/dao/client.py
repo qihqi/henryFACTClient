@@ -1,5 +1,7 @@
+from sqlalchemy.exc import IntegrityError
 from henry.base.serialization import SerializableMixin
 from henry.base.schema import NCliente
+from henry.dao.exceptions import ItemAlreadyExists
 
 
 class Client(SerializableMixin, NCliente):
@@ -53,8 +55,11 @@ class ClientApiDB(object):
                             cliente_desde=cliente.cliente_desde
                             )
         session = self.manager.session
-        session.add(newc)
-        session.flush()
+        try:
+            session.add(newc)
+            session.flush()
+        except IntegrityError:
+            raise ItemAlreadyExists('client {} already exists'.format(newc.codigo))
 
     def update(self, client_id, new_content):
         self.manager.session.query(

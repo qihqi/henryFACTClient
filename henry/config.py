@@ -37,8 +37,10 @@ externaltransapi = ExternalApi('http://localhost:8080/api', 'ingreso', 'yu', 'yu
 actionlogapi = ActionLogApi(ACTION_LOG_PATH)
 actionlogged = ActionLogApiDecor(actionlogapi)
 
+def my_finalize(x):
+    return '' if x is None else x
 template_paths = ['./templates']
-jinja_env = Environment(loader=FileSystemLoader(template_paths))
+jinja_env = Environment(loader=FileSystemLoader(template_paths), finalize=my_finalize)
 
 # for testing, make auth_decorator do nothing
 auth_decorator = lambda x: x

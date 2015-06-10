@@ -4,9 +4,10 @@ from sqlalchemy.exc import IntegrityError
 
 from bottle import request, Bottle, abort, redirect
 from henry.config import jinja_env, transapi, prodapi, invapi, externaltransapi
-from henry.config import dbcontext, auth_decorator, sessionmanager
-from henry.dao import Item, TransType, TransMetadata, Transferencia, Product, Status, InvMetadata
+from henry.config import dbcontext, auth_decorator, sessionmanager, clientapi
+from henry.dao import Item, TransType, TransMetadata, Transferencia, Product, Status, InvMetadata, Client
 from henry.base.schema import NUsuario, NNota, NCliente
+from henry.dao.exceptions import ItemAlreadyExists
 
 w = Bottle()
 web_inventory_webapp = w
@@ -274,3 +275,35 @@ def buscar_producto_result():
     prods = prodapi.search_producto(prefix)
     temp = jinja_env.get_template('buscar_producto_result.html')
     return temp.render(prods=prods)
+
+
+@w.get('/app/crear_cliente')
+@dbcontext
+@auth_decorator
+def crear_cliente_form(message=None):
+    temp = jinja_env.get_template('crear_cliente.html')
+    return temp.render(client=None, message=message, action='/app/crear_cliente',
+                       button_text='Crear')
+
+
+@w.get('/app/cliente/<id>')
+@dbcontext
+@auth_decorator
+def modificar_cliente_form(id, message=None):
+    client = clientapi.get(id)
+    temp = jinja_env.get_template('crear_cliente.html')
+    return temp.render(client=client, message=message, action='/app/modificar_cliente',
+                       button_text='Modificar')
+
+
+@w.post('/app/crear_cliente')
+@dbcontext
+@auth_decorator
+def crear_cliente():
+    cliente = Client.deserialize(request.forms)
+    try:
+        clientapi.create(cliente)
+    except ItemAlreadyExists:
+        return crear_cliente_form('Cliente con codigo {} ya existe'.format(cliente.codigo))
+    return crear_cliente_form('Cliente {} {} creado'.format(cliente.apellidos, cliente.nombres))
+
