@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{%block content%}
+<div>
+    <table>
+        {% for c in clientes %}
+        <tr>
+            <td>{{c.codigo}}</td>
+            <td>{{c.apellidos}}</td>
+            <td>{{c.nombres}}</td>
+            <td><a href="/app/cliente/{{c.codigo}}">Modificar</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}

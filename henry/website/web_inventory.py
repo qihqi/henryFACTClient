@@ -254,7 +254,10 @@ def ver_factura():
 @w.get('/app/ver_producto_form')
 @auth_decorator
 def ver_producto_form():
-    return jinja_env.get_template('ver_productos.html').render()
+    return jinja_env.get_template('ver_item.html').render(
+        title='Ver Producto',
+        baseurl='/app/producto',
+        apiurl='/api/producto')
 
 
 @w.get('/app/producto/<uid>')
@@ -291,9 +294,30 @@ def crear_cliente_form(message=None):
 @auth_decorator
 def modificar_cliente_form(id, message=None):
     client = clientapi.get(id)
+    if client is None:
+        message = 'Cliente {} no encontrado'.format(id)
     temp = jinja_env.get_template('crear_cliente.html')
     return temp.render(client=client, message=message, action='/app/modificar_cliente',
                        button_text='Modificar')
+
+
+@w.get('/app/cliente')
+@dbcontext
+@auth_decorator
+def search_cliente_result():
+    prefix = request.query.prefijo
+    clientes = list(clientapi.search(prefix))
+    temp = jinja_env.get_template('search_cliente_result.html')
+    return temp.render(clientes=clientes)
+
+
+@w.get('/app/ver_cliente')
+@dbcontext
+@auth_decorator
+def ver_cliente():
+    temp = jinja_env.get_template('ver_item.html')
+    return temp.render(title='Ver Cliente', baseurl='/app/cliente',
+                       apiurl='/api/cliente')
 
 
 @w.post('/app/crear_cliente')
