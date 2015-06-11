@@ -18,7 +18,7 @@ api = Bottle()
 @dbcontext
 @actionlogged
 def get_prod_from_inv(almacen_id, prod_id):
-    prod = prodapi.get_prod_price(prod_id, almacen_id)
+    prod = prodapi.get_producto(prod_id, almacen_id)
     if prod is None:
         response.status = 404
     return json_dump(prod)

@@ -48,6 +48,7 @@ def main():
                 new_item = make_lista_precio(item)
                 regla = get_reglas(session, item.codigo)
                 if regla is not None:
+                    new_item.prod_id = regla.dest_id + '+'
                     new_item.upi = get_contenido_id(session, regla.dest_id, item.bodega_id)
                     new_item.multiplicador = regla.multiplier
                     new_item.unidad = 'paquete grande'

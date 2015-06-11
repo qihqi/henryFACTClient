@@ -5,10 +5,12 @@ from sqlalchemy.orm import relationship, backref
 
 Base = declarative_base()
 
+
 class NCategory(Base):
     __tablename__ = 'categorias'
     id = Column(Integer, primary_key=True, autoincrement=True)
     nombre = Column(String(100))
+
 
 class NBodega(Base):
     __tablename__ = 'bodegas'
@@ -24,7 +26,6 @@ class NProducto(Base):
     nombre = Column(String(200))
     categoria_id = Column(Integer)
     contenidos = relationship('NContenido', backref=backref('producto'))
-    prices = relationship('NPriceList', backref=backref('producto'))
 
 
 class NContenido(Base):
@@ -212,7 +213,7 @@ class NPriceList(Base):
     pid = Column(Integer, primary_key=True, autoincrement=True)
     nombre = Column(String(100)) # display name
     almacen_id = Column(Integer)
-    prod_id = Column(String(20), ForeignKey(NProducto.codigo))
+    prod_id = Column(String(20))
     # Using int for money as in number of cents.
     precio1 = Column(Integer)
     precio2 = Column(Integer)

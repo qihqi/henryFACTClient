@@ -96,6 +96,8 @@ class ProductApiDB:
         NProducto.nombre,
     )
     _PROD_PRICE_KEYS = (
+        NPriceList.nombre,
+        NPriceList.prod_id.label('codigo'),
         NPriceList.almacen_id,
         NPriceList.precio1,
         NPriceList.precio2,
@@ -114,15 +116,15 @@ class ProductApiDB:
         self.db_session = sessionmanager
         self.transapi = transapi
 
-    def get_producto(self, prod_id, almacen_id=None, bodega_id=None):
-        filter_items, query_items = self._get_db_filters_and_keys(almacen_id, bodega_id)
-        filter_items.append(NProducto.codigo == prod_id)
-        query_items.extend(ProductApiDB._PROD_KEYS)
-        item = self.db_session.session.query(*query_items)
-        for f in filter_items:
-            item = item.filter(f)
-        if item.first() is not None:
-            p = Product().merge_from(item.first())
+    def get_producto(self, prod_id, almacen_id=None):
+        session = self.db_session.session
+        query = session.query(*self._PROD_KEYS).filter_by(
+            codigo=prod_id)
+        if almacen_id:
+            query = session.query(*self._PROD_PRICE_KEYS).filter_by(
+                prod_id=prod_id)
+        if query.first() is not None:
+            p = Product().merge_from(query.first())
             return p
         return None
 
@@ -140,28 +142,14 @@ class ProductApiDB:
         p.precios = contents
         return p
 
-    @staticmethod
-    def _get_db_filters_and_keys(almacen_id, bodega_id):
-        query_items = []
-        filter_items = []
-        if almacen_id is not None:
-            query_items.extend(ProductApiDB._PROD_PRICE_KEYS)
-            filter_items.append(NPriceList.almacen_id == almacen_id)
-            filter_items.append(NPriceList.prod_id == NProducto.codigo)
-        if bodega_id is not None:
-            query_items.extend(ProductApiDB._PROD_CANT_KEYS)
-            filter_items.append(NContenido.bodega_id == bodega_id)
-            filter_items.append(NContenido.prod_id == NProducto.codigo)
-        return filter_items, query_items
-
-    def search_producto(self, prefix, almacen_id=None, bodega_id=None):
-        filter_items, query_items = self._get_db_filters_and_keys(almacen_id, bodega_id)
-        filter_items.append(NProducto.nombre.startswith(prefix))
-        query_items.extend(ProductApiDB._PROD_KEYS)
-        result_proxy = self.db_session.session.query(*query_items)
-        for f in filter_items:
-            result_proxy = result_proxy.filter(f)
-        for r in result_proxy:
+    def search_producto(self, prefix, almacen_id=None):
+        session = self.db_session.session
+        query = session.query(*self._PROD_KEYS).filter(
+            NProducto.nombre.startswith(prefix))
+        if almacen_id:
+            query = session.query(*self._PROD_PRICE_KEYS).filter_by(
+                NPriceList.nombre.startswith(prefix))
+        for r in query:
             yield Product().merge_from(r)
 
     def execute_transactions(self, trans):
