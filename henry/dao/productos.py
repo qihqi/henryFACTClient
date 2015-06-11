@@ -39,6 +39,18 @@ class Product(SerializableMixin):
         self.cantidad = cantidad
 
 
+# An augmented product is treated to be a collection of
+# products. The representation is '<real_prod_id>+' where
+# real_prod_id is a prod_id that exists.
+# An augmented product is equivalent to 10x the normal one
+# This function returns the real prod id and multiplier(10)
+# if it is augmented and None, 0 otherwise
+def get_augmented_prod(prod_id):
+    if prod_id[-1] == '+':
+        return prod_id[:-1], 10
+    return None, 0
+
+
 class Transaction(SerializableMixin):
     _name = ('bodega_id', 'prod_id', 'delta', 'name', 'ref', 'fecha')
 

@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block content %}
+<table border="1px">
+    <tr>
+        <th width="200"> Usuario </td>
+        <th width="200"> Bodega Autorizado </td>
+        <th width="100"> Seguencia </td>
+    </tr>
+    {% for v in users%}
+    <tr>
+        <td width="200"> {{v.username}} </td>
+        <td width="200"> {{stores[v.bodega_factura_id]}} </td>
+        <td width="100"> {{v.last_factura}} </td>
+    </tr>
+    {% endfor %}
+</table>
+<form name="theForm" method="post" action="/app/secuencia">
+<table>
+    <tr>
+        <th>
+            <label for="id_usuario">Usuario:</label>
+        </th>
+        <td>
+            <select name="usuario" id="id_usuario">
+                {% for u in users %}
+                <option value="{{u.username}}">{{u.username}}</option>
+                {% endfor %}
+            </select>
+        </td>
+    </tr>
+<tr><th>
+    <label for="id_bodega">Bodega:</label></th><td><select name="almacen_id" id="id_bodega">
+    {% for u, v in stores.items()%}
+    <option value="{{u}}">{{v}}</option>
+    {% endfor %}
+    </select></td></tr>
+<tr><th><label for="id_seguencia">Seguencia:</label></th><td><input type="text" name="secuencia" id="id_seguencia" /></td></tr>
+    <tr>
+        <td></td>
+        <td><input type="submit" value="Guardar" />
+        <input type="button" value="Cancelar" /> </td>
+    </tr>
+</table>
+</form>
+
+{% endblock %}

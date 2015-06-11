@@ -331,3 +331,27 @@ def crear_cliente():
         return crear_cliente_form('Cliente con codigo {} ya existe'.format(cliente.codigo))
     return crear_cliente_form('Cliente {} {} creado'.format(cliente.apellidos, cliente.nombres))
 
+
+@w.get('/app/secuencia')
+@dbcontext
+@auth_decorator
+def get_secuencia():
+    users = list(sessionmanager.session.query(NUsuario))
+    temp = jinja_env.get_template('secuencia.html')
+    store_dict = {s.almacen_id: s.nombre for s in prodapi.get_stores()}
+    store_dict[-1] = 'Ninguno'
+    return temp.render(users=users, stores=store_dict)
+
+
+@w.post('/app/secuencia')
+@dbcontext
+@auth_decorator
+def post_secuencia():
+    username = request.forms.usuario
+    seq = request.forms.secuencia
+    alm = request.forms.almacen_id
+    sessionmanager.session.query(NUsuario).filter_by(
+        username=username).update({'last_factura': seq, 'bodega_factura_id': alm})
+    redirect('/app/secuencia')
+
+
