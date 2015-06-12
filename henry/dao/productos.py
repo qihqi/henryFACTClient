@@ -9,6 +9,26 @@ from henry.base.schema import (NProducto, NContenido, NStore, NCategory,
 from henry.base.serialization import SerializableMixin, json_dump
 from henry.base.fileservice import LockClass
 
+class Store(SerializableMixin, DbMixin):
+    _db_class = NStore
+    _db_attr = {
+        'almacen_id': 'almacen_id',
+        'ruc': 'ruc', 
+        'nombre': 'nombre',
+        'bodega_id': 'bodega_id'
+    }
+    _name = _db_attr.keys()
+
+
+class Bodega(SerializableMixin, DbMixin):
+    _db_class = NBodega
+    _db_attr = {
+        'id': 'almacen_id',
+        'nombre': 'nombre',
+        'nivel': 'nivel'
+    }
+    _name = _db_attr.keys()
+
 
 class Product(SerializableMixin):
     _name = ('nombre',
@@ -183,7 +203,7 @@ class ProductApiDB:
     def get_bodegas(self):
         if not self._bodegas:
             bodegas = self.db_session.session.query(NBodega)
-            self._bodegas = {b.id: b for b in bodegas}
+            self._bodegas = {b.id: Bodega.from_db_instance(b) for b in bodegas}
         return self._bodegas.values()
 
     def get_bodega_by_id(self, uid):
@@ -191,9 +211,9 @@ class ProductApiDB:
         return self._bodegas[uid]
 
     def get_stores(self):
-        if not self._bodegas:
+        if not self._stores:
             stores = self.db_session.session.query(NStore)
-            self._stores = {b.almacen_id: b for b in stores}
+            self._stores = {b.almacen_id: Store.from_db_instance(b) for b in stores}
         return self._stores.values()
 
     def get_store_by_id(self, uid):
@@ -222,7 +242,8 @@ class ProductApiDB:
                 almacen_id=almacen,
                 precio1=p1,
                 precio2=p2,
-                cant_mayorista=thres)
+                cant_mayorista=thres,
+                multiplicador=1)
             if bodega_id not in contenidos_creados:
                 cont = NContenido(
                     prod_id=product_core.codigo,
