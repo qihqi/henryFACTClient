@@ -6,7 +6,7 @@ from sqlalchemy.sql import bindparam
 
 from henry.base.schema import (NProducto, NContenido, NStore, NCategory,
                                NBodega, NPriceList)
-from henry.base.serialization import SerializableMixin, json_dump
+from henry.base.serialization import SerializableMixin, json_dump, DbMixin
 from henry.base.fileservice import LockClass
 
 class Store(SerializableMixin, DbMixin):
