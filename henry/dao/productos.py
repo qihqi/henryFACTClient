@@ -134,7 +134,7 @@ class ProductApiDB:
             codigo=prod_id)
         if almacen_id:
             query = session.query(*self._PROD_PRICE_KEYS).filter_by(
-                prod_id=prod_id)
+                prod_id=prod_id).filter_by(almacen_id=almacen_id)
         if query.first() is not None:
             p = Product().merge_from(query.first())
             return p
@@ -159,8 +159,8 @@ class ProductApiDB:
         query = session.query(*self._PROD_KEYS).filter(
             NProducto.nombre.startswith(prefix))
         if almacen_id:
-            query = session.query(*self._PROD_PRICE_KEYS).filter_by(
-                NPriceList.nombre.startswith(prefix))
+            query = session.query(*self._PROD_PRICE_KEYS).filter(
+                NPriceList.nombre.startswith(prefix)).filter_by(almacen_id=almacen_id)
         for r in query:
             yield Product().merge_from(r)
 
