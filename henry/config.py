@@ -12,7 +12,8 @@ from henry.base.fileservice import FileService
 from henry.base.auth import AuthDecorator
 from henry.base.session_manager import SessionManager, DBContext
 from henry.constants import (CONN_STRING, INGRESO_PATH, INVOICE_PATH, ENV,
-                             LOGIN_URL, TRANSACTION_PATH, PEDIDO_PATH, ACTION_LOG_PATH)
+                             LOGIN_URL, TRANSACTION_PATH, PEDIDO_PATH, ACTION_LOG_PATH,
+                             BEAKER_DIR)
 from henry.misc import id_type, fix_id, abs_string, value_from_cents, get_total
 from henry.externalapi import ExternalApi
 import sys
@@ -55,3 +56,10 @@ jinja_env.globals.update({
     'get_total': get_total,
     'today': datetime.date.today
 })
+
+BEAKER_SESSION_OPTS = {
+    'session.type': 'file',
+    'session.cookie_expires': False,
+    'session.data_dir': BEAKER_DIR,
+    'session.auto': True
+}
