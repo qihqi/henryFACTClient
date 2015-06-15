@@ -36,7 +36,7 @@ function getIngreso(codigo, callback) {
 
 
 var count=0;
-function getRow() {
+function getRow(includePrice) {
     var p = $("<tr>");
     var codigo_cell = $("<td>");
     var cant_cell = $("<td>");
@@ -44,6 +44,7 @@ function getRow() {
     var buscar_cell = $("<td>");
     var trans_cell = $("<td>");
     var codigo = $("<input id=\"cod"+ count + "\" name=\"codigo\" class=\"text_field\">");
+    codigo.attr('include_price', includePrice);
     var cant = $("<input id=\"cant"+ count + "\" name=\"cant\" class=\"text_field\">");
     var nombre = $("<span id=\"span"+ count + "\" name=\"nombre\" class=\"nombre\" class=\"text_field\">");
     var buscar = $("<a id=\"here"+ count + "\" name=\"nombre\" href=\"\" class=\"text_field\" >");
@@ -63,23 +64,33 @@ function getRow() {
     cant.addClass('cant');
     count++;
     p.beginning = codigo;
+    if (includePrice) {
+        var precio = $('<tr id=\"precio' + count + '\">');
+        var subtotal = $('<tr id=\"subtotal' + count + '\">');
+        p.append(precio);
+        p.append(subtotal);
+    }
     return p;
 }
 
+function displayMoney(s) {
+    return s / 100;
+}
+
+function isNumber(b) {
+    return b != undefined && b != null && (b - 0) == b;
+};
+
 function initEvents() {
-    // make new row when enter is pressed on cantidad
-    var isNumber = function (b) {
-        return b!=undefined && b!=null && (b - 0) == b;
-    };
     $(document).on('keypress', '.cant', null, function (event) {
         if (event.which == 13) {
             event.preventDefault();
-            
             var number = $(this).val();
             if (!isNumber(number)) { 
                 alert("cantidad debe ser numero");
                 return;
             }
+
 
             var a = getRow();
             $("#insert").append(a);
@@ -87,16 +98,21 @@ function initEvents() {
         }
     });
 
+
     $(document).on('keypress', '.codigo', null, function (event) {
         if (event.which == 13){
             event.preventDefault();
             var id = $(this).attr('i');
+            var include_price = $(this).attr('include_price');
             var cant = $('#cant' + id);
             var dest = $('#span' + id);
             var codigo = $(this).val();
             getProdAjaxCall(codigo, function(status, result) {
                 if (status) {
                     dest.html(result.nombre);
+                    if (include_price) {
+                        $('#price' + id).html(displayMoney(result.precio));
+                    }
                     cant.focus();
                 } else {
                     dest.html("Codigo Equivocado");

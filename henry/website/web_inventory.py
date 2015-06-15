@@ -6,7 +6,7 @@ from bottle import request, Bottle, abort, redirect
 from henry.config import jinja_env, transapi, prodapi, invapi, externaltransapi
 from henry.config import dbcontext, auth_decorator, sessionmanager, clientapi
 from henry.dao import Item, TransType, TransMetadata, Transferencia, Product, Status, InvMetadata, Client
-from henry.base.schema import NUsuario, NNota, NCliente
+from henry.base.schema import NUsuario, NNota, NCliente, NDjangoSession
 from henry.dao.exceptions import ItemAlreadyExists
 
 w = Bottle()
@@ -360,5 +360,14 @@ def post_secuencia():
     sessionmanager.session.query(NUsuario).filter_by(
         username=username).update({'last_factura': seq, 'bodega_factura_id': alm})
     redirect('/app/secuencia')
+
+
+@w.get('/app/notas_de_pedido')
+@dbcontext
+@auth_decorator
+def get_notas_de_pedido_form():
+    temp = jinja_env.get_template('crear_pedido.html')
+    return temp.render()
+
 
 
