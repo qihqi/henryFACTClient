@@ -3,18 +3,10 @@ import bottle
 from bottle import request
 from henry.base.schema import NUsuario
 from henry.config import sessionmanager
+from henry.base.auth import create_user_dict, get_user_info, authenticate
 
 app = bottle.Bottle()
 
-
-def authenticate(password, userinfo):
-    s = sha1()
-    s.update(password)
-    return s.hexdigest() == userinfo.password
-
-
-def get_user_info(session, username):
-    return session.query(NUsuario).filter_by(username=username).first()
 
 
 @app.post('/api/authenticate')
@@ -31,11 +23,7 @@ def post_authenticate():
         if info is None:
             return {'status': False, 'message': 'Usuario no encontrado'}
         if authenticate(password, info):
-            data = {
-                'status': True,
-                'last_factura': info.last_factura,
-                'bodega_factura_id': info.bodega_factura_id,
-            }
+            data = create_user_dict(info)
             beaker['login_info'] = data
             beaker.save()
             return data
