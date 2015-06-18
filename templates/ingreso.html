@@ -67,10 +67,11 @@
         <h3>
             {% if ingreso.meta.trans_type == 'TRANSFER' %}
             Transferencia: {{ingreso.meta.origin}} a {{ingreso.meta.dest}}
-            {%else%}
-            Ingresos :
+            {%elif ingreso.meta.trans_type == 'EXTERNA' %}
+            {{ingreso.meta.ref}} desde {{ingreso.meta.origin}} a {{ingreso.meta.dest}}
+            {%elif ingreso.meta.trans_type == 'INGRESO' %}
+            Ingreso: {{ingreso.dest}}
             {%endif%}
-            {{ingreso.dest}}  
         </h3>
         <h4> Codigo: {{ingreso.meta.uid}}</h4>
         <table align="center" width=600>

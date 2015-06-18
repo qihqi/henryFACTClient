@@ -23,7 +23,7 @@ class Store(SerializableMixin, DbMixin):
 class Bodega(SerializableMixin, DbMixin):
     _db_class = NBodega
     _db_attr = {
-        'id': 'almacen_id',
+        'id': 'id',
         'nombre': 'nombre',
         'nivel': 'nivel'
     }
