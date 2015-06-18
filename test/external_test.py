@@ -7,7 +7,7 @@ class ExternalTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api = ExternalApi('http://localhost:8080/api', 'ingreso', 'yu', 'yu')
+        cls.api = ExternalApi('http://localhost:8080/api/', 'ingreso', 'yu', 'yu')
 
     def test_trans(self):
         ing = Transferencia(

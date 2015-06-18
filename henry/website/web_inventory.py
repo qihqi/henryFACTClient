@@ -66,8 +66,13 @@ def items_from_form(form):
 
 def transmetadata_from_form(form):
     meta = TransMetadata()
-    meta.dest = int(form.get('dest'))
-    meta.origin = int(form.get('origin'))
+    meta.dest = form.get('dest')
+    meta.origin = form.get('origin')
+    try:
+        meta.dest = int(meta.dest)
+        meta.origin = int(meta.origin)
+    except ValueError:
+        pass
     meta.meta_type = form.get('meta_type')
     meta.trans_type = form.get('trans_type')
     if meta.trans_type == TransType.INGRESS:
@@ -84,11 +89,10 @@ def post_crear_ingreso():
     items = items_from_form(request.forms)
     try:
         transferencia = Transferencia(meta, items)
-        transferencia = transapi.save(transferencia)
         if meta.trans_type == TransType.EXTERNAL:
             transferencia = externaltransapi.save(transferencia)
+        transferencia = transapi.save(transferencia)
     except ValueError as e:
-        import traceback; traceback.print_exc()
         abort(400, str(e))
 
     redirect('/app/ingreso/{}'.format(transferencia.meta.uid))

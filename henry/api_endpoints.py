@@ -93,7 +93,8 @@ def crear_producto_alm(alm_id, pid):
 @actionlogged
 def crear_ingreso():
     json_content = request.body.read()
-    ingreso = Transferencia.deserialize(json_content)
+    json_dict = json_loads(json_content)
+    ingreso = Transferencia.deserialize(json_dict)
     ingreso = transapi.save(ingreso)
     return {'codigo': ingreso.meta.uid}
 

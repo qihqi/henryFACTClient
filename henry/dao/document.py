@@ -216,6 +216,13 @@ class TransMetadata(SerializableMixin, DbMixin):
         self.timestamp = timestamp if timestamp else datetime.datetime.now()
         self.status = status
 
+    @classmethod
+    def deserialize(cls, the_dict):
+        x = super(cls, TransMetadata).deserialize(the_dict)
+        if not isinstance(x.timestamp, datetime.datetime):
+            x.timestamp = parse_iso_date(x.timestamp)
+        return x
+
 
 class Transferencia(MetaItemSet):
     _metadata_cls = TransMetadata
@@ -242,14 +249,6 @@ class Transferencia(MetaItemSet):
                 raise ValueError('origin is none for transfer')
         if self.meta.trans_type == TransType.INGRESS:
             self.meta.origin = None
-
-    @classmethod
-    def deserialize(cls, the_dict):
-        x = super(cls, Transferencia).deserialize(the_dict)
-        if not isinstance(x.timestamp, datetime.datetime):
-            x.timestamp = parse_iso_date(x.timestamp)
-        return x
-
 
     @property
     def filepath_format(self):

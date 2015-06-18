@@ -34,7 +34,7 @@ clientapi = ClientApiDB(sessionmanager)
 transapi = DocumentApi(sessionmanager, FileService(INGRESO_PATH), prodapi, object_cls=Transferencia)
 invapi = DocumentApi(sessionmanager, FileService(INVOICE_PATH), prodapi, object_cls=Invoice)
 invapi2 = InvApiOld(sessionmanager)
-externaltransapi = ExternalApi('http://localhost:8080/api', 'ingreso', 'yu', 'yu')
+externaltransapi = ExternalApi('http://186.68.43.214/api/', 'ingreso', 'yu', 'yu')
 actionlogapi = ActionLogApi(ACTION_LOG_PATH)
 actionlogged = ActionLogApiDecor(actionlogapi)
 
