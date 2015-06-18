@@ -38,6 +38,8 @@ class AuthDecorator:
 
     def is_auth_by_header(self):
         header = request.get_header('Authorization')
+        if header is None:
+            return False
         pair = parse_auth(header)
         if pair is None:
             return False
