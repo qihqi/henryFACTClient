@@ -63,3 +63,7 @@ BEAKER_SESSION_OPTS = {
     'session.data_dir': BEAKER_DIR,
     'session.auto': True
 }
+
+BODEGAS_EXTERNAS = (
+    ('POLICENTRO', externaltransapi, 1),  # nombre, api, numero de bodega
+)

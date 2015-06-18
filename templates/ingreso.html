@@ -60,15 +60,13 @@
     </head>
 
     <body>
-        <h1> NOTA: solo ingreso y transferencia interna funciona </h1>
-
         <button onClick="window.print();" > Imprimir </button>
         <button onClick="window.location='/r';" > Regresar al principio </button>
         <h3>
             {% if ingreso.meta.trans_type == 'TRANSFER' %}
             Transferencia: {{ingreso.meta.origin}} a {{ingreso.meta.dest}}
             {%elif ingreso.meta.trans_type == 'EXTERNA' %}
-            {{ingreso.meta.ref}} desde {{ingreso.meta.origin}} a {{ingreso.meta.dest}}
+            {{ingreso.meta.ref}}: Desde {{ingreso.meta.origin}}
             {%elif ingreso.meta.trans_type == 'INGRESO' %}
             Ingreso: {{ingreso.dest}}
             {%endif%}

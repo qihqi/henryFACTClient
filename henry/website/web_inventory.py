@@ -1,11 +1,13 @@
 import datetime
 from decimal import Decimal
+import traceback
 from sqlalchemy.exc import IntegrityError
 
 from bottle import request, Bottle, abort, redirect
 from henry.config import jinja_env, transapi, prodapi, invapi, externaltransapi
-from henry.config import dbcontext, auth_decorator, sessionmanager, clientapi
+from henry.config import dbcontext, auth_decorator, sessionmanager, clientapi, BODEGAS_EXTERNAS
 from henry.dao import Item, TransType, TransMetadata, Transferencia, Product, Status, InvMetadata, Client
+from henry.dao.productos import Bodega
 from henry.base.schema import NUsuario, NNota, NCliente, NDjangoSession
 from henry.dao.exceptions import ItemAlreadyExists
 
@@ -20,16 +22,19 @@ def get_ingreso(uid):
     trans = transapi.get_doc(uid)
     bodegas = {x.id: x.nombre for x in prodapi.get_bodegas()}
     if trans:
-        print trans.serialize()
         temp = jinja_env.get_template('ingreso.html')
+        if trans.meta.origin is not None:
+            trans.meta.origin = prodapi.get_bodega_by_id(trans.meta.origin).nombre
+        if trans.meta.dest is not None:
+            trans.meta.dest = prodapi.get_bodega_by_id(trans.meta.dest).nombre
+
         return temp.render(ingreso=trans, bodega_mapping=bodegas)
-    else:
-        return 'Documento con codigo {} no existe'.format(uid)
+    return 'Documento con codigo {} no existe'.format(uid)
 
 @w.get('/app/nota/<uid>')
 @dbcontext
 @auth_decorator
-def get_ingreso(uid):
+def get_nota(uid):
     doc = invapi.get_doc(uid)
     if doc:
         temp = jinja_env.get_template('nota.html')
@@ -40,10 +45,11 @@ def get_ingreso(uid):
 @dbcontext
 @auth_decorator
 def crear_ingreso():
-    print request.remote_addr
     temp = jinja_env.get_template('crear_ingreso.html')
     bodegas = prodapi.get_bodegas()
-    return temp.render(bodegas=bodegas, types=TransType.names)
+    bodegas_externas = [Bodega(id=i, nombre=n[0]) for i, n in enumerate(BODEGAS_EXTERNAS)]
+    return temp.render(bodegas=bodegas, externas=bodegas_externas,
+                       types=TransType.names)
 
 
 def items_from_form(form):
@@ -77,6 +83,8 @@ def transmetadata_from_form(form):
     meta.trans_type = form.get('trans_type')
     if meta.trans_type == TransType.INGRESS:
         meta.origin = None  # ingress does not have origin
+    if meta.trans_type == TransType.EXTERNAL:
+        meta.dest = None  # dest for external resides in other server
     meta.timestamp = datetime.datetime.now()
     return meta
 
@@ -90,9 +98,17 @@ def post_crear_ingreso():
     try:
         transferencia = Transferencia(meta, items)
         if meta.trans_type == TransType.EXTERNAL:
-            transferencia = externaltransapi.save(transferencia)
+            newmeta = TransMetadata().merge_from(meta)
+            external_bodega_index = int(request.forms['externa'])
+            _, api, dest_id = BODEGAS_EXTERNAS[external_bodega_index]
+            newmeta.dest = dest_id
+            newmeta.origin = None
+            newmeta.trans_type = TransType.INGRESS
+            t = api.save(Transferencia(newmeta, items))
+            transferencia.meta.ref = t.meta.ref
         transferencia = transapi.save(transferencia)
     except ValueError as e:
+        traceback.print_exc()
         abort(400, str(e))
 
     redirect('/app/ingreso/{}'.format(transferencia.meta.uid))

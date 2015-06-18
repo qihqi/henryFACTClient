@@ -3,22 +3,29 @@
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
         <script src="/static/prod.js"></script>
         <script type="text/javascript">
+            function updateOptions(type) {
+                if (type === 'INGRESO') {
+                    $('#desde_bodega').show();
+                    $('#hasta_externa').hide();
+                    $('#hasta_bodega').hide();
+                } else if (type == 'EXTERNA') {
+                    $('#desde_bodega').show();
+                    $('#hasta_externa').show();
+                    $('#hasta_bodega').hide();
+                } else if (type == 'TRANSFER') {
+                    $('#desde_bodega').show();
+                    $('#hasta_externa').hide();
+                    $('#hasta_bodega').show();
+                }
+            }
             $(document).ready(function(){
                 initEvents();
                 var a = getRow();
                 $("#insert").append(a);
-                $("select#tipo").change(function () {
-                    if ($(this).val() === 'INGRESO') {
-                        $('#desde_bodega').hide();
-                    } else {
-                        $('#desde_bodega').show();
-                    }
-                });    
-                if ($('select#tipo').val() === 'INGRESO') {
-                    $('#desde_bodega').hide();
-                } else {
-                    $('#desde_bodega').show();
-                }
+                $("select#tipo").change(function() {
+                    var type = $(this).val();
+                    updateOptions(type);
+                });
                 $('#cargar_ingreso').click(function() {
                     var ing_id = $('#ingreso_id').val();
                     getIngreso(ing_id, function(status, result) {
@@ -65,13 +72,21 @@
                     {% endfor %}
                     </select>
                 </div>
-                <div id="desde_bodega" class="type_select">
+                <div id="hasta_bodega" class="type_select" style="display:none;">
                 <label>Hasta bodega:</label>
                 <select name="dest">
                     {% for i in bodegas %}
                     <option value="{{i.id}}">{{i.nombre}}</option> 
                     {% endfor %}
                 </select>
+                </div>
+                <div id="hasta_externa" class="type_select" style="display:none;">
+                    <label>Hasta bodega externa:</label>
+                    <select name="externa">
+                        {% for i in externas%}
+                        <option value="{{i.id}}">{{i.nombre}}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <table id="insert" cellspacing="10px">
                     <tr>

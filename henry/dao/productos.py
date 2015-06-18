@@ -29,6 +29,11 @@ class Bodega(SerializableMixin, DbMixin):
     }
     _name = _db_attr.keys()
 
+    def __init__(self, id=None, nombre=None, nivel=0):
+        self.id = id
+        self.nombre = nombre
+        self.nivel = nivel
+
 
 class Product(SerializableMixin):
     _name = ('nombre',

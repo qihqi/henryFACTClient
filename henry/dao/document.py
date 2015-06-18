@@ -176,12 +176,10 @@ class Invoice(MetaItemSet):
 class TransType:
     INGRESS = 'INGRESO'
     TRANSFER = 'TRANSFER'
-    REPACKAGE = 'REEMPAQUE'
     EXTERNAL = 'EXTERNA'
 
     names = (INGRESS,
              TRANSFER,
-             REPACKAGE,
              EXTERNAL)
 
 
@@ -242,12 +240,15 @@ class Transferencia(MetaItemSet):
                                   reason, self.meta.timestamp)
 
     def validate(self):
-        if self.meta.dest is None:
-            raise ValueError('dest is none')
-        if self.meta.trans_type == TransType.TRANSFER:
+        if self.meta.trans_type != TransType.EXTERNAL:
+            if self.meta.dest is None:
+                raise ValueError('dest is none for non external')
+        else:
+            self.meta.dest = None
+        if self.meta.trans_type != TransType.INGRESS:
             if self.meta.origin is None:
-                raise ValueError('origin is none for transfer')
-        if self.meta.trans_type == TransType.INGRESS:
+                raise ValueError('origin is none for non ingress')
+        else:
             self.meta.origin = None
 
     @property
