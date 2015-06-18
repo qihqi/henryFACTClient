@@ -8,7 +8,6 @@ from henry.base.auth import create_user_dict, get_user_info, authenticate
 app = bottle.Bottle()
 
 
-
 @app.post('/api/authenticate')
 def post_authenticate():
     beaker = request.environ.get('beaker.session')

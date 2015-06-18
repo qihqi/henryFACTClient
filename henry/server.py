@@ -18,7 +18,6 @@ def static(rest):
 
 app.merge(web_inventory_webapp)
 app.merge(accounting_webapp)
-app.merge(authapp)
 
 def main():
     global app

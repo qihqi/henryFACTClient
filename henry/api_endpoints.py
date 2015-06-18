@@ -263,3 +263,7 @@ def get_pedido(uid):
     if f is None:
         response.status = 404
     return f
+
+
+from henry.authentication import app
+api.merge(app)
