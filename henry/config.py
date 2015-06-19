@@ -13,7 +13,7 @@ from henry.base.auth import AuthDecorator
 from henry.base.session_manager import SessionManager, DBContext
 from henry.constants import (CONN_STRING, INGRESO_PATH, INVOICE_PATH, ENV,
                              LOGIN_URL, TRANSACTION_PATH, PEDIDO_PATH, ACTION_LOG_PATH,
-                             BEAKER_DIR, EXTERNAL_URL, EXTERNAL_USER, EXTERNAL_PASS)
+                             BEAKER_DIR, EXTERNAL_URL, EXTERNAL_USER, EXTERNAL_PASS, INVOICE_MODE)
 from henry.misc import id_type, fix_id, abs_string, value_from_cents, get_total
 from henry.externalapi import ExternalApi
 import sys
@@ -33,6 +33,9 @@ clientapi = ClientApiDB(sessionmanager)
 
 transapi = DocumentApi(sessionmanager, FileService(INGRESO_PATH), transactionapi, object_cls=Transferencia)
 invapi = DocumentApi(sessionmanager, FileService(INVOICE_PATH), transactionapi, object_cls=Invoice)
+if INVOICE_MODE == 'slave':
+    invapi = PedidoApi(sessionmanager, FileService(PEDIDO_PATH))
+
 invapi2 = InvApiOld(sessionmanager)
 externaltransapi = ExternalApi(EXTERNAL_URL, 'ingreso', EXTERNAL_USER, EXTERNAL_PASS)
 actionlogapi = ActionLogApi(ACTION_LOG_PATH)

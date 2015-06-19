@@ -209,11 +209,11 @@ def create_invoice():
         return ''
     content = json_loads(json_content)
     create_client = False
-    create_product = False
+    check_product = False
     if 'options' in content:
         options = content['options']
         create_client = options['crear_cliente']
-        create_product = options['crear_producto']
+        create_product = options['revisar_producto']
         del content['options']
 
     inv = Invoice.deserialize(content)
@@ -231,7 +231,10 @@ def create_invoice():
             clientapi.save(client)
 
     if create_product:
-        pass
+        for item in inv.items:
+            prod_id = item.prod.codigo
+            if not prodapi.get_producto(prod_id):
+                abort(400, 'Producto con codigo {} no existe'.format(prod_id))
 
     inv = invapi.save(inv)
 
@@ -269,7 +272,7 @@ def delete_invoice(uid):
 @actionlogged
 def save_pedido():
     json_content = request.body.read()
-    uid = pedidoapi.save(json_content)
+    uid, _ = pedidoapi.save(json_content)
     return {'codigo': uid}
 
 

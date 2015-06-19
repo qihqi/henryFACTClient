@@ -14,11 +14,11 @@ class FileService:
             os.makedirs(dirname)
         fullpath = os.path.join(dirname, name)
         if not override and os.path.exists(fullpath):
-            return False
+            return None
         with open(fullpath, 'w') as f:
             f.write(content)
             f.flush()
-            return True
+            return fullpath
 
     def get_file(self, filename):
         if not filename.startswith('/'):

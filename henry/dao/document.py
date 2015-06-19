@@ -371,20 +371,21 @@ class PedidoApi:
         self.session = sessionmanager
         self.filemanager = filemanager
 
-    def save(self, raw_content, user=None):
+    def save(self, raw_content, user=None, status='pedido'):
         session = self.session.session
         timestamp = datetime.datetime.now()
         pedido = NPedidoTemporal(
             user=user,
-            timestamp=timestamp)
+            timestamp=timestamp,
+            status=status)
         session.add(pedido)
         session.flush()
         codigo = str(pedido.id)
         filename = os.path.join(timestamp.date().isoformat(), codigo)
-        self.filemanager.put_file(filename, raw_content)
-        return codigo
+        filename = self.filemanager.put_file(filename, raw_content)
+        return codigo, filename
 
-    def get(self, uid):
+    def get_doc(self, uid):
         current_date = datetime.date.today()
         look_back = 7
         uid = str(uid)

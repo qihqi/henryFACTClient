@@ -206,6 +206,7 @@ class NPedidoTemporal(Base):
     user = Column(String(20))
     total = Column(Integer)
     timestamp = Column(DateTime)
+    status = Column(String(10))
 
 
 class NPriceList(Base):
