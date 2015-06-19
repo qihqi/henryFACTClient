@@ -242,6 +242,12 @@ class PerformanceTest(unittest.TestCase):
         end = time.time()
         print 'post factura ', end - start
 
+        start = time.time()
+        r = requests.put('{}/{}'.format(url, r.json()['codigo']))
+        print >>sys.stderr, r.text
+        end = time.time()
+        print 'put factura ', end - start
+
     def test_pedido(self):
         url = self.url_base + '/pedido'
         content = HUGE_REQUEST_NOTA

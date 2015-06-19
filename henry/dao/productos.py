@@ -3,12 +3,11 @@ import datetime
 from itertools import imap
 from sqlalchemy.exc import IntegrityError
 
-from sqlalchemy.sql import bindparam
-
 from henry.base.schema import (NProducto, NContenido, NStore, NCategory,
                                NBodega, NPriceList)
 from henry.base.serialization import SerializableMixin, json_dump, DbMixin
 from henry.base.fileservice import LockClass
+
 
 class Store(SerializableMixin, DbMixin):
     _db_class = NStore
@@ -98,10 +97,35 @@ class Transaction(SerializableMixin):
 
 
 class TransactionApi:
-    def __init__(self, root):
+    def __init__(self, root, db_session):
         self.root = root
+        self.db_session = db_session
+
+    def bulk_save(self, transactions):
+        for t in transactions:
+            self.save(t)
 
     def save(self, transaction):
+        session = self.db_session.session
+        count = session.query(NContenido).filter_by(
+            bodega_id=transaction.bodega_id, prod_id=transaction.prod_id).update(
+            {NContenido.cant: NContenido.cant + transaction.delta})
+        if not count:  # product does not exist in bodega
+            cont = NContenido(
+                prod_id=transaction.prod_id,
+                bodega_id=transaction.bodega_id,
+                precio=0,
+                precio2=0,
+                cant=transaction.delta)
+            try:
+                session.add(cont)
+                session.flush()
+            except IntegrityError:
+                session.rollback()
+                prod = NProducto(codigo=transaction.prod_id, nombre=transaction.name)
+                prod.contenidos.append(cont)
+                session.add(prod)
+                session.flush()
         prod = transaction.prod_id
         fecha = transaction.fecha.date().isoformat()
         dirname = os.path.join(self.root, prod)
@@ -151,13 +175,12 @@ class ProductApiDB:
         NContenido.bodega_id,
     )
 
-    def __init__(self, sessionmanager, transapi):
+    def __init__(self, sessionmanager):
         self._prod_name_cache = {}
         self._prod_price_cache = {}
         self._stores = {}
         self._bodegas = {}
         self.db_session = sessionmanager
-        self.transapi = transapi
 
     def get_producto(self, prod_id, almacen_id=None):
         session = self.db_session.session
@@ -194,33 +217,6 @@ class ProductApiDB:
                 NPriceList.nombre.startswith(prefix)).filter_by(almacen_id=almacen_id)
         for r in query:
             yield Product().merge_from(r)
-
-    def execute_transactions(self, trans):
-        return self.exec_transactions_with_session(self.db_session.session, trans)
-
-    def exec_transactions_with_session(self, session, trans):
-        for t in trans:
-            count = session.query(NContenido).filter_by(
-                bodega_id=t.bodega_id, prod_id=t.prod_id).update(
-                {NContenido.cant: NContenido.cant + t.delta})
-            if not count:  # product does not exist in bodega
-                cont = NContenido(
-                    prod_id=t.prod_id,
-                    bodega_id=t.bodega_id,
-                    precio=0,
-                    precio2=0,
-                    cant=t.delta)
-                try:
-                    session.add(cont)
-                    session.flush()
-                except IntegrityError:
-                    session.rollback()
-                    prod = NProducto(codigo=t.prod_id, nombre=t.name)
-                    prod.contenidos.append(cont)
-                    session.add(prod)
-                    session.flush()
-            self.transapi.save(t)
-        return len(trans)
 
     def get_bodegas(self):
         if not self._bodegas:

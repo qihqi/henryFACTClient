@@ -262,10 +262,10 @@ class Transferencia(MetaItemSet):
 
 class DocumentApi:
 
-    def __init__(self, sessionmanager, filemanager, prodapi, object_cls):
+    def __init__(self, sessionmanager, filemanager, transaction, object_cls):
         self.db_session = sessionmanager
         self.filemanager = filemanager
-        self.prodapi = prodapi
+        self.transaction = transaction
 
         self.cls = object_cls
         self.metadata_cls = object_cls._metadata_cls
@@ -341,7 +341,7 @@ class DocumentApi:
                 i.ref = '{}: {}'.format(new_status, i.ref)
                 if inverse_transaction:
                     i.inverse()
-            self.prodapi.execute_transactions(items)
+            self.transaction.bulk_save(items)
             session.query(self.db_class).filter_by(
                 id=doc.meta.uid).update({'status': new_status})
             session.commit()

@@ -26,13 +26,13 @@ sessionmanager = SessionManager(sessionfactory)
 # this is a decorator
 dbcontext = DBContext(sessionmanager)
 
-transactionapi = TransactionApi(TRANSACTION_PATH)
-prodapi = ProductApiDB(sessionmanager, transactionapi)
+transactionapi = TransactionApi(TRANSACTION_PATH, sessionmanager)
+prodapi = ProductApiDB(sessionmanager)
 pedidoapi = PedidoApi(sessionmanager, FileService(PEDIDO_PATH))
 clientapi = ClientApiDB(sessionmanager)
 
-transapi = DocumentApi(sessionmanager, FileService(INGRESO_PATH), prodapi, object_cls=Transferencia)
-invapi = DocumentApi(sessionmanager, FileService(INVOICE_PATH), prodapi, object_cls=Invoice)
+transapi = DocumentApi(sessionmanager, FileService(INGRESO_PATH), transactionapi, object_cls=Transferencia)
+invapi = DocumentApi(sessionmanager, FileService(INVOICE_PATH), transactionapi, object_cls=Invoice)
 invapi2 = InvApiOld(sessionmanager)
 externaltransapi = ExternalApi(EXTERNAL_URL, 'ingreso', EXTERNAL_USER, EXTERNAL_PASS)
 actionlogapi = ActionLogApi(ACTION_LOG_PATH)
