@@ -1,6 +1,7 @@
 import os
 import datetime
 from itertools import imap
+from sqlalchemy.exc import IntegrityError
 
 from sqlalchemy.sql import bindparam
 
@@ -198,17 +199,28 @@ class ProductApiDB:
         return self.exec_transactions_with_session(self.db_session.session, trans)
 
     def exec_transactions_with_session(self, session, trans):
-        trans = list(trans)
-        t = NContenido.__table__.update().where(
-            NContenido.prod_id == bindparam('p')).where(
-            NContenido.bodega_id == bindparam('b'))
-        t = t.values({'cant': NContenido.cant + bindparam('c')})
-        substitute = [{'c': x.delta, 'p': x.prod_id, 'b': x.bodega_id}
-                      for x in trans]
-        result = session.execute(t, substitute)
         for t in trans:
+            count = session.query(NContenido).filter_by(
+                bodega_id=t.bodega_id, prod_id=t.prod_id).update(
+                {NContenido.cant: NContenido.cant + t.delta})
+            if not count:  # product does not exist in bodega
+                cont = NContenido(
+                    prod_id=t.prod_id,
+                    bodega_id=t.bodega_id,
+                    precio=0,
+                    precio2=0,
+                    cant=t.delta)
+                try:
+                    session.add(cont)
+                    session.flush()
+                except IntegrityError:
+                    session.rollback()
+                    prod = NProducto(codigo=t.prod_id, nombre=t.name)
+                    prod.contenidos.append(cont)
+                    session.add(prod)
+                    session.flush()
             self.transapi.save(t)
-        return result.rowcount
+        return len(trans)
 
     def get_bodegas(self):
         if not self._bodegas:

@@ -208,6 +208,14 @@ def create_invoice():
     if not json_content:
         return ''
     content = json_loads(json_content)
+    create_client = False
+    create_product = False
+    if 'options' in content:
+        options = content['options']
+        create_client = options['crear_cliente']
+        create_product = options['crear_producto']
+        del content['options']
+
     inv = Invoice.deserialize(content)
     inv.items = filter(lambda x: x.cant >= 0, inv.items)
     inv.meta.bodega_id = prodapi.get_store_by_id(inv.meta.almacen_id).bodega_id
@@ -216,6 +224,15 @@ def create_invoice():
     # treating it as a decimal of 3 decimal places
     for item in inv.items:
         item.cant = Decimal(item.cant) / 1000
+
+    if create_client:
+        client = inv.meta.client
+        if not clientapi.get(client.codigo):
+            clientapi.save(client)
+
+    if create_product:
+        pass
+
     inv = invapi.save(inv)
 
     # increment the next invoice's number

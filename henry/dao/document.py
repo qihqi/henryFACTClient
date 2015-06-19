@@ -394,7 +394,7 @@ class PedidoApi:
             f = self.filemanager.get_file(filename)
             if f is not None:
                 return f
-        logging.info('Could not find pedido within {} days of lookback'.format(look_backback))
+        logging.info('Could not find pedido within {} days of lookback'.format(look_back))
         return None
 
 

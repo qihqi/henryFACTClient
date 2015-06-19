@@ -7,23 +7,23 @@ class ExternalTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api = ExternalApi('http://localhost:8080/api/', 'ingreso', 'yu', 'yu')
+        cls.api = ExternalApi('http://186.68.43.214/api/', 'ingreso', 'yu', 'yu')
 
     def test_trans(self):
         ing = Transferencia(
             meta=TransMetadata(**{
-                'origin': 1,
-                'dest': 2,
-                'trans_type': 'TRANSFER',
+                'dest': 1,
+                'trans_type': 'INGRESO',
                 'user': 'yu',
             }),
             items=[
                 Item(Product(**{'codigo': '123', 'nombre': 'prueba'}), 1),
-                Item(Product(**{'codigo': '12', 'nombre': 'prueba'}), 2)
+                #Item(Product(**{'codigo': '12', 'nombre': 'prueba'}), 2)
             ]
         )
         doc = self.api.save(ing)
-        print doc.meta.uid
+        self.assertTrue(doc is not None)
+        print doc.meta.ref
 
 
 if __name__ == '__main__':

@@ -67,7 +67,7 @@ class EndToEndTest(unittest.TestCase):
             },
             'items': [
                 {'prod': x, 'cant': 10} for x in (p1, p2, p3)
-              ]
+                ]
         }
 
         nota_url = self.url_base + '/nota'

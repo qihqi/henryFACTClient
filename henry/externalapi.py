@@ -4,6 +4,7 @@ from urlparse import urljoin
 import requests
 
 from henry.base.serialization import json_dump
+from henry.dao.exceptions import BaseServiceException
 
 
 class ExternalApi:
@@ -32,7 +33,7 @@ class ExternalApi:
         del doc.meta.timestamp
         response = self.execute_query_with_auth(requests.post, url, json_dump(doc.serialize()))
         if response.status_code != 200:
-            return None
+            raise BaseServiceException(response.text)
         codigo = response.json()['codigo']
         doc.meta.ref = 'transferencia externa: {}'.format(codigo)
         return doc

@@ -106,6 +106,8 @@ def post_crear_ingreso():
             newmeta.origin = None
             newmeta.trans_type = TransType.INGRESS
             t = api.save(Transferencia(newmeta, items))
+            if t is None:
+                abort(400)
             transferencia.meta.ref = t.meta.ref
         transferencia = transapi.save(transferencia)
     except ValueError as e:
