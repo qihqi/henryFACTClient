@@ -13,7 +13,7 @@ class Store(SerializableMixin, DbMixin):
     _db_class = NStore
     _db_attr = {
         'almacen_id': 'almacen_id',
-        'ruc': 'ruc', 
+        'ruc': 'ruc',
         'nombre': 'nombre',
         'bodega_id': 'bodega_id'
     }
@@ -115,11 +115,16 @@ class TransactionApi:
 
     # generator
     def get_transactions_raw(self, prod_id, date_start, date_end):
+        if isinstance(date_start, datetime.datetime):
+            date_start = date_start.date()
+        if isinstance(date_end, datetime.datetime):
+            date_end = date_end.date()
         while date_start < date_end:
-            fname = os.path.join(self.root, prod_id, date_start)
-            with open(fname) as f:
-                for line in f.readlines():
-                    yield line
+            fname = os.path.join(self.root, prod_id, date_start.isoformat())
+            if os.path.exists(fname):
+                with open(fname) as f:
+                    for line in f.readlines():
+                        yield line
             date_start += datetime.timedelta(days=1)
 
     def get_transactions(self, prod_id, date_start, date_end):

@@ -5,10 +5,11 @@ from sqlalchemy.exc import IntegrityError
 
 from bottle import request, Bottle, abort, redirect
 from henry.config import jinja_env, transapi, prodapi, invapi, externaltransapi
-from henry.config import dbcontext, auth_decorator, sessionmanager, clientapi, BODEGAS_EXTERNAS
+from henry.config import dbcontext, auth_decorator, sessionmanager, clientapi, BODEGAS_EXTERNAS, transactionapi
 from henry.dao import Item, TransType, TransMetadata, Transferencia, Product, Status, InvMetadata, Client
 from henry.dao.productos import Bodega
-from henry.base.schema import NUsuario, NNota, NCliente, NDjangoSession
+from henry.base.schema import NUsuario, NNota, NCliente, NProducto
+from henry.base.schema import NDjangoSession
 from henry.dao.exceptions import ItemAlreadyExists
 
 w = Bottle()
@@ -391,3 +392,20 @@ def get_notas_de_pedido_form():
 
 
 
+@w.get('/app/vendidos_por_categoria')
+@dbcontext
+@auth_decorator
+def vendidos_por_categoria():
+    cat = request.query.categoria_id
+    datestrp = datetime.datetime.strptime
+    start = datestrp(request.query.start_date, '%Y-%m-%d')
+    end = datestrp(request.query.end_date, '%Y-%m-%d')
+    prods = sessionmanager.session.query(NProducto.codigo).filter_by(
+        categoria_id=cat)
+    all_codigos = {p.codigo for p in prods}
+
+    for x in all_codigos:
+        for t in transactionapi.get_transactions(
+                x, start, end):
+            if t.ref is not None and 'factura' in t.ref:
+                print t.serialize()
