@@ -170,101 +170,6 @@ def search_client():
     return None
 
 
-# ########## NOTA ############################
-@api.get('/api/nota/<inv_id>')
-@dbcontext
-@auth_decorator
-@actionlogged
-def get_invoice(inv_id):
-    doc = invapi.get_doc(inv_id)
-    if doc is None:
-        abort(404, 'Nota no encontrado')
-        return
-    return json_dump(doc.serialize())
-
-
-@api.get('/api/nota')
-@dbcontext
-@actionlogged
-def get_invoice_by_date():
-    start = request.query.get('start_date')
-    end = request.query.get('end_date')
-    if start is None or end is None:
-        abort(400, 'invalid input')
-    datestrp = datetime.datetime.strptime
-    start_date = datestrp(start, "%Y-%m-%d")
-    end_date = datestrp(end, "%Y-%m-%d")
-    status = request.query.get('status')
-    result = invapi.search_metadata_by_date_range(start_date, end_date, status)
-    return json_dump(list(result))
-
-
-@api.post('/api/nota')
-@dbcontext
-@auth_decorator
-@actionlogged
-def create_invoice():
-    json_content = request.body.read()
-    if not json_content:
-        return ''
-    content = json_loads(json_content)
-    create_client = False
-    check_product = False
-    if 'options' in content:
-        options = content['options']
-        create_client = options['crear_cliente']
-        check_product = options['revisar_producto']
-        del content['options']
-
-    inv = Invoice.deserialize(content)
-    inv.items = filter(lambda x: x.cant >= 0, inv.items)
-    inv.meta.bodega_id = prodapi.get_store_by_id(inv.meta.almacen_id).bodega_id
-    inv.meta.paid = True
-    # convert cant into a decimal. cant is send as int,
-    # treating it as a decimal of 3 decimal places
-    for item in inv.items:
-        item.cant = Decimal(item.cant) / 1000
-
-    if create_client:
-        client = inv.meta.client
-        if not clientapi.get(client.codigo):
-            clientapi.save(client)
-
-    if check_product:
-        for item in inv.items:
-            prod_id = item.prod.codigo
-            if not prodapi.get_producto(prod_id):
-                abort(400, 'Producto con codigo {} no existe'.format(prod_id))
-
-    inv = invapi.save(inv)
-
-    # increment the next invoice's number
-    user = inv.meta.user
-    sessionmanager.session.query(NUsuario).filter_by(username=user).update(
-        {NUsuario.last_factura: int(inv.meta.codigo) + 1})
-    return {'codigo': inv.meta.uid}
-
-
-@api.put('/api/nota/<uid>')
-@dbcontext
-@auth_decorator
-@actionlogged
-def postear_invoice(uid):
-    inv = invapi.get_doc(uid)
-    invapi.commit(inv)
-    return {'status': inv.meta.status}
-
-
-@api.delete('/api/nota/<uid>')
-@dbcontext
-@auth_decorator
-@actionlogged
-def delete_invoice(uid):
-    inv = invapi.get_doc(uid)
-    invapi.delete(inv)
-    return {'status': inv.meta.status}
-
-
 # ####################### PEDIDO ############################
 @api.post('/api/pedido')
 @dbcontext
@@ -279,7 +184,7 @@ def save_pedido():
 @api.get('/api/pedido/<uid>')
 @actionlogged
 def get_pedido(uid):
-    f = pedidoapi.get(uid)
+    f = pedidoapi.get_doc(uid)
     if f is None:
         response.status = 404
     return f

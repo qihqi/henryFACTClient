@@ -207,6 +207,7 @@ class NPedidoTemporal(Base):
     total = Column(Integer)
     timestamp = Column(DateTime)
     status = Column(String(10))
+    external_id = Column(Integer)
 
 
 class NPriceList(Base):

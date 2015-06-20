@@ -4,9 +4,11 @@ import os
 from bottle import run, static_file, Bottle
 
 from henry.config import BEAKER_SESSION_OPTS
+from henry.constants import INVOICE_MODE
 from henry.website.web_inventory import web_inventory_webapp
 from henry.website.accounting import accounting_webapp
 from henry.authentication import app as authapp
+from henry.zmq_worker import start_worker
 
 app = Bottle()
 
@@ -21,9 +23,12 @@ app.merge(accounting_webapp)
 
 def main():
     global app
-    from henry.api_endpoints import api
+    from henry.api import get_master, get_slave
     from beaker.middleware import SessionMiddleware
-    app.merge(api)
+    if INVOICE_MODE == 'slave':
+        app.merge(get_slave())
+    else:
+        app.merge(get_master())
     app = SessionMiddleware(app, BEAKER_SESSION_OPTS)
     sys.path.append(os.path.dirname(os.path.realpath(__file__)))
     from henry.base.schema import Base

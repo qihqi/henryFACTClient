@@ -29,14 +29,19 @@ class ExternalApi:
         return response
 
     def save(self, doc):
-        url = urljoin(self.root, self.path)
         del doc.meta.timestamp
-        response = self.execute_query_with_auth(requests.post, url, json_dump(doc.serialize()))
-        if response.status_code != 200:
-            raise BaseServiceException(response.text)
+        response = self.save_data(json_dimp(doc.serialize()))
         codigo = response.json()['codigo']
         doc.meta.ref = 'transferencia externa: {}'.format(codigo)
         return doc
+
+    def save_data(self, data):
+        url = urljoin(self.root, self.path)
+        response = self.execute_query_with_auth(requests.post, url, data)
+        if response.status_code != 200:
+            raise BaseServiceException(response.text)
+        return response
+
 
     def commit(self, doc):
         url = os.path.join(self.root, self.path, doc.meta.uid)

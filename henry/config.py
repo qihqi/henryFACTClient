@@ -33,8 +33,6 @@ clientapi = ClientApiDB(sessionmanager)
 
 transapi = DocumentApi(sessionmanager, FileService(INGRESO_PATH), transactionapi, object_cls=Transferencia)
 invapi = DocumentApi(sessionmanager, FileService(INVOICE_PATH), transactionapi, object_cls=Invoice)
-#if INVOICE_MODE == 'slave':
-#    invapi = PedidoApi(sessionmanager, FileService(PEDIDO_PATH))
 
 invapi2 = InvApiOld(sessionmanager)
 externaltransapi = ExternalApi(EXTERNAL_URL, 'ingreso', EXTERNAL_USER, EXTERNAL_PASS)
@@ -70,3 +68,4 @@ BEAKER_SESSION_OPTS = {
 BODEGAS_EXTERNAS = (
     ('POLICENTRO', externaltransapi, 1),  # nombre, api, numero de bodega
 )
+
