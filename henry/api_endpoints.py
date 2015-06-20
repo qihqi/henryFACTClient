@@ -213,7 +213,7 @@ def create_invoice():
     if 'options' in content:
         options = content['options']
         create_client = options['crear_cliente']
-        create_product = options['revisar_producto']
+        check_product = options['revisar_producto']
         del content['options']
 
     inv = Invoice.deserialize(content)
@@ -230,7 +230,7 @@ def create_invoice():
         if not clientapi.get(client.codigo):
             clientapi.save(client)
 
-    if create_product:
+    if check_product:
         for item in inv.items:
             prod_id = item.prod.codigo
             if not prodapi.get_producto(prod_id):
