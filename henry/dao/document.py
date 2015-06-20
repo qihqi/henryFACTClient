@@ -272,10 +272,6 @@ class DocumentApi:
         self.db_class = self.metadata_cls._db_class
 
     def get_doc(self, uid):
-        """
-        uid id of the tranfer to fetch,
-        returns Transferencia object
-        """
         session = self.db_session.session
         db_instance = session.query(self.db_class).filter_by(id=uid).first()
         if db_instance is None:
@@ -300,7 +296,8 @@ class DocumentApi:
         meta = doc.meta
         if not hasattr(meta, 'timestamp'):
             meta.timestamp = datetime.datetime.now()
-        meta.status = Status.NEW
+        if not meta.status:
+            meta.status = Status.NEW
         doc.validate()
         filepath = doc.filepath_format
         session = self.db_session.session
@@ -420,3 +417,4 @@ class InvApiOld(object):
             dbmeta = dbmeta.filter_by(vendedor_id=seller)
 
         return dbmeta
+
