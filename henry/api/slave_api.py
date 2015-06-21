@@ -38,11 +38,12 @@ def do_work():
         s = receiver.recv_pyobj()
         if s.command == Command.SAVE:
             with open(s.path) as f:
-                codigo = api.save_data(f.read())['codigo']
+                codigo = api.save_data(f.read()).json()['codigo']
                 with sessionmanager as session:
                     session.query(NPedidoTemporal).filter_by(
-                            id=s.uid).update(status='uploaded',
-                            external_id=codigo)
+                            id=s.uid).update({
+                                NPedidoTemporal.status: 'uploaded',
+                                NPedidoTemporal.external_id: codigo})
                     session.flush()
         elif s.command == Command.COMMIT:
             t = Invoice(InvMetadata, [])

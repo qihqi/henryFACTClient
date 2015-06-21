@@ -44,7 +44,7 @@ class ExternalApi:
 
 
     def commit(self, doc):
-        url = os.path.join(self.root, self.path, doc.meta.uid)
+        url = os.path.join(self.root, self.path, str(doc.meta.uid))
         if self.execute_query_with_auth(requests.put, url):
             return doc
         return None
