@@ -160,7 +160,12 @@ class Invoice(MetaItemSet):
         reason = 'factura: id={} codigo={}'.format(
             self.meta.uid, self.meta.codigo)
         for item in self.items:
-            yield Transaction(self.meta.bodega_id, item.prod.codigo, -(item.cant), item.prod.nombre,
+            pid = item.prod.codigo
+            cant = item.cant
+            if pid[-1] == '+' or pid[-1] == '-':
+                cant = cant * (Decimal(10) if pid[-1] == '+' else Decimal('0.5'))
+                pid = pid[:-1]
+            yield Transaction(self.meta.bodega_id, pid, -cant, item.prod.nombre,
                               reason, self.meta.timestamp)
 
     def validate(self):
