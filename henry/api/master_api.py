@@ -92,7 +92,6 @@ def create_invoice():
 @auth_decorator
 @actionlogged
 def postear_invoice(uid):
-    return {'status': 'POSTEADO'}
     inv = invapi.get_doc(uid)
     invapi.commit(inv)
     return {'status': inv.meta.status}
