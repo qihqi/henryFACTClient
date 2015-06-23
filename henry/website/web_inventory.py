@@ -406,8 +406,14 @@ def vendidos_por_categoria():
         categoria_id=cat)
     all_codigos = {p.codigo for p in prods}
 
+    all_items = []
     for x in all_codigos:
         for t in transactionapi.get_transactions(
                 x, start, end):
             if t.ref is not None and 'factura' in t.ref:
-                print t.serialize()
+                all_items.append(t)
+
+    temp = jinja_env.get_template('ver_vendidos.html')
+    return temp.render(items=all_items)
+
+

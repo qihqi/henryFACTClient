@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 
 from henry.base.schema import (NProducto, NContenido, NStore, NCategory,
                                NBodega, NPriceList)
-from henry.base.serialization import SerializableMixin, json_dump, DbMixin
+from henry.base.serialization import SerializableMixin, json_dump, DbMixin, json_loads
 from henry.base.fileservice import LockClass
 
 
@@ -97,8 +97,8 @@ class Transaction(SerializableMixin):
 
 
 class TransactionApi:
-    def __init__(self, root, db_session):
-        self.root = root
+    def __init__(self, db_session, fileservice):
+        self.fileservice = fileservice
         self.db_session = db_session
 
     def bulk_save(self, transactions):
@@ -128,33 +128,29 @@ class TransactionApi:
                 session.flush()
         prod = transaction.prod_id
         fecha = transaction.fecha.date().isoformat()
-        dirname = os.path.join(self.root, prod)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
-        final_path = os.path.join(dirname, fecha)
-        with open(final_path, 'a') as f:
-            with LockClass(f):
-                f.write(json_dump(transaction.serialize()))
-                f.write('\n')
-                f.flush()
+        data = json_dump(transaction.serialize())
+        self.fileservice.save(os.path.join(prod, fecha), data)
 
-    # generator
     def get_transactions_raw(self, prod_id, date_start, date_end):
         if isinstance(date_start, datetime.datetime):
             date_start = date_start.date()
         if isinstance(date_end, datetime.datetime):
             date_end = date_end.date()
+
+        all_names = []
         while date_start < date_end:
-            fname = os.path.join(self.root, prod_id, date_start.isoformat())
-            if os.path.exists(fname):
-                with open(fname) as f:
-                    for line in f.readlines():
-                        yield line
+            fname = os.path.join(prod_id, date_start.isoformat())
+            all_names.append(fname)
             date_start += datetime.timedelta(days=1)
+        all_lines = self.fileservice.get_file_lines(all_names,
+                lambda x: 'factura' in x)
+        return all_lines
 
     def get_transactions(self, prod_id, date_start, date_end):
-        return imap(Transaction.deserialize,
-                    self.get_transactions_raw(prod_id, date_start, date_end))
+        for raw_item in self.get_transactions_raw(prod_id, date_start, date_end):
+            if raw_item:
+                thedict = json_loads(raw_item)
+                yield Transaction.deserialize(thedict)
 
 
 class ProductApiDB:

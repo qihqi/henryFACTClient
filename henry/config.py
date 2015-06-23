@@ -26,7 +26,7 @@ sessionmanager = SessionManager(sessionfactory)
 # this is a decorator
 dbcontext = DBContext(sessionmanager)
 
-transactionapi = TransactionApi(TRANSACTION_PATH, sessionmanager)
+transactionapi = TransactionApi(sessionmanager, FileService(TRANSACTION_PATH))
 prodapi = ProductApiDB(sessionmanager)
 pedidoapi = PedidoApi(sessionmanager, FileService(PEDIDO_PATH))
 clientapi = ClientApiDB(sessionmanager)
