@@ -1,14 +1,11 @@
-import datetime
-from decimal import Decimal
-
 from bottle import Bottle, response, request, abort
 
-from henry.base.schema import NUsuario
-from henry.config import (prodapi, transapi, dbcontext, clientapi,
-                          invapi, auth_decorator, pedidoapi, sessionmanager,
+from henry.base.schema import NPriceList
+from henry.config import (prodapi, dbcontext, clientapi,
+                          auth_decorator, pedidoapi, sessionmanager,
                           actionlogged)
 from henry.base.serialization import json_dump, json_loads
-from henry.dao import Invoice, Transferencia, Client
+from henry.dao import Client
 
 api = Bottle()
 
@@ -41,7 +38,6 @@ def get_prod(prod_id):
     if prod is None:
         response.status = 404
     return json_dump(prod)
-    return get_prod_from_inv(None, prod_id)
 
 
 @api.get('/api/producto')
@@ -82,51 +78,23 @@ def crear_producto(pid):
 @dbcontext
 @auth_decorator
 @actionlogged
-def crear_producto_alm(alm_id, pid):
+def update_price(alm_id, pid):
     content = json_loads(request.body.read())
+    print content
+    if not content:
+        abort(400)
     prodapi.update_price(alm_id, pid, content)
 
-# ################# INGRESO ###########################3
-@api.post('/api/ingreso')
+
+@api.delete('/api/alm/<alm_id>/producto/<pid>')
 @dbcontext
 @auth_decorator
 @actionlogged
-def crear_ingreso():
-    json_content = request.body.read()
-    json_dict = json_loads(json_content)
-    ingreso = Transferencia.deserialize(json_dict)
-    ingreso = transapi.save(ingreso)
-    return {'codigo': ingreso.meta.uid}
-
-
-@api.put('/api/ingreso/<ingreso_id>')
-@dbcontext
-@auth_decorator
-@actionlogged
-def postear_ingreso(ingreso_id):
-    trans = transapi.get_doc(ingreso_id)
-    transapi.commit(trans)
-    return {'status': trans.meta.status}
-
-
-@api.delete('/api/ingreso/<ingreso_id>')
-@dbcontext
-@actionlogged
-def delete_ingreso(ingreso_id):
-    trans = transapi.get_doc(ingreso_id)
-    transapi.delete(trans)
-    return {'status': trans.meta.status}
-
-
-@api.get('/api/ingreso/<ingreso_id>')
-@dbcontext
-@actionlogged
-def get_ingreso(ingreso_id):
-    ing = transapi.get_doc(ingreso_id)
-    if ing is None:
-        abort(404, 'Ingreso No encontrada')
-        return
-    return json_dump(ing.serialize())
+def delete_price(alm_id, pid):
+    session = sessionmanager.session
+    count = session.query(NPriceList).filter_by(
+        almacen_id=alm_id, prod_id=pid).delete()
+    return {'deleted': count}
 
 
 # ################ CLIENT ############################
