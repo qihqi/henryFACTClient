@@ -2,7 +2,7 @@ from hashlib import sha1
 import bottle
 from bottle import request
 from henry.base.schema import NUsuario
-from henry.config import sessionmanager
+from henry.config import sessionmanager, dbcontext, auth_decorator
 from henry.base.auth import create_user_dict, get_user_info, authenticate
 
 app = bottle.Bottle()
@@ -29,10 +29,13 @@ def post_authenticate():
         return {'status': False, 'message': 'Clave equivocada'}
 
 
-@app.get('/islogin')
+@app.get('/api/islogin')
+@dbcontext
+@auth_decorator
 def get_session():
     session = request.environ.get('beaker.session')
     login_info = session.get('login_info')
+    print session
     if login_info is not None:  # user is already logged in
         return login_info
     return {'message': 'Not logged in', 'status': False}

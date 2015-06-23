@@ -1,16 +1,26 @@
-<html>
+<html> <!-- manifest="/static/pedido.appcache"-->
     <head>
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
         <script src="/static/prod.js"></script>
         <script>
-            var pedido = [];
+            var state = {};
+            state.pedido = {};
+            state.items = {};
+            state.current = null;
+            state.alm_id = 1;
             function prodToDom(row) {
                 var p = $("<tr>");
-                var codigo_cell = $("<td>");
-                var cant_cell = $("<td>");
-                var nombre_cell = $("<td>");
-                var precio_cell = $("<td>");
-                var subtotal_cell = $("<td>");
+                p.addClass('row-' + row.codigo);
+                var codigo_cell = $('<td class="content">');
+                var cant_cell = $('<td class="content">');
+                var nombre_cell = $('<td class="content">');
+                var precio_cell = $('<td class="content">');
+                var subtotal_cell = $('<td class="content">');
+                var borrar = $('<td class="content">');
+                var borrar_button = $('<button class="borrar">');
+                borrar_button.html('Borrar');
+                borrar_button.attr('codigo', row.codigo);
+                borrar.append(borrar_button);
                 codigo_cell.html(row.codigo);
                 nombre_cell.html(row.nombre);
                 cant_cell.html(row.cant);
@@ -21,6 +31,7 @@
                 p.append(nombre_cell);
                 p.append(precio_cell);
                 p.append(subtotal_cell);
+                p.append(borrar);
                 return p;
             }
 
@@ -38,58 +49,152 @@
                         var codigo = $(this).val();
                         var url = '/api/alm/' + 1 + '/producto/' + codigo;
                         getRequest(url, function(status, result) {
+                            state.current = result;
                             $('#nombre').html(result.nombre);
                             $('#precio').html(displayMoney(result.precio1));
                             $('#cantidad').focus();
                         });
                     }
                 });
+                $('input#cantidad').keyup(function(event) {
+                    var cant = $(this).val();
+                    var precio = $('#precio').html();
+                    if (cant === '') {
+                        cant = '0';
+                    }
+                    if (isNumber(cant)) {
+                        var subtotal = (precio * parseInt(cant)).toFixed(2);
+                        $('#subtotal').html(subtotal);
+                    }
+                });
+
                 $('input#cantidad').keypress(function(event) {
+                    var cant = $(this).val();
+                    var precio = $('#precio').html();
                     if (event.which == 13) {
-                        var precio = $('#precio').html();
-                        var cant = $(this).val();
                         if (!isNumber(cant)) {
                             alert('Cantidad debe ser un numero');
                             $(this).focus();
                         } else {
-                            var subtotal = (precio * cant).toFixed(2);
-                            $('#subtotal').html(subtotal);
-                            $('#agregar').focus();
+                            cant = parseFloat(cant);
+                            var prod = {
+                                nombre: $('#nombre').html(),
+                                codigo: $('#codigo').val(),
+                                precio: precio,
+                                cant: cant,
+                                subtotal: $('#subtotal').html()
+                            };
+                            if (prod.nombre && prod.cant) {
+                                if (!(prod.codigo in state.items)) {
+                                    state.items[prod.codigo] = {
+                                        prod: state.current,
+                                        cant: cant * 1000,
+                                    };
+                                    state.pedido[prod.codigo] = prod;
+                                } else {
+                                    var oldcant = state.pedido[prod.codigo].cant;
+                                    var newcant = oldcant + cant;
+                                    state.items[prod.codigo].cant = newcant * 1000;
+                                    state.pedido[prod.codigo].cant = newcant;
+                                    prod.cant = newcant;
+                                    prod.subtotal = (newcant * parseFloat(precio)).toFixed(2);
+                                    $('.row-' + prod.codigo).remove();
+                                }
+                                var p = prodToDom(prod);
+                                state.current = null;
+                                p.insertAfter('#header');
+                                clearFields();
+                                calcTotals();
+                                $('#codigo').focus();
+                            }
                         }
                     }
                 });
-                $('#agregar').click(function() {
-                    var prod = {
-                        nombre: $('#nombre').html(),
-                        codigo: $('#codigo').val(),
-                        precio: $('#precio').html(),
-                        cant: $('#cantidad').val(),
-                        subtotal: $('#subtotal').html()
-                    };
-                    if (prod.nombre && prod.cant) {
-                        pedido.push(prod);
-                        var p = prodToDom(prod);
-                        $('#pedido').prepend(p);
-                        clearFields();
-                        calcTotals();
-                        $('#codigo').focus();
+                $('#buscar').click(function() {
+                    var newwindow=window.open("/static/buscar_prod_price.html",'name','height=700,width=500, scrollbars=yes');
+                    if (window.focus) {
+                        newwindow.focus();
                     }
+                    newwindow.alm_id = state.alm_id;
+                    return false;
                 });
+                $('#guardar').click(function() {
+                    if (state.items.length <= 0) {
+                        alert('Nota de pedido vacio');
+                        return;
+                    }
+                    var items = [];
+                    for (var x in state.items) {
+                        items.push(state.items[x]);
+                    }
+                     var doc = {
+                        meta: {
+                           almacen_id: state.alm_id
+                        },
+                        items: items
+                     };
+
+                     var url = '/api/pedido';
+                     $.ajax({
+                         url: url,
+                         type: 'POST',
+                         data: JSON.stringify(doc),
+                         success: function(data) {
+                            var imp = confirm("Numero de pedido es " + data.codigo + ", desea imprimir?");
+                            if (imp) {
+                                var win = window.open('/app/pedido/' + data.codigo);
+                            }
+                            clearFields();
+                            var header = $('tr#header');
+                            $('#pedido').html('');
+                            $('#pedido').append(header);
+                            $('#iva').html('');
+                            $('#spansubtotal').html('');
+                            $('#total').html('');
+
+                         },
+                         failure: function(error, result) {
+                         }
+                     });
+                });
+
+                $(document).on('click', '.borrar', null, function(event) {
+                    var codigo = $(this).attr('codigo');
+                    $('.row-' + codigo).remove();
+                    delete state.items[codigo];
+                    delete state.pedido[codigo];
+                    calcTotals();
+                });
+
+                $.ajax({
+                    url: '/api/islogin',
+                    success: function(data) {
+                        state.alm_id = data.bodega_factura_id;
+                    }
+               });
             });
 
             function calcTotals() {
                 var sub = 0;
                 var total = 0;
                 var iva = 0;
-                for (var i in pedido) {
-                    var p = pedido[i];
+                for (var i in state.pedido) {
+                    var p = state.pedido[i];
                     sub += parseFloat(p.subtotal);
                 }
-                iva = (0.12 * sub).toFixed(2);
-                total = (sub - iva).toFixed(2);
+                sub = Math.round(100 * sub) / 100;
+                iva = Math.round(12 * sub) / 100;  // round the 12% to 2 decimals
+                total = (sub + iva).toFixed(2);
                 $('#iva').html(iva);
-                $('span#subtotal').html(sub);
+                $('#spansubtotal').html(sub);
                 $('#total').html(total);
+            }
+
+            function handleResult(result) {
+                $('#codigo').val(result.codigo);
+                $('#nombre').html(result.nombre);
+                $('#precio').html(displayMoney(result.precio1));
+                $('#cantidad').focus();
             }
         </script>
         <style>
@@ -97,11 +202,7 @@
           width: 100%;
         }
         td.codigo, td.cant, td.button, td.precio, td.subtotal {
-          width: 10%;
-        }
-
-        td.precio, td.subtotal {
-            float:right;
+          width: 12%;
         }
         input {
             width: 100%;
@@ -110,31 +211,49 @@
             min-width: 100px;
             display: inline-block;
         }
-        table#pedido {
+        table#pedido, td.content, th.content {
             border: 1px solid black;
+            border-collapse: collapse;
+        }
+        td {
+            white-space: -webkit-pre-wrap;
+            white-space: -moz-pre-wrap !important;
         }
         </style>
     </head>
     <body>
         <table>
             <tr>
+            <td><button id="guardar">Guardar</button></td>
+            </tr>
+            <tr>
                 <td colspan="7">Ingresar Producto</td>
             </tr>
             <tr>
-                <td class="button"><button>Buscar</button></td>
+                <td class="button"><button id="buscar">Buscar</button></td>
                 <td class="codigo"><input id="codigo" placeholder="Codigo"/> </td>
                 <td class="cant"><input id="cantidad" placeholder="Cantidad"/> </td>
                 <td id="nombre"></td>
                 <td class="precio" id="precio"></td>
-                <td class="subtotal" id="subtotal">adlfa</td>
-                <td><button id="agregar">Agregar</button></td>
+                <td class="subtotal" id="subtotal"></td>
             </tr>
         </table>
         <p>
-            Subtotal: <span class="valor" id="subtotal"></span>
+            Subtotal: <span class="valor" id="spansubtotal"></span>
             Iva: <span class="valor" id="iva"></span>
             Total: <span class="valor" id="total"></span>
         </p>
-        <table id="pedido"></table>
+        <table class>
+        </table>
+        <table id="pedido">
+            <tr id="header">
+                <th class="content precio">Codigo</th>
+                <th class="content precio">Cantidad</th>
+                <th class="content">Nombre</th>
+                <th class="content precio">Precio</th>
+                <th class="content precio">Subtotal</th>
+                <th class="content precio"></th>
+            </tr>
+        </table>
     </body>
 </html>

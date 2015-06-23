@@ -1,0 +1,48 @@
+<html>
+    <head>
+        <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+        <script type="text/javascript" src="/static/prod.js" ></script>
+        <script type="text/javascript">
+            var searchResult = {};
+            function sendResultToOpener() {    
+                if (window.opener && !window.opener.closed){
+                    var dest_id = opener.dest_id;
+                    var codigo = $(this).attr('id');
+                    opener.handleResult(searchResult[codigo]);
+                    window.close();
+                }
+            }
+            function makeClickable(a) {
+                var elm = $('<p>');
+                elm.append(a.nombre);
+                elm.attr("id", a.codigo);
+                elm.click(sendResultToOpener);
+                return elm;
+            }
+            function getProductos() {
+                var nombre = $("#id_nombre").val();
+                var url = '/api/alm/' + window.alm_id + '/producto?prefijo=' + nombre;
+                getRequest(url, function(status, result){
+                    if (status) {
+                        var a = result;    
+                        $("#dest").html("");
+                        for ( var i = 0; i < a.length; i++) {
+                            $("#dest").append(makeClickable(a[i]));
+                            searchResult[a[i].codigo] = a[i];
+                        }
+                    }
+                });
+            }
+            $(document).ready(function(){
+                $("button").click(getProductos);
+            });
+        </script>
+    </head>
+
+    <body>
+        <label for="id_nombre" >Nombre</label> <input id="id_nombre"/>
+        <button value="Buscar">Buscar </button>
+        <table id="dest"> 
+        </table>
+    </body>
+</html>

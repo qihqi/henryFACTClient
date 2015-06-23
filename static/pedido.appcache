@@ -1,0 +1,8 @@
+CACHE MANIFEST
+# version 1
+/app/notas_de_pedido
+/static/prod.js
+//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
+
+NETWORK:
+*

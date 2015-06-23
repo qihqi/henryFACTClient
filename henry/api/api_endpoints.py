@@ -1,6 +1,7 @@
+import os
 from bottle import Bottle, response, request, abort
 
-from henry.base.schema import NPriceList
+from henry.base.schema import NPriceList, NPedidoTemporal
 from henry.config import (prodapi, dbcontext, clientapi,
                           auth_decorator, pedidoapi, sessionmanager,
                           actionlogged)
