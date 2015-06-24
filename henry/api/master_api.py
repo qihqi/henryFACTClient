@@ -2,7 +2,7 @@ import datetime
 from decimal import Decimal
 from bottle import Bottle, request, abort
 
-from henry.base.serialization import json_dump, json_loads
+from henry.base.serialization import json_dump, json_loads, SerializableMixin
 from henry.base.schema import NUsuario
 from henry.config import (transapi, dbcontext, prodapi, clientapi,
                           invapi, auth_decorator, sessionmanager,
@@ -41,6 +41,15 @@ def get_invoice_by_date():
     return json_dump(list(result))
 
 
+class InvoiceOptions(SerializableMixin):
+    _name = ('crear_cliente', 'revisar_producto', 'incrementar_codigo')
+
+    def __init__(self):
+        self.crear_cliente = False
+        self.revisar_producto = False
+        self.incrementar_codigo = False
+
+
 @napi.post('/api/nota')
 @dbcontext
 @auth_decorator
@@ -50,12 +59,10 @@ def create_invoice():
     if not json_content:
         return ''
     content = json_loads(json_content)
-    create_client = False
-    check_product = False
+    options = InvoiceOptions()
     if 'options' in content:
-        options = content['options']
-        create_client = options['crear_cliente']
-        check_product = options['revisar_producto']
+        op = content['options']
+        options.merge_from(op)
         del content['options']
 
     inv = Invoice.deserialize(content)
@@ -67,12 +74,12 @@ def create_invoice():
     for item in inv.items:
         item.cant = Decimal(item.cant) / 1000
 
-    if create_client:
+    if options.crear_cliente:
         client = inv.meta.client
         if not clientapi.get(client.codigo):
             clientapi.save(client)
 
-    if check_product:
+    if options.revisar_producto:
         for item in inv.items:
             prod_id = item.prod.codigo
             if not prodapi.get_producto(prod_id):
@@ -81,9 +88,10 @@ def create_invoice():
     inv = invapi.save(inv)
 
     # increment the next invoice's number
-    user = inv.meta.user
-    sessionmanager.session.query(NUsuario).filter_by(username=user).update(
-        {NUsuario.last_factura: int(inv.meta.codigo) + 1})
+    if options.incrementar_codigo:
+        user = inv.meta.user
+        sessionmanager.session.query(NUsuario).filter_by(username=user).update(
+            {NUsuario.last_factura: int(inv.meta.codigo) + 1})
     return {'codigo': inv.meta.uid}
 
 

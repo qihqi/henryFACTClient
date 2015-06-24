@@ -129,7 +129,7 @@ class TransactionApi:
         prod = transaction.prod_id
         fecha = transaction.fecha.date().isoformat()
         data = json_dump(transaction.serialize())
-        self.fileservice.save(os.path.join(prod, fecha), data)
+        self.fileservice.append_file(os.path.join(prod, fecha), data)
 
     def get_transactions_raw(self, prod_id, date_start, date_end):
         if isinstance(date_start, datetime.datetime):

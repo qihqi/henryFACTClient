@@ -15,6 +15,7 @@ class SessionManager(object):
     def __exit__(self, type_, value, stacktrace):
         if type_ is None:
             self._session.commit()
+            self._session.close()
             return True
         else:
             if type_ is not HTTPResponse:
@@ -22,6 +23,7 @@ class SessionManager(object):
                 self._session.rollback()
             else:
                 self._session.commit()
+            self._session.close()
             return False
 
     @property

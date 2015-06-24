@@ -65,10 +65,9 @@ class AuthDecorator:
     def is_logged_in_by_django(self):
         session_key = request.get_cookie('sessionid', None)
         if session_key is not None:
-            with self.db as session:
-                key = session.query(
-                NDjangoSession).filter_by(
-                session_key=session_key).first()
-                if key is not None:
-                    return True
+            key = session.query(
+            NDjangoSession).filter_by(
+            session_key=session_key).first()
+            if key is not None:
+                return True
         return False

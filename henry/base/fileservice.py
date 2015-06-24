@@ -36,7 +36,7 @@ class FileService:
 
     def append_file(self, filename, data):
         fullpath = self.make_fullpath(filename)
-        with open(filename, 'a') as f:
+        with open(fullpath, 'a') as f:
             with LockClass(f):
                 f.write(data)
                 f.write('\n')
