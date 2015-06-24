@@ -1,0 +1,87 @@
+<html>
+    <head>
+        <title> Nota de Pedido: {{pedido.meta.uid}} </title>
+        <style>
+            body {
+                text-align : center;
+            }
+            .cant {
+                text-align: right; 
+            }
+            .codigo {
+                text-align: left; 
+            }
+            
+        </style>
+        {% if willprint %}
+        <script>print();</script>
+        {% endif %}
+    </head>
+
+    <body>
+        <button onClick="window.print();" > Imprimir </button>
+        <button onClick="window.location='/r';" > Regresar al principio </button>
+        <h4>Nota de Pedido: {{pedido.meta.uid}}</h4>
+        <table align="center" width=600>
+            <tr>
+                <th width=100>Fecha</th>
+                <td>{{pedido.meta.timestamp.date().isoformat()}}</td> 
+                <th width=100>RUC</th>
+                <td>{{pedido.meta.client.codigo}}</td>
+                <th width=100>cliente</th>
+                <td>{{pedido.meta.client.apellidos + ' ' + pedido.meta.client.nombres}}</td>
+            </tr>
+            <tr>
+            </tr>
+        </table>
+        <!--items-->
+        <br />
+        <hr />
+        <table align="center" width="600">
+            <tr>
+                <th width=100 class="codigo">Codigo</th>
+                <th>Nombre</th>
+                <th width=150 class="cant">Cantidad</th>
+                <th width=150 class="cant">Precio</th>
+                <th width=150 class="cant">Subtotal</th>
+            </tr>
+            {% for i in pedido.items %}
+            <tr>
+                <td width=100>{{i.prod.codigo}}</td> 
+                <td>{{i.prod.nombre}}</td> 
+                <td width=100 class="cant">{{ i.cant }}</td> 
+                <td width=100 class="cant">{{ value_from_cents(i.prod.precio1) }}</td> 
+                <td width=100 class="cant">{{ value_from_cents(i.prod.precio1 * i.cant) }}</td> 
+            </tr>
+            {%endfor %}
+            <tr> <td></td></tr>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <th class="cant"> Subtotal: </th>
+                <td class="cant"> {{value_from_cents(pedido.meta.subtotal)}}</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <th class="cant"> Descuento: </th>
+                <td class="cant"> {{value_from_cents(pedido.meta.discount)}}</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <th class="cant"> IVA: </th>
+                <td class="cant"> {{value_from_cents(pedido.meta.tax)}}</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <th class="cant"> Total: </th>
+                <td class="cant"> {{value_from_cents(pedido.meta.total)}} </td>
+            </tr>
+    </body>
+</html>

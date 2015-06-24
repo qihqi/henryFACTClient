@@ -8,6 +8,7 @@
             state.items = {};
             state.current = null;
             state.alm_id = 1;
+            state.meta = {};
             function prodToDom(row) {
                 var p = $("<tr>");
                 p.addClass('row-' + row.codigo);
@@ -115,7 +116,15 @@
                     if (window.focus) {
                         newwindow.focus();
                     }
-                    newwindow.alm_id = state.alm_id;
+                    newwindow.handler = state.prodHandler;
+                    return false;
+                });
+                $('#buscar_cliente').click(function() {
+                    var newwindow=window.open("/static/buscar_prod_price.html",'name','height=700,width=500, scrollbars=yes');
+                    if (window.focus) {
+                        newwindow.focus();
+                    }
+                    newwindow.handler = state.clientHandler;
                     return false;
                 });
                 $('#guardar').click(function() {
@@ -128,11 +137,11 @@
                         items.push(state.items[x]);
                     }
                      var doc = {
-                        meta: {
-                           almacen_id: state.alm_id
-                        },
                         items: items
                      };
+                     doc.meta = state.meta;
+                     doc.meta.almacen_id = state.alm_id;
+                     doc.meta.discount = 0;
 
                      var url = '/api/pedido';
                      $.ajax({
@@ -142,7 +151,7 @@
                          success: function(data) {
                             var imp = confirm("Numero de pedido es " + data.codigo + ", desea imprimir?");
                             if (imp) {
-                                var win = window.open('/app/pedido/' + data.codigo);
+                                var win = window.open('/app/pedido/' + data.codigo + '?print=true', 'name', 'height=700,width=500, scrollbars=yes');
                             }
                             clearFields();
                             var header = $('tr#header');
@@ -158,6 +167,19 @@
                      });
                 });
 
+                $('#cliente_codigo').keypress(function(event) {
+                    if (event.which == 13) {
+                        var codigo = $(this).val();
+                        var url = '/api/cliente/' + codigo;
+                        getRequest(url, function(status, result) {
+                            state.meta.client = result;
+                            $('#cliente_nombre').html(state.clientHandler.display(result));
+                            $('#cliente_codigo').val(result.codigo);
+                            $('#codigo').focus();
+                        });
+                    }
+                });
+
                 $(document).on('click', '.borrar', null, function(event) {
                     var codigo = $(this).attr('codigo');
                     $('.row-' + codigo).remove();
@@ -170,24 +192,41 @@
                     url: '/api/islogin',
                     success: function(data) {
                         state.alm_id = data.bodega_factura_id;
+                        state.prodHandler = {
+                            url: '/api/alm/' + state.alm_id + '/producto?prefijo=',
+                            handle: handleResult,
+                            display: function(prod) {
+                                return prod.nombre;
+                            }
+                        };
+                        state.clientHandler = {
+                            url: '/api/cliente?prefijo=',
+                            handle: handleResultCliente,
+                            display: function(client) {
+                                return client.apellidos + ' ' + client.nombres; 
+                            }
+                        };
                     }
                });
             });
 
             function calcTotals() {
-                var sub = 0;
+                var sub = 0; // unit for this is dollar
                 var total = 0;
                 var iva = 0;
                 for (var i in state.pedido) {
                     var p = state.pedido[i];
                     sub += parseFloat(p.subtotal);
                 }
-                sub = Math.round(100 * sub) / 100;
-                iva = Math.round(12 * sub) / 100;  // round the 12% to 2 decimals
-                total = (sub + iva).toFixed(2);
-                $('#iva').html(iva);
+
+                state.meta.subtotal = Math.round(100 * sub);
+                state.meta.tax = Math.round(12 * sub);
+                state.meta.total = state.meta.subtotal + state.meta.tax;
+                state.meta.discount = 0;
+
+                $('#iva').html(state.meta.tax / 100);
                 $('#spansubtotal').html(sub);
-                $('#total').html(total);
+                $('#total').html(state.meta.total / 100);
             }
 
             function handleResult(result) {
@@ -195,6 +234,23 @@
                 $('#nombre').html(result.nombre);
                 $('#precio').html(displayMoney(result.precio1));
                 $('#cantidad').focus();
+            }
+            function handleResultCliente(result) {
+                $('#cliente_codigo').val(result.codigo);
+                $('#cliente_nombre').html(state.clientHandler.display(result));
+                state.meta.client = result;
+                $('#codigo').focus();
+            }
+
+            function clearEverything() {
+                clearFields();
+                var header = $('tr#header');
+                $('#pedido').html('');
+                $('#pedido').append(header);
+                $('#iva').html('');
+                $('#spansubtotal').html('');
+                $('#cliente_nombre').html('');
+                $('#cliente_codigo').html('');
             }
         </script>
         <style>
@@ -224,7 +280,10 @@
     <body>
         <table>
             <tr>
-            <td><button id="guardar">Guardar</button></td>
+                <td><button id="guardar">Guardar</button></td>
+                <td><button id="buscar_cliente">Buscar Cliente</button></td>
+                <td><input id="cliente_codigo" placeholder="Cedula" /></td>
+                <td id="cliente_nombre"></td>
             </tr>
             <tr>
                 <td colspan="7">Ingresar Producto</td>

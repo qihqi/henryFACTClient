@@ -5,12 +5,13 @@ from sqlalchemy.exc import IntegrityError
 
 from bottle import request, Bottle, abort, redirect
 from henry.config import jinja_env, transapi, prodapi, invapi, externaltransapi
-from henry.config import dbcontext, auth_decorator, sessionmanager, clientapi, BODEGAS_EXTERNAS, transactionapi
-from henry.dao import Item, TransType, TransMetadata, Transferencia, Product, Status, InvMetadata, Client
+from henry.config import dbcontext, auth_decorator, sessionmanager, clientapi, BODEGAS_EXTERNAS, transactionapi, pedidoapi
+from henry.dao import Item, TransType, TransMetadata, Transferencia, Product, Status, InvMetadata, Client, Invoice
 from henry.dao.productos import Bodega
 from henry.base.schema import NUsuario, NNota, NCliente, NProducto
 from henry.base.schema import NDjangoSession
 from henry.dao.exceptions import ItemAlreadyExists
+from henry.base.serialization import json_dump, json_loads
 
 w = Bottle()
 web_inventory_webapp = w
@@ -398,13 +399,25 @@ def post_secuencia():
     redirect('/app/secuencia')
 
 
-@w.get('/app/notas_de_pedido')
+@w.get('/app/nota_de_pedido')
 @dbcontext
 @auth_decorator
 def get_notas_de_pedido_form():
     temp = jinja_env.get_template('crear_pedido.html')
     return temp.render()
 
+@w.get('/app/pedido/<uid>')
+@dbcontext
+@auth_decorator
+def get_notas_de_pedido(uid):
+    pedido = pedidoapi.get_doc(uid)
+    pedido = Invoice.deserialize(json_loads(pedido))
+    pedido.meta.uid = uid
+    for i in pedido.items:
+        i.cant = Decimal(i.cant) / 1000
+    willprint = request.query.get('print')
+    temp = jinja_env.get_template('ver_pedido.html');
+    return temp.render(pedido=pedido, willprint=willprint)
 
 
 @w.get('/app/vendidos_por_categoria')

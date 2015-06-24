@@ -90,7 +90,7 @@ class InvMetadata(SerializableMixin, DbMixin):
         'bodega_id': 'bodega_id',
         'paid': 'paid',
         'paid_amount': 'paid_amount',
-        'almacen_id': 'almacen_id', 
+        'almacen_id': 'almacen_id',
         'payment_format': 'payment_format'}
 
     _name = tuple(_db_attr.keys()) + ('client', )
@@ -137,8 +137,11 @@ class InvMetadata(SerializableMixin, DbMixin):
         x = cls().merge_from(the_dict)
         if not isinstance(x.timestamp, datetime.datetime):
             x.timestamp = parse_iso_date(x.timestamp)
-        client = Client.deserialize(the_dict['client'])
-        x.client = client
+        if 'client' in the_dict:
+            client = Client.deserialize(the_dict['client'])
+            x.client = client
+        else:
+            x.client = None
         return x
 
     def db_instance(self):
