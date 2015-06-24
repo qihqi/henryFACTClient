@@ -211,6 +211,9 @@ public class FacturaInterfaceRest implements FacturaInterface {
         meta.addProperty("change", doc.getCambio());
         meta.addProperty("payment_format", doc.getFormaPago());
 
+        JsonObject options = new JsonObject();
+        options.addProperty("incrementar_codigo", true);
+
         JsonArray items = new JsonArray();
         for (Item i : doc.getItems()) {
             if (i.getProducto() != null) {
@@ -220,6 +223,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
         JsonObject factura = new JsonObject();
         factura.add("meta", meta);
         factura.add("items", items);
+        factura.add("options", options);
         return factura;
     }
 
@@ -271,7 +275,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
         }
     }
 
-    public void commitDocument(int docId) {
+    public boolean commitDocument(int docId) {
         URI uri = null;
         try {
             uri = new URIBuilder().setScheme("http")
@@ -283,13 +287,12 @@ public class FacturaInterfaceRest implements FacturaInterface {
         }
         HttpPut req = new HttpPut(uri);
         try (CloseableHttpResponse response = httpClient.execute(req)) {
-            if (response.getStatusLine().getStatusCode() == 200) {
-                return;
-            }
+            return (response.getStatusLine().getStatusCode() == 200);
         }
         catch (IOException e) {
             e.printStackTrace();
         }
+        return false;
     }
 
     @Override

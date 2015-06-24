@@ -18,7 +18,7 @@ public interface FacturaInterface {
     Documento getPedidoPorCodigo(String codigo) throws NotFoundException;
 
     Usuario authenticate(String username, String password);
-    void commitDocument(int docId);
+    boolean commitDocument(int docId);
 
     public static class NotFoundException extends Exception {
         public NotFoundException(String message) {

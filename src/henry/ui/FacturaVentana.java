@@ -208,13 +208,15 @@ public class FacturaVentana extends JFrame {
             doc.setCodigo(numero);
             int id = api.guardarDocumento(doc, isFactura);
             if (id > 0) {
+                if (!api.commitDocument(id)) {
+                    api.commitDocument(id); // if this magically fails, retry once;
+                }
                 if (printer.printFactura(doc)) {
+                    clear();
+                    contenido.setMessage("");
                     numero++;
                     numeroLabel.setText("" + numero);
-                    api.commitDocument(id);
                 }
-                clear();
-                contenido.setMessage("");
             }
             else {
                 contenido.setMessage("Factura no se guardo");
