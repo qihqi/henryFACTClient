@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 
 from henry.base.schema import (NProducto, NContenido, NStore, NCategory,
                                NBodega, NPriceList)
-from henry.base.serialization import SerializableMixin, json_dump, DbMixin, json_loads
+from henry.base.serialization import SerializableMixin, json_dumps, DbMixin, json_loads
 from henry.base.fileservice import LockClass
 
 
@@ -128,7 +128,7 @@ class TransactionApi:
                 session.flush()
         prod = transaction.prod_id
         fecha = transaction.fecha.date().isoformat()
-        data = json_dump(transaction.serialize())
+        data = json_dumps(transaction.serialize())
         self.fileservice.append_file(os.path.join(prod, fecha), data)
 
     def get_transactions_raw(self, prod_id, date_start, date_end):

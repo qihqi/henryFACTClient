@@ -3,7 +3,7 @@ import datetime
 
 from bottle import request
 
-from henry.base.serialization import SerializableMixin, json_dump
+from henry.base.serialization import SerializableMixin, json_dumps
 from henry.base.fileservice import LockClass
 
 
@@ -45,7 +45,7 @@ class ActionLogApi:
             self.root, log.timestamp.date().isoformat() + '.actionlog')
         with open(filename, 'a') as f:
             with LockClass(f):
-                f.write(json_dump(log.serialize()))
+                f.write(json_dumps(log.serialize()))
                 f.write('\n')
                 f.flush()
 

@@ -13,7 +13,7 @@ def decode(s, codec=DB_ENCODING):
     return s.decode(codec)
 
 
-def json_dump(content):
+def json_dumps(content):
     return json.dumps(
         content,
         cls=ModelEncoder,
@@ -103,4 +103,4 @@ class SerializableMixin(object):
         }
 
     def to_json(self):
-        return json_dump(self.serialize())
+        return json_dumps(self.serialize())

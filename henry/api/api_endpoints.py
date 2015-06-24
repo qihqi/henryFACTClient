@@ -5,7 +5,7 @@ from henry.base.schema import NPriceList, NPedidoTemporal
 from henry.config import (prodapi, dbcontext, clientapi,
                           auth_decorator, pedidoapi, sessionmanager,
                           actionlogged)
-from henry.base.serialization import json_dump, json_loads
+from henry.base.serialization import json_dumps, json_loads
 from henry.dao import Client
 
 api = Bottle()
@@ -19,7 +19,7 @@ def get_prod_from_inv(almacen_id, prod_id):
     prod = prodapi.get_producto(prod_id, almacen_id)
     if prod is None:
         response.status = 404
-    return json_dump(prod)
+    return json_dumps(prod)
 
 
 @api.get('/api/producto/<prod_id>')
@@ -33,12 +33,12 @@ def get_prod(prod_id):
         result_dict['precios'] = [
             (x.almacen_id, x.almacen_name, x.precio1, x.precio2, x.threshold)
             for x in result.precios]
-        return json_dump(result_dict)
+        return json_dumps(result_dict)
 
     prod = prodapi.get_producto(prod_id=prod_id)
     if prod is None:
         response.status = 404
-    return json_dump(prod)
+    return json_dumps(prod)
 
 
 @api.get('/api/producto')
@@ -47,7 +47,7 @@ def get_prod(prod_id):
 def search_prod():
     prefijo = request.query.prefijo
     if prefijo:
-        return json_dump(list(prodapi.search_producto(prefix=prefijo)))
+        return json_dumps(list(prodapi.search_producto(prefix=prefijo)))
     response.status = 400
     return None
 
@@ -58,7 +58,7 @@ def search_prod():
 def search_prod_alm(almacen_id):
     prefijo = request.query.prefijo
     if prefijo:
-        return json_dump(
+        return json_dumps(
             list(prodapi.search_producto(
                 prefix=prefijo,
                 almacen_id=almacen_id)))
@@ -134,7 +134,7 @@ def create_client(codigo):
 def search_client():
     prefijo = request.query.prefijo
     if prefijo:
-        return json_dump(list(clientapi.search(apellido=prefijo)))
+        return json_dumps(list(clientapi.search(apellido=prefijo)))
     response.status = 400
     return None
 

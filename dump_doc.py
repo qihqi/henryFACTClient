@@ -1,12 +1,12 @@
 import sys
 
 from henry.config import transapi
-from henry.base.serialization import json_dump
+from henry.base.serialization import json_dumps
 
 
 def main():
     x = sys.argv[1]
-    print json_dump(transapi.get_doc(x))
+    print json_dumps(transapi.get_doc(x))
 
 if __name__ == '__main__':
     main()

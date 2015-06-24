@@ -7,8 +7,6 @@ from henry.config import BEAKER_SESSION_OPTS
 from henry.constants import INVOICE_MODE
 from henry.website.web_inventory import web_inventory_webapp
 from henry.website.accounting import accounting_webapp
-from henry.authentication import app as authapp
-from henry.zmq_worker import start_worker
 
 app = Bottle()
 

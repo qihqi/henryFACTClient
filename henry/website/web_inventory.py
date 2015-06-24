@@ -11,7 +11,7 @@ from henry.dao.productos import Bodega
 from henry.base.schema import NUsuario, NNota, NCliente, NProducto
 from henry.base.schema import NDjangoSession
 from henry.dao.exceptions import ItemAlreadyExists
-from henry.base.serialization import json_dump, json_loads
+from henry.base.serialization import json_dumps, json_loads
 
 w = Bottle()
 web_inventory_webapp = w

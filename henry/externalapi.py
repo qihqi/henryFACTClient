@@ -3,7 +3,7 @@ from urlparse import urljoin
 
 import requests
 
-from henry.base.serialization import json_dump
+from henry.base.serialization import json_dumps
 from henry.dao.exceptions import BaseServiceException
 
 

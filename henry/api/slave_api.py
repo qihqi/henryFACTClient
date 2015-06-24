@@ -1,6 +1,7 @@
 import zmq
 from multiprocessing import Process
-from bottle import Bottle, request
+from bottle import Bottle, request, json_loads
+from henry.api.master_api import InvoiceOptions
 
 from henry.dao.document import Status, Invoice, InvMetadata
 from henry.base.schema import NPedidoTemporal
@@ -38,12 +39,17 @@ def do_work():
         s = receiver.recv_pyobj()
         if s.command == Command.SAVE:
             with open(s.path) as f:
+                data = json_loads(f.read())
+                options = InvoiceOptions()
+                options.incrementar_codigo = False
+                options.revisar_producto = False
+                options.crear_cliente = True
                 codigo = api.save_data(f.read()).json()['codigo']
                 with sessionmanager as session:
                     session.query(NPedidoTemporal).filter_by(
-                            id=s.uid).update({
-                                NPedidoTemporal.status: 'uploaded',
-                                NPedidoTemporal.external_id: codigo})
+                        id=s.uid).update({
+                            NPedidoTemporal.status: 'uploaded',
+                            NPedidoTemporal.external_id: codigo})
                     session.flush()
         elif s.command == Command.COMMIT:
             t = Invoice(InvMetadata, [])

@@ -2,7 +2,7 @@ import datetime
 from decimal import Decimal
 from bottle import Bottle, request, abort
 
-from henry.base.serialization import json_dump, json_loads, SerializableMixin
+from henry.base.serialization import json_dumps, json_loads, SerializableMixin
 from henry.base.schema import NUsuario
 from henry.config import (transapi, dbcontext, prodapi, clientapi,
                           invapi, auth_decorator, sessionmanager,
@@ -22,7 +22,7 @@ def get_invoice(inv_id):
     if doc is None:
         abort(404, 'Nota no encontrado')
         return
-    return json_dump(doc.serialize())
+    return json_dumps(doc.serialize())
 
 
 @napi.get('/api/nota')
@@ -38,7 +38,7 @@ def get_invoice_by_date():
     end_date = datestrp(end, "%Y-%m-%d")
     status = request.query.get('status')
     result = invapi.search_metadata_by_date_range(start_date, end_date, status)
-    return json_dump(list(result))
+    return json_dumps(list(result))
 
 
 class InvoiceOptions(SerializableMixin):
@@ -155,4 +155,4 @@ def get_ingreso(ingreso_id):
     if ing is None:
         abort(404, 'Ingreso No encontrada')
         return
-    return json_dump(ing.serialize())
+    return json_dumps(ing.serialize())
