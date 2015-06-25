@@ -17,6 +17,13 @@ w = Bottle()
 web_inventory_webapp = w
 
 
+@w.get('/app')
+@dbcontext
+@auth_decorator
+def index():
+    return jinja_env.get_template('base.html').render()
+
+
 @w.get('/app/ingreso/<uid>')
 @dbcontext
 @auth_decorator
@@ -134,18 +141,6 @@ def convert_to_cent(dec):
     return int(dec * 100)
 
 
-
-@w.get('/app/pricelist')
-@dbcontext
-@auth_decorator
-def get_price_list():
-    almacen_id = request.query.get('almacen_id')
-    prefix = request.query.get('prefix')
-    if not prefix:
-        prefix = ''
-    all = prodapi.search_producto(prefix=prefix, almacen_id=almacen_id)
-    temp = jinja_env.get_template('buscar_precios.html')
-    return temp.render(prods=all)
 
 @w.post('/app/crear_producto')
 @dbcontext
@@ -442,4 +437,6 @@ def vendidos_por_categoria():
     temp = jinja_env.get_template('ver_vendidos.html')
     return temp.render(items=all_items)
 
+from .advanced import w as aw
+w.merge(aw)
 
