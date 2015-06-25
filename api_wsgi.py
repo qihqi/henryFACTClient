@@ -1,6 +1,6 @@
 from beaker.middleware import SessionMiddleware
 from henry.config import BEAKER_SESSION_OPTS
-from henry.contants import INVOICE_MODE
+from henry.constants import INVOICE_MODE
 from henry.api import get_master, get_slave
 
 api_factory = get_master
