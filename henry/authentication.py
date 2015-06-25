@@ -1,7 +1,6 @@
-from hashlib import sha1
 import bottle
 from bottle import request
-from henry.base.schema import NUsuario
+
 from henry.config import sessionmanager, dbcontext, auth_decorator
 from henry.base.auth import create_user_dict, get_user_info, authenticate
 

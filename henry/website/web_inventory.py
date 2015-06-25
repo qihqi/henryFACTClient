@@ -1,17 +1,19 @@
 import datetime
 from decimal import Decimal
 import traceback
+
 from sqlalchemy.exc import IntegrityError
 
 from bottle import request, Bottle, abort, redirect
-from henry.config import jinja_env, transapi, prodapi, invapi, externaltransapi
-from henry.config import dbcontext, auth_decorator, sessionmanager, clientapi, BODEGAS_EXTERNAS, transactionapi, pedidoapi
+
+from henry.config import jinja_env, transapi, prodapi, invapi
+from henry.config import (dbcontext, auth_decorator, sessionmanager, clientapi,
+                          BODEGAS_EXTERNAS, transactionapi, pedidoapi)
 from henry.dao import Item, TransType, TransMetadata, Transferencia, Product, Status, InvMetadata, Client, Invoice
 from henry.dao.productos import Bodega
 from henry.base.schema import NUsuario, NNota, NCliente, NProducto
-from henry.base.schema import NDjangoSession
 from henry.dao.exceptions import ItemAlreadyExists
-from henry.base.serialization import json_dumps, json_loads
+from henry.base.serialization import json_loads
 
 w = Bottle()
 web_inventory_webapp = w
@@ -40,6 +42,7 @@ def get_ingreso(uid):
         return temp.render(ingreso=trans, bodega_mapping=bodegas)
     return 'Documento con codigo {} no existe'.format(uid)
 
+
 @w.get('/app/nota/<uid>')
 @dbcontext
 @auth_decorator
@@ -49,6 +52,7 @@ def get_nota(uid):
         temp = jinja_env.get_template('nota.html')
         return temp.render(inv=doc)
     return 'Documento con codigo {} no existe'.format(uid)
+
 
 @w.get('/app/crear_ingreso')
 @dbcontext
@@ -118,11 +122,10 @@ def post_crear_ingreso():
                 abort(400)
             transferencia.meta.ref = t.meta.ref
         transferencia = transapi.save(transferencia)
+        redirect('/app/ingreso/{}'.format(transferencia.meta.uid))
     except ValueError as e:
         traceback.print_exc()
         abort(400, str(e))
-
-    redirect('/app/ingreso/{}'.format(transferencia.meta.uid))
 
 
 @w.get('/app/crear_producto')
@@ -139,7 +142,6 @@ def convert_to_cent(dec):
     if not isinstance(dec, Decimal):
         dec = Decimal(dec)
     return int(dec * 100)
-
 
 
 @w.post('/app/crear_producto')
@@ -196,6 +198,7 @@ def get_resumen():
     store = int(store)
 
     session = sessionmanager.session
+
     def decode_db_row_with_client(db_raw):
         m = InvMetadata.from_db_instance(db_raw[0])
         m.client.nombres = db_raw.nombres
@@ -210,8 +213,10 @@ def get_resumen():
     result = map(decode_db_row_with_client, result)
     deleted = [x for x in result if x.status == Status.DELETED]
     committed = [x for x in result if x.status != Status.DELETED]
+
     def pago(value):
         return lambda x: x.payment_format == value
+
     efectivos = filter(pago('efectivo'), committed)
     creditos = filter(pago('credito'), committed)
     cheques = filter(pago('cheque'), committed)
@@ -231,6 +236,7 @@ def get_resumen():
         gtotal=gtotal,
         eliminados=deleted)
 
+
 @w.get('/app/eliminar_factura')
 @dbcontext
 @auth_decorator
@@ -247,7 +253,7 @@ def eliminar_factura_form(message=None):
 def eliminar_factura():
     almacen = int(request.forms.get('almacen'))
     codigo = request.forms.get('codigo').strip()
-    ref = request.forms.get('ref')
+    # ref = request.forms.get('ref')  # TODO: have to save this
     print almacen, codigo
     db_instance = sessionmanager.session.query(
         NNota.id, NNota.status, NNota.items_location).filter_by(
@@ -280,7 +286,6 @@ def get_nota_form(message=None):
 def ver_factura():
     almacen = int(request.query.get('almacen'))
     codigo = request.query.get('codigo').strip()
-    ref = request.query.get('ref')
     print almacen, codigo
     db_instance = sessionmanager.session.query(
         NNota.id, NNota.status, NNota.items_location).filter_by(
@@ -306,6 +311,7 @@ def ver_producto(uid):
     prod = prodapi.get_producto_full(uid)
     temp = jinja_env.get_template('producto.html')
     return temp.render(prod=prod)
+
 
 @w.get('/app/producto')
 @dbcontext
@@ -401,6 +407,7 @@ def get_notas_de_pedido_form():
     temp = jinja_env.get_template('crear_pedido.html')
     return temp.render()
 
+
 @w.get('/app/pedido/<uid>')
 @dbcontext
 @auth_decorator
@@ -411,7 +418,7 @@ def get_notas_de_pedido(uid):
     for i in pedido.items:
         i.cant = Decimal(i.cant) / 1000
     willprint = request.query.get('print')
-    temp = jinja_env.get_template('ver_pedido.html');
+    temp = jinja_env.get_template('ver_pedido.html')
     return temp.render(pedido=pedido, willprint=willprint)
 
 

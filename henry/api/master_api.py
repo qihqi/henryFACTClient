@@ -9,7 +9,6 @@ from henry.config import (transapi, dbcontext, prodapi, clientapi,
                           actionlogged)
 from henry.dao import Invoice, Transferencia
 
-
 napi = Bottle()
 
 # ########## NOTA ############################

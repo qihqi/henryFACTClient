@@ -140,7 +140,8 @@ class NUsuario(Base):
     last_factura = Column(Integer)
     bodega_factura_id = Column(Integer)
 
-############################################################3
+
+# ###########################################################3
 # below are stuff that are not in prod yet
 
 class NStore(Base):
@@ -196,6 +197,8 @@ class NNota(Base):
     bodega_id = Column(Integer, ForeignKey(NBodega.id))
     # unix filepath where the items is stored
     items_location = Column(String(200))
+
+
 Index('ix_notas_2', NNota.almacen_id, NNota.codigo)
 
 
@@ -213,7 +216,7 @@ class NPedidoTemporal(Base):
 class NPriceList(Base):
     __tablename__ = 'lista_de_precios'
     pid = Column(Integer, primary_key=True, autoincrement=True)
-    nombre = Column(String(100)) # display name
+    nombre = Column(String(100))  # display name
     almacen_id = Column(Integer)
     prod_id = Column(String(20))
     # Using int for money as in number of cents.
@@ -223,6 +226,8 @@ class NPriceList(Base):
     upi = Column(Integer, ForeignKey(NContenido.id))
     unidad = Column(String(20))
     multiplicador = Column(Integer)
+
+
 Index('ix_lista_de_precio_2', NPriceList.almacen_id, NPriceList.prod_id)
 
 

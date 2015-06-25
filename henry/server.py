@@ -19,10 +19,12 @@ def static(rest):
 app.merge(web_inventory_webapp)
 app.merge(accounting_webapp)
 
+
 def main():
     global app
     from henry.api import get_master, get_slave
     from beaker.middleware import SessionMiddleware
+
     if INVOICE_MODE == 'slave':
         app.merge(get_slave())
     else:
@@ -31,6 +33,7 @@ def main():
     sys.path.append(os.path.dirname(os.path.realpath(__file__)))
     from henry.base.schema import Base
     from henry.config import engine
+
     Base.metadata.create_all(engine)
     host, port = '0.0.0.0', 8080
     if len(sys.argv) > 1:

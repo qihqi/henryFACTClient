@@ -1,9 +1,9 @@
 import os
 import fcntl
-import threading
+# import threading
+
 
 class FileService:
-
     def __init__(self, root):
         self.root = root
 
@@ -15,7 +15,6 @@ class FileService:
             os.makedirs(dirname)
         fullpath = os.path.join(dirname, name)
         return fullpath
-
 
     def put_file(self, filename, content, override=True):
         fullpath = self.make_fullpath(filename)
@@ -44,30 +43,29 @@ class FileService:
         return fullpath
 
     def get_file_lines(self, filenames, condition):
-#        result = []
-#        def worker(filename, dest):
-#            with open(filename) as f:
-#                for line in f.readlines():
-#                    if condition(line):
-#                        dest.append(line)
+        #        result = []
+        #        def worker(filename, dest):
+        #            with open(filename) as f:
+        #                for line in f.readlines():
+        #                    if condition(line):
+        #                        dest.append(line)
         threads = []
         for fname in filenames:
             fullpath = self.make_fullpath(fname)
             if os.path.exists(fullpath):
-                #t = threading.Thread(target=worker, args=(fullpath, result))
-                #threads.append(t)
-                #t.start()
+                # t = threading.Thread(target=worker, args=(fullpath, result))
+                # threads.append(t)
+                # t.start()
                 with open(fullpath) as f:
                     for line in f.readlines():
                         if condition(line):
                             yield line
 
-        #map(threading.Thread.join, threads)
-        #return result
+                            # map(threading.Thread.join, threads)
+                            # return result
 
 
 class LockClass:
-
     def __init__(self, fileobj):
         self.fileno = fileobj.fileno()
 

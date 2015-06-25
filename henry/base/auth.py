@@ -1,5 +1,7 @@
 from hashlib import sha1
-from bottle import request, redirect, response, parse_auth
+
+from bottle import request, response, parse_auth
+
 from henry.base.schema import NUsuario, NDjangoSession
 
 
@@ -20,8 +22,8 @@ def create_user_dict(userinfo):
         'bodega_factura_id': userinfo.bodega_factura_id,
     }
 
-class AuthDecorator:
 
+class AuthDecorator:
     def __init__(self, redirect_url, db):
         self.redirect = redirect_url
         self.db = db
@@ -36,6 +38,7 @@ class AuthDecorator:
             else:
                 response.status = 401
                 response.set_header('www-authenticate', 'Basic realm="Henry"')
+
         return wrapped
 
     def is_auth_by_header(self):
@@ -65,9 +68,9 @@ class AuthDecorator:
     def is_logged_in_by_django(self):
         session_key = request.get_cookie('sessionid', None)
         if session_key is not None:
-            key = session.query(
-            NDjangoSession).filter_by(
-            session_key=session_key).first()
+            key = self.db.session.query(
+                NDjangoSession).filter_by(
+                session_key=session_key).first()
             if key is not None:
                 return True
         return False

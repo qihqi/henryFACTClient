@@ -8,7 +8,6 @@ from henry.dao.exceptions import BaseServiceException
 
 
 class ExternalApi:
-
     def __init__(self, root, path, user=None, password=None):
         self.root = root
         self.path = path
@@ -30,7 +29,7 @@ class ExternalApi:
 
     def save(self, doc):
         del doc.meta.timestamp
-        response = self.save_data(json_dimp(doc.serialize()))
+        response = self.save_data(json_dumps(doc.serialize()))
         codigo = response.json()['codigo']
         doc.meta.ref = 'transferencia externa: {}'.format(codigo)
         return doc
@@ -41,7 +40,6 @@ class ExternalApi:
         if response.status_code != 200:
             raise BaseServiceException(response.text)
         return response
-
 
     def commit(self, doc):
         url = os.path.join(self.root, self.path, str(doc.meta.uid))

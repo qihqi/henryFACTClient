@@ -47,6 +47,7 @@ class ModelEncoder(json.JSONEncoder):
 class DbMixin(object):
     _db_class = None
     _db_attr = ()
+
     @classmethod
     def _get_name_pairs(cls, names):
         if isinstance(names, dict):
@@ -58,7 +59,7 @@ class DbMixin(object):
         x = self._db_class()
         excluded = getattr(self, '_excluded_vars', [])
         for thisname, dbname in DbMixin._get_name_pairs(self._db_attr):
-            if not thisname in excluded:
+            if thisname not in excluded:
                 value = getattr(self, thisname, None)
                 if value is not None:
                     setattr(x, dbname, value)
@@ -69,7 +70,7 @@ class DbMixin(object):
         y = cls()
         excluded = getattr(cls, '_excluded_vars', [])
         for thisname, dbname in cls._get_name_pairs(cls._db_attr):
-            if not thisname in excluded:
+            if thisname not in excluded:
                 value = getattr(db_instance, dbname, None)
                 if value is not None:
                     setattr(y, thisname, value)
@@ -78,6 +79,7 @@ class DbMixin(object):
 
 class SerializableMixin(object):
     _name = ()
+
     def merge_from(self, obj):
         for key in self._name:
             try:
@@ -100,7 +102,7 @@ class SerializableMixin(object):
     def _serialize_helper(obj, names):
         return {
             name: getattr(obj, name) for name in names if getattr(obj, name, None) is not None
-        }
+            }
 
     def to_json(self):
         return json_dumps(self.serialize())

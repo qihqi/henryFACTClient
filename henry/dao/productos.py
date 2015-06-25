@@ -1,12 +1,10 @@
 import os
 import datetime
-from itertools import imap
 from sqlalchemy.exc import IntegrityError
 
 from henry.base.schema import (NProducto, NContenido, NStore, NCategory,
                                NBodega, NPriceList)
 from henry.base.serialization import SerializableMixin, json_dumps, DbMixin, json_loads
-from henry.base.fileservice import LockClass
 
 
 class Store(SerializableMixin, DbMixin):
@@ -142,8 +140,9 @@ class TransactionApi:
             fname = os.path.join(prod_id, date_start.isoformat())
             all_names.append(fname)
             date_start += datetime.timedelta(days=1)
-        all_lines = self.fileservice.get_file_lines(all_names,
-                lambda x: 'factura' in x)
+        all_lines = self.fileservice.get_file_lines(
+            all_names,
+            lambda x: 'factura' in x)
         return all_lines
 
     def get_transactions(self, prod_id, date_start, date_end):

@@ -9,12 +9,10 @@ from henry.config import (pedidoapi, sessionmanager,
                           dbcontext, auth_decorator, actionlogged)
 from henry.externalapi import ExternalApi
 
-
 api = Bottle()
 
 
 class Command(object):
-
     SAVE = 'save'
     COMMIT = 'commit'
 
@@ -29,11 +27,8 @@ def do_work():
     receiver = context.socket(zmq.SUB)
     receiver.connect("tcp://localhost:1234")
     receiver.setsockopt(zmq.SUBSCRIBE, '')
-    api = ExternalApi('http://45.55.88.99/api/', 'nota', 'yu', 'yu')
+    externalapi = ExternalApi('http://45.55.88.99/api/', 'nota', 'yu', 'yu')
     print 'worker ready'
-    def save_func(command):
-        with open(command.path) as f:
-            api.save_data(f.read())
 
     while True:
         s = receiver.recv_pyobj()
@@ -44,7 +39,8 @@ def do_work():
                 options.incrementar_codigo = False
                 options.revisar_producto = False
                 options.crear_cliente = True
-                codigo = api.save_data(f.read()).json()['codigo']
+                data['options'] = options
+                codigo = externalapi.save_data(data).json()['codigo']
                 with sessionmanager as session:
                     session.query(NPedidoTemporal).filter_by(
                         id=s.uid).update({
@@ -57,17 +53,19 @@ def do_work():
                 temp = session.query(NPedidoTemporal).filter_by(id=s.uid).first()
                 if temp.external_id is not None:
                     t.meta.uid = temp.external_id
-                    api.commit(t)
+                    externalapi.commit(t)
 
 
-
-def start_worker(number=1):
+def start_worker():
     p = Process(target=do_work)
     p.start()
     print 'worker started'
     return p
 
+
 workerqueue = None
+
+
 def start_server():
     context = zmq.Context()
     queue = context.socket(zmq.PUB)
@@ -98,5 +96,3 @@ def put_inv(uid):
     command = Command(Command.COMMIT, uid)
     workerqueue.send_pyobj(command)
     return {'status': Status.COMITTED}
-
-

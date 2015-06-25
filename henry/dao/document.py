@@ -23,6 +23,7 @@ class Status:
              COMITTED,
              DELETED)
 
+
 class PaymentFormat:
     CASH = "efectivo"
     CARD = "tarjeta"
@@ -93,7 +94,7 @@ class InvMetadata(SerializableMixin, DbMixin):
         'almacen_id': 'almacen_id',
         'payment_format': 'payment_format'}
 
-    _name = tuple(_db_attr.keys()) + ('client', )
+    _name = tuple(_db_attr.keys()) + ('client',)
 
     def __init__(
             self,
@@ -152,7 +153,8 @@ class InvMetadata(SerializableMixin, DbMixin):
     @classmethod
     def from_db_instance(cls, db_instance):
         this = super(InvMetadata, cls).from_db_instance(db_instance)
-        this.client = Client(codigo=db_instance.client_id)
+        this.client = Client()
+        this.client.codigo = db_instance.client_id
         return this
 
 
@@ -269,7 +271,6 @@ class Transferencia(MetaItemSet):
 
 
 class DocumentApi:
-
     def __init__(self, sessionmanager, filemanager, transaction, object_cls):
         self.db_session = sessionmanager
         self.filemanager = filemanager
@@ -298,7 +299,6 @@ class DocumentApi:
         content = json_loads(file_content)
         doc = self.cls.deserialize(content)
         return doc
-
 
     def save(self, doc):
         meta = doc.meta
@@ -354,6 +354,7 @@ class DocumentApi:
             return True
         except SQLAlchemyError:
             import traceback
+
             traceback.print_exc()
             session.rollback()
             return False
@@ -371,7 +372,6 @@ class DocumentApi:
 
 
 class PedidoApi:
-
     def __init__(self, sessionmanager, filemanager):
         self.session = sessionmanager
         self.filemanager = filemanager
@@ -405,7 +405,6 @@ class PedidoApi:
 
 
 class InvApiOld(object):
-
     def __init__(self, sessionmanager):
         self.session = sessionmanager
 
@@ -425,4 +424,3 @@ class InvApiOld(object):
             dbmeta = dbmeta.filter_by(vendedor_id=seller)
 
         return dbmeta
-

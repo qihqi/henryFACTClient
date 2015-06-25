@@ -4,6 +4,7 @@ from .slave_api import api as slave_api
 from .slave_api import start_server, start_worker
 import bottle
 
+
 def get_slave():
     a = bottle.Bottle()
     a.merge(api)
@@ -18,4 +19,3 @@ def get_master():
     a.merge(api)
     a.merge(napi)
     return a
-

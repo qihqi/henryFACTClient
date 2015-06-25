@@ -3,7 +3,6 @@ from bottle import HTTPResponse
 
 
 class SessionManager(object):
-
     def __init__(self, session_factory):
         self._session = None
         self._factory = session_factory
@@ -32,14 +31,13 @@ class SessionManager(object):
 
 
 class DBContext(object):
-
     def __init__(self, sessionmanager):
         self.sm = sessionmanager
 
     # used as decorator
     def __call__(self, func):
-
         def wrapped(*args, **kwargs):
             with self.sm:
                 return func(*args, **kwargs)
+
         return wrapped
