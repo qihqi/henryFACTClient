@@ -412,7 +412,7 @@ class InvApiOld(object):
                          seller=None, status=Status.COMITTED):
         dbmeta = self.session.session.query(NOrdenDespacho).filter_by(
             bodega_id=almacen).filter(
-            NOrdenDespacho.fecha <= end_date).filter(
+            NOrdenDespacho.fecha < end_date).filter(
             NOrdenDespacho.fecha >= start_date)
 
         if status == Status.DELETED:

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h3>Entrega de Cuenta</h3>
+<p> 
+<input id="ver_entrega" placeholder="Codigo de Cuenta"/> 
+<button id="ver_entrega_button">Ver</button>
+</p>
+<p> 
+<form action="/app/crear_entrega_de_cuenta" method="get">
+    <input id="fecha" placeholder="Fecha" value="{{today().isoformat()}}"/> 
+    <input type="submit" value="Crear"/>
+</form>
+</p>
+
+
+{% endblock %}

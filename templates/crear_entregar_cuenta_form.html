@@ -1,0 +1,40 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<h3>Entrega de Cuenta</h3>
+<p> 
+<h3>Ventas</h3>
+<h4>Efectivo: {{ value_from_cents(total_cash) }}</h4>
+<ul>
+    {% for s, v in cash.items() %}
+    <li>{{ s }}: {{ value_from_cents(v) }}</li>
+    {% endfor %}
+</ul>
+
+{% for forma, items in others.items() %}
+    {% if items %}
+    <h4> {{ forma }}</h4>
+    <table>
+        {% for i in items %}
+        <tr>
+            <td> {{ i.codigo }} </td>
+            <td> {{ i.client.fullname}} </td>
+            <td> {{ value_from_cents(i.total) }} </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+{% endfor %}
+
+<h3>A entregar:</h3>
+<form method="post" action="/app/crear_entregar_cuenta">
+    <input type="hidden" name="date" value="{{date}}" />
+    <input type="hidden" name="cash" value="{{value_from_cents(total_cash)}}" />
+    <p>Gastos: <input name="gastos" placeholder="Total de Gastos"/></p>
+    <p>Brindado: <input name="deposito" placeholder="Valor que entrego al brindado"/></p>
+    <p>Efectivo: <input name="valor" placeholder="Valor a entregar"/></p>
+    <input type="submit" value="Crear" />
+</form>
+
+{% endblock %}

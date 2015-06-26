@@ -236,3 +236,15 @@ class NDjangoSession(Base):
     session_key = Column(String(40), primary_key=True)
     session_data = Column(Text)
     expire_date = Column(DateTime)
+
+
+class NAccountStat(Base):
+    __tablename__ = 'entrega_de_cuenta'
+    uid = Column(Integer, primary_key=True, autoincrement=True)
+    date = Column(Date, index=True)
+    total_spend = Column(Integer)
+    turned_cash = Column(Integer)
+    deposit = Column(Integer)
+    diff = Column(Integer)
+    created_by = Column(String(20))
+    revised_by = Column(String(20))

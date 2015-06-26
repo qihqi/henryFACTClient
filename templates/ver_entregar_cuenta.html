@@ -1,0 +1,33 @@
+<h3>Entrega de Cuenta</h3>
+<p> 
+<h3>Ventas</h3>
+<h4>Efectivo: {{ value_from_cents(total_cash) }}</h4>
+<ul>
+    {% for s, v in cash.items() %}
+    <li>{{ s }}: {{ value_from_cents(v) }}</li>
+    {% endfor %}
+</ul>
+
+{% for forma, items in others.items() %}
+    {% if items %}
+    <h4> {{ forma }}</h4>
+    <table>
+        {% for i in items %}
+        <tr>
+            <td> {{ i.codigo }} </td>
+            <td> {{ i.client.fullname}} </td>
+            <td> {{ value_from_cents(i.total) }} </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+{% endfor %}
+
+<h3>A entregar:</h3>
+<form method="post" action="/app/crear_entregar_cuenta">
+    <p>Gastos: {{value_from_cents(stat.total_spend)}} </p>
+    <p>Brindado: {{value_from_cents(stat.deposit)}}</p>
+    <p>Efectivo: {{value_from_cents(stat.turned_cash)}}</p>
+    <p>Diff: {{value_from_cents(stat.diff)}}</p>
+</form>
+
