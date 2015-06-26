@@ -1,0 +1,36 @@
+{%extends "base.html"%}
+{%block title%}Ver Ingreso{%endblock%}
+{%block script%}
+<style>
+    .baseform {
+    left-margin: auto;
+    right-margin: auto;
+    width: auto;
+    float: left;
+    }
+    .prod_label {
+    width: 30%;
+    float: left;
+    }
+    .prod_input {
+    float: left;
+    width: 70%;
+    }
+    .precios {
+    width:100%;
+    }
+</style>
+<script src="/static/jquery-1.7.2.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#ver').click(function() {
+            window.location = '/app/ingreso/' + $('#uid').val();
+        });
+    });
+</script>
+{%endblock%}
+
+{%block content%}
+<input id="uid" placeholder="Codigo de Ingreso"/><button id="ver">Ver</button>
+{%endblock%}

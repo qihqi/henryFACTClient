@@ -2,8 +2,19 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h3>Entrega de Cuenta</h3>
-<p> 
+<h3>Entrega de Cuenta: {{date}}</h3>
+<h3>Estado:
+    {% if existing %}
+        {% if existing.revised_by %}
+            Revisado por {{existing.revised_by}}
+        {% else %}
+            creado
+        {% endif %}
+    {% else %}
+        nuevo
+    {% endif %}
+</h3>
+<p>
 <h3>Ventas</h3>
 <h4>Efectivo: {{ value_from_cents(total_cash) }}</h4>
 <ul>
@@ -28,13 +39,31 @@
 {% endfor %}
 
 <h3>A entregar:</h3>
-<form method="post" action="/app/crear_entregar_cuenta">
+{% set deposit = "" %}
+{% set total_spend = "" %}
+{% set turned_cash = "" %}
+{% set display = True%}
+{% if existing %}
+{% set deposit = value_from_cents(existing.deposit) %}
+{% set total_spend = value_from_cents(existing.total_spend) %}
+{% set turned_cash = value_from_cents(existing.turned_cash) %}
+{% set display = existing.revised_by is none%}
+{% endif %}
+<form method="post" action="/app/crear_entrega_de_cuenta">
     <input type="hidden" name="date" value="{{date}}" />
     <input type="hidden" name="cash" value="{{value_from_cents(total_cash)}}" />
-    <p>Gastos: <input name="gastos" placeholder="Total de Gastos"/></p>
-    <p>Brindado: <input name="deposito" placeholder="Valor que entrego al brindado"/></p>
-    <p>Efectivo: <input name="valor" placeholder="Valor a entregar"/></p>
+    <p>Gastos:
+        <input name="gastos" placeholder="Total de Gastos" value="{{total_spend}}" {%if not display%}readonly{%endif%}/></p>
+    <p>Deposito:
+        <input name="deposito" placeholder="Valor que entrego al brindado" value="{{deposit}}"{%if not display%}readonly{%endif%} /></p>
+    <p>Efectivo:
+        <input name="valor" placeholder="Valor a entregar" value="{{turned_cash}}"{%if not display%}readonly{%endif%} /></p>
+    {% if existing %}
+    <p>Diff: {{ value_from_cents(existing.diff) }} </p>
+    <button id="Revisar">Revisar</button>
+    {% else %}
     <input type="submit" value="Crear" />
+    {% endif %}
 </form>
 
 {% endblock %}

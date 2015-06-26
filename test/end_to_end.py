@@ -23,7 +23,8 @@ class Timing:
 class EndToEndTest(unittest.TestCase):
 
     def setUp(self):
-        self.url_base = 'http://192.168.0.23/api'
+#        self.url_base = 'http://192.168.0.23/api'
+        self.url_base = 'http://localhost:8080/api'
 
     
     def test_end_to_end(self):

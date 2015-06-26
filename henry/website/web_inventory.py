@@ -64,6 +64,12 @@ def crear_ingreso():
     return temp.render(bodegas=bodegas, externas=bodegas_externas,
                        types=TransType.names)
 
+@w.get('/app/ver_ingreso_form')
+@dbcontext
+@auth_decorator
+def ver_ingreso_form():
+    return jinja_env.get_template('ver_ingreso_form.html').render()
+
 
 def items_from_form(form):
     items = []
@@ -451,9 +457,9 @@ def entrega_de_cuenta():
     return temp.render()
 
 
-@w.get('/app/crear_entregar_cuenta_form')
+@w.get('/app/crear_entrega_de_cuenta')
 @dbcontext
-def crear_entrega_de_cuenta_form():
+def crear_entrega_de_cuenta():
     date = request.query.get('fecha')
     date = datetime.datetime.strptime(date, '%Y-%m-%d')
     nextdate = date + datetime.timedelta(days=1)
@@ -479,15 +485,20 @@ def crear_entrega_de_cuenta_form():
         otros_pagos[pago] = filter(lambda x: x.payment_format == pago,
                                    noncash)
 
+    existing = sessionmanager.session.query(NAccountStat).filter_by(date=date).first()
+    print existing.__dict__
     temp = jinja_env.get_template('crear_entregar_cuenta_form.html')
     return temp.render(
         cash=sale_by_store, others=otros_pagos,
-        total_cash=total_cash, deleted=deleted, date=date.date().isoformat())
+        total_cash=total_cash,
+        deleted=deleted,
+        date=date.date().isoformat(),
+        existing=existing)
 
 
-@w.post('/app/crear_entregar_cuenta')
+@w.post('/app/crear_entrega_de_cuenta')
 @dbcontext
-def crear_entrega_cuenta():
+def post_crear_entregaa_de_cuenta():
     cash = request.forms.get('cash')
     gastos = request.forms.get('gastos')
     deposito = request.forms.get('deposito')
@@ -498,7 +509,7 @@ def crear_entrega_cuenta():
     gastos = int(float(gastos) * 100)
     deposito = int(float(deposito) * 100)
     turned_cash= int(float(turned_cash) * 100)
-    date = datetime.datetime.strptime(date, '%Y-%m-%d')
+    date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
 
     stat = NAccountStat(
         date=date,
@@ -511,42 +522,7 @@ def crear_entrega_cuenta():
     sessionmanager.session.add(stat)
     sessionmanager.session.flush()
 
-    redirect('/app/entregar_cuenta/{}'.format(stat.uid))
-
-@w.get('/app/entregar_cuenta/<uid>')
-@dbcontext
-def entregar_cuenta(uid):
-    stat = sessionmanager.session.query(NAccountStat).filter_by(uid=uid)
-    stat = stat.first()
-    date = stat.date
-    nextdate = date + datetime.timedelta(days=1)
-    all_sale = list(invapi.search_metadata_by_date_range(date, nextdate))
-    deleted = filter(lambda x: x.status == Status.DELETED, all_sale)
-    committed = filter(lambda x: x.status == Status.COMITTED, all_sale)
-
-    cashed = filter(lambda x: x.payment_format == PaymentFormat.CASH, committed)
-    noncash = filter(lambda x: x.payment_format != PaymentFormat.CASH, committed)
-
-    sale_by_store = {}
-    for store in prodapi.get_stores():
-        sale_by_store[store.nombre] = sum((
-            x.total for x in cashed if x.almacen_id == store.almacen_id))
-    total_cash = sum(sale_by_store.values())
-
-    for x in noncash:
-        x.client = clientapi.get(x.client.codigo)
-
-    otros_pagos = {}
-    for pago in PaymentFormat.names:
-        otros_pagos[pago] = filter(lambda x: x.payment_format == pago,
-                                   noncash)
-
-    temp = jinja_env.get_template('ver_entregar_cuenta.html')
-    return temp.render(
-            cash=sale_by_store,
-            total_cash=total_cash,
-            others=otros_pagos,
-            stat=stat)
+    redirect('/app/crear_entrega_de_cuenta?fecha={}'.format(date.isoformat()))
 
 
 from .advanced import w as aw

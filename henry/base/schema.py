@@ -240,8 +240,7 @@ class NDjangoSession(Base):
 
 class NAccountStat(Base):
     __tablename__ = 'entrega_de_cuenta'
-    uid = Column(Integer, primary_key=True, autoincrement=True)
-    date = Column(Date, index=True)
+    date = Column(Date, primary_key=True)
     total_spend = Column(Integer)
     turned_cash = Column(Integer)
     deposit = Column(Integer)
