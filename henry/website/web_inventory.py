@@ -164,9 +164,10 @@ def create_prod():
         p1 = request.forms.get('{}-precio1'.format(alm.almacen_id))
         p2 = request.forms.get('{}-precio2'.format(alm.almacen_id))
         thres = request.forms.get('{}-thres'.format(alm.almacen_id))
-        p1 = convert_to_cent(p1)
-        p2 = convert_to_cent(p2)
-        precios[alm.almacen_id] = (p1, p2, thres)
+        if p1 and p2:
+            p1 = convert_to_cent(p1)
+            p2 = convert_to_cent(p2)
+            precios[alm.almacen_id] = (p1, p2, thres)
     try:
         prodapi.create_product(p, precios)
         message = 'producto con codigo "{}" creado'.format(p.codigo)

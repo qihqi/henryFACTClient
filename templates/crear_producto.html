@@ -26,8 +26,8 @@ input.prod_input {
 <form class="baseform" action="/app/crear_producto" method="post">
     <h5>{{ message }}</h5>
     <h4>Crear Producto</h4>
+    <label class="prod_label" for="codigo">Codigo:</label><input class="prod_input" name="codigo" />
     <label class="prod_label" for="nombre">Nombre:</label><input class="prod_input" name="nombre" />
-    <label class="prod_label" for="codigo">Codigo</label><input class="prod_input" name="codigo" />
     <label class="prod_label" for="categoria">Categoria</label>
     <select name="categoria">
         {%for x in categorias %}

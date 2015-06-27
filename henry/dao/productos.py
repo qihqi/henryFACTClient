@@ -255,6 +255,7 @@ class ProductApiDB:
             bodega_id = alm_to_bodega[almacen]
             alm = NPriceList(
                 prod_id=product_core.codigo,
+                nombre=product_core.nombre,
                 almacen_id=almacen,
                 precio1=p1,
                 precio2=p2,
