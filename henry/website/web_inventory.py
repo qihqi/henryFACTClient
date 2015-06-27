@@ -410,6 +410,11 @@ def post_secuencia():
 @dbcontext
 @auth_decorator
 def get_notas_de_pedido_form():
+    session = request.environ['beaker.session']
+    if session is None or 'login_info' not in session:
+        response.status = 401
+        response.set_header('www-authenticate', 'Basic realm="Henry"')
+        return ''
     temp = jinja_env.get_template('crear_pedido.html')
     return temp.render()
 

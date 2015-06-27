@@ -135,11 +135,14 @@ class TransactionApi:
         if isinstance(date_end, datetime.datetime):
             date_end = date_end.date()
 
-        all_names = []
-        while date_start < date_end:
-            fname = os.path.join(prod_id, date_start.isoformat())
-            all_names.append(fname)
-            date_start += datetime.timedelta(days=1)
+        dirname = os.path.join(self.fileservice.root, prod_id)
+        if not os.path.exists(dirname):
+            return []
+        print os.listdir(dirname)
+        all_names = filter(lambda x: x <= date_end.isoformat() and x >= date_start.isoformat(), os.listdir(dirname))
+        if not all_names:
+            return []
+        all_names = [os.path.join(dirname, x) for x in all_names]
         all_lines = self.fileservice.get_file_lines(
             all_names,
             lambda x: 'factura' in x)
