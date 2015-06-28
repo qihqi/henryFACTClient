@@ -138,7 +138,6 @@ class TransactionApi:
         dirname = os.path.join(self.fileservice.root, prod_id)
         if not os.path.exists(dirname):
             return []
-        print os.listdir(dirname)
         all_names = filter(lambda x: x <= date_end.isoformat() and x >= date_start.isoformat(), os.listdir(dirname))
         if not all_names:
             return []

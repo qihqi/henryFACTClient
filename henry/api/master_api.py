@@ -91,6 +91,7 @@ def create_invoice():
         user = inv.meta.user
         sessionmanager.session.query(NUsuario).filter_by(username=user).update(
             {NUsuario.last_factura: int(inv.meta.codigo) + 1})
+        sessionmanager.session.commit()
     return {'codigo': inv.meta.uid}
 
 

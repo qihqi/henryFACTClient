@@ -27,10 +27,8 @@ class FileService:
 
     def get_file(self, filename):
         fullpath = self.make_fullpath(filename)
-        print fullpath
         if not os.path.exists(fullpath):
             return None
-        print 'i am here'
         with open(fullpath) as f:
             return f.read()
 

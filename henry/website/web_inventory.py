@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from bottle import request, Bottle, abort, redirect, response
 
-from henry.config import jinja_env, transapi, prodapi, invapi
+from henry.config import jinja_env, transapi, prodapi, invapi, actionlogged
 from henry.config import (dbcontext, auth_decorator, sessionmanager, clientapi,
                           BODEGAS_EXTERNAS, transactionapi, pedidoapi)
 from henry.dao import Item, TransType, TransMetadata, Transferencia, Product, Status, InvMetadata, Client, Invoice, PaymentFormat
@@ -111,6 +111,7 @@ def transmetadata_from_form(form):
 @w.post('/app/crear_ingreso')
 @dbcontext
 @auth_decorator
+@actionlogged
 def post_crear_ingreso():
     meta = transmetadata_from_form(request.forms)
     items = items_from_form(request.forms)
@@ -253,6 +254,7 @@ def eliminar_factura_form(message=None):
 @w.post('/app/eliminar_factura')
 @dbcontext
 @auth_decorator
+@actionlogged
 def eliminar_factura():
     almacen = int(request.forms.get('almacen'))
     codigo = request.forms.get('codigo').strip()
@@ -394,6 +396,7 @@ def get_secuencia():
 @w.post('/app/secuencia')
 @dbcontext
 @auth_decorator
+@actionlogged
 def post_secuencia():
     username = request.forms.usuario
     seq = request.forms.secuencia
