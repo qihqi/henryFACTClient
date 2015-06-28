@@ -11,7 +11,7 @@ from henry.config import (dbcontext, auth_decorator, sessionmanager, clientapi,
                           BODEGAS_EXTERNAS, transactionapi, pedidoapi)
 from henry.dao import Item, TransType, TransMetadata, Transferencia, Product, Status, InvMetadata, Client, Invoice, PaymentFormat
 from henry.dao.productos import Bodega
-from henry.base.schema import NUsuario, NNota, NCliente, NProducto, NAccountStat
+from henry.base.schema import NUsuario, NNota, NCliente, NProducto, NAccountStat, NCategory
 from henry.dao.exceptions import ItemAlreadyExists
 from henry.base.serialization import json_loads
 
@@ -433,6 +433,14 @@ def get_notas_de_pedido(uid):
     temp = jinja_env.get_template('ver_pedido.html')
     return temp.render(pedido=pedido, willprint=willprint)
 
+@w.get('/app/vendidos_por_categoria_form')
+@dbcontext
+@auth_decorator
+def vendidos_por_categoria_form():
+    temp = jinja_env.get_template('vendidos_por_categoria_form.html')
+    categorias = sessionmanager.session.query(NCategory)
+    return temp.render(cat=categorias)
+
 
 @w.get('/app/vendidos_por_categoria')
 @dbcontext
@@ -447,14 +455,23 @@ def vendidos_por_categoria():
     all_codigos = {p.codigo for p in prods}
 
     all_items = []
-    for x in all_codigos:
-        for t in transactionapi.get_transactions(
-                x, start, end):
-            if t.ref is not None and 'factura' in t.ref:
-                all_items.append(t)
+    invs = invapi.search_metadata_by_date_range(start, end)
+    total = 0
+    for inv in invs:
+        fullinv = invapi.get_doc_from_file(inv.items_location)
+        if fullinv is None:
+            print 'fullinv is None'
+            continue
+        for x in fullinv.items:
+            if x.prod.codigo in all_codigos:
+                x.prod.precio = (x.prod.precio1 if x.cant >= x.prod.threshold
+                                 else x.prod.precio2)
+                x.subtotal = x.prod.precio * x.cant
+                total += x.subtotal
+                all_items.append((inv, x))
 
     temp = jinja_env.get_template('ver_vendidos.html')
-    return temp.render(items=all_items)
+    return temp.render(items=all_items, total=total)
 
 
 @w.get('/app/entregar_cuenta_form')

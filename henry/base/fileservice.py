@@ -26,11 +26,12 @@ class FileService:
             return fullpath
 
     def get_file(self, filename):
-        if not filename.startswith('/'):
-            filename = os.path.join(self.root, filename)
-        if not os.path.exists(filename):
+        fullpath = self.make_fullpath(filename)
+        print fullpath
+        if not os.path.exists(fullpath):
             return None
-        with open(filename) as f:
+        print 'i am here'
+        with open(fullpath) as f:
             return f.read()
 
     def append_file(self, filename, data):

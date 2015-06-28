@@ -1,5 +1,23 @@
-<div>
-    {% for i in items %}
-    <p> {{ i.fecha }} {{i.ref}} {{i.codigo}} {{i.name}} {{i.delta}} </p>
+<table>
+    <tr>
+        <th>Fecha</th>
+        <th>No. Factura</th>
+        <th>Codigo</th>
+        <th>Cantidad</th>
+        <th>Nombre</th>
+        <th>Precio</th>
+        <th>Subtotal</th>
+    </tr>
+    {% for meta, i in items %}
+    <tr> 
+        <td>{{meta.timestamp.date().isoformat()}}</td>
+        <td>{{meta.codigo}}</td>
+        <td>{{i.prod.codigo}}</td>
+        <td>{{i.cant}}</td>
+        <td>{{i.prod.nombre}}</td> 
+        <td>{{ value_from_cents(i.prod.precio) }} </td>
+        <td>{{ value_from_cents(i.subtotal) }} </td>
+    </tr>
     {% endfor %}
-</div>
+</table>
+<p>Total: {{ value_from_cents(total)}}</p>

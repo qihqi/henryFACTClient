@@ -1,0 +1,40 @@
+{%extends "base.html"%}
+{%block title%}Vendidos por Categoria{%endblock%}
+{%block script%}
+<style>
+.baseform {
+    left-margin: auto;
+    right-margin: auto;
+    width: auto;
+    float: left;
+}
+.prod_label {
+    width: 50%;
+    float: left;
+}
+</style>
+{%endblock%}
+
+{%block content%}
+<form class="baseform" action="/app/vendidos_por_categoria" method="get">
+    <h5>{{ message }}</h5>
+    <h4>Vendidos por Categoria</h4>
+    <p>
+        <label class="prod_label" for="nombre">Desde:</label>
+        <input class="prod_input" name="start_date" value="{{today().isoformat()}}"/>
+    </p>
+    <p>
+        <label class="prod_label" for="codigo">Hasta:</label>
+        <input class="prod_input" name="end_date" value="{{today().isoformat()}}" />
+    </p>
+    <p>
+        <label class="prod_label" for="almacen">Categoria:</label>
+        <select name="categoria_id">
+            {%for x in cat%}
+            <option value="{{x.id}}">{{x.nombre}}</option>
+            {%endfor%}
+        </select>
+    </p>
+    <input name="Aceptar" type="submit"/>
+</form>
+{%endblock%}

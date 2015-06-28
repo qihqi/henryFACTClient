@@ -294,7 +294,7 @@ class DocumentApi:
     def get_doc_from_file(self, filename):
         file_content = self.filemanager.get_file(filename)
         if file_content is None:
-            print 'could not find file at ', file_content
+            print 'could not find file at ', filename
             return None
         content = json_loads(file_content)
         doc = self.cls.deserialize(content)
@@ -368,7 +368,10 @@ class DocumentApi:
             query = query.filter_by(status=status)
         if other_filters is not None:
             query = query.filter_by(**other_filters)
-        return imap(self.metadata_cls.from_db_instance, query)
+        for r in query:
+            meta = self.metadata_cls.from_db_instance(r)
+            meta.items_location = r.items_location
+            yield meta
 
 
 class PedidoApi:
