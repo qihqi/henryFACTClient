@@ -179,8 +179,11 @@ class Invoice(MetaItemSet):
 
     @property
     def filepath_format(self):
-        return os.path.join(
-            self.meta.timestamp.date().isoformat(), self.meta.codigo)
+        path = getattr(self, '_path', None)
+        if path is None:
+            self._path = os.path.join(
+                self.meta.timestamp.date().isoformat(), uuid.uuid1().hex)
+        return self._path
 
 
 class TransType:

@@ -4,7 +4,7 @@ import traceback
 
 from sqlalchemy.exc import IntegrityError
 
-from bottle import request, Bottle, abort, redirect
+from bottle import request, Bottle, abort, redirect, response
 
 from henry.config import jinja_env, transapi, prodapi, invapi
 from henry.config import (dbcontext, auth_decorator, sessionmanager, clientapi,
@@ -411,7 +411,7 @@ def post_secuencia():
 @dbcontext
 @auth_decorator
 def get_notas_de_pedido_form():
-    session = request.environ['beaker.session']
+    session = request.environ.get('beaker.session')
     if session is None or 'login_info' not in session:
         response.status = 401
         response.set_header('www-authenticate', 'Basic realm="Henry"')

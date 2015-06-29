@@ -34,7 +34,6 @@ def post_authenticate():
 def get_session():
     session = request.environ.get('beaker.session')
     login_info = session.get('login_info')
-    print session
     if login_info is not None:  # user is already logged in
         return login_info
     return {'message': 'Not logged in', 'status': False}

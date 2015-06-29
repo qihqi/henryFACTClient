@@ -20,7 +20,7 @@ import sys
 reload(sys)
 sys.setdefaultencoding('latin1')
 
-engine = create_engine(CONN_STRING)
+engine = create_engine(CONN_STRING, pool_recycle=3600)
 sessionfactory = sessionmaker(bind=engine)
 sessionmanager = SessionManager(sessionfactory)
 # this is a decorator
