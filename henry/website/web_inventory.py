@@ -224,22 +224,18 @@ def get_resumen():
     def pago(value):
         return lambda x: x.payment_format == value
 
-    efectivos = filter(pago('efectivo'), committed)
-    creditos = filter(pago('credito'), committed)
-    cheques = filter(pago('cheque'), committed)
-    depositos = filter(pago('deposito'), committed)
-    gtotal = sum((x.total for x in committed))
+    ventas = {}
+    for t in PaymentFormat.names:
+        ventas[t] = filter(pago(t), committed)
 
+    gtotal = sum((x.total for x in committed))
     temp = jinja_env.get_template('resumen.html')
     return temp.render(
         start=start,
         end=end,
         user=user,
         store=prodapi.get_store_by_id(store),
-        efectivos=efectivos,
-        creditos=creditos,
-        cheques=cheques,
-        depositos=depositos,
+        ventas=ventas,
         gtotal=gtotal,
         eliminados=deleted)
 

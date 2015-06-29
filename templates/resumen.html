@@ -13,69 +13,53 @@
         <button onClick="window.location='/r';" > Regresar al principio </button>
         <h2>{{store.nombre}}</h2>
         <h4>Vendido por {{user}} : {{start.date().isoformat()}} / {{end.date().isoformat()}} </h4>
-        {%block contenido %}
-        <table width=700 align="center">
-            <tr>
-                <th width=100 style="text-align:left;"> Codigo </th>
-                <th style="text-align:center;"> Cliente </th>
-                <th width=100 style="text-align:right;"> Valor </th>
-            </tr>
-        </table>
-        <hr />
+
+    {%block contenido %}
+    <table width=700 align="center">
+        <tr>
+            <th width=100 style="text-align:left;"> Codigo </th>
+            <th style="text-align:center;"> Cliente </th>
+            <th width=100 style="text-align:right;"> Valor </th>
+        </tr>
+    </table>
+    <hr />
 
     {%macro build_table(items)%}
-    <table width=700 align="center">
-        <tr><td colspan=3 style="{text-align:center;font-family:'Arial'}"><b>{{nombre}}</b></td>
-        {% if not items%}
-            <tr><td colspan=3 style="{text-align:center;}"> NO HAY </td> 
-        {%endif%}
+        <table width=700 align="center">
+            <tr><td colspan=3 style="{text-align:center;font-family:'Arial'}"><b>{{nombre}}</b></td>
+            {% if not items%}
+                <tr><td colspan=3 style="{text-align:center;}"> NO HAY </td>
+            {%endif%}
 
-        {% for x in items%}
-            <tr>
-                <td width=100 > {{x.codigo}} </td>
-                <td style="text-align:center;"> {{x.client.apellidos}} {{x.client.nombres}} ({{x.client.codigo}}) </td>
-                <td style="text-align:right;" width=100> {{value_from_cents(x.total)}} </td>
-            </tr>
-        {%endfor %}
-            <!--total -->
-            <tr>
-                <td>  </td>
-                <td style="text-align:right;"><b>Total:</b> </td>
-                <td style="text-align:right;"><b> {{get_total(items)}}</b> </td>
-                <td style="text-align:right;"><b> </b> </td>
-            </tr>
-    </table>
+            {% for x in items%}
+                <tr>
+                    <td width=100 > {{x.codigo}} </td>
+                    <td style="text-align:center;"> {{x.client.apellidos}} {{x.client.nombres}} ({{x.client.codigo}}) </td>
+                    <td style="text-align:right;" width=100> {{value_from_cents(x.total)}} </td>
+                </tr>
+            {%endfor %}
+                <!--total -->
+                <tr>
+                    <td>  </td>
+                    <td style="text-align:right;"><b>Total:</b> </td>
+                    <td style="text-align:right;"><b> {{get_total(items)}}</b> </td>
+                    <td style="text-align:right;"><b> </b> </td>
+                </tr>
+        </table>
     {%endmacro%}
-        {%if efectivos%}
-        <h4>Efectivos</h4>
-        {{ build_table(efectivos) }}
-        <hr />
-        {%endif%}
-        {%if cheques%}
-        <h4>cheques</h4>
-        {{ build_table(cheques) }}
-        <hr />
-        {%endif%}
-        {%if depositos%}
-        <h4>depositos</h4>
-        {{ build_table(depositos) }}
-        <hr />
-        {%endif%}
-        {%if creditos%}
-        <h4>creditos</h4>
-        {{ build_table(creditos) }}
-        <hr />
-        {%endif%}
-        {%if tarjetas%}
-        <h4>tarjetas de credito</h4>
-        {{ build_table(tarjetas) }}
-        <hr />
-        {%endif%}
-        <h4>eliminados</h4>
-        {{ build_table(eliminados) }}
 
-        <p> Total de venta = {{value_from_cents(gtotal)}}</p>
-        
-        {%endblock%}
+    {% for type, inv in ventas.items() %}
+        {%if inv%}
+        <h4>{{type}}</h4>
+        {{ build_table(inv) }}
+        <hr />
+        {%endif%}
+    {% endfor %}
+    <h4>eliminados</h4>
+    {{ build_table(eliminados) }}
+
+    <p> Total de venta = {{value_from_cents(gtotal)}}</p>
+
+    {%endblock%}
     </body>
 </html>
