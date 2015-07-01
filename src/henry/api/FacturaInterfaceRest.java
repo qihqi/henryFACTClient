@@ -55,10 +55,11 @@ public class FacturaInterfaceRest implements FacturaInterface {
     private String baseUrl;
     private Gson gson;
     private int almacenId;
+    private String almacenName;
     private static int TIMEOUT_MILLIS = 30000;
     private RequestConfig timeoutConfig;
 
-    public FacturaInterfaceRest(String baseUrl, int almacenId) {
+    public FacturaInterfaceRest(String baseUrl, int almacenId, String almacenName) {
         timeoutConfig = RequestConfig.custom()
             .setConnectionRequestTimeout(TIMEOUT_MILLIS)
             .setConnectTimeout(TIMEOUT_MILLIS)
@@ -69,6 +70,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
         httpClient = HttpClients.custom().setDefaultCookieStore(cookieStore).build();
         this.baseUrl = baseUrl;
         this.almacenId = almacenId;
+        this.almacenName = almacenName;
         gson = new GsonBuilder()
                    .excludeFieldsWithoutExposeAnnotation()
                    .create();

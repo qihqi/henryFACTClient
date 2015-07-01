@@ -39,12 +39,6 @@ public class LoginPane extends JPanel implements ActionListener{
     private JComboBox almacenbox;
     private String configpath;
     private Config config;
-    private static final String[] SERVER_OPTS = new String[] {
-        "192.168.0.23", "localhost:8080"
-    };
-    private static final String[] ALMACEN_OPTS = new String[] {
-        "quinal", "bodega", "corpesut"
-    };
     /**
      * Create the panel.
      */
@@ -63,7 +57,7 @@ public class LoginPane extends JPanel implements ActionListener{
         JLabel almacenLabel = new JLabel("Vendido por: ");
         config = loadConfig(this.configpath);
         serverbox = new JComboBox(config.getServersOpts());
-        almacenbox = new JComboBox(config.getStoreOpts());
+        almacenbox = new JComboBox(config.getStoreOptsLabel());
 
         user = new JTextField();
         pass = new JPasswordField();
@@ -83,7 +77,6 @@ public class LoginPane extends JPanel implements ActionListener{
         add(message);
         
         login.addActionListener(this);
-
     }
 
     private Config loadConfig(String configpath) {
@@ -101,9 +94,11 @@ public class LoginPane extends JPanel implements ActionListener{
     @Override
     public void actionPerformed(ActionEvent e) {
         //almacenId in server uses index starting from 1
-        int almacenId = almacenbox.getSelectedIndex() + 1; 
+        int index = almacenbox.getSelectedIndex(); 
+        int almacenId = Integer.parseInt(config.getStoreOpts()[index][1]);
+        String almacenName = config.getStoreOpts()[index][0];
         String serverIp = serverbox.getSelectedItem().toString();
-        FacturaInterface api = new FacturaInterfaceRest(serverIp, almacenId);
+        FacturaInterface api = new FacturaInterfaceRest(serverIp, almacenId, almacenName);
 
         String username = user.getText();
         String password = new String(pass.getPassword());

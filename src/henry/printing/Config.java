@@ -93,7 +93,10 @@ public final class Config {
     String[] serversOpts;
 
     @Getter @SerializedName("almacenes")
-    String[] storeOpts;
+    String[][] storeOpts;
+
+    @Getter
+    String[] storeOptsLabel;
 
     @Getter @SerializedName("impresora_matriz")
     boolean matrixPrinter;
@@ -102,6 +105,10 @@ public final class Config {
         System.out.println(json);
         Config config = new Gson().fromJson(json, Config.class);
         addDisplacement(config.impression);
+        config.storeOptsLabel = new String[config.storeOpts.length];
+        for (int i = 0; i < config.storeOpts.length; i++) {
+            config.storeOptsLabel[i] = config.storeOpts[i][0];
+        }
         return config;
     }
 
