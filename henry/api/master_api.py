@@ -14,7 +14,6 @@ napi = Bottle()
 # ########## NOTA ############################
 @napi.get('/api/nota/<inv_id>')
 @dbcontext
-@auth_decorator
 @actionlogged
 def get_invoice(inv_id):
     doc = invapi.get_doc(inv_id)
@@ -83,6 +82,24 @@ def create_invoice():
             prod_id = item.prod.codigo
             if not prodapi.get_producto(prod_id):
                 abort(400, 'Producto con codigo {} no existe'.format(prod_id))
+
+    alm = None
+    ruc = getattr(inv.meta, 'almacen_ruc', None)
+    if ruc:
+        alms = [a for a in prodapi.get_stores() if a.ruc == inv.meta.almacen_ruc]
+        if alms:
+            alm = alms[0]
+    if alm is None:
+        name = getattr(inv.meta, 'almacen_name', None)
+        if name:
+            alms = [a for a in prodapi.get_stores() if a.nombre == inv.meta.almacen_name]
+            if alms:
+                alm = alms[0]
+    if alm is None:
+        alm = prodapi.get_store_by_id(inv.meta.almacen_id)
+    inv.meta.almacen_id = alm.almacen_id
+    inv.meta.almacen_name = alm.nombre
+    inv.meta.almacen_ruc = alm.ruc
 
     inv = invapi.save(inv)
 

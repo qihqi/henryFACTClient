@@ -102,9 +102,9 @@ class NIngreso(Base):
     __tablename__ = 'ingresos'
     id = Column(Integer, primary_key=True)
     fecha = Column(Date)
-    usuario = Column(String(50))
-    bodega = Column(Integer)
-    bodega_desde = Column(Integer)
+    usuario = Column('usuario_id', String(50))
+    bodega_id = Column(Integer)
+    bodega_desde_id = Column(Integer)
     tipo = Column(String(1))
     items = relationship('NIngresoItem', backref=backref('header'))
 
@@ -180,6 +180,8 @@ class NNota(Base):
     # this pair should be unique
     codigo = Column(String(20))
     almacen_id = Column(Integer, ForeignKey(NStore.almacen_id))
+    almacen_name = Column(String(20))
+    almacen_ruc = Column(String(20))
 
     client_id = Column(String(20))
     user_id = Column(String(20))

@@ -24,10 +24,9 @@ def main2():
     poli_prod = {}
     get_nombres(ps, poli_prod)
 
-    henry_prod = henry_prod.viewkeys()
-    poli_prod = poli_prod.viewkeys()
-    print 'henry', len(henry_prod), 'poli', len(poli_prod)
-    print 'intersection', len(henry_prod & poli_prod), 'union', len(henry_prod | poli_prod)
+    for x in poli_prod.keys():
+        if x not in henry_prod:
+            print x, '\t', poli_prod[x]
 
 def main():
     ps = poli_session()

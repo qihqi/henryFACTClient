@@ -92,6 +92,8 @@ class InvMetadata(SerializableMixin, DbMixin):
         'paid': 'paid',
         'paid_amount': 'paid_amount',
         'almacen_id': 'almacen_id',
+        'almacen_name': 'almacen_name',
+        'almacen_ruc': 'almacen_ruc',
         'payment_format': 'payment_format'}
 
     _name = tuple(_db_attr.keys()) + ('client',)
@@ -114,7 +116,9 @@ class InvMetadata(SerializableMixin, DbMixin):
             paid=None,
             paid_amount=None,
             payment_format=None,
-            almacen_id=None):
+            almacen_id=None,
+            almacen_name=None,
+            almacen_ruc=None):
         self.uid = uid
         self.codigo = codigo
         self.client = client
@@ -127,6 +131,8 @@ class InvMetadata(SerializableMixin, DbMixin):
         self.discount = discount
         self.bodega_id = bodega_id
         self.almacen_id = almacen_id
+        self.almacen_name = almacen_name
+        self.almacen_ruc = almacen_ruc
         self.tax_percent = tax_percent
         self.discount_percent = discount_percent
         self.paid = paid
