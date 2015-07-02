@@ -43,11 +43,11 @@ import static henry.Helpers.streamToString;
  */
 public class FacturaInterfaceRest implements FacturaInterface {
 
-    private static final String PROD_URL_PATH = "/api/alm/%s/producto";
+    private static final String PROD_URL_PATH = "/api/alm/%d/producto";
     private static final String CLIENT_URL_PATH = "/api/cliente";
     private static final String VENTA_URL_PATH = "/api/pedido";
     private static final String FACTURA_URL_PATH = "/api/nota";
-    private static final String PROD_URL = "/api/alm/%s/producto/%s";
+    private static final String PROD_URL = "/api/alm/%d/producto/%s";
     private static final String LOGIN_URL = "/api/authenticate";
 
     private BasicCookieStore cookieStore;
@@ -79,7 +79,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
     @Override
     public Producto getProductoPorCodigo(String codigo) throws NotFoundException {
         try {
-            String url = String.format(PROD_URL, "1", codigo);
+            String url = String.format(PROD_URL, almacenId, codigo);
             URI prodUri = new URIBuilder().setScheme("http")
                                           .setHost(baseUrl)
                                           .setPath(url)
