@@ -18,6 +18,8 @@ from henry.base.serialization import json_loads
 w = Bottle()
 web_inventory_webapp = w
 
+datestrp = datetime.datetime.strptime
+
 
 @w.get('/app')
 @dbcontext
@@ -31,15 +33,13 @@ def index():
 @auth_decorator
 def get_ingreso(uid):
     trans = transapi.get_doc(uid)
-    bodegas = {x.id: x.nombre for x in prodapi.get_bodegas()}
     if trans:
         temp = jinja_env.get_template('ingreso.html')
         if trans.meta.origin is not None:
             trans.meta.origin = prodapi.get_bodega_by_id(trans.meta.origin).nombre
         if trans.meta.dest is not None:
             trans.meta.dest = prodapi.get_bodega_by_id(trans.meta.dest).nombre
-
-        return temp.render(ingreso=trans, bodega_mapping=bodegas)
+        return temp.render(ingreso=trans)
     return 'Documento con codigo {} no existe'.format(uid)
 
 
@@ -200,7 +200,6 @@ def get_resumen():
     if start is None or end is None:
         abort(400, 'Hay que ingresar las fechas')
 
-    datestrp = datetime.datetime.strptime
     start = datestrp(start, '%Y-%m-%d')
     end = datestrp(end, '%Y-%m-%d') + datetime.timedelta(days=1)
     store = int(store)
@@ -446,7 +445,6 @@ def vendidos_por_categoria_form():
 @auth_decorator
 def vendidos_por_categoria():
     cat = request.query.categoria_id
-    datestrp = datetime.datetime.strptime
     start = datestrp(request.query.start_date, '%Y-%m-%d')
     end = datestrp(request.query.end_date, '%Y-%m-%d')
     prods = sessionmanager.session.query(NProducto.codigo).filter_by(
@@ -530,7 +528,7 @@ def post_crear_entregaa_de_cuenta():
     cash = int(float(cash) * 100)
     gastos = int(float(gastos) * 100)
     deposito = int(float(deposito) * 100)
-    turned_cash= int(float(turned_cash) * 100)
+    turned_cash = int(float(turned_cash) * 100)
     date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
 
     stat = NAccountStat(

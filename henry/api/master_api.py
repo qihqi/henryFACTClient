@@ -40,12 +40,23 @@ def get_invoice_by_date():
 
 
 class InvoiceOptions(SerializableMixin):
-    _name = ('crear_cliente', 'revisar_producto', 'incrementar_codigo')
+    _name = ('crear_cliente', 'revisar_producto',
+             'incrementar_codigo', 'usar_decimal')
 
     def __init__(self):
         self.crear_cliente = False
         self.revisar_producto = False
         self.incrementar_codigo = False
+        self.usar_decimal = False
+
+
+def get_store_by(field, value):
+    if field == 'almacen_id':
+        return prodapi.get_store_by_id(value)
+    canditates = [a for a in prodapi.get_stores() if getattr(a, field) == value]
+    if canditates:
+        return canditates[0]
+    return None
 
 
 @napi.post('/api/nota')
@@ -65,41 +76,39 @@ def create_invoice():
 
     inv = Invoice.deserialize(content)
     inv.items = filter(lambda x: x.cant >= 0, inv.items)
-    inv.meta.bodega_id = prodapi.get_store_by_id(inv.meta.almacen_id).bodega_id
     inv.meta.paid = True
-    # convert cant into a decimal. cant is send as int,
-    # treating it as a decimal of 3 decimal places
-    for item in inv.items:
-        item.cant = Decimal(item.cant) / 1000
 
-    if options.crear_cliente:
+    for item in inv.items:
+        if options.usar_decimal:
+            item.cant = Decimal(item.cant)
+        else:
+            # if not using decimal, means that cant is send as int.
+            # treating it as a decimal of 3 decimal places.
+            item.cant = Decimal(item.cant) / 1000
+
+    if options.crear_cliente:  # create client if not exist
         client = inv.meta.client
         if not clientapi.get(client.codigo):
             clientapi.save(client)
 
-    if options.revisar_producto:
+    if options.revisar_producto:  # make sure all product exists
         for item in inv.items:
             prod_id = item.prod.codigo
             if not prodapi.get_producto(prod_id):
                 abort(400, 'Producto con codigo {} no existe'.format(prod_id))
 
-    alm = None
+    # Get store: if ruc exists get it takes prescendence. Then name, then id.
+    # The reason is that id is mysql autoincrement integer and may not be
+    # consistent across different servers
     ruc = getattr(inv.meta, 'almacen_ruc', None)
-    if ruc:
-        alms = [a for a in prodapi.get_stores() if a.ruc == inv.meta.almacen_ruc]
-        if alms:
-            alm = alms[0]
-    if alm is None:
-        name = getattr(inv.meta, 'almacen_name', None)
-        if name:
-            alms = [a for a in prodapi.get_stores() if a.nombre == inv.meta.almacen_name]
-            if alms:
-                alm = alms[0]
-    if alm is None:
-        alm = prodapi.get_store_by_id(inv.meta.almacen_id)
+    name = getattr(inv.meta, 'almacen_name', None)
+    alm = (get_store_by('ruc', ruc) or get_store_by('nombre', name) or
+           prodapi.get_store_by_id(inv.meta.almacen_id))
+
     inv.meta.almacen_id = alm.almacen_id
     inv.meta.almacen_name = alm.nombre
     inv.meta.almacen_ruc = alm.ruc
+    inv.meta.bodega_id = alm.bodega_id
 
     inv = invapi.save(inv)
 
