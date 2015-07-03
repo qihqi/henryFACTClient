@@ -1,3 +1,4 @@
+from decimal import Decimal
 from henry.base.schema import NProducto, NContenido, NPriceList, NTransform
 from henry.config import sessionmanager
 
@@ -17,7 +18,10 @@ def get_all_contenidos(session):
 def get_reglas(session, prod_id):
     return session.query(NTransform.origin_id,
                          NTransform.dest_id,
-                         NTransform.multiplier).filter_by(origin_id=prod_id).first()
+                         NTransform.multiplier,
+                         NProducto.nombre).filter(
+                             NTransform.dest_id == NProducto.codigo).filter_by(
+                             origin_id=prod_id).first()
 
 
 def make_lista_precio(item, unidad='unidad', multiplicador=1):
@@ -33,27 +37,40 @@ def make_lista_precio(item, unidad='unidad', multiplicador=1):
         multiplicador=1)
 
 
-def get_contenido_id(session, prod_id, bodega_id):
-    return session.query(NContenido.id).filter_by(
-        prod_id=prod_id, bodega_id=bodega_id).first().id
-
-
 def main():
     counter = 0
     last_id = None
+    created = set()
     try:
         with sessionmanager as session:
             for item in get_all_contenidos(session):
                 last_id = item.id
+                if item.precio == 0:
+                    continue
                 new_item = make_lista_precio(item)
                 regla = get_reglas(session, item.codigo)
                 if regla is not None:
-                    new_item.prod_id = regla.dest_id + '+'
-                    new_item.upi = get_contenido_id(session, regla.dest_id, item.bodega_id)
-                    new_item.multiplicador = regla.multiplier
-                    new_item.unidad = 'paquete grande'
-                session.add(new_item)
+                    if regla.multiplier <= 12:
+                        new_item.prod_id = regla.dest_id + '+'
+                        new_item.multiplicador = regla.multiplier
+                        new_item.unidad = 'paquete grande'
+                    else:
+                        if item.bodega_id == 1:
+                            continue
+                        new_item.prod_id = regla.dest_id
+                        new_item.nombre = regla.nombre
+                        new_item.precio1 = int(new_item.precio1 / regla.multiplier + Decimal('0.5'))
+                        new_item.precio2 = int(new_item.precio2 / regla.multiplier + Decimal('0.5'))
+                        if new_item.prod_id == 'HILCTP':
+                            print 'precio original', item.precio, new_item.precio1
+
+                #if (new_item.almacen_id, new_item.prod_id) in created:
+                #    print (new_item.almacen_id, new_item.prod_id), 'alreaady exist'
+                #else:
                 counter += 1
+                session.add(new_item)
+                created.add((new_item.almacen_id, new_item.prod_id))
+                
                 if counter % 100 == 0:
                     print 'processed ', counter
     finally:
