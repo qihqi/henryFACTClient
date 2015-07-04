@@ -337,12 +337,18 @@ class DocumentApi:
         return None
 
     def delete(self, doc):
-        if doc.meta.status != Status.COMITTED:
-            logging.info('attempt to delete doc {} which is not committed'.format(doc.meta.uid))
+        if doc.meta.status == Status.COMITTED:
+            if self._set_status_and_update_prod_count(
+                    doc, Status.DELETED, inverse_transaction=True):
+                return doc
             return None
-        if self._set_status_and_update_prod_count(
-                doc, Status.DELETED, inverse_transaction=True):
-            return doc
+        elif doc.meta.status == Status.NEW:
+            count = self.db_session.session.query(self.db_class).filter_by(
+                id=doc.meta.uid).update({'status': Status.DELETED})
+            if count > 0:
+                doc.meta.status = Status.DELETED
+                return doc
+        logging.info('attempt to delete doc {} which is not committed'.format(doc.meta.uid))
         return None
 
     def _set_status_and_update_prod_count(
@@ -362,7 +368,6 @@ class DocumentApi:
             return True
         except SQLAlchemyError:
             import traceback
-
             traceback.print_exc()
             session.rollback()
             return False
