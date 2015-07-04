@@ -104,9 +104,10 @@ def transmetadata_from_form(form):
     meta.trans_type = form.get('trans_type')
     if meta.trans_type == TransType.INGRESS:
         meta.origin = None  # ingress does not have origin
-    if meta.trans_type == TransType.EXTERNAL:
+    if meta.trans_type in (TransType.EXTERNAL or TransType.EGRESS):
         meta.dest = None  # dest for external resides in other server
-    meta.timestamp = datetime.datetime.now()
+    if meta.timestamp is None:
+        meta.timestamp = datetime.datetime.now()
     return meta
 
 
