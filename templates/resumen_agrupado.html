@@ -57,13 +57,13 @@
             <th>Total</th>
         </tr>
         {% for venta in eliminados %}
-        <table>
+        <tr>
             <td>{{venta.codigo}}</td>
             <td>{{venta.client.codigo}}</td>
             <td>{{ value_from_cents(venta.subtotal)}}</td>
             <td>{{ value_from_cents(venta.tax)}}</td>
             <td>{{ value_from_cents(venta.total)}}</td>
-        </table>
+        </tr>
         {% endfor %}
     </table>
 </iva>

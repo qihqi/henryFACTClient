@@ -48,10 +48,11 @@ def main():
             meta_item[meta].append((item, prod))
         for m, i in meta_item.items():
             almacen_id = bodega_id
-            if m.codigo < 0:  # corpesut
-                m.codigo = abs(m.codigo)
+            codigo = m.codigo
+            if codigo < 0:
+                codigo = abs(codigo)
                 almacen_id = 3
-            existing = session.query(NNota).filter_by(almacen_id=almacen_id, codigo=m.codigo).first()
+            existing = session.query(NNota).filter_by(almacen_id=almacen_id, codigo=codigo).first()
             if existing is not None:
                 print 'codigo {} en bodega {} ya existe, pasando'.format(m.codigo, bodega_id)
                 continue
@@ -61,7 +62,7 @@ def main():
                 almacen_id=almacen_id,
                 almacen_name=store.nombre,
                 almacen_ruc=store.ruc,
-                codigo=str(m.codigo),
+                codigo=str(codigo),
                 user=m.vendedor_id,
                 client=all_client[m.cliente_id],
                 timestamp=datetime.combine(m.fecha, time()),
