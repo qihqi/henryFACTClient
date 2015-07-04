@@ -72,8 +72,7 @@ class DbMixin(object):
         for thisname, dbname in cls._get_name_pairs(cls._db_attr):
             if thisname not in excluded:
                 value = getattr(db_instance, dbname, None)
-                if value is not None:
-                    setattr(y, thisname, value)
+                setattr(y, thisname, value)
         return y
 
 
@@ -88,7 +87,7 @@ class SerializableMixin(object):
                 try:
                     setattr(self, key, obj[key])
                 except:
-                    pass
+                    setattr(self, key, None)
         return self
 
     def serialize(self):

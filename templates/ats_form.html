@@ -1,17 +1,16 @@
-<html>
-    <head>
-        <title>General XML para ATS</title>
-    </head>
-    <body>
-        <form action="/app/accounting.xml" method="get">
-            <p><label>Fecha inicio</label><input name="start_date" value="{{today.isoformat()}}"/></p>
-            <p><label>Fecha fin</label><input name="end_date" value="{{today.isoformat()}}"/></p>
-            <p><label>Vendido por: </label><select name=vendido></p>
-                {% for vendedor in vendedores %} 
-                <option value="{{vendedor.username}}">{{vendedor.username}}</option>
-                {% endfor %}
-            </select></p>
-            <p><input type="submit" value="Aceptar"/>
-        </form>
-    </body>
-</html>
+{% extends "base.html" %}
+{% block content %}
+<h3> {{title}}</h3>
+<form action="/app/accounting.xml" method="get">
+    <p><label>Fecha inicio</label><input name="start_date" value="{{today().isoformat()}}"/></p>
+    <p><label>Fecha fin</label><input name="end_date" value="{{today().isoformat()}}"/></p>
+    <p><label>RUC: </label><select name="alm"></p>
+        {% for s in stores %}
+        <option value="{{s.ruc}}">{{s.nombre}} ({{ s.ruc }})</option>
+        {% endfor %}
+    </select></p>
+    <p><input type="submit" name="form_type" value="ats"/>
+    <input type="submit" name="form_type" value="resumen"/>
+    </p>
+</form>
+{% endblock %}

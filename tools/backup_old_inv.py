@@ -1,16 +1,17 @@
 from datetime import datetime, date, time
 from collections import defaultdict
 from datetime import date
-from henry.config import sessionmanager, invapi
-from henry.base.schema import NItemDespacho, NOrdenDespacho, NCliente, NProducto
+from henry.config import sessionmanager, invapi, prodapi
+from henry.base.schema import NItemDespacho, NOrdenDespacho, NCliente, NProducto, NNota
 from henry.dao import InvMetadata, Client, PaymentFormat, Item, Product, Invoice, Status
 
 
-def query_all_fully_joined(session, start, end):
-    s = session.query(NOrdenDespacho, NItemDespacho).filter(
+def query_all_fully_joined(session, start, end, bodega_id):
+    s = session.query(NOrdenDespacho, NItemDespacho, NProducto).filter(
         NOrdenDespacho.id == NItemDespacho.desp_cod_id).filter(
+        NItemDespacho.producto_id == NProducto.codigo).filter(
         NOrdenDespacho.fecha >= start).filter(
-        NOrdenDespacho.fecha <= end).filter_by(bodega_id=1)
+        NOrdenDespacho.fecha <= end).filter_by(bodega_id=bodega_id)
     return s
 
 def money_to_cent(money):
@@ -34,40 +35,48 @@ def get_all_client(session):
         cliente[x.codigo] = x
     return cliente
 
-
-def get_all_prod(session):
-    prod = {}
-    for x in session.query(NProducto):
-        prod[x.codigo.upper()] = Product().merge_from(x)
-    return prod
-
 def main():
     with sessionmanager as session:
 
         all_client = get_all_client(session)
-        prods = get_all_prod(session)
         meta_item = defaultdict(list)
-        for meta, item in query_all_fully_joined(session, date(2014, 12, 1), date(2014, 12, 2)):
-            meta_item[meta].append(item)
+        bodega_id = 1
+        tax_percent = 12
+        for meta, item, prod in query_all_fully_joined(
+                session,
+                date(2015, 6, 1), date(2015, 7, 4), bodega_id):
+            meta_item[meta].append((item, prod))
         for m, i in meta_item.items():
+            almacen_id = bodega_id
+            if m.codigo < 0:  # corpesut
+                m.codigo = abs(m.codigo)
+                almacen_id = 3
+            existing = session.query(NNota).filter_by(almacen_id=almacen_id, codigo=m.codigo).first()
+            if existing is not None:
+                print 'codigo {} en bodega {} ya existe, pasando'.format(m.codigo, bodega_id)
+                continue
+
+            store = prodapi.get_store_by_id(almacen_id)
             meta = InvMetadata(
-                almacen_id=1,
+                almacen_id=almacen_id,
+                almacen_name=store.nombre,
+                almacen_ruc=store.ruc,
                 codigo=str(m.codigo),
                 user=m.vendedor_id,
                 client=all_client[m.cliente_id],
                 timestamp=datetime.combine(m.fecha, time()),
                 payment_format=newpayformat(m.pago),
                 total=money_to_cent(m.total),
-                tax_percent=12,
+                tax_percent=tax_percent,
             )
             meta.status = Status.DELETED if m.eliminado else Status.COMITTED
-            meta.subtotal = int(meta.total / 1.12)
+            meta.subtotal = int(meta.total / (1 + tax_percent/100.0))
             meta.tax = meta.total - meta.subtotal
 
             def make_item(ix):
-                p = prods[ix.producto_id.upper()]
-                p.precio1 = money_to_cent(ix.precio)
-                return Item(p, ix.cantidad)
+                p = Product().merge_from(ix[1])
+                p.precio1 = money_to_cent(ix[0].precio)
+                return Item(p, ix[0].cantidad)
             items = map(make_item, i)
 
             inv = Invoice(meta, items)

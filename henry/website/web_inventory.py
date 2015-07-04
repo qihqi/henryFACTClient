@@ -1,5 +1,6 @@
 import datetime
 from decimal import Decimal
+from operator import attrgetter
 import traceback
 
 from sqlalchemy.exc import IntegrityError
@@ -14,6 +15,7 @@ from henry.dao.productos import Bodega
 from henry.base.schema import NUsuario, NNota, NCliente, NProducto, NAccountStat, NCategory
 from henry.dao.exceptions import ItemAlreadyExists
 from henry.base.serialization import json_loads
+from henry.reports import get_notas_with_clients, split_records, group_by_records
 
 w = Bottle()
 web_inventory_webapp = w
@@ -201,32 +203,16 @@ def get_resumen():
         abort(400, 'Hay que ingresar las fechas')
 
     start = datestrp(start, '%Y-%m-%d')
-    end = datestrp(end, '%Y-%m-%d') + datetime.timedelta(days=1)
+    end = datestrp(end, '%Y-%m-%d')
     store = int(store)
 
     session = sessionmanager.session
+    result = get_notas_with_clients(session, store, start, end)
 
-    def decode_db_row_with_client(db_raw):
-        m = InvMetadata.from_db_instance(db_raw[0])
-        m.client.nombres = db_raw.nombres
-        m.client.apellidos = db_raw.apellidos
-        return m
-
-    result = session.query(NNota, NCliente.nombres, NCliente.apellidos).filter_by(
-        user_id=user,
-        almacen_id=store).filter(
-        NNota.timestamp >= start).filter(
-        NNota.timestamp <= end).filter(NCliente.codigo == NNota.client_id)
-    result = map(decode_db_row_with_client, result)
-    deleted = [x for x in result if x.status == Status.DELETED]
-    committed = [x for x in result if x.status != Status.DELETED]
-
-    def pago(value):
-        return lambda x: x.payment_format == value
-
-    ventas = {}
-    for t in PaymentFormat.names:
-        ventas[t] = filter(pago(t), committed)
+    by_status = split_records(result, lambda x: x.status)
+    deleted = by_status[Status.DELETED]
+    committed = by_status[Status.COMITTED]
+    ventas = split_records(committed, lambda x: x.payment_format)
 
     gtotal = sum((x.total for x in committed))
     temp = jinja_env.get_template('resumen.html')
@@ -482,31 +468,25 @@ def entrega_de_cuenta():
 def crear_entrega_de_cuenta():
     date = request.query.get('fecha')
     date = datetime.datetime.strptime(date, '%Y-%m-%d')
-    nextdate = date + datetime.timedelta(days=1)
 
-    all_sale = list(invapi.search_metadata_by_date_range(date, nextdate))
-    deleted = filter(lambda x: x.status == Status.DELETED, all_sale)
-    committed = filter(lambda x: x.status == Status.COMITTED, all_sale)
+    all_sale = list(get_notas_with_clients(sessionmanager.session, None, date, date))
 
-    cashed = filter(lambda x: x.payment_format == PaymentFormat.CASH, committed)
-    noncash = filter(lambda x: x.payment_format != PaymentFormat.CASH, committed)
+    by_status = split_records(all_sale, attrgetter('status'))
+    deleted = by_status[Status.DELETED]
+    committed = by_status[Status.COMITTED]
 
-    sale_by_store = {}
-    for store in prodapi.get_stores():
-        sale_by_store[store.nombre] = sum((
-            x.total for x in cashed if x.almacen_id == store.almacen_id))
+    by_payment = split_records(committed, attrgetter('payment_format'))
+    cashed = by_payment[PaymentFormat.CASH]
+    for i in cashed:
+        i
+
+    sale_by_store = group_by_records(cashed, attrgetter('almacen_name'), attrgetter('total'))
     total_cash = sum(sale_by_store.values())
 
-    for x in noncash:
-        x.client = clientapi.get(x.client.codigo)
-
-    otros_pagos = {}
-    for pago in PaymentFormat.names:
-        otros_pagos[pago] = filter(lambda x: x.payment_format == pago,
-                                   noncash)
+    otros_pagos = by_payment
+    del otros_pagos[PaymentFormat.CASH]
 
     existing = sessionmanager.session.query(NAccountStat).filter_by(date=date).first()
-    print existing.__dict__
     temp = jinja_env.get_template('crear_entregar_cuenta_form.html')
     return temp.render(
         cash=sale_by_store, others=otros_pagos,
@@ -519,6 +499,7 @@ def crear_entrega_de_cuenta():
 @w.post('/app/crear_entrega_de_cuenta')
 @dbcontext
 def post_crear_entregaa_de_cuenta():
+    del otros_pagos[PaymentFormat.CASH]
     cash = request.forms.get('cash')
     gastos = request.forms.get('gastos')
     deposito = request.forms.get('deposito')

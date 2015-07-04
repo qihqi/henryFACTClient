@@ -1,0 +1,69 @@
+<html>
+<table>
+    <tr>
+        <th>RUC:</th>
+        <td>{{meta.almacen_ruc}}</td>
+    </tr>
+    <tr>
+        <th>Nombre:</th>
+        <td>{{meta.almacen_name}}</td>
+    </tr>
+    <tr>
+        <th>Fecha:</th>
+        <td>{{meta.date.date().isoformat()}}</td>
+    </tr>
+    <tr>
+        <th>Total:</th>
+        <td>{{value_from_cents(meta.total)}}</td>
+    </tr>
+</table>
+
+<style>
+    td,th {
+        padding-left: 50px;
+        border: 1px 1px 1px 1px;
+        text-align: right;
+    }
+</style>
+
+
+</html>
+    <h3>Ventas</h3>
+    <table>
+    <tr>
+        <th>RUC</th>
+        <th>Numero de facturas</th>
+        <th>Subtotal</th>
+        <th>IVA</th>
+        <th>Total</th>
+    </tr>
+    {% for id, detalle in vendidos.items() %}
+        <tr>
+            <td>{{ fix_id(id) }}</td>
+            <td>{{ detalle.count }}</td>
+            <td>{{ value_from_cents(detalle.subtotal)}}</td>
+            <td>{{ value_from_cents(detalle.iva) }}</td>
+            <td>{{ value_from_cents(detalle.total) }}</td>
+        </tr>
+    {% endfor %}
+    </table>
+    <h3>Anulados</h3>
+    <table>
+        <tr>
+            <th>Codigo</th>
+            <th>RUC</th>
+            <th>Subtotal</th>
+            <th>IVA</th>
+            <th>Total</th>
+        </tr>
+        {% for venta in eliminados %}
+        <table>
+            <td>{{venta.codigo}}</td>
+            <td>{{venta.client.codigo}}</td>
+            <td>{{ value_from_cents(venta.subtotal)}}</td>
+            <td>{{ value_from_cents(venta.tax)}}</td>
+            <td>{{ value_from_cents(venta.total)}}</td>
+        </table>
+        {% endfor %}
+    </table>
+</iva>

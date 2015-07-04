@@ -1,23 +1,21 @@
 import datetime
-from decimal import Decimal, ROUND_HALF_DOWN
 from collections import defaultdict
 
 from bottle import request, Bottle, response
 from henry.dao import Status
 from henry.base.schema import NUsuario
-from henry.config import sessionmanager, jinja_env, invapi2, dbcontext, fix_id
-from henry.constants import RUC
+from henry.config import sessionmanager, jinja_env, dbcontext, fix_id, prodapi, invapi
 
 w = Bottle()
 accounting_webapp = w
 
 
 class CustomerSell(object):
-
     def __init__(self):
         self.subtotal = 0
         self.iva = 0
         self.count = 0
+        self.total = 0
 
 
 def get_all_users():
@@ -26,19 +24,14 @@ def get_all_users():
     return all_user
 
 
-def extract_subtotal_from_total(total):
-    return (total / Decimal('1.12')).quantize(Decimal('.01'),
-                                              rounding=ROUND_HALF_DOWN)
-
-
 def group_by_customer(inv):
     result = defaultdict(CustomerSell)
     for i in inv:
-        cliente_id = fix_id(i.cliente_id)
-        subtotal = extract_subtotal_from_total(i.total)
-        vta = i.total - subtotal
-        result[cliente_id].subtotal += subtotal
-        result[cliente_id].iva += vta
+        cliente_id = fix_id(i.client.codigo)
+        disc = i.discount if i.discount else 0
+        result[cliente_id].subtotal += (i.subtotal - disc)
+        result[cliente_id].iva += i.tax
+        result[cliente_id].total += i.total
         result[cliente_id].count += 1
     return result
 
@@ -47,7 +40,8 @@ def group_by_customer(inv):
 @dbcontext
 def get_sells_xml_form():
     temp = jinja_env.get_template('ats_form.html')
-    return temp.render(today=datetime.date.today(), vendedores=get_all_users())
+    stores = filter(lambda x: x.ruc, prodapi.get_stores())
+    return temp.render(stores=stores, title='ATS')
 
 
 class Meta(object):
@@ -60,19 +54,24 @@ def get_sells_xml():
     datestrp = datetime.datetime.strptime
     start_date = datestrp(request.query.get('start_date'), "%Y-%m-%d")
     end_date = datestrp(request.query.get('end_date'), "%Y-%m-%d")
+    form_type =  request.query.get('form_type')
 
-    seller = request.query.get('vendido')
-    sold = invapi2.get_dated_report(
-        start_date, end_date, 1, seller=seller, status=Status.COMITTED)
+    ruc = request.query.get('alm')
+    sold = invapi.search_metadata_by_date_range(
+        start_date, end_date, status=Status.COMITTED, other_filters={'almacen_ruc': ruc})
     grouped = group_by_customer(sold)
-    deleted = invapi2.get_dated_report(
-        start_date, end_date, 1, seller=seller, status=Status.DELETED)
+    deleted = invapi.search_metadata_by_date_range(
+        start_date, end_date, status=Status.DELETED, other_filters={'almacen_ruc': ruc})
 
     meta = Meta()
     meta.date = start_date
-    meta.total = reduce(lambda acc, x: acc + x.subtotal, grouped.values(), 0)
-    meta.ruc = RUC
-    temp = jinja_env.get_template('ats.xml')
-    # response.set_header('Content-disposition', 'attachment')
-    response.set_header('Content-type', 'application/xml')
+    meta.total = reduce(lambda acc, x: acc + x.total, grouped.values(), 0)
+    meta.almacen_ruc = ruc
+    meta.almacen_name = [x.nombre for x in prodapi.get_stores() if x.ruc == ruc][0]
+    temp = jinja_env.get_template('resumen_agrupado.html')
+    if form_type == 'ats':
+        temp = jinja_env.get_template('ats.xml')
+        response.set_header('Content-disposition', 'attachment')
+        response.set_header('Content-type', 'application/xml')
     return temp.render(vendidos=grouped, eliminados=deleted, meta=meta)
+

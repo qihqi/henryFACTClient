@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <iva>
   <TipoIDInformante>R</TipoIDInformante>
-  <IdInformante>{{meta.ruc}}</IdInformante> <!-- RUC -->
-  <razonSocial>QUINAL SA</razonSocial> <!-- nombre de la compania -->
+  <IdInformante>{{meta.almacen_ruc}}</IdInformante> <!-- RUC -->
+  <razonSocial>{{meta.almacen_name}}</razonSocial> <!-- nombre de la compania -->
   <Anio>{{'%04d' % meta.date.year}}</Anio>
   <Mes>{{'%02d' % meta.date.month}}</Mes>
   <numEstabRuc>001</numEstabRuc>
@@ -19,8 +19,8 @@
       <numeroComprobantes>{{ detalle.count }}</numeroComprobantes>
       <baseNoGraIva>0.00</baseNoGraIva>
       <baseImponible>0.00</baseImponible>
-      <baseImpGrav>{{ detalle.subtotal}}</baseImpGrav>
-      <montoIva>{{ detalle.iva }}</montoIva>
+      <baseImpGrav>{{ value_from_cents(detalle.subtotal)}}</baseImpGrav>
+      <montoIva>{{ value_from_cents(detalle.iva) }}</montoIva>
       <valorRetIva>0.00</valorRetIva>
       <valorRetRenta>0.00</valorRetRenta>
     </detalleVentas>
@@ -29,20 +29,20 @@
   <ventasEstablecimiento>
     <ventaEst>
       <codEstab>001</codEstab>
-      <ventasEstab>{{meta.total}}</ventasEstab>
+      <ventasEstab>{{value_from_cents(meta.total)}}</ventasEstab>
     </ventaEst>
   </ventasEstablecimiento>
 
   <anulados>
     {% for venta in eliminados %}
-    <detalleAnulados>
-      <tipoComprobante>01</tipoComprobante>
-      <establecimiento>001</establecimiento>
-      <puntoEmision>001</puntoEmision>
-      <secuencialInicio>{{abs(venta.codigo)}}</secuencialInicio>
-      <secuencialFin>{{venta.codigo}}</secuencialFin>
-      <autorizacion>1111897538</autorizacion>
-    </detalleAnulados>
+        <detalleAnulados>
+          <tipoComprobante>01</tipoComprobante>
+          <establecimiento>001</establecimiento>
+          <puntoEmision>001</puntoEmision>
+          <secuencialInicio>{{abs(venta.codigo)}}</secuencialInicio>
+          <secuencialFin>{{venta.codigo}}</secuencialFin>
+          <autorizacion>1111897538</autorizacion>
+        </detalleAnulados>
     {% endfor %}
   </anulados>
 </iva>
