@@ -38,10 +38,6 @@ import henry.model.Usuario;
 
 import static henry.Helpers.streamToString;
 
-
-/**
- * Created by han on 12/30/13.
- */
 public class FacturaInterfaceRest implements FacturaInterface {
 
     private static final String PROD_URL_PATH = "/api/alm/%d/producto";
@@ -51,24 +47,22 @@ public class FacturaInterfaceRest implements FacturaInterface {
     private static final String PROD_URL = "/api/alm/%d/producto/%s";
     private static final String LOGIN_URL = "/api/authenticate";
 
-    private BasicCookieStore cookieStore;
     private CloseableHttpClient httpClient;
     private String baseUrl;
     private Gson gson;
     @Setter
     private int almacenId;
-    private String almacenName;
-    private static int TIMEOUT_MILLIS = 30000;
     private RequestConfig timeoutConfig;
 
     public FacturaInterfaceRest(String baseUrl) {
+        int TIMEOUT_MILLIS = 30000;
         timeoutConfig = RequestConfig.custom()
             .setConnectionRequestTimeout(TIMEOUT_MILLIS)
             .setConnectTimeout(TIMEOUT_MILLIS)
             .setSocketTimeout(TIMEOUT_MILLIS)
             .build();
 
-        cookieStore = new BasicCookieStore();
+        BasicCookieStore cookieStore = new BasicCookieStore();
         httpClient = HttpClients.custom().setDefaultCookieStore(cookieStore).build();
         this.baseUrl = baseUrl;
         gson = new GsonBuilder()
@@ -177,8 +171,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
                 if (response.getStatusLine().getStatusCode() == 200) {
                     HttpEntity entity = response.getEntity();
                     String result = streamToString(entity.getContent());
-                    int codigo = gson.fromJson(result, Codigo.class).codigo;
-                    return codigo;
+                    return gson.fromJson(result, Codigo.class).codigo;
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -229,7 +222,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
         return factura;
     }
 
-    Documento parseDocumento(JsonObject json) {
+    private Documento parseDocumento(JsonObject json) {
         Documento doc = new Documento();
         JsonObject metadata = json.get("meta").getAsJsonObject();
         JsonElement clientObj = metadata.get("client"); 
@@ -327,9 +320,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
+        } catch (URISyntaxException | UnsupportedEncodingException e) {
             e.printStackTrace();
         }
         return null;
@@ -342,9 +333,9 @@ public class FacturaInterfaceRest implements FacturaInterface {
         try (CloseableHttpResponse response = httpClient.execute(req)) {
             HttpEntity entity = response.getEntity();
             if (response.getStatusLine().getStatusCode() == 200) {
-                String content = streamToString(entity.getContent());
-                return content;
-            }        }
+                return streamToString(entity.getContent());
+            }
+        }
         catch (IOException e) {
         }
         return null;

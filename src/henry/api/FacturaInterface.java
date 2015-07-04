@@ -20,10 +20,10 @@ public interface FacturaInterface {
     Usuario authenticate(String username, String password);
     boolean commitDocument(int docId);
 
-    public static class NotFoundException extends Exception {
+    class NotFoundException extends Exception {
         public NotFoundException(String message) {
             super(message);
         }
     }
-    public static class ServerErrorException extends Exception {}
+    class ServerErrorException extends Exception {}
 }

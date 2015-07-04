@@ -29,7 +29,6 @@ public class ItemContainer extends JPanel
      */
 
     private static final int DEFAULT_IVA = 12;
-    private static final int VIEWABLE_ROW_COUNT = 6;
 
     private int current = 0; // the current selected item
     private ArrayList<ItemPanel> items;
@@ -37,11 +36,6 @@ public class ItemContainer extends JPanel
 
     private JPanel content;
 
-    private JLabel lCodigo;
-    private JLabel lCantidad;
-    private JLabel lNombre;
-    private JLabel lPrecio;
-    private JLabel lSubtotal;
     private JScrollPane scroll;
 
     private JTextField ivaPorciento;
@@ -68,7 +62,7 @@ public class ItemContainer extends JPanel
     }
 
     //-------------------------------------------------------------------------------
-    public ItemContainer(boolean fact, ItemPanelFactory itemFactory) {
+    public ItemContainer(ItemPanelFactory itemFactory) {
         super(new BorderLayout());
         this.itemFactory = itemFactory;
 
@@ -86,24 +80,24 @@ public class ItemContainer extends JPanel
         addItemPanel(firstItem);
     }
 
-    public void initUI() {
+    private void initUI() {
         System.out.println("ItemContainer::initUI");
         JPanel header = new JPanel(new MigLayout("",
                 "90[]10[][][][]",""));
 
-        lCodigo = new JLabel();
+        JLabel lCodigo = new JLabel();
         lCodigo.setText("Codigo");
 
-        lCantidad = new JLabel();
+        JLabel lCantidad = new JLabel();
         lCantidad.setText("Cantidad");
 
-        lNombre = new JLabel();
+        JLabel lNombre = new JLabel();
         lNombre.setText("Nombre del Producto");
 
-        lPrecio = new JLabel();
+        JLabel lPrecio = new JLabel();
         lPrecio.setText("Precio");
 
-        lSubtotal = new JLabel();
+        JLabel lSubtotal = new JLabel();
         lSubtotal.setText("Subtotal");
 
         header.add(lCodigo, "width :100:");
@@ -184,7 +178,7 @@ public class ItemContainer extends JPanel
         vp.scrollRectToVisible(rect);
     }
 
-    public void scrollUp() {
+    private void scrollUp() {
         JViewport vp = scroll.getViewport();
         Rectangle rect = vp.getBounds();
         rect.setLocation((int) rect.getX(),0);
@@ -201,7 +195,7 @@ public class ItemContainer extends JPanel
         getFocus();
     }
 
-    public void getFocus() {
+    private void getFocus() {
         int threshold = items.size() - 1;
         current++;
         System.out.println("current " + current + " thres " + threshold);
@@ -226,10 +220,10 @@ public class ItemContainer extends JPanel
     }
 
     public void setCurrent(ItemPanel item) {
-        current = reverseItem.get(item).intValue();
+        current = reverseItem.get(item);
     }
 
-    public void addItemPanel(Item item) {
+    private void addItemPanel(Item item) {
 
         System.out.println("ItemContainer::addItemPanel " + 
                 (item.getProducto() == null ? "null" : item.getProducto().getCodigo()));

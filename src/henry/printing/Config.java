@@ -3,11 +3,8 @@ package henry.printing;
 import static henry.Helpers.streamToString;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
-import lombok.Setter;
 import lombok.Getter;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.FileInputStream;
 
@@ -130,12 +127,11 @@ public final class Config {
          addto(imp.firma3, imp.disp);
          addto(imp.contenido.pos, imp.disp);
     }
-    public static void addto(double[] a, double[] b) {
+    private static void addto(double[] a, double[] b) {
         a[0] += b[0];
         a[1] += b[1];
     }
     public static void main(String[] args) throws Exception {
-        String content;
         try (InputStream stream = new FileInputStream(args[0])) {
             Config config = Config.getConfigFromJson(streamToString(stream));
             System.out.println(config.getImpression().getTitle()[0]);

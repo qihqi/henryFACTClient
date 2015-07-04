@@ -18,21 +18,20 @@ public abstract class GenericPrinter {
 
     @Setter
     protected Documento documento;
-    protected Config config;
+    Config config;
 
     private SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-    private double lastItemY;
     private static final double[] ZERO = new double[]{0.0, 0.0};
 
-    public GenericPrinter(Config config) {
+    GenericPrinter(Config config) {
         this.config = config;
     }
 
     public abstract boolean printFactura(Documento documento);
-    public abstract void printContent(String content, double x, double y);
+    protected abstract void printContent(String content, double x, double y);
 
 
-    protected void printTitle() {
+    void printTitle() {
         if (!config.isFacturaBlanco()) {//titulos ya estan impresas
             return;
         }
@@ -44,7 +43,7 @@ public abstract class GenericPrinter {
         printContent(value, titlePos[0], titlePos[1]);
     }
 
-    protected void drawElement(double[] pos, double[] delta, String label, String content) {
+    private void drawElement(double[] pos, double[] delta, String label, String content) {
         if (content == null) {
             content = "";
         }
@@ -58,7 +57,7 @@ public abstract class GenericPrinter {
         printContent(content, x, y);
     }
     
-    protected void printClient(Cliente cliente) {
+    void printClient(Cliente cliente) {
         Config.ImpressionConfig impConfig = config.getImpression();
         drawElement(impConfig.getRuc(), impConfig.getRucDelta(),
                     "RUC", cliente.getCodigo());
@@ -79,7 +78,7 @@ public abstract class GenericPrinter {
                     "fecha", format.format(new Date()));
     }
 
-    protected boolean printContent(int page, int lineWidth) {
+    boolean printContent(int page, int lineWidth) {
         int lines = config.getImpression().getLineas();
         // page is the current page number. 
         // if say it is 2 there are 2 printed pages, we should start from the next
@@ -115,7 +114,6 @@ public abstract class GenericPrinter {
                 }
                 x = LEFT_EDGE;
                 y += lineWidth;
-                lastItemY = (float) y;
             }
         }
         return endOfPage;
@@ -143,7 +141,7 @@ public abstract class GenericPrinter {
     
     private static String shorten(String s) {
         String [] words = s.split("[ ]+");
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (String w : words) {
             if (w.length() > 6) {
                 sb.append(w.substring(0, 5));
@@ -156,8 +154,7 @@ public abstract class GenericPrinter {
         return sb.toString();
     }
     
-    protected void printValues() {
-        String [] titles = { "bruto", "neto", "desc", "iva", "total" };
+    void printValues() {
         ImpressionConfig imp = config.getImpression();
         drawElement(imp.getBruto(), ZERO, "Subtotal", displayAsMoney(documento.getSubtotal()));
         drawElement(imp.getNeto(), ZERO, "Valor Neto", displayAsMoney(documento.getTotalNeto()));
@@ -166,7 +163,7 @@ public abstract class GenericPrinter {
         drawElement(imp.getTotal(), ZERO, "Descuento", displayAsMoney(documento.getTotal()));
     }
     
-    protected void printFirma() {
+    void printFirma() {
         if (!config.isFacturaBlanco()) {
             return;
         }

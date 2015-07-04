@@ -30,7 +30,7 @@ public class MinoristaPrinter extends GenericPrinter{
     }
 
     private byte[] getBytesFromMatrix(char[][] data) {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         for (char[] x : data) {
             buffer.append(x).append('\n');
         }

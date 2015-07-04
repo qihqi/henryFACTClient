@@ -1,31 +1,22 @@
 package henry.ui;
 
-import lombok.Getter;
-import lombok.Setter;
 import henry.api.FacturaInterface;
-import henry.api.SearchEngine;
 import henry.model.BaseModel;
 import henry.model.Cliente;
 import henry.model.Observable;
-import net.miginfocom.swing.MigLayout;
-
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.List;
+import net.miginfocom.swing.MigLayout;
 
-public class ClientePanel extends JPanel implements BaseModel.Listener {
+class ClientePanel extends JPanel implements BaseModel.Listener {
 
-	private static final long serialVersionUID = 8993493064487143324L;
     private MessageDisplay messageDisplay;
-    private JButton buscar;
-	private JLabel label;
-	private JTextField codigo;
+    private JTextField codigo;
 	private JTextField nombre;
 	private JCheckBox general;
 
@@ -57,7 +48,7 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
 
 	private void initUI() {
 
-		buscar = new JButton();
+        JButton buscar = new JButton();
 		buscar.setText("Bus");
         buscar.addActionListener(new ActionListener() {
             @Override
@@ -66,7 +57,7 @@ public class ClientePanel extends JPanel implements BaseModel.Listener {
             }
         });
 
-		label = new JLabel();
+        JLabel label = new JLabel();
 		label.setText("Cliente");
 
 		codigo = new JTextField();

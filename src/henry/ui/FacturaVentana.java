@@ -9,7 +9,6 @@ import henry.model.Producto;
 import henry.model.Cliente;
 import henry.api.SearchEngine;
 import henry.printing.GenericPrinter;
-import lombok.Getter;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.ButtonGroup;
@@ -25,9 +24,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.List;
 
-@SuppressWarnings("serial")
+@SuppressWarnings({"serial", "WeakerAccess"})
 public class FacturaVentana extends JFrame {
-    private JPanel panel;
 
 
     private ItemContainer contenido;
@@ -37,38 +35,13 @@ public class FacturaVentana extends JFrame {
     private ClientePanel cliente;
 
     final private FacturaInterface api;
-    Usuario usuario;
+    private Usuario usuario;
 
     private int numero = 0;
     private static final String []
             PAGO_LABEL = {"efectivo", "tarjeta", "cheque", "deposito", "credito", "varios"};
     private String formaPago = "efectivo";
     private GenericPrinter printer;
-
-    private SearchDialog<Producto> prodSearchDialog =
-            new SearchDialog<>(new SearchEngine<Producto>() {
-                @Override
-                public List<Producto> search(String prefijo) {
-                    return api.buscarProducto(prefijo);
-                }
-
-                @Override
-                public String toString() {
-                    return "Producto";
-                }
-            });
-    private SearchDialog<Cliente> clienteSearchDialog =
-            new SearchDialog<>(new SearchEngine<Cliente>() {
-                @Override
-                public List<Cliente> search(String prefijo) {
-                    return api.buscarCliente(prefijo);
-                }
-
-                @Override
-                public String toString() {
-                    return "Cliente";
-                }
-            });
 
     private SimpleDialog dialog = new SimpleDialog();
 
@@ -84,19 +57,41 @@ public class FacturaVentana extends JFrame {
         this.printer = printer;
         this.isFactura = isFactura;
 
+        SearchDialog<Producto> prodSearchDialog = new SearchDialog<>(new SearchEngine<Producto>() {
+            @Override
+            public List<Producto> search(String prefijo) {
+                return api.buscarProducto(prefijo);
+            }
+
+            @Override
+            public String toString() {
+                return "Producto";
+            }
+        });
         ItemPanelFactory itemFactory = new ItemPanelFactory(api, prodSearchDialog);
 
         System.out.println("creating itemcontainer");
-        panel = new JPanel();
+        JPanel panel = new JPanel();
         getContentPane().add(panel);
-        panel.setLayout(new MigLayout("", "[][][][]",""));
+        panel.setLayout(new MigLayout("", "[][][][]", ""));
 
         //mostrador de numero de factura;
         numero = usuario.getLastFactura();
         numeroLabel = new JLabel();
 
         System.out.println("creating itemcontainer");
-        contenido = new ItemContainer(true, itemFactory);
+        contenido = new ItemContainer(itemFactory);
+        SearchDialog<Cliente> clienteSearchDialog = new SearchDialog<>(new SearchEngine<Cliente>() {
+            @Override
+            public List<Cliente> search(String prefijo) {
+                return api.buscarCliente(prefijo);
+            }
+
+            @Override
+            public String toString() {
+                return "Cliente";
+            }
+        });
         cliente = new ClientePanel(this.api, clienteSearchDialog, contenido);
 
         JButton buscarPorCliente = new JButton("");
@@ -137,7 +132,6 @@ public class FacturaVentana extends JFrame {
             if (i == 0) {
                 rad.setSelected(true);
             }
-            final int index = i;
             rad.addActionListener(formaDePagoListener);
 
             buttons.add(rad);
@@ -193,7 +187,7 @@ public class FacturaVentana extends JFrame {
         }
     }
 
-    public void guardarFactura() {
+    private void guardarFactura() {
         Documento doc = contenido.getDocumento();
         doc.setCliente(cliente.getCliente());
         doc.setUser(usuario);
@@ -220,7 +214,7 @@ public class FacturaVentana extends JFrame {
             }
         }
         else {
-            int codigo = api.guardarDocumento(doc, isFactura);
+            int codigo = api.guardarDocumento(doc, false);
             if (codigo > 0) {
                 dialog.setText("El codigo es " + codigo);
                 dialog.setVisible(true);
@@ -277,12 +271,12 @@ public class FacturaVentana extends JFrame {
         return true;
     }
 
-    public void focusPagoField() {
+    private void focusPagoField() {
         pago.requestFocus();
         pago.selectAll();
     }
 
-    public void clear() {
+    private void clear() {
         contenido.clear();
         cliente.clear();
     }
@@ -299,8 +293,7 @@ public class FacturaVentana extends JFrame {
         public void actionPerformed(ActionEvent e) {
             if (e.getSource() instanceof JRadioButton) {
                 JRadioButton button = (JRadioButton) e.getSource();
-                String text = button.getText();
-                formaPago = text;
+                formaPago = button.getText();
             }
         }
     }

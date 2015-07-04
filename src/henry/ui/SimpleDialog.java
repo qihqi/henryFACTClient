@@ -14,7 +14,7 @@ import javax.swing.border.EmptyBorder;
 import java.awt.Font;
 
 @SuppressWarnings("serial")
-public class SimpleDialog extends JDialog {
+class SimpleDialog extends JDialog {
     private final JPanel contentPanel = new JPanel();
     private JTextArea displayText = new JTextArea(3, 15);
 

@@ -1,8 +1,6 @@
 package henry.ui;
 
-import henry.api.FacturaInterface;
 import henry.api.FacturaInterfaceRest;
-import henry.model.Documento;
 import henry.model.Usuario;
 import henry.printing.Config;
 import henry.printing.FacturaPrinter;
@@ -27,14 +25,13 @@ import net.miginfocom.swing.MigLayout;
 import static henry.Helpers.streamToString;
 
 @SuppressWarnings("serial")
-public class LoginPane extends JPanel implements ActionListener{
+class LoginPane extends JPanel implements ActionListener{
 
-    static final String CONFIG_PATH = "config.json";
+    private static final String CONFIG_PATH = "config.json";
     private JLabel message;
     private JTextField user;
     private JPasswordField pass;
-    private JComboBox serverbox;
-    private String configpath;
+    private JComboBox<String> serverbox;
     private Config config;
     /**
      * Create the panel.
@@ -45,14 +42,14 @@ public class LoginPane extends JPanel implements ActionListener{
 
         message = new JLabel();
 
-        this.configpath = configpath == null ? CONFIG_PATH : configpath;
+        String configpath1 = configpath == null ? CONFIG_PATH : configpath;
 
         JLabel userLabel = new JLabel("Usuario: ");
         JLabel passLabel = new JLabel("Clave: ");
 
         JLabel serverLabel = new JLabel("Servidor: ");
-        config = loadConfig(this.configpath);
-        serverbox = new JComboBox(config.getServersOpts());
+        config = loadConfig(configpath1);
+        serverbox = new JComboBox<>(config.getServersOpts());
 
         user = new JTextField();
         pass = new JPasswordField();
@@ -75,11 +72,7 @@ public class LoginPane extends JPanel implements ActionListener{
     private Config loadConfig(String configpath) {
         try (InputStream stream = new FileInputStream(configpath)) {
             return Config.getConfigFromJson(streamToString(stream));
-        }
-        catch (FileNotFoundException exception) {
-            throw new RuntimeException(exception);
-        }
-        catch(IOException exception) {
+        } catch(IOException exception) {
             throw new RuntimeException(exception);
         }
     }

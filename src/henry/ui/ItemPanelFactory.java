@@ -2,12 +2,13 @@ package henry.ui;
 
 import henry.model.Item;
 import henry.api.FacturaInterface;
+import henry.model.Producto;
 
-public class ItemPanelFactory {
+class ItemPanelFactory {
     private FacturaInterface api;
-    private SearchDialog dialog;
+    private SearchDialog<Producto> dialog;
 
-    public ItemPanelFactory(FacturaInterface api, SearchDialog dialog) {
+    public ItemPanelFactory(FacturaInterface api, SearchDialog<Producto> dialog) {
         this.api = api;
         this.dialog = dialog;
     }

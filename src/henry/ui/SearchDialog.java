@@ -1,7 +1,6 @@
 package henry.ui;
 
 import henry.api.SearchEngine;
-import henry.model.BaseModel;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import net.miginfocom.swing.MigLayout;
@@ -24,13 +23,12 @@ import java.awt.event.ActionListener;
 import java.util.List;
 
 @SuppressWarnings("serial")
-public class SearchDialog<T> extends JDialog {
+class SearchDialog<T> extends JDialog {
 
-    private static String NO_ENCONTRADO = "No ha podido encontrar el cliente";
     //TextArea for searching
     private JTextField searchInput;
-    private JList display;
-    private DefaultListModel listContent;
+    private JList<String> display;
+    private DefaultListModel<String> listContent;
 
     private SearchEngine<T> engine;
 
@@ -38,18 +36,19 @@ public class SearchDialog<T> extends JDialog {
     private final JPanel contentPanel = new JPanel();
     private int selectedIndex;
 
-    public class SearchAction implements ActionListener {
+    private class SearchAction implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
             String prefix = e.getActionCommand().trim();
             resultList = engine.search(prefix);
             listContent.clear();
             if (resultList.isEmpty()) {
+                String NO_ENCONTRADO = "No ha podido encontrar el cliente";
                 listContent.addElement(NO_ENCONTRADO);
             }
             else {
                 for (T r : resultList) {
-                    listContent.addElement(r);
+                    listContent.addElement(r.toString());
                 }
             }
         }
@@ -64,7 +63,7 @@ public class SearchDialog<T> extends JDialog {
         initUI();
     }
 
-    public void initUI() {
+    private void initUI() {
         setBounds(100, 100, 502, 255);
 
         getContentPane().setLayout(new BorderLayout());
@@ -81,8 +80,8 @@ public class SearchDialog<T> extends JDialog {
         searchInput.addActionListener(new SearchAction());
         contentPanel.add(searchInput, "wrap, width :400:");
 
-        listContent = new DefaultListModel();
-        display = new JList(listContent);
+        listContent = new DefaultListModel<>();
+        display = new JList<>(listContent);
         display.setVisibleRowCount(10);
         display.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
@@ -118,7 +117,7 @@ public class SearchDialog<T> extends JDialog {
         return resultList.get(selectedIndex);
     }
 
-    public void focus() {
+    void focus() {
         searchInput.requestFocus();
         searchInput.selectAll();
     }

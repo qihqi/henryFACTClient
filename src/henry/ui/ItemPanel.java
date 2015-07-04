@@ -87,7 +87,7 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         public void actionPerformed(ActionEvent e) {
             final String code = codigo.getText();
             System.out.println("Started requesting");
-            Producto prod = null;
+            Producto prod;
             try {
                 prod = api.getProductoPorCodigo(code);
             } catch (FacturaInterface.NotFoundException e1) {
@@ -171,7 +171,7 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         }
     }
 
-    public void initUI() {
+    private void initUI() {
         codigo = new JTextField();
         cantidad = new JTextField();
         nombre = new JTextField();
@@ -209,7 +209,7 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         codigo.requestFocus();
     }
 
-    public void eraseRow() {
+    private void eraseRow() {
         item.getRef().setProducto(null);
         item.getRef().setCantidad(0);
         item.notifyListeners();
@@ -217,7 +217,7 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         clear();
     }
 
-    public void clear() {
+    private void clear() {
         codigo.setText("");
         cantidad.setText("");
         precio.setText("");
