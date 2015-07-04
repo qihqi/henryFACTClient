@@ -37,7 +37,6 @@ public class FacturaVentana extends JFrame {
     private ClientePanel cliente;
 
     final private FacturaInterface api;
-    private int almacenId;
     Usuario usuario;
 
     private int numero = 0;
@@ -77,12 +76,10 @@ public class FacturaVentana extends JFrame {
 
     public FacturaVentana(
             final FacturaInterface api,
-            int almacenId,
             Usuario usuario,
             GenericPrinter printer,
             boolean isFactura) {
         this.api = api;
-        this.almacenId = almacenId;
         this.usuario = usuario;
         this.printer = printer;
         this.isFactura = isFactura;

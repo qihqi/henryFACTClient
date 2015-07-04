@@ -14,6 +14,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.Expose;
+import lombok.Setter;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.config.RequestConfig;
@@ -54,12 +55,13 @@ public class FacturaInterfaceRest implements FacturaInterface {
     private CloseableHttpClient httpClient;
     private String baseUrl;
     private Gson gson;
+    @Setter
     private int almacenId;
     private String almacenName;
     private static int TIMEOUT_MILLIS = 30000;
     private RequestConfig timeoutConfig;
 
-    public FacturaInterfaceRest(String baseUrl, int almacenId, String almacenName) {
+    public FacturaInterfaceRest(String baseUrl) {
         timeoutConfig = RequestConfig.custom()
             .setConnectionRequestTimeout(TIMEOUT_MILLIS)
             .setConnectTimeout(TIMEOUT_MILLIS)
@@ -69,8 +71,6 @@ public class FacturaInterfaceRest implements FacturaInterface {
         cookieStore = new BasicCookieStore();
         httpClient = HttpClients.custom().setDefaultCookieStore(cookieStore).build();
         this.baseUrl = baseUrl;
-        this.almacenId = almacenId;
-        this.almacenName = almacenName;
         gson = new GsonBuilder()
                    .excludeFieldsWithoutExposeAnnotation()
                    .create();
@@ -319,7 +319,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
                 if (status) {
                     Usuario user = new Usuario();
                     user.setNombre(username);
-                    user.setBodega(obj.get("bodega_factura_id").getAsInt());
+                    user.setAlmacenId(obj.get("bodega_factura_id").getAsInt());
                     user.setLastFactura(obj.get("last_factura").getAsInt());
                     return user;
                 }

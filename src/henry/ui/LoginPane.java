@@ -33,10 +33,7 @@ public class LoginPane extends JPanel implements ActionListener{
     private JLabel message;
     private JTextField user;
     private JPasswordField pass;
-    private Runnable nextWindow;
-    private Documento doc;
     private JComboBox serverbox;
-    private JComboBox almacenbox;
     private String configpath;
     private Config config;
     /**
@@ -54,10 +51,8 @@ public class LoginPane extends JPanel implements ActionListener{
         JLabel passLabel = new JLabel("Clave: ");
 
         JLabel serverLabel = new JLabel("Servidor: ");
-        JLabel almacenLabel = new JLabel("Vendido por: ");
         config = loadConfig(this.configpath);
         serverbox = new JComboBox(config.getServersOpts());
-        almacenbox = new JComboBox(config.getStoreOptsLabel());
 
         user = new JTextField();
         pass = new JPasswordField();
@@ -69,9 +64,7 @@ public class LoginPane extends JPanel implements ActionListener{
 
         add(serverLabel);
         add(serverbox, "wrap, width :200:");
-        add(almacenLabel);
-        add(almacenbox, "wrap, width :200:");
-        
+
         JButton login = new JButton("Ingresar");
         add(login);
         add(message);
@@ -94,14 +87,11 @@ public class LoginPane extends JPanel implements ActionListener{
     @Override
     public void actionPerformed(ActionEvent e) {
         //almacenId in server uses index starting from 1
-        int index = almacenbox.getSelectedIndex(); 
-        int almacenId = Integer.parseInt(config.getStoreOpts()[index][1]);
-        String almacenName = config.getStoreOpts()[index][0];
         String serverIp = serverbox.getSelectedItem().toString();
-        FacturaInterface api = new FacturaInterfaceRest(serverIp, almacenId, almacenName);
 
         String username = user.getText();
         String password = new String(pass.getPassword());
+        FacturaInterfaceRest api = new FacturaInterfaceRest(serverIp);
         Usuario usuario = api.authenticate(username, password);
         if (usuario == null) {
             message.setText("Usuario o clave equivocado");
@@ -109,7 +99,7 @@ public class LoginPane extends JPanel implements ActionListener{
             pass.setText("");
             return;
         }
-        System.out.println(almacenbox.getSelectedItem());
+        api.setAlmacenId(usuario.getAlmacenId());
         System.out.println(serverbox.getSelectedItem());
         System.out.println("index " + serverbox.getSelectedIndex());
         GenericPrinter printer;
@@ -122,7 +112,7 @@ public class LoginPane extends JPanel implements ActionListener{
             System.out.println("factura printer");
         }
         FacturaVentana factura = new FacturaVentana(
-                api, almacenId, usuario, printer, config.isFactura());
+                api, usuario, printer, config.isFactura());
         factura.setVisible(true);
         SwingUtilities.getWindowAncestor(this).dispose();
     }
