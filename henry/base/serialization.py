@@ -81,13 +81,9 @@ class SerializableMixin(object):
 
     def merge_from(self, obj):
         for key in self._name:
-            try:
-                setattr(self, key, getattr(obj, key))
-            except AttributeError:
-                try:
-                    setattr(self, key, obj[key])
-                except:
-                    setattr(self, key, None)
+            their = getattr(obj, key, None) or obj.get(key, None) 
+            mine = getattr(self, key)
+            setattr(self, key, their or mine)  # defaults to theirs
         return self
 
     def serialize(self):
