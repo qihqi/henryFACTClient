@@ -196,10 +196,12 @@ class TransType:
     INGRESS = 'INGRESO'
     TRANSFER = 'TRANSFER'
     EXTERNAL = 'EXTERNA'
+    EGRESS = 'EGRESO'
 
     names = (INGRESS,
              TRANSFER,
-             EXTERNAL)
+             EXTERNAL,
+             EGRESS)
 
 
 class TransMetadata(SerializableMixin, DbMixin):
@@ -245,10 +247,7 @@ class Transferencia(MetaItemSet):
     _metadata_cls = TransMetadata
 
     def items_to_transaction(self):
-        reason = 'ingreso: codigo={}'
-        if self.meta.trans_type == TransType.TRANSFER:
-            reason = 'transferencia: codigo = {}'
-        reason = reason.format(self.meta.uid)
+        reason = '{}: codigo={}'.format(self.meta.trans_type, self.meta.uid)
         for item in self.items:
             prod, cant = item.prod, item.cant
             if self.meta.origin:
@@ -259,7 +258,7 @@ class Transferencia(MetaItemSet):
                                   reason, self.meta.timestamp)
 
     def validate(self):
-        if self.meta.trans_type != TransType.EXTERNAL:
+        if self.meta.trans_type not in (TransType.EXTERNAL, TransType.EGRESS):
             if self.meta.dest is None:
                 raise ValueError('dest is none for non external')
         else:

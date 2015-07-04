@@ -477,9 +477,6 @@ def crear_entrega_de_cuenta():
 
     by_payment = split_records(committed, attrgetter('payment_format'))
     cashed = by_payment[PaymentFormat.CASH]
-    for i in cashed:
-        i
-
     sale_by_store = group_by_records(cashed, attrgetter('almacen_name'), attrgetter('total'))
     total_cash = sum(sale_by_store.values())
 
