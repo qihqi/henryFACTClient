@@ -100,8 +100,8 @@ def create_invoice():
     # Get store: if ruc exists get it takes prescendence. Then name, then id.
     # The reason is that id is mysql autoincrement integer and may not be
     # consistent across different servers
-    ruc = getattr(inv.meta, 'almacen_ruc', None)
-    name = getattr(inv.meta, 'almacen_name', None)
+    ruc = getattr(inv.meta, 'almacen_ruc', '$$$')  # using None as default value is buggy. Because there could be store with store.ruc == None
+    name = getattr(inv.meta, 'almacen_name', '$$$')
     alm = (get_store_by('ruc', ruc) or get_store_by('nombre', name) or
            prodapi.get_store_by_id(inv.meta.almacen_id))
 
