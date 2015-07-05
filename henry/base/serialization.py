@@ -81,7 +81,9 @@ class SerializableMixin(object):
 
     def merge_from(self, obj):
         for key in self._name:
-            their = getattr(obj, key, None) or obj.get(key, None) 
+            their = getattr(obj, key, None) 
+            if their is None and hasattr(obj, 'get'):  # merge from dict
+                their = obj.get(key, None) 
             mine = getattr(self, key)
             setattr(self, key, their or mine)  # defaults to theirs
         return self
