@@ -12,7 +12,7 @@ class Timing:
     def __enter__(self):
         self.start = time.time()
         return self
-    
+
     def __exit__(self, *args, **kwargs):
         self.end = time.time()
         print self.name, ': ', self.end - self.start
@@ -26,7 +26,7 @@ class EndToEndTest(unittest.TestCase):
 #        self.url_base = 'http://192.168.0.23/api'
         self.url_base = 'http://localhost:8080/api'
 
-    
+
     def test_end_to_end(self):
         #authenticate
         print 'Today is ', datetime.datetime.now().isoformat()
@@ -40,12 +40,12 @@ class EndToEndTest(unittest.TestCase):
         print response
         number = response['last_factura']
         # search for a product
-        url = self.url_base + '/alm/1/producto' 
+        url = self.url_base + '/alm/1/producto'
         content = None
         with Timing('search producto'):
             r = requests.get(url, params={'prefijo': 'A'})
             content = r.json()
-        
+
         p1 = content[0]
         p2 = content[1]
         p3 = content[2]
@@ -56,7 +56,7 @@ class EndToEndTest(unittest.TestCase):
             clients = requests.get(url, params={'prefijo': 'N'}).json()
             client = clients[0]
 
-        content = { 
+        content = {
             'meta': {
                 'client': client,
                 'total': 123,
@@ -80,11 +80,27 @@ class EndToEndTest(unittest.TestCase):
 
         with Timing('put factura'):
             r = requests.put(self.url_base + '/nota/' + str(codigo), cookies=cookies)
+            self.assertEquals(200, r.status_code)
             print r
-        
+
+        with Timing('Get FACTura'):
+            r = requests.get(nota_url + '/' + str(codigo))
+            fact = r.json()
+            self.assertEquals(codigo, fact['meta']['uid'])
+            self.assertEquals(1, fact['meta']['almacen_id'])
+            print 'got factura ', fact
+
+        with Timing('Delete'):
+            r = requests.delete(nota_url + '/' + str(codigo))
+            self.assertEquals(200, r.status_code)
+            print r
+
+
+
+
         print '================================Test end============================================'
 
-        
+
 
 if __name__ == '__main__':
     unittest.main()
