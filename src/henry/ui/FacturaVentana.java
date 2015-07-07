@@ -180,9 +180,10 @@ public class FacturaVentana extends JFrame {
                 contenido.setMessage("Nota de pedido no encontrado");
                 return;
             }
-            contenido.clear();
-            cliente.clear();
-            cliente.bindCliente(doc.getCliente());
+            if (doc.getCliente() != null) {
+                cliente.clear();
+                cliente.bindCliente(doc.getCliente());
+            }
             contenido.update(doc);
         }
     }
@@ -279,6 +280,8 @@ public class FacturaVentana extends JFrame {
     private void clear() {
         contenido.clear();
         cliente.clear();
+        pago.setText("");
+        pedidoField.setText("");
     }
 
     private class CancelarActionListener implements ActionListener {

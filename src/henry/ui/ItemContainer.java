@@ -4,6 +4,11 @@ import henry.model.BaseModel;
 import henry.model.Documento;
 import henry.model.Item;
 import henry.model.Observable;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Rectangle;
+import java.util.List;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.JLabel;
@@ -11,7 +16,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JViewport;
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -225,7 +229,7 @@ public class ItemContainer extends JPanel
 
     private void addItemPanel(Item item) {
 
-        System.out.println("ItemContainer::addItemPanel " + 
+        System.out.println("ItemContainer::addItemPanel " +
                 (item.getProducto() == null ? "null" : item.getProducto().getCodigo()));
         ItemPanel itemPanel = itemFactory.make(this, item);
         items.add(itemPanel);
@@ -267,11 +271,16 @@ public class ItemContainer extends JPanel
 
     public void update(Documento doc) {
         System.out.println("ItemContainer::update");
-        documento.setRef(doc);
+        Documento old = documento.getRef();
+        List<Item> contentItems = old.getItems();
+        contentItems.remove(contentItems.size() - 1);
+        for (Item i : doc.getItems()) {
+            contentItems.add(i);
+        }
         content.removeAll();
         items.clear();
         reverseItem.clear();
-        for (Item i : doc.getItems()) {
+        for (Item i : contentItems) {
             addItemPanel(i);
         }
         Item next = new Item();

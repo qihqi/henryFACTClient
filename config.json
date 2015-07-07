@@ -1,13 +1,13 @@
 {
     "fontsize": 10,
     "fontfamily": "Courier New",
-    "factura": true,
+    "factura": false,
     "factura_blanco": true,
     "libre": 80,
     "max_cliente": 30,
     "max_desc": 30,
     "impresora_matriz": false,
-    "servidores":["localhost:8080", "192.168.0.23", "192.168.0.22", "192.168.1.105"],
+    "servidores":["192.168.0.22:8080", "192.168.0.23", "192.168.0.22", "localhost:8080"],
     "almacenes":[["QUINAL", "1"], ["BODEGA", "2"], ["CORPESUT", "3"]],
     "impression": {
         "disp": [0, -50],

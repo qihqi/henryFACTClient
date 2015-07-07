@@ -33,6 +33,7 @@ public class Item extends BaseModel {
         if (producto == null) {
             return 0;
         }
+        System.out.println("called " + cantidad + " " + producto.getThreshold());
         if (cantidad >= producto.getThreshold()) {
             int descUnit = producto.getPrecio1() - getProducto().getPrecio2();
             return milesimaPorCentavos(cantidad, descUnit);
