@@ -18,6 +18,9 @@ def get_prod_from_inv(almacen_id, prod_id):
     prod = prodapi.get_producto(prod_id, almacen_id)
     if prod is None:
         response.status = 404
+    use_thousandth = request.query.get('use_thousandth', True)
+    if use_thousandth and prod.threshold:
+        prod.threshold *= 1000
     return json_dumps(prod)
 
 
@@ -57,10 +60,15 @@ def search_prod():
 def search_prod_alm(almacen_id):
     prefijo = request.query.prefijo
     if prefijo:
-        return json_dumps(
-            list(prodapi.search_producto(
-                prefix=prefijo,
-                almacen_id=almacen_id)))
+        result = list(prodapi.search_producto(
+            prefix=prefijo,
+            almacen_id=almacen_id))
+        use_thousandth = request.query.get('use_thousandth', True)
+        if use_thousandth:
+            for x in result:
+                if x.threshold:
+                    x.threshold *= 1000
+        return json_dumps(result)
     response.status = 400
     return None
 
