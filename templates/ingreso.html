@@ -13,7 +13,7 @@
             }
             
         </style>
-        <script src="/static/jquery-1.7.2.js"></script>
+        <script src="/static/jquery.min.js"></script>
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
         <script>
             var current_id = {{ingreso.meta.uid}};
@@ -61,7 +61,7 @@
 
     <body>
         <button onClick="window.print();" > Imprimir </button>
-        <button onClick="window.location='/r';" > Regresar al principio </button>
+        <button onClick="window.location='/app';" > Regresar al principio </button>
         <h3>
             {% if ingreso.meta.trans_type == 'TRANSFER' %}
             Transferencia: {{ingreso.meta.origin}} a {{ingreso.meta.dest}}

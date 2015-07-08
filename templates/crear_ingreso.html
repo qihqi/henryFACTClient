@@ -1,6 +1,7 @@
 <html>
     <head>
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+        <script src="/static/jquery.min.js"></script>
         <script src="/static/prod.js"></script>
         <script type="text/javascript">
             function updateOptions(type) {
@@ -58,7 +59,7 @@
     </head>
     <body>
     <div class="center">
-        <button onClick="window.location='/r';" > Regresar </button>
+        <button onClick="window.location='/app';" > Regresar </button>
         <input id="ingreso_id"/> <button id="cargar_ingreso"> Copiar Ingreso Viejo</button>
         <form id="p" method="post" action="/app/crear_ingreso">
             <p><input type="submit" value="Guardar"/></p>
