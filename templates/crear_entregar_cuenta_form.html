@@ -60,9 +60,9 @@
         <input name="valor" placeholder="Valor a entregar" value="{{turned_cash}}"{%if not display%}readonly{%endif%} /></p>
     {% if existing %}
     <p>Diff: {{ value_from_cents(existing.diff) }} </p>
-    <button id="Revisar">Revisar</button>
+    <input id="Revisar" type="submit" name="submit" value="Revisar" />
     {% else %}
-    <input type="submit" value="Crear" />
+    <input type="submit" name="submit" value="Crear" />
     {% endif %}
 </form>
 

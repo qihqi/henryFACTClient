@@ -500,8 +500,7 @@ def crear_entrega_de_cuenta():
 
 @w.post('/app/crear_entrega_de_cuenta')
 @dbcontext
-def post_crear_entregaa_de_cuenta():
-    del otros_pagos[PaymentFormat.CASH]
+def post_crear_entrega_de_cuenta():
     cash = request.forms.get('cash')
     gastos = request.forms.get('gastos')
     deposito = request.forms.get('deposito')
@@ -514,17 +513,20 @@ def post_crear_entregaa_de_cuenta():
     turned_cash = int(float(turned_cash) * 100)
     date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
 
-    stat = NAccountStat(
-        date=date,
-        total_spend=gastos,
-        turned_cash=turned_cash,
-        deposit=deposito,
-        diff=(cash - gastos - deposito - turned_cash),
-        created_by='user',
-        )
-    sessionmanager.session.add(stat)
-    sessionmanager.session.flush()
-
+    if request.forms.get('submit') == 'Crear':
+        stat = NAccountStat(
+            date=date,
+            total_spend=gastos,
+            turned_cash=turned_cash,
+            deposit=deposito,
+            diff=(cash - gastos - deposito - turned_cash),
+            created_by='user',
+            )
+        sessionmanager.session.add(stat)
+        sessionmanager.session.flush()
+    else:
+        sessionmanager.session.query(NAccountStat).filter_by(date=date).update(
+                {'revised_by':'user'})
     redirect('/app/crear_entrega_de_cuenta?fecha={}'.format(date.isoformat()))
 
 
