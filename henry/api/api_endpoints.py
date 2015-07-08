@@ -18,8 +18,8 @@ def get_prod_from_inv(almacen_id, prod_id):
     prod = prodapi.get_producto(prod_id, almacen_id)
     if prod is None:
         response.status = 404
-    use_thousandth = request.query.get('use_thousandth', True)
-    if use_thousandth and prod.threshold:
+    use_thousandth = request.query.get('use_thousandth', '1')
+    if int(use_thousandth) and prod.threshold:
         prod.threshold *= 1000
     return json_dumps(prod)
 
@@ -63,8 +63,8 @@ def search_prod_alm(almacen_id):
         result = list(prodapi.search_producto(
             prefix=prefijo,
             almacen_id=almacen_id))
-        use_thousandth = request.query.get('use_thousandth', True)
-        if use_thousandth:
+        use_thousandth = request.query.get('use_thousandth', 1)
+        if int(use_thousandth):
             for x in result:
                 if x.threshold:
                     x.threshold *= 1000
@@ -82,16 +82,15 @@ def crear_producto(pid):
     prodapi.update_prod(pid, content)
 
 
-@api.put('/api/alm/<alm_id>/producto/<pid>')
+@api.put('/api/alm/<alm_id:int>/producto/<pid>')
 @dbcontext
 @auth_decorator
 @actionlogged
 def update_price(alm_id, pid):
     content = json_loads(request.body.read())
-    print content
     if not content:
         abort(400)
-    prodapi.update_price(alm_id, pid, content)
+    prodapi.update_or_create_price(alm_id, pid, content)
 
 
 @api.delete('/api/alm/<alm_id>/producto/<pid>')

@@ -192,16 +192,15 @@ class ProductApiDB:
         return None
 
     def get_producto_full(self, prod_id):
+
         items = self.db_session.session.query(
-            *(self._PROD_KEYS + self._PROD_PRICE_KEYS +
+            *(self._PROD_PRICE_KEYS +
               (NStore.almacen_id, NStore.nombre.label('almacen_name'), ))).filter(
-            NProducto.codigo == prod_id).filter(
             NPriceList.prod_id == prod_id).filter(
             NStore.almacen_id == NPriceList.almacen_id)
+
         contents = list(items)
-        if not contents:
-            return None
-        p = Product(codigo=contents[0].codigo, nombre=contents[0].nombre)
+        p = self.get_producto(prod_id)
         p.precios = contents
         return p
 
@@ -277,8 +276,25 @@ class ProductApiDB:
         session.query(NProducto).filter_by(codigo=pid).update(
             content_dict)
 
-    def update_price(self, alm_id, pid, content_dict):
+    def update_or_create_price(self, alm_id, pid, content_dict):
         session = self.db_session.session
-        session.query(NPriceList).filter_by(
+        count = session.query(NPriceList).filter_by(
             prod_id=pid, almacen_id=alm_id).update(
             content_dict)
+        if count == 0:  # did not match any row
+            store = self.get_store_by_id(alm_id)
+            prod, cont = session.query(NProducto, NContenido).filter(
+                NProducto.codigo == NContenido.prod_id).filter(
+                NProducto.codigo == pid, NContenido.bodega_id == store.bodega_id).first()
+            content_dict.update({
+                'almacen_id': alm_id,
+                'prod_id': pid,
+                'nombre': prod.nombre,
+                'upi': cont.id,
+                'multiplicador': 1,
+                'unidad': 'unidad',
+            })
+            newprice = NPriceList(**content_dict)
+            session.add(newprice)
+
+

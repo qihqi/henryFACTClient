@@ -52,14 +52,16 @@
     <h4>Producto: {{prod.codigo}}</h4>
     <ul>
     <li><h4>{{prod.nombre}}</h4></li>
-    {% for x in prod.precios %}
+    {% for s in stores %}
+    {% set precio = prod.precios.get(s.almacen_id) %}
+
     <li>
-        {{x.almacen_name}} <button class="editar" id="editar-{{x.almacen_id}}" alm="{{x.almacen_id}}">Editar</button>
-        <button style="display:none;" class="guardar" id="guardar-{{x.almacen_id}}" alm="{{x.almacen_id}}">Guardar</button>
+    {{s.nombre}} <button class="editar" id="editar-{{s.almacen_id}}" alm="{{s.almacen_id}}" prod="{{s.prod_id}}">Editar</button>
+        <button style="display:none;" class="guardar" id="guardar-{{s.almacen_id}}" alm="{{s.almacen_id}}" prod="{{s.prod_id}}">Guardar</button>
         <ul>
-            <li>Precio1: <input id="p1-{{x.almacen_id}}" disabled value="{{value_from_cents(x.precio1)}}"/></li>
-            <li>Precio2: <input id="p2-{{x.almacen_id}}" disabled value="{{value_from_cents(x.precio2)}}"/></li>
-            <li>Cant Mayorista: <input id="cant_mayorista-{{x.almacen_id}}" disabled value="{{x.threshold}}"/></li>
+            <li>Precio1: <input id="p1-{{s.almacen_id}}" disabled value="{% if precio %}{{value_from_cents(precio.precio1)}} {% endif %}"/></li>
+            <li>Precio2: <input id="p2-{{s.almacen_id}}" disabled value="{% if precio %}{{value_from_cents(precio.precio2)}}{% endif %}"/></li>
+            <li>Cant Mayorista: <input id="cant_mayorista-{{s.almacen_id}}" disabled value="{% if precio %}{{precio.threshold}}{% endif %}"/></li>
         </ul>
     </li>
     {% endfor %}

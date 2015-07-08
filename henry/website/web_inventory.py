@@ -300,8 +300,12 @@ def ver_producto_form():
 @auth_decorator
 def ver_producto(uid):
     prod = prodapi.get_producto_full(uid)
+    price_dict = {}
+    for x in prod.precios:
+        price_dict[x.almacen_id] = x
+    prod.precios = price_dict
     temp = jinja_env.get_template('producto.html')
-    return temp.render(prod=prod)
+    return temp.render(prod=prod, stores=prodapi.get_stores())
 
 
 @w.get('/app/producto')
