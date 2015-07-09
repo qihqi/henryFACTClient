@@ -41,7 +41,9 @@ class Product(SerializableMixin):
              'threshold',
              'cantidad',
              'almacen_id',
-             'bodega_id')
+             'bodega_id',
+             'upi',
+             'multiplicador')
 
     def __init__(self,
                  codigo=None,
@@ -51,7 +53,9 @@ class Product(SerializableMixin):
                  threshold=None,
                  cantidad=None,
                  almacen_id=None,
-                 bodega_id=None):
+                 bodega_id=None,
+                 upi=None,
+                 multiplicador=None):
         self.codigo = codigo
         self.nombre = nombre
         self.almacen_id = almacen_id
@@ -60,6 +64,8 @@ class Product(SerializableMixin):
         self.threshold = threshold
         self.bodega_id = bodega_id
         self.cantidad = cantidad
+        self.upi = upi
+        self.multiplicador = multiplicador
 
 
 # An augmented product is treated to be a collection of
@@ -75,11 +81,12 @@ def get_augmented_prod(prod_id):
 
 
 class Transaction(SerializableMixin):
-    _name = ('bodega_id', 'prod_id', 'delta', 'name', 'ref', 'fecha')
+    _name = ('upi', 'bodega_id', 'prod_id', 'delta', 'name', 'ref', 'fecha')
 
-    def __init__(self, bodega_id=None,
+    def __init__(self, upi=None, bodega_id=None,
                  prod_id=None, delta=None,
                  name=None, ref=None, fecha=None):
+        self.upi = upi
         self.bodega_id = bodega_id
         self.prod_id = prod_id
         self.delta = delta
@@ -105,10 +112,12 @@ class TransactionApi:
 
     def save(self, transaction):
         session = self.db_session.session
-        count = session.query(NContenido).filter_by(
-            bodega_id=transaction.bodega_id, prod_id=transaction.prod_id).update(
-            {NContenido.cant: NContenido.cant + transaction.delta})
-        if not count:  # product does not exist in bodega
+
+        upi = getattr(transaction, 'upi', None)
+        filter_by = ({'bodega_id': transaction.bodega_id, 'prod_id': transaction.prod_id}
+            if upi is None else {'id': upi})
+        cont = session.query(NContenido).filter_by(**filter_by).first()
+        if cont is None:  # product does not exist in bodega
             cont = NContenido(
                 prod_id=transaction.prod_id,
                 bodega_id=transaction.bodega_id,
@@ -124,6 +133,11 @@ class TransactionApi:
                 prod.contenidos.append(cont)
                 session.add(prod)
                 session.flush()
+        else:
+            cont.cant += transaction.delta
+            session.flush()
+        transaction.prod_id = cont.prod_id
+        transaction.bodega_id = cont.bodega_id
         prod = transaction.prod_id
         fecha = transaction.fecha.date().isoformat()
         data = json_dumps(transaction.serialize())
@@ -165,7 +179,9 @@ class ProductApiDB:
         NPriceList.almacen_id,
         NPriceList.precio1,
         NPriceList.precio2,
-        NPriceList.cant_mayorista.label('threshold')
+        NPriceList.cant_mayorista.label('threshold'),
+        NPriceList.upi,
+        NPriceList.multiplicador
     )
     _PROD_CANT_KEYS = (
         NContenido.cant.label('cantidad'),

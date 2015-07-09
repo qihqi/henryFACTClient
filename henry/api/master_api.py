@@ -69,6 +69,12 @@ def fix_inv_by_options(inv, options):
             # treating it as a decimal of 3 decimal places.
             item.cant = Decimal(item.cant) / 1000
 
+        if getattr(item.prod, 'upi', None) is None:
+            newprod = prodapi.get_producto(prod_id=item.prod.codigo,
+                                           almacen_id=inv.meta.almacen_id)
+            item.prod.upi = newprod.upi
+            item.prod.multiplicador = newprod.multiplicador
+
 
     # Get store: if ruc exists get it takes prescendence. Then name, then id.
     # The reason is that id is mysql autoincrement integer and may not be

@@ -173,10 +173,9 @@ class Invoice(MetaItemSet):
         for item in self.items:
             pid = item.prod.codigo
             cant = item.cant
-            if pid[-1] == '+' or pid[-1] == '-':
-                cant = cant * (Decimal(10) if pid[-1] == '+' else Decimal('0.5'))
-                pid = pid[:-1]
-            yield Transaction(self.meta.bodega_id, pid, -cant, item.prod.nombre,
+            if item.prod.multiplicador:
+                cant *= item.prod.multiplicador
+            yield Transaction(item.prod.upi, self.meta.bodega_id, pid, -cant, item.prod.nombre,
                               reason, self.meta.timestamp)
 
     def validate(self):
