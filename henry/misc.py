@@ -67,6 +67,8 @@ def validate_uid_and_ruc(uid):
 
 
 def value_from_cents(cents):
+    if not cents:
+        return '0.00'
     cents = int(cents)
     return '{}.{:02d}'.format(cents // 100, cents % 100)
 
