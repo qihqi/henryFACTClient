@@ -32,7 +32,6 @@ class AuthDecorator:
         def wrapped(*args, **kwargs):
             print request.get_header('Authorization')
             if (self.is_logged_in_by_beaker()
-                    or self.is_logged_in_by_django()
                     or self.is_auth_by_header()):
                 return func(*args, **kwargs)
             else:
@@ -63,14 +62,4 @@ class AuthDecorator:
         session = request.environ['beaker.session']
         if session is not None:
             return 'login_info' in session
-        return False
-
-    def is_logged_in_by_django(self):
-        session_key = request.get_cookie('sessionid', None)
-        if session_key is not None:
-            key = self.db.session.query(
-                NDjangoSession).filter_by(
-                session_key=session_key).first()
-            if key is not None:
-                return True
         return False

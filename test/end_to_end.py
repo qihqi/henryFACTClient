@@ -91,7 +91,7 @@ class EndToEndTest(unittest.TestCase):
             print 'got factura ', fact
 
         with Timing('Delete'):
-            r = requests.delete(nota_url + '/' + str(codigo))
+            r = requests.delete(nota_url + '/' + str(codigo), cookies=cookies)
             self.assertEquals(200, r.status_code)
             print r
 
