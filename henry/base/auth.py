@@ -17,10 +17,18 @@ def authenticate(password, userinfo):
 
 def create_user_dict(userinfo):
     return {
+        'username': userinfo.username,
         'status': True,
         'last_factura': userinfo.last_factura,
         'bodega_factura_id': userinfo.bodega_factura_id,
     }
+
+
+def get_user(r):
+    session = r.environ['beaker.session']
+    if session is not None:
+        return session.get('login_info', None)
+    return None
 
 
 class AuthDecorator:
@@ -59,7 +67,4 @@ class AuthDecorator:
         return False
 
     def is_logged_in_by_beaker(self):
-        session = request.environ['beaker.session']
-        if session is not None:
-            return 'login_info' in session
-        return False
+        return get_user(request) is not None

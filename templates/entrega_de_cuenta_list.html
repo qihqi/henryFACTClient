@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <style>
+        td,th {
+        padding-left: 50px;
+        border: 1px 1px 1px 1px;
+        text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <form action="/app/entrega_de_cuenta_list" method="get">
+        Start:
+        <input name="start" value="{{start.isoformat()}}" />
+        End:
+        <input name="end" value="{{end.isoformat()}}" />
+        <input type="submit" value="Buscar" />
+    </form>
+    <table>
+        <tr>
+            <th>Fecha</th>
+            <th>Creado</th>
+            <th>Revisado</th>
+            <th>Gastos</th>
+            <th>Entregados</th>
+            <th>Deposito</th>
+            <th>Diferencia</th>
+        </tr>
+        {% for a in accts %}
+        <tr>
+            <td>{{a.date.isoformat()}}</td>
+            <td>{{a.created_by }}</td>
+            <td>{{a.revised_by}}</td>
+            <td>{{value_from_cents(a.total_spend)}}</td>
+            <td>{{value_from_cents(a.turned_cash)}}</td>
+            <td>{{value_from_cents(a.deposit)}}</td>
+            <td>{{value_from_cents(a.diff)}}</td>
+            <td><a href="/app/crear_entrega_de_cuenta?fecha={{a.date.isoformat()}}">Ver</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

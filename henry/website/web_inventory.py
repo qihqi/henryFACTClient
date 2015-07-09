@@ -16,6 +16,7 @@ from henry.base.schema import NUsuario, NNota, NCliente, NProducto, NAccountStat
 from henry.dao.exceptions import ItemAlreadyExists
 from henry.base.serialization import json_loads
 from henry.reports import get_notas_with_clients, split_records, group_by_records
+from henry.base.auth import get_user
 
 w = Bottle()
 web_inventory_webapp = w
@@ -463,6 +464,8 @@ def vendidos_por_categoria():
 
 
 @w.get('/app/entregar_cuenta_form')
+@dbcontext
+@auth_decorator
 def entrega_de_cuenta():
     temp = jinja_env.get_template('entregar_cuenta_form.html')
     return temp.render()
@@ -470,6 +473,7 @@ def entrega_de_cuenta():
 
 @w.get('/app/crear_entrega_de_cuenta')
 @dbcontext
+@auth_decorator
 def crear_entrega_de_cuenta():
     date = request.query.get('fecha')
     date = datetime.datetime.strptime(date, '%Y-%m-%d')
@@ -500,6 +504,7 @@ def crear_entrega_de_cuenta():
 
 @w.post('/app/crear_entrega_de_cuenta')
 @dbcontext
+@auth_decorator
 def post_crear_entrega_de_cuenta():
     cash = request.forms.get('cash')
     gastos = request.forms.get('gastos')
@@ -513,6 +518,7 @@ def post_crear_entrega_de_cuenta():
     turned_cash = int(float(turned_cash) * 100)
     date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
 
+    userid = get_user(request)['username']
     if request.forms.get('submit') == 'Crear':
         stat = NAccountStat(
             date=date,
@@ -520,15 +526,31 @@ def post_crear_entrega_de_cuenta():
             turned_cash=turned_cash,
             deposit=deposito,
             diff=(cash - gastos - deposito - turned_cash),
-            created_by='user',
+            created_by=userid
             )
         sessionmanager.session.add(stat)
         sessionmanager.session.flush()
     else:
         sessionmanager.session.query(NAccountStat).filter_by(date=date).update(
-                {'revised_by':'user'})
+                {'revised_by': userid})
     redirect('/app/crear_entrega_de_cuenta?fecha={}'.format(date.isoformat()))
 
+
+@w.get('/app/entrega_de_cuenta_list')
+@dbcontext
+@auth_decorator
+def ver_entrega_de_cuenta_list():
+    end = datetime.date.today()
+    start = datetime.date.today() - datetime.timedelta(days=7)
+    if request.query.get('start', None):
+        start = datestrp(request.query.start, '%Y-%m-%d').date()
+    if request.query.get('end', None):
+        end = datestrp(request.query.end, '%Y-%m-%d').date()
+
+    accts = sessionmanager.session.query(NAccountStat).filter(
+        NAccountStat.date >= start, NAccountStat.date <= end)
+    temp = jinja_env.get_template('entrega_de_cuenta_list.html')
+    return temp.render(accts=accts, start=start, end=end)
 
 from .advanced import w as aw
 w.merge(aw)
