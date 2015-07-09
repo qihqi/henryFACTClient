@@ -41,27 +41,16 @@ class FileService:
                 f.flush()
         return fullpath
 
-    def get_file_lines(self, filenames, condition):
-        #        result = []
-        #        def worker(filename, dest):
-        #            with open(filename) as f:
-        #                for line in f.readlines():
-        #                    if condition(line):
-        #                        dest.append(line)
-        threads = []
+    def get_file_lines(self, filenames, condition=None):
+        if condition is None:
+            condition = lambda x: True
         for fname in filenames:
             fullpath = self.make_fullpath(fname)
             if os.path.exists(fullpath):
-                # t = threading.Thread(target=worker, args=(fullpath, result))
-                # threads.append(t)
-                # t.start()
                 with open(fullpath) as f:
                     for line in f.readlines():
                         if condition(line):
                             yield line
-
-                            # map(threading.Thread.join, threads)
-                            # return result
 
 
 class LockClass:

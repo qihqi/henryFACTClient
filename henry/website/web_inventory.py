@@ -12,7 +12,7 @@ from henry.config import (dbcontext, auth_decorator, sessionmanager, clientapi,
                           BODEGAS_EXTERNAS, transactionapi, pedidoapi)
 from henry.dao import Item, TransType, TransMetadata, Transferencia, Product, Status, InvMetadata, Client, Invoice, PaymentFormat
 from henry.dao.productos import Bodega
-from henry.base.schema import NUsuario, NNota, NCliente, NProducto, NAccountStat, NCategory
+from henry.base.schema import NUsuario, NNota, NCliente, NProducto, NAccountStat, NCategory, NContenido, NBodega
 from henry.dao.exceptions import ItemAlreadyExists
 from henry.base.serialization import json_loads
 from henry.reports import get_notas_with_clients, split_records, group_by_records
@@ -551,6 +551,44 @@ def ver_entrega_de_cuenta_list():
         NAccountStat.date >= start, NAccountStat.date <= end)
     temp = jinja_env.get_template('entrega_de_cuenta_list.html')
     return temp.render(accts=accts, start=start, end=end)
+
+
+@w.get('/app/ver_transacciones')
+@dbcontext
+@auth_decorator
+def ver_transacciones():
+    prod_id = request.query.prod_id
+    end = datetime.date.today()
+    start = datetime.date.today() - datetime.timedelta(days=7)
+    bodega_id = request.query.bodega_id
+    if request.query.get('start', None):
+        start = datestrp(request.query.start, '%Y-%m-%d').date()
+    if request.query.get('end', None):
+        end = datestrp(request.query.end, '%Y-%m-%d').date()
+    items = sorted(transactionapi.get_transactions(prod_id, start, end),
+                   key=lambda x: x.fecha, reverse=True)
+    counts = {}
+    count_expr = sessionmanager.session.query(NContenido).filter_by(prod_id=prod_id)
+    if bodega_id is not None:
+        bodega_id = int(bodega_id)
+        if bodega_id == -1:
+            bodega_id = None
+
+    for x in count_expr:
+        counts[x.bodega_id] = x.cant
+    if bodega_id:
+        items = filter(lambda i: i.bodega_id == bodega_id, items)
+    for i in items:
+        i.bodega_name = prodapi.get_bodega_by_id(i.bodega_id).nombre
+        i.count = counts[i.bodega_id]
+        counts[i.bodega_id] += i.delta
+
+    bodegas = prodapi.get_bodegas()
+    bodegas.append(NBodega(id=-1, nombre='Todas'))
+    temp = jinja_env.get_template('ver_transacciones.html')
+    return temp.render(items=items, start=start, end=end,
+                       prod_id=prod_id, bodegas=bodegas, bodega_id=bodega_id)
+
 
 from .advanced import w as aw
 w.merge(aw)

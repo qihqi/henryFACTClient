@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <style>
+        .red {
+            background-color: green;
+        }
+        td,th {
+            padding-left: 50px;
+            border: 1px 1px 1px 1px;
+            text-align: right;
+        }
+    </style>
+
+</head>
+<body>
+    <form action="/app/ver_transacciones" method="get">
+        Start:
+        <input name="start" value="{{start.isoformat()}}" />
+        End:
+        <input name="end" value="{{end.isoformat()}}" />
+        Codigo:
+        <input name="prod_id" value="{{prod_id}}" />
+        Bodega:
+        <select name="bodega_id" value="{{prod_id}}">
+            {% for b in bodegas %}
+            <option value="{{b.id}}" {% if b.id == bodega_id %} selected {% endif %}>
+                {{b.nombre}}
+            </option>
+            {% endfor %}
+        </select>
+        <input type="submit" value="Buscar" />
+    </form>
+    <table>
+        <tr>
+            <th>Fecha</th>
+            <th>Bodega</th>
+            <th>Codigo</th>
+            <th>Referencia</th>
+            <th>Ingreso</th>
+            <th>Egreso</th>
+            <th>Saldo</th>
+        </tr>
+        {% for i in items %}
+        <tr {% if i.delta > 0 %}class="green"{%endif%}>
+            <td>{{ i.fecha }}</td>
+            <td>{{ i.bodega_name }}</td>
+            <td>{{ i.prod_id}}</td>
+            <td>{{ i.ref}}</td>
+            <td>{% if i.delta > 0 %}{{ i.delta }} {% endif %}</td>
+            <td>{% if i.delta <= 0 %}{{ i.delta }} {% endif %}</td>
+            <td>{{ i.count }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+</body>
+</html>

@@ -1,5 +1,6 @@
 import os
 import datetime
+from decimal import Decimal
 from sqlalchemy.exc import IntegrityError
 
 from henry.base.schema import (NProducto, NContenido, NStore, NCategory,
@@ -100,6 +101,12 @@ class Transaction(SerializableMixin):
         self.delta = -self.delta
         return self
 
+    @classmethod
+    def deserialize(cls, dict_input):
+        result = super(cls, Transaction).deserialize(dict_input)
+        result.delta = Decimal(result.delta)
+        return result
+
 
 class TransactionApi:
     def __init__(self, db_session, fileservice):
@@ -155,10 +162,9 @@ class TransactionApi:
         all_names = filter(lambda x: x <= date_end.isoformat() and x >= date_start.isoformat(), os.listdir(dirname))
         if not all_names:
             return []
-        all_names = [os.path.join(dirname, x) for x in all_names]
-        all_lines = self.fileservice.get_file_lines(
-            all_names,
-            lambda x: 'factura' in x)
+        all_names = [os.path.join(prod_id, x) for x in all_names]
+        print all_names
+        all_lines = list(self.fileservice.get_file_lines(all_names))
         return all_lines
 
     def get_transactions(self, prod_id, date_start, date_end):
