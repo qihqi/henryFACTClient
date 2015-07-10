@@ -94,7 +94,9 @@ class InvMetadata(SerializableMixin, DbMixin):
         'almacen_id': 'almacen_id',
         'almacen_name': 'almacen_name',
         'almacen_ruc': 'almacen_ruc',
-        'payment_format': 'payment_format'}
+        'payment_format': 'payment_format',
+        'retension': 'retension',
+    }
 
     _name = tuple(_db_attr.keys()) + ('client',)
 
@@ -118,7 +120,8 @@ class InvMetadata(SerializableMixin, DbMixin):
             payment_format=None,
             almacen_id=None,
             almacen_name=None,
-            almacen_ruc=None):
+            almacen_ruc=None,
+            retension=None):
         self.uid = uid
         self.codigo = codigo
         self.client = client
@@ -138,6 +141,7 @@ class InvMetadata(SerializableMixin, DbMixin):
         self.paid = paid
         self.payment_format = payment_format
         self.paid_amount = paid_amount
+        self.retension = retension
 
     @classmethod
     def deserialize(cls, the_dict):

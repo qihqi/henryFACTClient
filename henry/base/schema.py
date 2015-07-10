@@ -189,9 +189,10 @@ class NNota(Base):
     paid_amount = Column(Integer)
     payment_format = Column(String(20))
 
-    subtotal = Column(Integer)
-    total = Column(Integer)
+    subtotal = Column(Integer)  # sum of items
+    total = Column(Integer)  # amount of money received total = subtotal - discount + iva - retension
     tax = Column(Integer)
+    retension = Column(Integer)
     discount = Column(Integer)
     tax_percent = Column(Integer)
     discount_percent = Column(Integer)
