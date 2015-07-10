@@ -1,0 +1,83 @@
+<html>
+<head>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.guardar').click(function() {
+            var num = $(this).attr('num');
+            var codigo = $(this).attr('codigo');
+            var alm = $(this).attr('alm');
+            var url = '/api/alm/' + alm + '/producto/' + encodeURIComponent(codigo);
+
+            var precio1 = $('#' + num + '-precio1');
+            var precio2 = $('#' + num + '-precio2');
+            var nombre = $('#' + num + '-nombre');
+            var cant_mayorista = $('#' + num + '-threshold');
+
+            var data = {
+                cant_mayorista: cant_mayorista.val(),
+                precio1: precio1.val() * 100,
+                precio2: precio2.val() * 100,
+                nombre: nombre.val(),
+            };
+            data = JSON.stringify(data);
+            $.ajax({
+                url: url,
+                type: 'PUT',
+                data: data,
+                success: function(result) {
+                    alert('Precio guardado');
+                },
+                failure: function(error) {
+                    alert(error);
+                }
+            });
+        });
+    });
+</script>
+<style>
+    .small {
+        width: 80px;
+    }
+    .big{
+        width: 250px;
+    }
+</style>
+</head>
+<body>
+<form action="/app/ver_lista_precio" method="get">
+    Nombre:
+    <input name="prefix" value="{{ prefix }}"/>
+    <select name="almacen_id">
+        {% for s in stores %}
+            <option value="{{s.almacen_id}}">{{s.nombre}}</option>
+        {% endfor %}
+    </select>
+    <input type="submit" value="Buscar" />
+</form>
+<div>
+    <h3>Precios de {{ almacen_name }}</h3>
+    <table>
+        <tr>
+            <th>Codigo</th>
+            <th>Nombre a mostrar</th>
+            <th>Precio 1</th>
+            <th>Precio 2</th>
+            <th>Cant Mayorista</th>
+            <th></th>
+        </tr>
+        {% for p in prods %}
+        <tr id="{{p.codigo}}">
+            <td><input class="small" id="{{loop.index}}-codigo" value="{{p.codigo}}" disabled/></td>
+            <td><input class="big" id="{{loop.index}}-nombre" value="{{p.nombre}}" /></td>
+            <td><input class="small" id="{{loop.index}}-precio1" value="{{value_from_cents(p.precio1)}}" /></td>
+            <td><input class="small" id="{{loop.index}}-precio2" value="{{value_from_cents(p.precio2)}}" /></td>
+            <td><input class="small" id="{{loop.index}}-threshold" value="{{p.threshold}}" /></td>
+            <td><button num="{{loop.index}}" alm="{{p.almacen_id}}" codigo="{{p.codigo}}" class="guardar">Guardar</button></td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+</body>
+</html>
+

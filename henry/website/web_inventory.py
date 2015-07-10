@@ -149,6 +149,20 @@ def create_prod_form(message=''):
     return temp.render(almacenes=stores, categorias=categorias, message=message)
 
 
+@w.get('/app/ver_lista_precio')
+@dbcontext
+@auth_decorator
+def ver_lista_precio():
+    almacen_id = int(request.query.get('almacen_id', 1))
+    prefix = request.query.get('prefix', None)
+    if prefix:
+        all = prodapi.search_producto(prefix=prefix, almacen_id=almacen_id)
+    else:
+        all = []
+    temp = jinja_env.get_template('ver_lista_precio.html')
+    return temp.render(prods=all, stores=prodapi.get_stores(),
+                       prefix=prefix, almacen_name=prodapi.get_store_by_id(almacen_id).nombre)
+
 def convert_to_cent(dec):
     if not isinstance(dec, Decimal):
         dec = Decimal(dec)
