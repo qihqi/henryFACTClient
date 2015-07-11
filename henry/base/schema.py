@@ -38,6 +38,7 @@ class NContenido(Base):
     precio2 = Column(Numeric(20, 2))
     cant_mayorista = Column(Integer)
     pricelist = relationship('NPriceList', backref=backref('cantidad'))
+    inactivo = Column(Boolean)
 
 
 class NVenta(Base):

@@ -226,6 +226,16 @@ class ProductApiDB:
         p.precios = contents
         return p
 
+    def search_prod_cant(self, prefix, bodega_id):
+        session = self.db_session.session
+        query = session.query(*(self._PROD_KEYS + self._PROD_CANT_KEYS)).filter(
+            NProducto.nombre.startswith(prefix)).filter(
+            NContenido.prod_id == NProducto.codigo).filter(
+            NContenido.bodega_id == bodega_id).filter(
+            NContenido.inactivo != True)
+        for r in query:
+            yield Product().merge_from(r)
+
     def search_producto(self, prefix, almacen_id=None):
         session = self.db_session.session
         query = session.query(*self._PROD_KEYS).filter(

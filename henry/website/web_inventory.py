@@ -603,6 +603,20 @@ def ver_transacciones():
     return temp.render(items=items, start=start, end=end,
                        prod_id=prod_id, bodegas=bodegas, bodega_id=bodega_id)
 
+@w.get('/app/ver_cantidad')
+@dbcontext
+@auth_decorator
+def ver_cantidades():
+    bodega_id = int(request.query.get('bodega_id', 1))
+    prefix = request.query.get('prefix', None)
+    if prefix:
+        all_prod = prodapi.search_prod_cant(prefix, bodega_id)
+    else:
+        all_prod = []
+    temp = jinja_env.get_template('ver_cantidad.html')
+    return temp.render(prods=all_prod, bodegas=prodapi.get_bodegas(),
+                       prefix=prefix, bodega_name=prodapi.get_bodega_by_id(bodega_id).nombre)
+
 
 from .advanced import w as aw
 w.merge(aw)

@@ -1,0 +1,43 @@
+<html>
+<head>
+<style>
+    .small {
+        width: 80px;
+    }
+    .big{
+        width: 250px;
+    }
+</style>
+</head>
+<body>
+<form action="/app/ver_cantidad" method="get">
+    Nombre:
+    <input name="prefix" value="{{ prefix }}"/>
+    <select name="bodega_id">
+        {% for s in bodegas%}
+            <option value="{{s.id}}">{{s.nombre}}</option>
+        {% endfor %}
+    </select>
+    <input type="submit" value="Buscar" />
+</form>
+<div>
+    <h3>Cantidad de {{ bodega_name }}</h3>
+    <table>
+        <tr>
+            <th>Codigo</th>
+            <th>Nombre a mostrar</th>
+            <th>Cantidad </th>
+            <th></th>
+        </tr>
+        {% for p in prods %}
+        <tr id="{{p.codigo}}">
+            <td>{{p.codigo}}</td>
+            <td>{{p.nombre}}</td>
+            <td>{{ p.cantidad }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+</body>
+</html>
+
