@@ -251,3 +251,22 @@ class NAccountStat(Base):
     diff = Column(Integer)
     created_by = Column(String(20))
     revised_by = Column(String(20))
+
+
+class NInventoryRevision(Base):
+    __tablename__ = 'revisiones_de_inventario'
+    uid = Column(Integer, primary_key=True, autoincrement=True)  
+    bodega_id = Column(Integer)
+    timestamp = Column(DateTime, index=True)
+    created_by = Column(String(20))
+    items = relationship('NInventoryRevisionItems', backref=backref('revision'))
+
+
+class NInventoryRevisionItems(Base):
+    __tablename__ = 'items_de_revisiones'
+    uid = Column(Integer, primary_key=True, autoincrement=True)
+    revision_id = Column(Integer, ForeignKey(InventoryRevision.id))
+    prod_id = Column(String(20), index=True)
+    inv_cant = Column(Numeric(20, 3))
+    real_cant = Column(Numeric(20, 3))
+

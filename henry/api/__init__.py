@@ -1,11 +1,10 @@
 from .api_endpoints import api
-from .master_api import napi
-from .slave_api import api as slave_api
-from .slave_api import start_server, start_worker
 import bottle
 
 
 def get_slave():
+    from .slave_api import api as slave_api
+    from .slave_api import start_server, start_worker
     a = bottle.Bottle()
     a.merge(api)
     a.merge(slave_api)
@@ -15,6 +14,7 @@ def get_slave():
 
 
 def get_master():
+    from .master_api import napi
     a = bottle.Bottle()
     a.merge(api)
     a.merge(napi)
