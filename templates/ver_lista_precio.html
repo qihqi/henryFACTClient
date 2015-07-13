@@ -45,14 +45,11 @@
 </style>
 </head>
 <body>
+{% from "macros.html" import select_almacen %}
 <form action="/app/ver_lista_precio" method="get">
     Nombre:
     <input name="prefix" value="{{ prefix }}"/>
-    <select name="almacen_id">
-        {% for s in stores %}
-            <option value="{{s.almacen_id}}">{{s.nombre}}</option>
-        {% endfor %}
-    </select>
+    {{ select_almacen(stores) }}
     <input type="submit" value="Buscar" />
 </form>
 <div>

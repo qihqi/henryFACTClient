@@ -16,21 +16,14 @@
 
 </head>
 <body>
+    {% from "macros.html" import start_end_date, select_bodega %}
     <form action="/app/ver_transacciones" method="get">
-        Start:
-        <input name="start" value="{{start.isoformat()}}" />
-        End:
-        <input name="end" value="{{end.isoformat()}}" />
+        {% from "macros.html" import start_end_date_oneline %}
+        {{ start_end_date_oneline() }}
         Codigo:
         <input name="prod_id" value="{{prod_id}}" />
         Bodega:
-        <select name="bodega_id" value="{{prod_id}}">
-            {% for b in bodegas %}
-            <option value="{{b.id}}" {% if b.id == bodega_id %} selected {% endif %}>
-                {{b.nombre}}
-            </option>
-            {% endfor %}
-        </select>
+        {{ select_bodega(bodegas) }}
         <input type="submit" value="Buscar" />
     </form>
     <table>

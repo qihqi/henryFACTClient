@@ -72,27 +72,15 @@
             <br/>
                 <div id="desde_bodega" class="type_select">
                     <label>Desde bodega:</label>
-                    <select name="origin">
-                    {% for i in bodegas %}
-                    <option value="{{i.id}}">{{i.nombre}}</option> 
-                    {% endfor %}
-                    </select>
+                    {{ selector(bodegas, 'origin', 'id', 'nombre') }}
                 </div>
                 <div id="hasta_bodega" class="type_select" style="display:none;">
                 <label>Hasta bodega:</label>
-                <select name="dest">
-                    {% for i in bodegas %}
-                    <option value="{{i.id}}">{{i.nombre}}</option> 
-                    {% endfor %}
-                </select>
+                {{ selector(bodegas, 'dest', 'id', 'nombre') }}
                 </div>
                 <div id="hasta_externa" class="type_select" style="display:none;">
                     <label>Hasta bodega externa:</label>
-                    <select name="externa">
-                        {% for i in externas%}
-                        <option value="{{i.id}}">{{i.nombre}}</option>
-                        {% endfor %}
-                    </select>
+                    {{ selector(externas, 'externa', 'id', 'nombre') }}
                 </div>
                 <table id="insert" cellspacing="10px">
                     <tr>

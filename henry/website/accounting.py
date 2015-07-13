@@ -7,6 +7,7 @@ from henry.dao import Status
 from henry.reports import split_records
 from henry.base.schema import NUsuario
 from henry.config import sessionmanager, jinja_env, dbcontext, fix_id, prodapi, invapi
+from .common import parse_start_end_date
 
 w = Bottle()
 accounting_webapp = w
@@ -53,10 +54,8 @@ class Meta(object):
 @w.get('/app/accounting.xml')
 @dbcontext
 def get_sells_xml():
-    datestrp = datetime.datetime.strptime
-    start_date = datestrp(request.query.get('start_date'), "%Y-%m-%d")
-    end_date = datestrp(request.query.get('end_date'), "%Y-%m-%d")
-    form_type =  request.query.get('form_type')
+    start_date, end_date = parse_start_end_date(request.query)
+    form_type = request.query.get('form_type')
 
     ruc = request.query.get('alm')
     invs = invapi.search_metadata_by_date_range(

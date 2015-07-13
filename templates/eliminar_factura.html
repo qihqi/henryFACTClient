@@ -23,6 +23,7 @@
 {%endblock%}
 
 {%block content%}
+{% from "macros.html" import select_almacen %}
 <form class="baseform" action="/app/eliminar_factura" method="post">
     <h5>{% if message %} {{ message }} {% endif %}</h5>
     <h4>Eliminar Factura</h4>
@@ -32,11 +33,7 @@
                 <label for="almacen">Almacen:</label>
             </th>
             <td>
-                <select name="almacen" id="almancen">
-                    {% for x in almacenes %}
-                    <option value="{{x.almacen_id}}">{{x.nombre}}</option>
-                    {% endfor %}
-                </select>
+                {{ select_almacen(almacenes) }}
             </td>
         </tr>
         <tr>

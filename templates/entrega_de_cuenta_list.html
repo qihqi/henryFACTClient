@@ -12,11 +12,9 @@
     </style>
 </head>
 <body>
+    {% from "macros.html" import start_end_date %}
     <form action="/app/entrega_de_cuenta_list" method="get">
-        Start:
-        <input name="start" value="{{start.isoformat()}}" />
-        End:
-        <input name="end" value="{{end.isoformat()}}" />
+        {{ start_end_date() }}
         <input type="submit" value="Buscar" />
     </form>
     <table>

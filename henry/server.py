@@ -5,10 +5,9 @@ from bottle import run, static_file, Bottle
 
 from henry.config import BEAKER_SESSION_OPTS
 from henry.constants import INVOICE_MODE
-from henry.website.web_inventory import web_inventory_webapp
-from henry.website.accounting import accounting_webapp
+from henry.website import webmain
 
-app = Bottle()
+app = webmain
 
 
 @app.get('/static/<rest:path>')
@@ -16,8 +15,6 @@ def static(rest):
     return static_file(rest, root='./static/')
 
 
-app.merge(web_inventory_webapp)
-app.merge(accounting_webapp)
 
 
 def main():

@@ -1,0 +1,32 @@
+{% macro start_end_date(start_name='start', end_name='end') %}
+<p>Desde: <input name="{{start_name}}" value="{{today().isoformat()}}" /></p>
+<p>Hasta: <input name="{{end_name}}" value="{{today().isoformat()}}" /></p>
+{% endmacro %}
+{% macro start_end_date_oneline(start_name='start', end_name='end') %}
+<p>Desde: <input name="{{start_name}}" value="{{today().isoformat()}}" />
+Hasta: <input name="{{end_name}}" value="{{today().isoformat()}}" /></p>
+{% endmacro %}
+
+{% macro selector(contents, name, key, value)%}
+<select name="{{ name }}">
+    {% for s in contents%}
+    <option value="{{s[key]}}">{{s[value]}}</option>
+    {% endfor %}
+</select>
+{% endmacro %}
+
+{% macro select_bodega(bodegas)%}
+{{ selector(bodegas, 'bodega_id', 'id', 'nombre') }}
+{% endmacro %}
+
+
+{% macro select_almacen(stores)%}
+{{ selector(stores, 'almacen_id', 'almacen_id', 'nombre') }}
+{% endmacro %}
+
+{% macro select_cat(categoria) %}
+{{ selector(categoria, 'categoria', 'id', 'nombre') }}
+{% endmacro %}
+
+
+
