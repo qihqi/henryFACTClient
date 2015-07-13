@@ -63,6 +63,7 @@
         <input id="ingreso_id"/> <button id="cargar_ingreso"> Copiar Ingreso Viejo</button>
         <form id="p" method="post" action="/app/crear_ingreso">
             <p><input type="submit" value="Guardar"/></p>
+            <p>Fecha: <input name="fecha" value="{{today().isoformat()}}"/></p>
             <select id="tipo" name="trans_type">
                 {% for o in types %}
                 <option value="{{o}}">{{o}}</option>

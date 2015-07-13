@@ -96,6 +96,11 @@ def transmetadata_from_form(form):
     meta = TransMetadata()
     meta.dest = form.get('dest')
     meta.origin = form.get('origin')
+    fecha = form.get('fecha')
+    if fecha:
+        fecha = datestrp(fecha, '%Y-%m-%d')
+        meta.timestamp = datetime.datetime.combine(
+            fecha.date(), datetime.datetime.now().time())
     try:
         meta.dest = int(meta.dest)
         meta.origin = int(meta.origin)

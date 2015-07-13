@@ -265,7 +265,7 @@ class NInventoryRevision(Base):
 class NInventoryRevisionItems(Base):
     __tablename__ = 'items_de_revisiones'
     uid = Column(Integer, primary_key=True, autoincrement=True)
-    revision_id = Column(Integer, ForeignKey(InventoryRevision.id))
+    revision_id = Column(Integer, ForeignKey(NInventoryRevision.uid))
     prod_id = Column(String(20), index=True)
     inv_cant = Column(Numeric(20, 3))
     real_cant = Column(Numeric(20, 3))

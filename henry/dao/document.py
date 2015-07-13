@@ -254,11 +254,19 @@ class Transferencia(MetaItemSet):
         for item in self.items:
             prod, cant = item.prod, item.cant
             if self.meta.origin:
-                yield Transaction(self.meta.origin, prod.codigo, -cant, prod.nombre,
-                                  reason, self.meta.timestamp)
+                yield Transaction(
+                    upi=None,
+                    bodega_id=self.meta.origin,
+                    prod_id=prod.codigo,
+                    delta=-cant, name=prod.nombre,
+                    ref=reason, fecha=self.meta.timestamp)
             if self.meta.dest:
-                yield Transaction(self.meta.dest, prod.codigo, cant, prod.nombre,
-                                  reason, self.meta.timestamp)
+                yield Transaction(
+                    upi=None,
+                    bodega_id=self.meta.dest,
+                    prod_id=prod.codigo,
+                    delta=cant, name=prod.nombre,
+                    ref=reason, fecha=self.meta.timestamp)
 
     def validate(self):
         if self.meta.trans_type not in (TransType.EXTERNAL, TransType.EGRESS):
