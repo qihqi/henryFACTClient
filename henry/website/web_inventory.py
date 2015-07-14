@@ -6,7 +6,7 @@ from henry.config import jinja_env, prodapi, actionlogged, transapi, BODEGAS_EXT
 from henry.config import (dbcontext, auth_decorator)
 from henry.dao import TransType, TransMetadata, Transferencia
 from henry.dao.productos import Bodega
-from henry.website.common import items_from_form, transmetadata_from_form
+from henry.website.common import items_from_form, transmetadata_from_form, parse_start_end_date
 
 w = Bottle()
 web_inventory_webapp = w
@@ -85,3 +85,9 @@ def post_crear_ingreso():
     except ValueError as e:
         traceback.print_exc()
         abort(400, str(e))
+
+@w.get('/app/ingresos_list')
+@dbcontext
+@auth_decorator
+def list_ingress():
+    start, end = parse_start_end_date(request.query)

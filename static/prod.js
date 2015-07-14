@@ -13,19 +13,21 @@ function getRequest(url, callback) {
 
 function popup(){
     var newwindow=window.open("/static/buscar_prod.html",'name','height=700,width=500, scrollbars=yes');
+    var bodegaId = getBodegaId();
     window.dest_id = $(this).attr('i');
+    window.bodegaId = bodegaId;
     if (window.focus) {
         newwindow.focus();
     }
     return false;
 }
-function getProdAjaxCall(codigo, callback) {
-    var url = '/api/producto/' + codigo;
+function getProdAjaxCall(codigo, bodega_id, callback) {
+    var url = '/api/bod/' + bodega_id + '/producto/' + codigo;
     getRequest(url, callback);
 }
 
-function searchProdAjax(prefix, callback) {
-    var url = '/api/producto?prefijo=' + prefix;
+function searchProdAjax(prefix, bodega_id, callback) {
+    var url = '/api/bod/' + bodega_id + '/producto?prefijo=' + prefix;
     getRequest(url, callback);
 }
 
@@ -81,6 +83,17 @@ function isNumber(b) {
     return b != undefined && b != null && (b - 0) == b;
 };
 
+function getBodegaId() {
+    var type = $('#tipo').val();
+    var bodegaId;
+    if (type == 'INGRESO') {
+        bodegaId = $('select[name="dest"]').val();
+    } else {
+        bodegaId = $('select[name="origin"]').val();
+    }
+    return bodegaId;
+}
+
 function initEvents() {
     $(document).on('keypress', '.cant', null, function (event) {
         if (event.which == 13) {
@@ -90,8 +103,6 @@ function initEvents() {
                 alert("cantidad debe ser numero");
                 return;
             }
-
-
             var a = getRow();
             $("#insert").append(a);
             a.beginning.focus();
@@ -107,7 +118,8 @@ function initEvents() {
             var cant = $('#cant' + id);
             var dest = $('#span' + id);
             var codigo = $(this).val();
-            getProdAjaxCall(codigo, function(status, result) {
+            var bodegaId = getBodegaId();
+            getProdAjaxCall(codigo, bodegaId, function(status, result) {
                 if (status) {
                     dest.html(result.nombre);
                     if (include_price) {

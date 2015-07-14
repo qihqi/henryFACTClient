@@ -221,6 +221,23 @@ class ProductApiDB:
             return p
         return None
 
+    def get_cant(self, prod_id, bodega_id):
+        session = self.db_session.session
+        item = session.query(*(self._PROD_KEYS + self._PROD_CANT_KEYS)).filter(
+            NProducto.codigo == prod_id, NContenido.prod_id == prod_id,
+            NContenido.bodega_id == bodega_id, NContenido.inactivo != True).first()
+        if item is not None:
+            return Product().merge_from(item)
+        return None
+
+    def get_cant_prefix(self, prefix, bodega_id):
+        session = self.db_session.session
+        query = session.query(*(self._PROD_KEYS + self._PROD_CANT_KEYS)).filter(
+            NProducto.nombre.startswith(prefix), NContenido.prod_id == NProducto.codigo,
+            NContenido.bodega_id == bodega_id, NContenido.inactivo != True)
+        for r in query:
+            yield Product().merge_from(r)
+
     def get_producto_full(self, prod_id):
 
         items = self.db_session.session.query(
@@ -336,5 +353,3 @@ class ProductApiDB:
             })
             newprice = NPriceList(**content_dict)
             session.add(newprice)
-
-

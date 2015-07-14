@@ -6,7 +6,6 @@
             function sendResultToOpener() {    
                 if (window.opener && !window.opener.closed){
                     var dest_id = opener.dest_id;
-                    alert(dest_id);
                     opener.$("#cod"+dest_id).val($(this).attr('id'));
                     opener.$("#span"+dest_id).html($(this).html());
                     opener.$("#cant"+dest_id).focus()
@@ -23,7 +22,7 @@
             }
             function getProductos() {
                 var nombre = $("#id_nombre").val();
-                searchProdAjax(nombre, function(status, result){
+                searchProdAjax(nombre, opener.bodegaId, function(status, result){
                     if (status) {
                         var a = result;    
                         $("#dest").html("");

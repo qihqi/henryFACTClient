@@ -42,6 +42,26 @@ def get_prod(prod_id):
         response.status = 404
     return json_dumps(prod)
 
+@api.get('/api/bod/<bodega_id>/producto/<prod_id>')
+@dbcontext
+@actionlogged
+def get_prod_cant(bodega_id, prod_id):
+    prod = prodapi.get_cant(prod_id, bodega_id)
+    if prod is None:
+        response.status = 404
+    return json_dumps(prod)
+
+@api.get('/api/bod/<bodega_id>/producto')
+@dbcontext
+@actionlogged
+def search_prod_cant(bodega_id):
+    prefix = request.query.prefijo
+    if prefix:
+        prod = list(prodapi.get_cant_prefix(prefix, bodega_id))
+        return json_dumps(prod)
+    response.status = 400
+    return None
+
 
 @api.get('/api/producto')
 @dbcontext
