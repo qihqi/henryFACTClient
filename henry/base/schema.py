@@ -229,7 +229,7 @@ class NPriceList(Base):
     cant_mayorista = Column(Integer)
     upi = Column(Integer, ForeignKey(NContenido.id))
     unidad = Column(String(20))
-    multiplicador = Column(Integer)
+    multiplicador = Column(Numeric(11, 3))
 
 
 Index('ix_lista_de_precio_2', NPriceList.almacen_id, NPriceList.prod_id)
