@@ -3,7 +3,6 @@ from henry.base.schema import NUsuario
 from henry.config import dbcontext, auth_decorator, jinja_env, clientapi, sessionmanager, prodapi, actionlogged
 from henry.dao import Client
 from henry.dao.exceptions import ItemAlreadyExists
-from henry.website.web_inventory import w
 
 webmain = w = Bottle()
 

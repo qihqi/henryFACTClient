@@ -69,5 +69,3 @@ def convert_to_cent(dec):
     if not isinstance(dec, Decimal):
         dec = Decimal(dec)
     return int(dec * 100)
-
-

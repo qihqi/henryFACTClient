@@ -1,0 +1,58 @@
+<html>
+<head>
+    <title>Resumen</title>
+    <style>
+        body {
+        text-align : center;
+        }
+        td {font-size: 10;}
+    </style>
+</head>
+<body align="center">
+<button onClick="window.print();" > Imprimir </button>
+<button onClick="window.location='/app';" > Regresar al principio </button>
+<h2>{{store.nombre}}</h2>
+<h4>Vendido por {{user}} : {{start.date().isoformat()}} / {{end.date().isoformat()}} </h4>
+
+<h4>Total Efectivo: {{value_from_cents(report.total_by_payment[PaymentFormat.CASH])}}</h4>
+
+{%block contenido %}
+<table width=700 align="center">
+    <tr>
+        <th width=100 style="text-align:left;"> Codigo </th>
+        <th style="text-align:center;"> Cliente </th>
+        <th width=100 style="text-align:right;"> Valor </th>
+    </tr>
+</table>
+<hr />
+
+{%macro build_table(items)%}
+<table width=700 align="center">
+    <tr><td colspan=3 style="{text-align:center;font-family:'Arial'}"><b>{{nombre}}</b></td>
+        {% if not items%}
+    <tr><td colspan=3 style="{text-align:center;}"> NO HAY </td>
+        {%endif%}
+
+        {% for x in items%}
+    <tr>
+        <td width=100 > {{x.codigo}} </td>
+        <td style="text-align:center;"> {{x.client.apellidos}} {{x.client.nombres}} ({{x.client.codigo}}) </td>
+        <td style="text-align:right;" width=100> {{value_from_cents(x.total)}} </td>
+    </tr>
+    {%endfor %}
+</table>
+{%endmacro%}
+
+{% for type, inv in report.list_by_payment.items() %}
+{%if type != PaymentFormat.CASH %}
+    <h4>{{ type }}</h4>
+    {{ build_table(inv) }}
+    <hr />
+{%endif%}
+{% endfor %}
+<h4>eliminados</h4>
+{{ build_table(eliminados) }}
+
+{%endblock%}
+</body>
+</html>

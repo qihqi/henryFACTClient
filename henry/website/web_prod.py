@@ -3,7 +3,6 @@ from sqlalchemy.exc import IntegrityError
 
 from henry.config import dbcontext, auth_decorator, jinja_env, prodapi
 from henry.dao import Product
-from henry.website.web_inventory import w
 from henry.website.common import convert_to_cent
 
 __author__ = 'han'
@@ -28,11 +27,11 @@ def ver_lista_precio():
     almacen_id = int(request.query.get('almacen_id', 1))
     prefix = request.query.get('prefix', None)
     if prefix:
-        all = prodapi.search_producto(prefix=prefix, almacen_id=almacen_id)
+        prods = prodapi.search_producto(prefix=prefix, almacen_id=almacen_id)
     else:
-        all = []
+        prods = []
     temp = jinja_env.get_template('ver_lista_precio.html')
-    return temp.render(prods=all, stores=prodapi.get_stores(),
+    return temp.render(prods=prods, stores=prodapi.get_stores(),
                        prefix=prefix, almacen_name=prodapi.get_store_by_id(almacen_id).nombre)
 
 
@@ -95,5 +94,3 @@ def buscar_producto_result():
     prods = prodapi.search_producto(prefix)
     temp = jinja_env.get_template('buscar_producto_result.html')
     return temp.render(prods=prods)
-
-

@@ -6,7 +6,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from henry.dao import (DocumentApi, Transferencia, Invoice,
                        ProductApiDB, PedidoApi, ClientApiDB,
-                       TransactionApi, InvApiOld)
+                       TransactionApi, InvApiOld, PaymentFormat)
 from henry.dao.actionlog import ActionLogApi, ActionLogApiDecor
 from henry.base.fileservice import FileService
 from henry.base.auth import AuthDecorator
@@ -55,7 +55,8 @@ jinja_env.globals.update({
     'abs': abs_string,
     'value_from_cents': value_from_cents,
     'get_total': get_total,
-    'today': datetime.date.today
+    'today': datetime.date.today,
+    'PaymentFormat': PaymentFormat,
 })
 
 BEAKER_SESSION_OPTS = {

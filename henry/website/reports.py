@@ -8,6 +8,7 @@ from henry.dao import InvMetadata, Status
 
 def get_notas_with_clients(session, end_date, start_date, store=None, user_id=None):
     end_date = end_date + timedelta(days=1) - timedelta(seconds=1)
+
     def decode_db_row_with_client(db_raw):
         m = InvMetadata.from_db_instance(db_raw[0])
         m.client.nombres = db_raw.nombres
@@ -63,8 +64,8 @@ def payment_report(session, start, end, store_id=None, user_id=None):
 
     by_payment = split_records(committed, attrgetter('payment_format'))
     report.list_by_payment = by_payment
-    report.total_by_payment = {key: sum(value) for key, value in report.list_by_payment.items()}
+
+    def get_total(content):
+        return reduce(lambda acc, x: acc + x.total, content, 0)
+    report.total_by_payment = {key: get_total(value) for key, value in report.list_by_payment.items()}
     return report
-
-
-

@@ -1,6 +1,6 @@
 import datetime
 from bottle import Bottle, request, abort
-from henry.base.schema import NProducto, NContenido, NBodega
+from henry.base.schema import NProducto, NContenido, NBodega, NCategory
 from henry.config import dbcontext, auth_decorator, prodapi, jinja_env, sessionmanager, invapi, transactionapi
 from henry.website.common import parse_start_end_date
 
@@ -29,6 +29,15 @@ def get_price_list():
     prods = prodapi.search_producto(prefix=prefix, almacen_id=almacen_id)
     temp = jinja_env.get_template('buscar_precios.html')
     return temp.render(prods=prods)
+
+
+@w.get('/app/vendidos_por_categoria_form')
+@dbcontext
+@auth_decorator
+def vendidos_por_categoria_form():
+    temp = jinja_env.get_template('vendidos_por_categoria_form.html')
+    categorias = sessionmanager.session.query(NCategory)
+    return temp.render(cat=categorias)
 
 
 @w.get('/app/vendidos_por_categoria')

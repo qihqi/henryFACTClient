@@ -5,11 +5,13 @@ from operator import attrgetter
 from bottle import request, abort, redirect, response, Bottle
 
 from henry.base.auth import get_user
-from henry.base.schema import NUsuario, NNota, NAccountStat, NCategory
+from henry.base.schema import NUsuario, NNota, NAccountStat
 from henry.base.serialization import json_loads
-from henry.config import dbcontext, auth_decorator, jinja_env, prodapi, sessionmanager, actionlogged, invapi, pedidoapi
+from henry.config import (dbcontext, auth_decorator, jinja_env, prodapi,
+                          sessionmanager, actionlogged, invapi, pedidoapi)
 from henry.dao import Status, PaymentFormat, Invoice
-from henry.website.reports import get_notas_with_clients, split_records, group_by_records, payment_report
+from henry.website.reports import (get_notas_with_clients, split_records,
+                                   group_by_records, payment_report)
 from henry.website.common import parse_start_end_date, parse_iso
 
 webinvoice = w = Bottle()
@@ -36,7 +38,32 @@ def resume_form():
 @auth_decorator
 def get_resumen():
     user = request.query.get('user')
-    store = request.query.get('almacen')
+    store = request.query.get('almacen_id')
+    start, end = parse_start_end_date(request.query)
+
+    if user is None or store is None:
+        abort(400, 'Escoje usuario y almacen')
+    if start is None or end is None:
+        abort(400, 'Hay que ingresar las fechas')
+
+    store = int(store)
+    report = payment_report(sessionmanager.session, end, start, store)
+
+    temp = jinja_env.get_template('resumen_nuevo.html')
+    return temp.render(
+        start=start,
+        end=end,
+        user=user,
+        store=prodapi.get_store_by_id(store),
+        report=report)
+
+
+@w.get('/app/resumen_viejo')
+@dbcontext
+@auth_decorator
+def get_resumen_viejo():
+    user = request.query.get('user')
+    store = request.query.get('almacen_id')
     start, end = parse_start_end_date(request.query)
 
     if user is None or store is None:
@@ -111,12 +138,10 @@ def get_nota_form(message=None):
 @dbcontext
 @auth_decorator
 def ver_factura():
-    almacen = int(request.query.get('almacen'))
+    almacen_id = int(request.query.get('almacen_id'))
     codigo = request.query.get('codigo').strip()
-    print almacen, codigo
-    db_instance = sessionmanager.session.query(
-        NNota.id, NNota.status, NNota.items_location).filter_by(
-        almacen_id=almacen, codigo=codigo).first()
+    db_instance = get_inv_db_instance(sessionmanager.session,
+                                      almacen_id, codigo)
     if db_instance is None:
         return get_nota_form('Factura no existe')
     redirect('/app/nota/{}'.format(db_instance.id))
@@ -183,12 +208,12 @@ def post_crear_entrega_de_cuenta():
             deposit=deposito,
             diff=(cash - gastos - deposito - turned_cash),
             created_by=userid
-            )
+        )
         sessionmanager.session.add(stat)
         sessionmanager.session.flush()
     else:
         sessionmanager.session.query(NAccountStat).filter_by(date=date).update(
-                {'revised_by': userid})
+            {'revised_by': userid})
     redirect('/app/crear_entrega_de_cuenta?fecha={}'.format(date.isoformat()))
 
 
@@ -244,12 +269,3 @@ def get_notas_de_pedido(uid):
     willprint = request.query.get('print')
     temp = jinja_env.get_template('ver_pedido.html')
     return temp.render(pedido=pedido, willprint=willprint)
-
-
-@w.get('/app/vendidos_por_categoria_form')
-@dbcontext
-@auth_decorator
-def vendidos_por_categoria_form():
-    temp = jinja_env.get_template('vendidos_por_categoria_form.html')
-    categorias = sessionmanager.session.query(NCategory)
-    return temp.render(cat=categorias)
