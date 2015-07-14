@@ -39,14 +39,14 @@ def ver_cantidades():
 @auth_decorator
 def get_ingreso(uid):
     trans = transapi.get_doc(uid)
-    if trans:
-        temp = jinja_env.get_template('ingreso.html')
-        if trans.meta.origin is not None:
-            trans.meta.origin = prodapi.get_bodega_by_id(trans.meta.origin).nombre
-        if trans.meta.dest is not None:
-            trans.meta.dest = prodapi.get_bodega_by_id(trans.meta.dest).nombre
-        return temp.render(ingreso=trans)
-    return 'Documento con codigo {} no existe'.format(uid)
+    if not trans:
+        return 'Documento con codigo {} no existe'.format(uid)
+    temp = jinja_env.get_template('ingreso.html')
+    if trans.meta.origin is not None:
+        trans.meta.origin = prodapi.get_bodega_by_id(trans.meta.origin).nombre
+    if trans.meta.dest is not None:
+        trans.meta.dest = prodapi.get_bodega_by_id(trans.meta.dest).nombre
+    return temp.render(ingreso=trans)
 
 
 @w.get('/app/crear_ingreso')

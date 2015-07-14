@@ -6,6 +6,16 @@ from henry.website.common import parse_start_end_date
 
 webadv = w = Bottle()
 
+
+@w.get('/app/adv')
+@auth_decorator
+def index():
+    return '''
+    <a href="/app/pricelist">Price List</a>
+    <a href="/app/vendidos_por_categoria">Por Categoria</a>
+    <a href="/app/ver_transacciones">Transacciones</a>
+    '''
+
 @w.get('/app/pricelist')
 @dbcontext
 @auth_decorator

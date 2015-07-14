@@ -68,6 +68,13 @@ class Product(SerializableMixin):
         self.upi = upi
         self.multiplicador = multiplicador
 
+    @classmethod
+    def deserialize(cls, dict_input):
+        prod = super(cls, Product).deserialize(dict_input)
+        if prod.multiplicador:
+            prod.multiplicador = Decimal(prod.multiplicador)
+        return prod
+
 
 # An augmented product is treated to be a collection of
 # products. The representation is '<real_prod_id>+' where
@@ -159,7 +166,8 @@ class TransactionApi:
         dirname = os.path.join(self.fileservice.root, prod_id)
         if not os.path.exists(dirname):
             return []
-        all_names = filter(lambda x: x <= date_end.isoformat() and x >= date_start.isoformat(), os.listdir(dirname))
+        all_names = filter(lambda x: date_end.isoformat() >= x >= date_start.isoformat(),
+                           os.listdir(dirname))
         if not all_names:
             return []
         all_names = [os.path.join(prod_id, x) for x in all_names]

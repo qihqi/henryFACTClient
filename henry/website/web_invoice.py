@@ -1,16 +1,25 @@
 import datetime
 from decimal import Decimal
 from operator import attrgetter
+
 from bottle import request, abort, redirect, response, Bottle
+
 from henry.base.auth import get_user
 from henry.base.schema import NUsuario, NNota, NAccountStat, NCategory
 from henry.base.serialization import json_loads
 from henry.config import dbcontext, auth_decorator, jinja_env, prodapi, sessionmanager, actionlogged, invapi, pedidoapi
 from henry.dao import Status, PaymentFormat, Invoice
-from henry.reports import get_notas_with_clients, split_records, group_by_records
-from henry.website.common import parse_start_end_date
+from henry.website.reports import get_notas_with_clients, split_records, group_by_records, payment_report
+from henry.website.common import parse_start_end_date, parse_iso
 
 webinvoice = w = Bottle()
+
+
+def get_inv_db_instance(session, almacen_id, codigo):
+    return session.query(
+        NNota.id, NNota.status, NNota.items_location).filter_by(
+        almacen_id=almacen_id, codigo=codigo).first()
+
 
 @w.get('/app/resumen_form')
 @dbcontext
@@ -29,13 +38,15 @@ def get_resumen():
     user = request.query.get('user')
     store = request.query.get('almacen')
     start, end = parse_start_end_date(request.query)
+
+    if user is None or store is None:
+        abort(400, 'Escoje usuario y almacen')
     if start is None or end is None:
         abort(400, 'Hay que ingresar las fechas')
 
     store = int(store)
-
     session = sessionmanager.session
-    result = get_notas_with_clients(session, store, start, end)
+    result = get_notas_with_clients(session, end, start, store)
 
     by_status = split_records(result, lambda x: x.status)
     deleted = by_status[Status.DELETED]
@@ -69,13 +80,11 @@ def eliminar_factura_form(message=None):
 @auth_decorator
 @actionlogged
 def eliminar_factura():
-    almacen = int(request.forms.get('almacen'))
+    almacen_id = int(request.forms.get('almacen_id'))
     codigo = request.forms.get('codigo').strip()
-    # ref = request.forms.get('ref')  # TODO: have to save this
-    print almacen, codigo
-    db_instance = sessionmanager.session.query(
-        NNota.id, NNota.status, NNota.items_location).filter_by(
-        almacen_id=almacen, codigo=codigo).first()
+    ref = request.forms.get('ref')  # TODO: have to save this
+    print almacen_id, codigo, ref
+    db_instance = get_inv_db_instance(sessionmanager.session, almacen_id, codigo)
     if db_instance is None:
         return eliminar_factura_form('Factura no existe')
     doc = invapi.get_doc_from_file(db_instance.items_location)
@@ -126,20 +135,17 @@ def entrega_de_cuenta():
 @auth_decorator
 def crear_entrega_de_cuenta():
     date = request.query.get('fecha')
-    date = datetime.datetime.strptime(date, '%Y-%m-%d')
+    if date:
+        date = parse_iso(date).date()
+    else:
+        date = datetime.date.today()
 
-    all_sale = list(get_notas_with_clients(sessionmanager.session, None, date, date))
-
-    by_status = split_records(all_sale, attrgetter('status'))
-    deleted = by_status[Status.DELETED]
-    committed = by_status[Status.COMITTED]
-
-    by_payment = split_records(committed, attrgetter('payment_format'))
-    cashed = by_payment[PaymentFormat.CASH]
+    report = payment_report(sessionmanager.session, date, date)
+    cashed = report.list_by_payment[PaymentFormat.CASH]
     sale_by_store = group_by_records(cashed, attrgetter('almacen_name'), attrgetter('total'))
     total_cash = sum(sale_by_store.values())
 
-    otros_pagos = by_payment
+    otros_pagos = report.list_by_payment
     del otros_pagos[PaymentFormat.CASH]
 
     existing = sessionmanager.session.query(NAccountStat).filter_by(date=date).first()
@@ -147,8 +153,8 @@ def crear_entrega_de_cuenta():
     return temp.render(
         cash=sale_by_store, others=otros_pagos,
         total_cash=total_cash,
-        deleted=deleted,
-        date=date.date().isoformat(),
+        deleted=report.deleted,
+        date=date.isoformat(),
         existing=existing)
 
 
@@ -156,17 +162,17 @@ def crear_entrega_de_cuenta():
 @dbcontext
 @auth_decorator
 def post_crear_entrega_de_cuenta():
-    cash = request.forms.get('cash')
-    gastos = request.forms.get('gastos')
-    deposito = request.forms.get('deposito')
-    turned_cash = request.forms.get('valor')
+    cash = request.forms.get('cash', 0)
+    gastos = request.forms.get('gastos', 0)
+    deposito = request.forms.get('deposito', 0)
+    turned_cash = request.forms.get('valor', 0)
     date = request.forms.get('date')
 
     cash = int(float(cash) * 100)
     gastos = int(float(gastos) * 100)
     deposito = int(float(deposito) * 100)
     turned_cash = int(float(turned_cash) * 100)
-    date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
+    date = parse_iso(date).date()
 
     userid = get_user(request)['username']
     if request.forms.get('submit') == 'Crear':
