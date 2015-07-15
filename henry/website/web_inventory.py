@@ -1,4 +1,5 @@
 import traceback
+import datetime
 
 from bottle import request, Bottle, abort, redirect
 
@@ -86,8 +87,20 @@ def post_crear_ingreso():
         traceback.print_exc()
         abort(400, str(e))
 
+
 @w.get('/app/ingresos_list')
 @dbcontext
 @auth_decorator
 def list_ingress():
     start, end = parse_start_end_date(request.query)
+    if not end:
+        end = datetime.datetime.now()
+    else:
+        end = end + datetime.timedelta(days=1) - datetime.timedelta(seconds=1)
+    if not start:
+        start = end - datetime.timedelta(days=7)
+    trans_list = transapi.search_metadata_by_date_range(start, end)
+    temp = jinja_env.get_template('ingresos_list.html')
+    bodega = {b.id: b.nombre for b in prodapi.get_bodegas()}
+    print start, end
+    return temp.render(trans=trans_list, start=start, end=end, bodega=bodega)

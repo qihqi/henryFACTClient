@@ -1,0 +1,39 @@
+<html>
+{% from "macros.html" import start_end_date_oneline %}
+<head>
+<style>
+    td,th {
+        padding-left: 50px;
+        border: 1px 1px 1px 1px;
+        text-align: right;
+    }
+</style>
+</head>
+<body>
+    <form>
+        {{ start_end_date_oneline(start.date().isoformat(), end.date().isoformat()) }}
+        <input type="submit" />
+    </form>
+    <table>
+        <tr>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Estado</th>
+            <th>Desde</th>
+            <th>Hasta</th>
+            <th></th>
+        </tr>
+        {% for t in trans %}
+        <tr>
+            <td>{{ t.timestamp.date().isoformat() }}</td>
+            <td>{{ t.trans_type }}</td>
+            <td>{{ t.status }}</td>
+            <td>{{ bodega[t.origin] }}</td>
+            <td>{{ bodega[t.dest] }}</td>
+            <td><a href="/app/ingreso/{{t.uid}}">Ver</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+
+</html>
