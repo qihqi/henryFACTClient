@@ -1,7 +1,9 @@
+from collections import defaultdict
 import datetime
 from bottle import Bottle, request, abort
 from henry.base.schema import NProducto, NContenido, NBodega, NCategory
 from henry.config import dbcontext, auth_decorator, prodapi, jinja_env, sessionmanager, invapi, transactionapi
+from henry.dao import Item
 from henry.website.common import parse_start_end_date
 
 webadv = w = Bottle()
@@ -14,7 +16,9 @@ def index():
     <a href="/app/pricelist">Price List</a>
     <a href="/app/vendidos_por_categoria">Por Categoria</a>
     <a href="/app/ver_transacciones">Transacciones</a>
+    <a href="/app/ver_vendidos_por_dia">Transacciones</a>
     '''
+
 
 @w.get('/app/pricelist')
 @dbcontext
@@ -40,6 +44,16 @@ def vendidos_por_categoria_form():
     return temp.render(cat=categorias)
 
 
+def full_invoice_items(api, start_date, end_date):
+    invs = api.search_metadata_by_date_range(start_date, end_date)
+    for inv in invs:
+        fullinv = invapi.get_doc_from_file(inv.items_location)
+        if fullinv is None:
+            continue
+        for x in fullinv.items:
+            yield inv, x
+
+
 @w.get('/app/vendidos_por_categoria')
 @dbcontext
 @auth_decorator
@@ -51,20 +65,14 @@ def vendidos_por_categoria():
     all_codigos = {p.codigo for p in prods}
 
     all_items = []
-    invs = invapi.search_metadata_by_date_range(start, end)
     total = 0
-    for inv in invs:
-        fullinv = invapi.get_doc_from_file(inv.items_location)
-        if fullinv is None:
-            print 'fullinv is None'
-            continue
-        for x in fullinv.items:
-            if x.prod.codigo in all_codigos:
-                x.prod.precio = (x.prod.precio1 if x.cant >= x.prod.threshold
-                                 else x.prod.precio2)
-                x.subtotal = x.prod.precio * x.cant
-                total += x.subtotal
-                all_items.append((inv, x))
+    for inv, x in full_invoice_items(invapi, start, end):
+        if x.prod.codigo in all_codigos:
+            x.prod.precio = (x.prod.precio1 if x.cant >= x.prod.threshold
+                             else x.prod.precio2)
+            x.subtotal = x.prod.precio * x.cant
+            total += x.subtotal
+            all_items.append((inv, x))
 
     temp = jinja_env.get_template('ver_vendidos.html')
     return temp.render(items=all_items, total=total)
@@ -104,3 +112,29 @@ def ver_transacciones():
     temp = jinja_env.get_template('ver_transacciones.html')
     return temp.render(items=items, start=start, end=end,
                        prod_id=prod_id, bodegas=bodegas, bodega_id=bodega_id)
+
+
+@w.get('/app/ver_ventas')
+@dbcontext
+@auth_decorator
+def sale_by_product():
+    start, end = parse_start_end_date(request.query)
+    alm_id = int(request.query.get('almacen_id', 1))
+    almacen = prodapi.get_store_by_id(alm_id)
+    if not end:
+        end = datetime.datetime.now()
+    if not start:
+        start = end - datetime.timedelta(days=7)
+    prods_sale = defaultdict(Item)
+    for inv, x in full_invoice_items(invapi, start, end):
+        if inv.almacen_id != almacen.almacen_id:
+            continue
+        obj = prods_sale[x.prod.codigo]
+        obj.prod = x.prod
+        if obj.cant:
+            obj.cant += x.cant
+        else:
+            obj.cant = x.cant
+    temp = jinja_env.get_template('ver_ventas_por_prod.html')
+    return temp.render(items=prods_sale, start=start, end=end, almacen=almacen.nombre,
+                       almacenes=prodapi.get_stores())
