@@ -120,13 +120,6 @@
                     newwindow.handler = state.prodHandler;
                     return false;
                 });
-                $('#buscar_cliente').click(function() {
-                    var newwindow=window.open("/static/buscar_prod_price.html",'name','height=700,width=500, scrollbars=yes');
-                    if (window.focus) {
-                        newwindow.focus();
-                    }
-                    newwindow.handler = state.clientHandler;
-                    return false;
                 });
                 $('#guardar').click(function() {
                     if (state.items.length <= 0) {

@@ -1,0 +1,141 @@
+{% from "macros.html" import select_bodega %}
+<html> <!-- manifest="/static/pedido.appcache"-->
+    <head>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+        <script src="/static/jquery.min.js"></script>
+        <script src="/static/prod.js"></script>
+        <script>
+            var state = {};
+            state.items = {};
+            state.current = null;
+            state.alm_id = 1;
+            state.meta = {};
+            function prodToDom(row) {
+                var p = $("<tr>");
+                p.addClass('row-' + row.codigo);
+                var codigo_cell = $('<td class="content">');
+                var cant_cell = $('<td class="content">');
+                var nombre_cell = $('<td class="content">');
+                var borrar = $('<td class="content">');
+                var borrar_button = $('<button class="borrar">');
+                borrar_button.html('Borrar');
+                borrar_button.attr('codigo', row.codigo);
+                borrar.append(borrar_button);
+                var codigo_input = $('<input name="prod_id">');
+                codigo_input.attr('readonly', true);
+                codigo_input.val(row.codigo);
+                codigo_cell.append(codigo_input);
+                nombre_cell.html(row.nombre);
+                cant_cell.html(row.cantidad);
+                p.append(codigo_cell);
+                p.append(nombre_cell);
+                p.append(cant_cell);
+                p.append(borrar);
+                return p;
+            }
+
+            function clearFields() {
+                $('#codigo').val('');
+                $('#cantidad').val('');
+                $('#nombre').html('');
+                $('#precio').html('');
+                $('#subtotal').html('');
+            }
+
+            $(document).ready(function() {
+                $('input#codigo').keypress(function(event) {
+                    if (event.which == 13) {
+                        event.preventDefault();
+                        var codigo = $(this).val();
+                        var bodega_id = $('select[name=bodega_id]').val();
+                        var url = '/api/bod/' + bodega_id + '/producto/' + codigo;
+                        getRequest(url, function(status, result) {
+                            state.current = result;
+                            handleResult(result);
+                        });
+                    }
+                });
+
+                $('#buscar').click(function() {
+                    var bodega_id = $('select[name=bodega_id]').val();
+                    var prodHandler = {
+                        url: '/api/bod/' + bodega_id + '/producto?prefijo=',
+                        handle: handleResult,
+                        display: function(prod) {
+                            return prod.nombre;
+                        }
+                    };
+                    var newwindow=window.open("/static/buscar_prod_price.html",'name','height=700,width=500, scrollbars=yes');
+                    if (window.focus) {
+                        newwindow.focus();
+                    }
+                    newwindow.handler = prodHandler;
+                    return false;
+                });
+
+                $(document).on('click', '.borrar', null, function(event) {
+                    var codigo = $(this).attr('codigo');
+                    $('.row-' + codigo).remove();
+                });
+            });
+
+            function handleResult(result) {
+                $('#nombre').html(result.nombre);
+                $('#cantidad').html(result.cantidad);
+                var p = prodToDom(result);
+                state.current = null;
+                p.insertAfter('#header');
+                $('#codigo').focus();
+                $('#codigo').select();
+            }
+        </script>
+        <style>
+        table {
+          width: 100%;
+        }
+        td.codigo, td.cant, td.button, td.precio, td.subtotal {
+          width: 12%;
+        }
+        input {
+            width: 100%;
+        }
+        span.valor {
+            min-width: 100px;
+            display: inline-block;
+        }
+        table#pedido, td.content, th.content {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+        td {
+            white-space: -webkit-pre-wrap;
+            white-space: -moz-pre-wrap !important;
+        }
+        </style>
+    </head>
+    <body>
+        <form method="post">
+            <table>
+                <tr>
+                    <td><button id="guardar">Guardar</button></td>
+                    <td>Bodega:</td>
+                    <td> {{ select_bodega(bodegas) }}</td>
+                </tr>
+                <tr>
+                    <td class="button"><button id="buscar">Buscar</button></td>
+                    <td class="codigo"><input id="codigo" placeholder="Codigo"/> </td>
+                    <td id="nombre"></td>
+                    <td class="cantidad" id="cantidad"></td>
+                </tr>
+            </table>
+            <table id="pedido">
+                <tr id="header">
+                    <th class="content precio">Codigo</th>
+                    <th class="content">Nombre</th>
+                    <th class="content precio">Cantidad</th>
+                    <th class="content precio"></th>
+                </tr>
+            </table>
+        </form>
+    </body>
+</html>

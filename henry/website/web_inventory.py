@@ -2,12 +2,14 @@ import traceback
 import datetime
 
 from bottle import request, Bottle, abort, redirect
+from henry.base.auth import get_user
 
 from henry.config import jinja_env, prodapi, actionlogged, transapi, BODEGAS_EXTERNAS
 from henry.config import (dbcontext, auth_decorator)
 from henry.dao import TransType, TransMetadata, Transferencia
 from henry.dao.productos import Bodega
 from henry.website.common import items_from_form, transmetadata_from_form, parse_start_end_date
+from henry.base.schema import NInventoryRevision, NInventoryRevisionItems
 
 w = Bottle()
 web_inventory_webapp = w
@@ -104,4 +106,31 @@ def list_ingress():
     bodega = {b.id: b.nombre for b in prodapi.get_bodegas()}
     print start, end
     return temp.render(trans=trans_list, start=start, end=end, bodega=bodega)
+
+
+@w.get('/app/revisar_inventario')
+@dbcontext
+@auth_decorator
+def revisar_inv_form():
+    temp = jinja_env.get_template('inventory/crear_revision.html')
+    return temp.render(bodegas=prodapi.get_bodegas())
+
+
+@w.post('/app/revisar_inventario')
+@dbcontext
+@auth_decorator
+def post_revisar_inv():
+    bodega_id = request.forms.get('bodega_id', None)
+    if bodega_id is None:
+        abort(400, 'bodega_id no existe')
+    prod_ids = request.forms.getlist('prod_id')
+
+    revision = NInventoryRevision()
+    revision.bodega_id = int(bodega_id)
+    revision.timestamp = datetime.datetime.now()
+    revision.created_by = get_user(request).username
+
+    for prod_id in prod_ids:
+        item = NInventoryRevisionItem(
+        )
 

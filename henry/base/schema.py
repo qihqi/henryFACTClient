@@ -262,7 +262,7 @@ class NInventoryRevision(Base):
     items = relationship('NInventoryRevisionItems', backref=backref('revision'))
 
 
-class NInventoryRevisionItems(Base):
+class NInventoryRevisionItem(Base):
     __tablename__ = 'items_de_revisiones'
     uid = Column(Integer, primary_key=True, autoincrement=True)
     revision_id = Column(Integer, ForeignKey(NInventoryRevision.uid))
