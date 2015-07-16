@@ -17,7 +17,7 @@ web_inventory_webapp = w
 @dbcontext
 @auth_decorator
 def ver_ingreso_form():
-    return jinja_env.get_template('ver_ingreso_form.html').render()
+    return jinja_env.get_template('inventory/ver_ingreso_form.html').render()
 
 
 @w.get('/app/ver_cantidad')
@@ -30,7 +30,7 @@ def ver_cantidades():
         all_prod = prodapi.search_prod_cant(prefix, bodega_id)
     else:
         all_prod = []
-    temp = jinja_env.get_template('ver_cantidad.html')
+    temp = jinja_env.get_template('inventory/ver_cantidad.html')
     return temp.render(prods=all_prod, bodegas=prodapi.get_bodegas(),
                        prefix=prefix, bodega_name=prodapi.get_bodega_by_id(bodega_id).nombre)
 
@@ -42,7 +42,7 @@ def get_ingreso(uid):
     trans = transapi.get_doc(uid)
     if not trans:
         return 'Documento con codigo {} no existe'.format(uid)
-    temp = jinja_env.get_template('ingreso.html')
+    temp = jinja_env.get_template('inventory/ingreso.html')
     if trans.meta.origin is not None:
         trans.meta.origin = prodapi.get_bodega_by_id(trans.meta.origin).nombre
     if trans.meta.dest is not None:
@@ -54,7 +54,7 @@ def get_ingreso(uid):
 @dbcontext
 @auth_decorator
 def crear_ingreso():
-    temp = jinja_env.get_template('crear_ingreso.html')
+    temp = jinja_env.get_template('inventory/crear_ingreso.html')
     bodegas = prodapi.get_bodegas()
     bodegas_externas = [Bodega(id=i, nombre=n[0]) for i, n in enumerate(BODEGAS_EXTERNAS)]
     return temp.render(bodegas=bodegas, externas=bodegas_externas,
@@ -100,7 +100,8 @@ def list_ingress():
     if not start:
         start = end - datetime.timedelta(days=7)
     trans_list = transapi.search_metadata_by_date_range(start, end)
-    temp = jinja_env.get_template('ingresos_list.html')
+    temp = jinja_env.get_template('inventory/ingresos_list.html')
     bodega = {b.id: b.nombre for b in prodapi.get_bodegas()}
     print start, end
     return temp.render(trans=trans_list, start=start, end=end, bodega=bodega)
+

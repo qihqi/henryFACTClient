@@ -14,7 +14,7 @@ webprod = w = Bottle()
 @dbcontext
 @auth_decorator
 def create_prod_form(message=''):
-    temp = jinja_env.get_template('crear_producto.html')
+    temp = jinja_env.get_template('prod/crear_producto.html')
     stores = prodapi.get_stores()
     categorias = prodapi.get_category()
     return temp.render(almacenes=stores, categorias=categorias, message=message)
@@ -30,7 +30,7 @@ def ver_lista_precio():
         prods = prodapi.search_producto(prefix=prefix, almacen_id=almacen_id)
     else:
         prods = []
-    temp = jinja_env.get_template('ver_lista_precio.html')
+    temp = jinja_env.get_template('prod/ver_lista_precio.html')
     return temp.render(prods=prods, stores=prodapi.get_stores(),
                        prefix=prefix, almacen_name=prodapi.get_store_by_id(almacen_id).nombre)
 
@@ -80,7 +80,7 @@ def ver_producto(uid):
     for x in prod.precios:
         price_dict[x.almacen_id] = x
     prod.precios = price_dict
-    temp = jinja_env.get_template('producto.html')
+    temp = jinja_env.get_template('prod/producto.html')
     return temp.render(prod=prod, stores=prodapi.get_stores())
 
 
@@ -92,5 +92,5 @@ def buscar_producto_result():
     if prefix is None:
         redirect('/app/ver_producto_form')
     prods = prodapi.search_producto(prefix)
-    temp = jinja_env.get_template('buscar_producto_result.html')
+    temp = jinja_env.get_template('prod/buscar_producto_result.html')
     return temp.render(prods=prods)

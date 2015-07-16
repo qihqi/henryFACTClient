@@ -16,7 +16,7 @@ def index():
     <a href="/app/pricelist">Price List</a>
     <a href="/app/vendidos_por_categoria">Por Categoria</a>
     <a href="/app/ver_transacciones">Transacciones</a>
-    <a href="/app/ver_vendidos_por_dia">Transacciones</a>
+    <a href="/app/ver_ventas">Ventas</a>
     '''
 
 
@@ -136,5 +136,6 @@ def sale_by_product():
         else:
             obj.cant = x.cant
     temp = jinja_env.get_template('ver_ventas_por_prod.html')
-    return temp.render(items=prods_sale, start=start, end=end, almacen=almacen.nombre,
+    values = sorted(prods_sale, key=lambda x:x.cant * x.prod.precio1)
+    return temp.render(items=values, start=start, end=end, almacen=almacen.nombre,
                        almacenes=prodapi.get_stores())

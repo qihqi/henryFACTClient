@@ -27,7 +27,7 @@ def get_inv_db_instance(session, almacen_id, codigo):
 @dbcontext
 @auth_decorator
 def resume_form():
-    temp = jinja_env.get_template('resumen_form.html')
+    temp = jinja_env.get_template('invoice/resumen_form.html')
     stores = prodapi.get_stores()
     users = list(sessionmanager.session.query(NUsuario))
     return temp.render(almacenes=stores, users=users)
@@ -49,7 +49,7 @@ def get_resumen():
     store = int(store)
     report = payment_report(sessionmanager.session, end, start, store)
 
-    temp = jinja_env.get_template('resumen_nuevo.html')
+    temp = jinja_env.get_template('invoice/resumen_nuevo.html')
     return temp.render(
         start=start,
         end=end,
@@ -81,7 +81,7 @@ def get_resumen_viejo():
     ventas = split_records(committed, lambda x: x.payment_format)
 
     gtotal = sum((x.total for x in committed))
-    temp = jinja_env.get_template('resumen.html')
+    temp = jinja_env.get_template('invoice/resumen.html')
     return temp.render(
         start=start,
         end=end,
@@ -98,7 +98,7 @@ def get_resumen_viejo():
 def eliminar_factura_form(message=None):
     almacenes = list(prodapi.get_stores())
     print almacenes
-    temp = jinja_env.get_template('eliminar_factura.html')
+    temp = jinja_env.get_template('invoice/eliminar_factura.html')
     return temp.render(almacenes=almacenes, message=message)
 
 
@@ -130,7 +130,7 @@ def eliminar_factura():
 @auth_decorator
 def get_nota_form(message=None):
     almacenes = list(prodapi.get_stores())
-    temp = jinja_env.get_template('ver_factura_form.html')
+    temp = jinja_env.get_template('invoice/ver_factura_form.html')
     return temp.render(almacenes=almacenes, message=message)
 
 
@@ -151,7 +151,7 @@ def ver_factura():
 @dbcontext
 @auth_decorator
 def entrega_de_cuenta():
-    temp = jinja_env.get_template('entregar_cuenta_form.html')
+    temp = jinja_env.get_template('invoice/entregar_cuenta_form.html')
     return temp.render()
 
 
@@ -174,7 +174,7 @@ def crear_entrega_de_cuenta():
     del otros_pagos[PaymentFormat.CASH]
 
     existing = sessionmanager.session.query(NAccountStat).filter_by(date=date).first()
-    temp = jinja_env.get_template('crear_entregar_cuenta_form.html')
+    temp = jinja_env.get_template('invoice/crear_entregar_cuenta_form.html')
     return temp.render(
         cash=sale_by_store, others=otros_pagos,
         total_cash=total_cash,
@@ -229,7 +229,7 @@ def ver_entrega_de_cuenta_list():
 
     accts = sessionmanager.session.query(NAccountStat).filter(
         NAccountStat.date >= start, NAccountStat.date <= end)
-    temp = jinja_env.get_template('entrega_de_cuenta_list.html')
+    temp = jinja_env.get_template('invoice/entrega_de_cuenta_list.html')
     return temp.render(accts=accts, start=start, end=end)
 
 
@@ -239,7 +239,7 @@ def ver_entrega_de_cuenta_list():
 def get_nota(uid):
     doc = invapi.get_doc(uid)
     if doc:
-        temp = jinja_env.get_template('nota.html')
+        temp = jinja_env.get_template('invoice/nota.html')
         return temp.render(inv=doc)
     return 'Documento con codigo {} no existe'.format(uid)
 
@@ -253,7 +253,7 @@ def get_notas_de_pedido_form():
         response.status = 401
         response.set_header('www-authenticate', 'Basic realm="Henry"')
         return ''
-    temp = jinja_env.get_template('crear_pedido.html')
+    temp = jinja_env.get_template('invoice/crear_pedido.html')
     return temp.render()
 
 
@@ -267,5 +267,5 @@ def get_notas_de_pedido(uid):
     for i in pedido.items:
         i.cant = Decimal(i.cant) / 1000
     willprint = request.query.get('print')
-    temp = jinja_env.get_template('ver_pedido.html')
+    temp = jinja_env.get_template('invoice/ver_pedido.html')
     return temp.render(pedido=pedido, willprint=willprint)

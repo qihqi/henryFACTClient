@@ -19,7 +19,7 @@
             <th>Vendidos</th>
             <th>Vendidos Valor</th>
         </tr>
-        {% for _, x in items.items() %}
+        {% for x in items %}
         <tr>
             <th>{{x.prod.codigo}}</th>
             <th>{{x.prod.nombre}}</th>
