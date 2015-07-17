@@ -7,9 +7,9 @@
         <script type="text/javascript">
             function updateOptions(type) {
                 if (type === 'INGRESO') {
-                    $('#desde_bodega').show();
+                    $('#desde_bodega').hide();
                     $('#hasta_externa').hide();
-                    $('#hasta_bodega').hide();
+                    $('#hasta_bodega').show();
                 } else if (type == 'EXTERNA') {
                     $('#desde_bodega').show();
                     $('#hasta_externa').show();
@@ -19,9 +19,9 @@
                     $('#hasta_externa').hide();
                     $('#hasta_bodega').show();
                 } else if (type == 'EGRESO') {
-                    $('#desde_bodega').hide();
+                    $('#desde_bodega').show();
                     $('#hasta_externa').hide();
-                    $('#hasta_bodega').show();
+                    $('#hasta_bodega').hide();
                 }
             }
             $(document).ready(function(){
