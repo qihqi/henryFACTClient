@@ -6,7 +6,7 @@
   <Anio>{{'%04d' % meta.date.year}}</Anio>
   <Mes>{{'%02d' % meta.date.month}}</Mes>
   <numEstabRuc>001</numEstabRuc>
-  <totalVentas>{{meta.subtotal}}</totalVentas>
+  <totalVentas>{{meta.total}}</totalVentas>
   <codigoOperativo>IVA</codigoOperativo>
   <compras>
   </compras>

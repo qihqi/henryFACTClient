@@ -67,7 +67,7 @@ def get_sells_xml():
 
     meta = Meta()
     meta.date = start_date
-    meta.total = reduce(lambda acc, x: acc + x.total, grouped.values(), 0)
+    meta.total = reduce(lambda acc, x: acc + x.subtotal, grouped.values(), 0)
     meta.almacen_ruc = ruc
     meta.almacen_name = [x.nombre for x in prodapi.get_stores() if x.ruc == ruc][0]
     temp = jinja_env.get_template('accounting/resumen_agrupado.html')
