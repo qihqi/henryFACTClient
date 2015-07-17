@@ -6,7 +6,7 @@
   <Anio>{{'%04d' % meta.date.year}}</Anio>
   <Mes>{{'%02d' % meta.date.month}}</Mes>
   <numEstabRuc>001</numEstabRuc>
-  <totalVentas>{{meta.total}}</totalVentas>
+  <totalVentas>{{meta.subtotal}}</totalVentas>
   <codigoOperativo>IVA</codigoOperativo>
   <compras>
   </compras>
@@ -19,7 +19,7 @@
       <numeroComprobantes>{{ detalle.count }}</numeroComprobantes>
       <baseNoGraIva>0.00</baseNoGraIva>
       <baseImponible>0.00</baseImponible>
-      <baseImpGrav>{{ value_from_cents(detalle.subtotal)}}</baseImpGrav>
+      <baseImpGrav>{{ value_from_cents(detalle.subtotal - detalle.discount)}}</baseImpGrav>
       <montoIva>{{ value_from_cents(detalle.iva) }}</montoIva>
       <valorRetIva>0.00</valorRetIva>
       <valorRetRenta>0.00</valorRetRenta>
@@ -29,7 +29,7 @@
   <ventasEstablecimiento>
     <ventaEst>
       <codEstab>001</codEstab>
-      <ventasEstab>{{value_from_cents(meta.total)}}</ventasEstab>
+      <ventasEstab>{{value_from_cents(meta.subtotal)}}</ventasEstab>
     </ventaEst>
   </ventasEstablecimiento>
 
