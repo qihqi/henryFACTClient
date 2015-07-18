@@ -2,9 +2,10 @@ import traceback
 import datetime
 
 from bottle import request, Bottle, abort, redirect
+from decimal import Decimal
 from henry.base.auth import get_user
 
-from henry.config import jinja_env, prodapi, actionlogged, transapi, BODEGAS_EXTERNAS
+from henry.config import jinja_env, prodapi, actionlogged, transapi, BODEGAS_EXTERNAS, sessionmanager
 from henry.config import (dbcontext, auth_decorator)
 from henry.dao import TransType, TransMetadata, Transferencia
 from henry.dao.productos import Bodega
@@ -128,9 +129,47 @@ def post_revisar_inv():
     revision = NInventoryRevision()
     revision.bodega_id = int(bodega_id)
     revision.timestamp = datetime.datetime.now()
-    revision.created_by = get_user(request).username
+    revision.created_by = get_user(request)['username']
 
     for prod_id in prod_ids:
-        item = NInventoryRevisionItem(
-        )
+        item = NInventoryRevisionItem(prod_id=prod_id)
+        revision.items.append(item)
+    sessionmanager.session.add(revision)
+    sessionmanager.session.flush()
+    redirect('/app/revision/{}'.format(revision.uid))
+
+
+@w.get('/app/revision/<rid>')
+@dbcontext
+@auth_decorator
+def get_revision(rid):
+    session = sessionmanager.session
+    meta = session.query(NInventoryRevision).filter_by(uid=rid).first()
+    bodega_name = prodapi.get_bodega_by_id(meta.bodega_id).nombre
+    items = []
+    for y in meta.items:
+        item = prodapi.get_cant(prod_id=y.prod_id, bodega_id=meta.bodega_id)
+        if meta.status == 'CONTADO':
+            item.cantidad = y.inv_cant
+            item.contado = y.real_cant
+        items.append(item)
+
+    temp = jinja_env.get_template('inventory/revision.html')
+    return temp.render(meta=meta, items=items, bodega_name=bodega_name)
+
+
+@w.post('/app/revision/<rid>')
+@dbcontext
+@auth_decorator
+def get_revision(rid):
+    session = sessionmanager.session
+    meta = session.query(NInventoryRevision).filter_by(uid=rid).first()
+    if meta.status != 'CONTADO':
+        for y in meta.items:
+            item = prodapi.get_cant(prod_id=y.prod_id, bodega_id=meta.bodega_id)
+            y.inv_cant = item.cantidad
+            y.real_cant = Decimal(request.forms.get('prod-cant-{}'.format(y.prod_id)))
+    meta.status = 'CONTADO'
+    redirect('/app/revision/{}'.format(rid))
+
 

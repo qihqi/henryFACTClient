@@ -3,13 +3,14 @@ from decimal import Decimal
 from bottle import Bottle, request, abort
 
 from henry.base.serialization import json_dumps, json_loads, SerializableMixin
-from henry.base.schema import NUsuario
+from henry.base.schema import NUsuario, NInventoryRevision, NInventoryRevisionItem
 from henry.config import (transapi, dbcontext, prodapi, clientapi,
                           invapi, auth_decorator, sessionmanager,
-                          actionlogged)
-from henry.dao import Invoice, Transferencia
+                          actionlogged, transactionapi)
+from henry.dao import Invoice, Transferencia, Transaction
 
 napi = Bottle()
+
 
 # ########## NOTA ############################
 @napi.get('/api/nota/<inv_id>')
@@ -58,6 +59,7 @@ def get_store_by(field, value):
         return canditates[0]
     return None
 
+
 def fix_inv_by_options(inv, options):
     inv.items = filter(lambda x: x.cant >= 0, inv.items)
     inv.meta.paid = True
@@ -75,11 +77,11 @@ def fix_inv_by_options(inv, options):
             item.prod.upi = newprod.upi
             item.prod.multiplicador = newprod.multiplicador
 
-
     # Get store: if ruc exists get it takes prescendence. Then name, then id.
     # The reason is that id is mysql autoincrement integer and may not be
     # consistent across different servers
-    ruc = getattr(inv.meta, 'almacen_ruc', None)  # using None as default value is buggy. Because there could be store with store.ruc == None
+    # using None as default value is buggy. Because there could be store with store.ruc == None
+    ruc = getattr(inv.meta, 'almacen_ruc', None)
     name = getattr(inv.meta, 'almacen_name', None)
 
     alm = None
@@ -113,8 +115,6 @@ def create_invoice():
 
     inv = Invoice.deserialize(content)
     fix_inv_by_options(inv, options)  # at this point, inv should no longer change
-
-
     if options.crear_cliente:  # create client if not exist
         client = inv.meta.client
         if not clientapi.get(client.codigo):
@@ -198,3 +198,27 @@ def get_ingreso(ingreso_id):
         abort(404, 'Ingreso No encontrada')
         return
     return json_dumps(ing.serialize())
+
+
+@napi.put('/api/revision/<rid>')
+@dbcontext
+@auth_decorator
+@actionlogged
+def put_revision(rid):
+    revision = sessionmanager.session.query(NInventoryRevision, NInventoryRevisionItem).filter(
+        NInventoryRevision.uid == NInventoryRevisionItem.revision_id).filter(
+        NInventoryRevision.uid == rid)
+    reason = 'Revision: codigo {}'.format(rid)
+    now = datetime.datetime.now()
+    for rev, item in revision:
+        bodega_id = rev.bodega_id
+        delta = item.real_cant - item.inv_cant
+        transaction = Transaction(
+            upi=None,
+            bodega_id=bodega_id,
+            prod_id=item.prod_id,
+            delta=delta,
+            ref=reason,
+            fecha=now)
+        transactionapi.save(transaction)
+    return {'status': 'AJUSTADO'}

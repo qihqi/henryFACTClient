@@ -259,6 +259,7 @@ class NInventoryRevision(Base):
     bodega_id = Column(Integer)
     timestamp = Column(DateTime, index=True)
     created_by = Column(String(20))
+    status = Column(String(10))
     items = relationship('NInventoryRevisionItem', backref=backref('revision'))
 
 

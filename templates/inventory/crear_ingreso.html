@@ -71,11 +71,11 @@
                 {% endfor %}
             </select>
             <br/>
-                <div id="desde_bodega" class="type_select">
+                <div id="desde_bodega" class="type_select" style="display:none;">
                     <label>Desde bodega:</label>
                     {{ selector(bodegas, 'origin', 'id', 'nombre') }}
                 </div>
-                <div id="hasta_bodega" class="type_select" style="display:none;">
+                <div id="hasta_bodega" class="type_select" >
                 <label>Hasta bodega:</label>
                 {{ selector(bodegas, 'dest', 'id', 'nombre') }}
                 </div>
