@@ -1,9 +1,38 @@
 <html>
+<head>
+
+    <script src="/static/jquery.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script>
+        var rid = {{meta.uid}};
+        $(document).ready(function() {
+            $('#ajustar').click(function(event) {
+                event.preventDefault();
+                var url = '/api/revision/' + rid;
+                $.ajax({
+                    method: 'PUT',
+                    url: url,
+                    success: function() {
+                        alert('Ajustado');
+                    },
+                    failure: function() {
+                        alert('fallo en ajustar');
+                    }
+                });
+            });
+        });
+
+    </script>
+</head>
 <body>
 <h4>Revision de Bodegas: {{meta.uid}} de {{bodega_name}}</h4>
 
 <form method="post">
-    <input type="submit" />
+    {% if meta.status == 'CONTADO' %}
+        <button id="ajustar">Ajustar</button>
+    {% elif meta.status != 'AJUSTADO'%}
+        <input type="submit" value="Guardar"/>
+    {% endif %}
     <table>
         <tr>
             <th>Codigo</th>

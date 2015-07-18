@@ -5,7 +5,7 @@ from bottle import request, Bottle, abort, redirect
 from decimal import Decimal
 from henry.base.auth import get_user
 
-from henry.config import jinja_env, prodapi, actionlogged, transapi, BODEGAS_EXTERNAS, sessionmanager
+from henry.config import jinja_env, prodapi, actionlogged, transapi, BODEGAS_EXTERNAS, sessionmanager, revisionapi
 from henry.config import (dbcontext, auth_decorator)
 from henry.dao import TransType, TransMetadata, Transferencia
 from henry.dao.productos import Bodega
@@ -125,26 +125,15 @@ def post_revisar_inv():
     if bodega_id is None:
         abort(400, 'bodega_id no existe')
     prod_ids = request.forms.getlist('prod_id')
-
-    revision = NInventoryRevision()
-    revision.bodega_id = int(bodega_id)
-    revision.timestamp = datetime.datetime.now()
-    revision.created_by = get_user(request)['username']
-
-    for prod_id in prod_ids:
-        item = NInventoryRevisionItem(prod_id=prod_id)
-        revision.items.append(item)
-    sessionmanager.session.add(revision)
-    sessionmanager.session.flush()
-    redirect('/app/revision/{}'.format(revision.uid))
+    rev = revisionapi.save(bodega_id, get_user(request)['username'], prod_ids)
+    redirect('/app/revision/{}'.format(rev.uid))
 
 
 @w.get('/app/revision/<rid>')
 @dbcontext
 @auth_decorator
 def get_revision(rid):
-    session = sessionmanager.session
-    meta = session.query(NInventoryRevision).filter_by(uid=rid).first()
+    meta = revisionapi.get(rid)
     bodega_name = prodapi.get_bodega_by_id(meta.bodega_id).nombre
     items = []
     for y in meta.items:
@@ -162,12 +151,8 @@ def get_revision(rid):
 @dbcontext
 @auth_decorator
 def get_revision(rid):
-    session = sessionmanager.session
-    meta = session.query(NInventoryRevision).filter_by(uid=rid).first()
-    if meta.status != 'CONTADO':
-        for y in meta.items:
-            item = prodapi.get_cant(prod_id=y.prod_id, bodega_id=meta.bodega_id)
-            y.inv_cant = item.cantidad
-            y.real_cant = Decimal(request.forms.get('prod-cant-{}'.format(y.prod_id)))
-    meta.status = 'CONTADO'
+    prods = {}
+    for key, value in request.forms.items():
+        prods[key.replace('prod-cant-', '')] = value
+    revisionapi.update_count(rid, prods)
     redirect('/app/revision/{}'.format(rid))

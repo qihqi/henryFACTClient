@@ -136,6 +136,6 @@ def sale_by_product():
         else:
             obj.cant = x.cant
     temp = jinja_env.get_template('ver_ventas_por_prod.html')
-    values = sorted(prods_sale, key=lambda x:x.cant * x.prod.precio1)
+    values = sorted(prods_sale, key=lambda x: x.cant * x.prod.precio1)
     return temp.render(items=values, start=start, end=end, almacen=almacen.nombre,
                        almacenes=prodapi.get_stores())

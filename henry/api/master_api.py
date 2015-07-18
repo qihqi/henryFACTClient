@@ -6,7 +6,7 @@ from henry.base.serialization import json_dumps, json_loads, SerializableMixin
 from henry.base.schema import NUsuario, NInventoryRevision, NInventoryRevisionItem
 from henry.config import (transapi, dbcontext, prodapi, clientapi,
                           invapi, auth_decorator, sessionmanager,
-                          actionlogged, transactionapi)
+                          actionlogged, transactionapi, revisionapi)
 from henry.dao import Invoice, Transferencia, Transaction
 
 napi = Bottle()
@@ -205,20 +205,6 @@ def get_ingreso(ingreso_id):
 @auth_decorator
 @actionlogged
 def put_revision(rid):
-    revision = sessionmanager.session.query(NInventoryRevision, NInventoryRevisionItem).filter(
-        NInventoryRevision.uid == NInventoryRevisionItem.revision_id).filter(
-        NInventoryRevision.uid == rid)
-    reason = 'Revision: codigo {}'.format(rid)
-    now = datetime.datetime.now()
-    for rev, item in revision:
-        bodega_id = rev.bodega_id
-        delta = item.real_cant - item.inv_cant
-        transaction = Transaction(
-            upi=None,
-            bodega_id=bodega_id,
-            prod_id=item.prod_id,
-            delta=delta,
-            ref=reason,
-            fecha=now)
-        transactionapi.save(transaction)
-    return {'status': 'AJUSTADO'}
+    if revisionapi.commit(rid):
+        return {'status': 'AJUSTADO'}
+    abort(404)

@@ -4,7 +4,7 @@ from decimal import Decimal
 from sqlalchemy.exc import IntegrityError
 
 from henry.base.schema import (NProducto, NContenido, NStore, NCategory,
-                               NBodega, NPriceList)
+                               NBodega, NPriceList, NInventoryRevision, NInventoryRevisionItem)
 from henry.base.serialization import SerializableMixin, json_dumps, DbMixin, json_loads
 
 
@@ -353,3 +353,69 @@ class ProductApiDB:
             })
             newprice = NPriceList(**content_dict)
             session.add(newprice)
+
+
+class RevisionApi:
+    AJUSTADO = 'AJUSTADO'
+    NUEVO = 'NUEVO'
+    CONTADO = 'CONTADO'
+
+    def __init__(self, sessionmanager, prodapi, transactionapi):
+        self.sm = sessionmanager
+        self.prodapi = prodapi
+        self.transactionapi = transactionapi
+
+    def save(self, bodega_id, user_id, items):
+        session = self.sm.session
+        revision = NInventoryRevision()
+        revision.bodega_id = bodega_id
+        revision.timestamp = datetime.datetime.now()
+        revision.created_by = user_id
+        revision.status = self.NUEVO
+        for prod_id in items:
+            item = NInventoryRevisionItem(prod_id=prod_id)
+            revision.items.append(item)
+        session.add(revision)
+        session.flush()
+        return revision
+
+    def get(self, rid):
+        return self.sm.session.query(NInventoryRevision).filter_by(uid=rid).first()
+
+    def update_count(self, rid, items_counts):
+        revision = self.get(rid)
+        if revision is None:
+            return None
+        for item in revision.items:
+            prod = self.prodapi.get_cant(item.prod_id, revision.bodega_id)
+            item.inv_cant = prod.cantidad
+            item.real_cant = items_counts[item.prod_id]
+        revision.status = self.CONTADO
+        self.sm.session.flush()
+        return revision
+
+    def commit(self, rid):
+        revision = self.get(rid)
+        if revision is None:
+            return None
+        if revision.status != 'CONTADO':
+            return revision
+        reason = 'Revision: codigo {}'.format(rid)
+        now = datetime.datetime.now()
+        bodega_id = revision.bodega_id
+        for item in revision.items:
+            delta = item.real_cant - item.inv_cant
+            transaction = Transaction(
+                upi=None,
+                bodega_id=bodega_id,
+                prod_id=item.prod_id,
+                delta=delta,
+                ref=reason,
+                fecha=now)
+            self.transactionapi.save(transaction)
+        revision.status = 'AJUSTADO'
+        return revision
+
+
+
+
