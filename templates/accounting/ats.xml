@@ -19,7 +19,7 @@
       <numeroComprobantes>{{ detalle.count }}</numeroComprobantes>
       <baseNoGraIva>0.00</baseNoGraIva>
       <baseImponible>0.00</baseImponible>
-      <baseImpGrav>{{ value_from_cents(detalle.subtotal - detalle.discount)}}</baseImpGrav>
+      <baseImpGrav>{{ value_from_cents(detalle.subtotal)}}</baseImpGrav>
       <montoIva>{{ value_from_cents(detalle.iva) }}</montoIva>
       <valorRetIva>0.00</valorRetIva>
       <valorRetRenta>0.00</valorRetRenta>

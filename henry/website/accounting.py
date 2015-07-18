@@ -30,9 +30,12 @@ def get_all_users():
 def group_by_customer(inv):
     result = defaultdict(CustomerSell)
     for i in inv:
+        if i.client.codigo is None:
+            i.client.codigo = 'NA'
         cliente_id = fix_id(i.client.codigo)
-        disc = i.discount if i.discount else 0
-        result[cliente_id].subtotal += (i.subtotal - disc)
+        if not i.discount:
+            i.discount = 0
+        result[cliente_id].subtotal += (i.subtotal - i.discount)
         result[cliente_id].iva += i.tax
         result[cliente_id].total += i.total
         result[cliente_id].count += 1
