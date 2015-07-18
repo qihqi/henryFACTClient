@@ -171,5 +171,3 @@ def get_revision(rid):
             y.real_cant = Decimal(request.forms.get('prod-cant-{}'.format(y.prod_id)))
     meta.status = 'CONTADO'
     redirect('/app/revision/{}'.format(rid))
-
-
