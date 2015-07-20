@@ -151,6 +151,7 @@ class TransactionApi:
         else:
             cont.cant += transaction.delta
             session.flush()
+        transaction.upi = cont.id
         transaction.prod_id = cont.prod_id
         transaction.bodega_id = cont.bodega_id
         prod = transaction.prod_id
@@ -164,8 +165,13 @@ class TransactionApi:
         if isinstance(date_end, datetime.datetime):
             date_end = date_end.date()
 
-        dirname = os.path.join(self.fileservice.root, prod_id)
-        if not os.path.exists(dirname):
+        pupper = os.path.join(self.fileservice.root, prod_id.upper())
+        plower = os.path.join(self.fileservice.root, prod_id.lower())
+        if os.path.exists(pupper):
+            dirname = pupper
+        elif os.path.exists(pupper):
+            dirname = plower
+        else:
             return []
         all_names = filter(lambda x: date_end.isoformat() >= x >= date_start.isoformat(),
                            os.listdir(dirname))
