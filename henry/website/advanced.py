@@ -14,7 +14,7 @@ webadv = w = Bottle()
 def index():
     return '''
     <a href="/app/pricelist">Price List</a>
-    <a href="/app/vendidos_por_categoria">Por Categoria</a>
+    <a href="/app/vendidos_por_categoria_form">Por Categoria</a>
     <a href="/app/ver_transacciones">Transacciones</a>
     <a href="/app/ver_ventas">Ventas</a>
     '''
@@ -63,7 +63,6 @@ def vendidos_por_categoria():
     prods = sessionmanager.session.query(NProducto.codigo).filter_by(
         categoria_id=cat)
     all_codigos = {p.codigo for p in prods}
-
     all_items = []
     total = 0
     for inv, x in full_invoice_items(invapi, start, end):
@@ -73,7 +72,6 @@ def vendidos_por_categoria():
             x.subtotal = x.prod.precio * x.cant
             total += x.subtotal
             all_items.append((inv, x))
-
     temp = jinja_env.get_template('ver_vendidos.html')
     return temp.render(items=all_items, total=total)
 
@@ -82,8 +80,8 @@ def vendidos_por_categoria():
 @dbcontext
 @auth_decorator
 def ver_transacciones():
-    prod_id = request.query.prod_id
-    bodega_id = request.query.bodega_id
+    prod_id = request.query.prod_id or '123'
+    bodega_id = request.query.bodega_id or 1
     start, end = parse_start_end_date(request.query)
     if end is None:
         end = datetime.date.today()
@@ -105,7 +103,7 @@ def ver_transacciones():
     for i in items:
         i.bodega_name = prodapi.get_bodega_by_id(i.bodega_id).nombre
         i.count = counts[i.bodega_id]
-        counts[i.bodega_id] += i.delta
+        counts[i.bodega_id] -= i.delta
 
     bodegas = prodapi.get_bodegas()
     bodegas.append(NBodega(id=-1, nombre='Todas'))
@@ -125,6 +123,7 @@ def sale_by_product():
         end = datetime.datetime.now()
     if not start:
         start = end - datetime.timedelta(days=7)
+
     prods_sale = defaultdict(Item)
     for inv, x in full_invoice_items(invapi, start, end):
         if inv.almacen_id != almacen.almacen_id:
@@ -136,7 +135,9 @@ def sale_by_product():
         else:
             obj.cant = x.cant
     temp = jinja_env.get_template('ver_ventas_por_prod.html')
-    values = sorted(prods_sale, key=lambda x: x.cant * x.prod.precio1)
+    values = sorted(prods_sale.values(), key=lambda x: -x.cant * x.prod.precio1)
+    for x in values:
+        print x.serialize()
     return temp.render(items=values, start=start, end=end, almacen=almacen.nombre,
                        almacenes=prodapi.get_stores())
 
