@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+    <form>
+        {% from "macros.html" import start_end_date_oneline %}
+        {{ start_end_date_oneline(start.date(), end.date()) }}
+        <input type="submit" value="buscar"/>
+    </form>
+    <table>
+        <tr>
+            <th>Codigo</th>
+            <th>Bodega</th>
+            <th>Fecha</th>
+            <th>Creado Por</th>
+            <th>Estado</th>
+            <th></th>
+        </tr>
+        {% for i in revisions %}
+        <tr>
+            <td>{{ i.uid }}</td>
+            <td>{{ i.bodega_id }}</td>
+            <td>{{ i.timestamp.date().isoformat() }}</td>
+            <td>{{ i.created_by }}</td>
+            <td>{{ i.status }}</td>
+            <td><a href="/app/revision/{{i.uid}}">Ver</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

@@ -30,9 +30,12 @@
 <form method="post">
     {% if meta.status == 'CONTADO' %}
         <button id="ajustar">Ajustar</button>
-    {% elif meta.status != 'AJUSTADO'%}
+    {% elif meta.status == 'NUEVO'%}
         <input type="submit" value="Guardar"/>
     {% endif %}
+    <h4>Estado: {{meta.status}}</h4>
+    <h4>Creado por: {{meta.created_by}}</h4>
+    <h4>Fecha: {{meta.timestamp.date().isoformat()}}</h4>
     <table>
         <tr>
             <th>Codigo</th>
@@ -47,17 +50,16 @@
             <td>{{ p.cantidad}}</td>
 
             <td>
-                {% if meta.status == 'CONTADO' %}
-                {{ p.contado }}
-                {% else %}
+                {% if meta.status == 'NUEVO' %}
                 <input name="prod-cant-{{p.codigo}}"/>
+                {% else %}
+                {{ p.contado}}
                 {% endif%}
             </td>
         </tr>
         {% endfor %}
     </table>
 </form>
-
 
 </body>
 </html>

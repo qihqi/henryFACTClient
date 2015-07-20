@@ -89,11 +89,11 @@ def get_augmented_prod(prod_id):
 
 
 class Transaction(SerializableMixin):
-    _name = ('upi', 'bodega_id', 'prod_id', 'delta', 'name', 'ref', 'fecha')
+    _name = ('upi', 'bodega_id', 'prod_id', 'delta', 'name', 'ref', 'fecha', 'tipo')
 
     def __init__(self, upi=None, bodega_id=None,
                  prod_id=None, delta=None,
-                 name=None, ref=None, fecha=None):
+                 name=None, ref=None, fecha=None, tipo=None):
         self.upi = upi
         self.bodega_id = bodega_id
         self.prod_id = prod_id
@@ -103,6 +103,7 @@ class Transaction(SerializableMixin):
         if fecha is None:
             fecha = datetime.datetime.now()
         self.fecha = fecha
+        self.tipo = tipo
 
     def inverse(self):
         self.delta = -self.delta

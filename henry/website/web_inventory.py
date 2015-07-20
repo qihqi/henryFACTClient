@@ -138,8 +138,8 @@ def get_revision(rid):
     items = []
     for y in meta.items:
         item = prodapi.get_cant(prod_id=y.prod_id, bodega_id=meta.bodega_id)
-        if meta.status == 'CONTADO':
-            item.cantidad = y.inv_cant
+        item.cantidad = y.inv_cant
+        if y.real_cant is not None:
             item.contado = y.real_cant
         items.append(item)
 
@@ -156,3 +156,19 @@ def get_revision(rid):
         prods[key.replace('prod-cant-', '')] = value
     revisionapi.update_count(rid, prods)
     redirect('/app/revision/{}'.format(rid))
+
+@w.get('/app/list_revision')
+@dbcontext
+@auth_decorator
+def list_revision():
+    start, end = parse_start_end_date(request.query)
+    if end is None:
+        end = datetime.datetime.now()
+    if start is None:
+        start = end - datetime.timedelta(days=7)
+
+    revisions = sessionmanager.session.query(NInventoryRevision).filter(
+        NInventoryRevision.timestamp <= end, NInventoryRevision.timestamp >= start)
+
+    temp = jinja_env.get_template('inventory/list_revisions.html')
+    return temp.render(revisions=revisions, start=start, end=end)

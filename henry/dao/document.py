@@ -174,13 +174,14 @@ class Invoice(MetaItemSet):
     def items_to_transaction(self):
         reason = 'factura: id={} codigo={}'.format(
             self.meta.uid, self.meta.codigo)
+        tipo = 'venta'
         for item in self.items:
             pid = item.prod.codigo
             cant = item.cant
             if item.prod.multiplicador:
                 cant *= item.prod.multiplicador
             yield Transaction(item.prod.upi, self.meta.bodega_id, pid, -cant, item.prod.nombre,
-                              reason, self.meta.timestamp)
+                              reason, self.meta.timestamp, tipo)
 
     def validate(self):
         if getattr(self.meta, 'codigo', None) is None:
@@ -251,6 +252,7 @@ class Transferencia(MetaItemSet):
 
     def items_to_transaction(self):
         reason = '{}: codigo={}'.format(self.meta.trans_type, self.meta.uid)
+        tipo = self.meta.trans_type
         for item in self.items:
             prod, cant = item.prod, item.cant
             if self.meta.origin:
@@ -266,7 +268,7 @@ class Transferencia(MetaItemSet):
                     bodega_id=self.meta.dest,
                     prod_id=prod.codigo,
                     delta=cant, name=prod.nombre,
-                    ref=reason, fecha=self.meta.timestamp)
+                    ref=reason, fecha=self.meta.timestamp, tipo=tipo)
 
     def validate(self):
         if self.meta.trans_type not in (TransType.EXTERNAL, TransType.EGRESS):
