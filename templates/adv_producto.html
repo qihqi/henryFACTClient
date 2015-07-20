@@ -1,0 +1,53 @@
+<html>
+    <body>
+        <h3>Producto:</h3>
+        <p>Codigo: {{ prod.codigo }} </p>
+        <p>Nombre: {{ prod.nombre }} </p>
+        <h3>Contenidos:</h3>
+        <table>
+            <tr>
+                <th>id</th>
+                <th>prod_id</th>
+                <th>bodega_id</th>
+                <th>cant</th>
+                <th>inactivo</th>
+            </tr>
+            {% for c in contenidos %}
+            <tr>
+                <th>{{ c.id }}</th>
+                <th>{{ c.prod_id }}</th>
+                <th>{{ c.bodega_id }}</th>
+                <th>{{ c.cant }}</th>
+                <th>{{ c.inactivo }}</th>
+            </tr>
+            {% endfor %}
+        </table>
+        <h3>Precios:</h3>
+        <table>
+            <tr>
+                <th>id</th>
+                <th>prod_id</th>
+                <th>almacen_id</th>
+                <th>nombre a mostrar</th>
+                <th>precio1</th>
+                <th>precio2</th>
+                <th>cant_mayorista</th>
+                <th>multiplicador</th>
+                <th>upi</th>
+            </tr>
+            {% for p in pricelist %}
+            <tr>
+                <th>{{ p.id }}</th>
+                <th>{{ p.prod_id }}</th>
+                <th>{{ p.almacen_id }}</th>
+                <th>{{ p.nombre }}</th>
+                <th>{{ p.precio1 }}</th>
+                <th>{{ p.precio2 }}</th>
+                <th>{{ p.cant_mayorista }}</th>
+                <th>{{ p.multiplicador }}</th>
+                <th>{{ p.upi }}</th>
+            </tr>
+            {% endfor %}
+        </table>
+    </body>
+</html>

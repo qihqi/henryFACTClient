@@ -1,7 +1,7 @@
 from collections import defaultdict
 import datetime
 from bottle import Bottle, request, abort
-from henry.base.schema import NProducto, NContenido, NBodega, NCategory
+from henry.base.schema import NProducto, NContenido, NBodega, NCategory, NPriceList
 from henry.config import dbcontext, auth_decorator, prodapi, jinja_env, sessionmanager, invapi, transactionapi
 from henry.dao import Item
 from henry.website.common import parse_start_end_date
@@ -139,3 +139,17 @@ def sale_by_product():
     values = sorted(prods_sale, key=lambda x: x.cant * x.prod.precio1)
     return temp.render(items=values, start=start, end=end, almacen=almacen.nombre,
                        almacenes=prodapi.get_stores())
+
+
+@w.get('/app/adv/producto/<pid>')
+@dbcontext
+@auth_decorator
+def ver_prod_advanced(pid):
+    session = sessionmanager.session
+    prod = session.query(NProducto).filter_by(codigo=pid).first()
+    contenidos = list(session.query(NContenido).filter_by(prod_id=pid))
+    pricelist = list(session.query(NPriceList).filter(
+        NPriceList.prod_id.in_((pid, pid + '+', pid + '-'))))
+
+    temp = jinja_env.get_template('adv_producto.html')
+    return temp.render(prod=prod, contenidos=contenidos, pricelist=pricelist)
