@@ -14,11 +14,11 @@
             </tr>
             {% for c in contenidos %}
             <tr>
-                <th>{{ c.id }}</th>
-                <th>{{ c.prod_id }}</th>
-                <th>{{ c.bodega_id }}</th>
-                <th>{{ c.cant }}</th>
-                <th>{{ c.inactivo }}</th>
+                <td>{{ c.id }}</td>
+                <td>{{ c.prod_id }}</td>
+                <td>{{ c.bodega_id }}</td>
+                <td>{{ c.cant }}</td>
+                <td>{{ c.inactivo }}</td>
             </tr>
             {% endfor %}
         </table>
@@ -37,15 +37,15 @@
             </tr>
             {% for p in pricelist %}
             <tr>
-                <th>{{ p.id }}</th>
-                <th>{{ p.prod_id }}</th>
-                <th>{{ p.almacen_id }}</th>
-                <th>{{ p.nombre }}</th>
-                <th>{{ p.precio1 }}</th>
-                <th>{{ p.precio2 }}</th>
-                <th>{{ p.cant_mayorista }}</th>
-                <th>{{ p.multiplicador }}</th>
-                <th>{{ p.upi }}</th>
+                <td>{{ p.id }}</td>
+                <td>{{ p.prod_id }}</td>
+                <td>{{ p.almacen_id }}</td>
+                <td>{{ p.nombre }}</td>
+                <td>{{ p.precio1 }}</td>
+                <td>{{ p.precio2 }}</td>
+                <td>{{ p.cant_mayorista }}</td>
+                <td>{{ p.multiplicador }}</td>
+                <td>{{ p.upi }}</td>
             </tr>
             {% endfor %}
         </table>
