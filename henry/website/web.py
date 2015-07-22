@@ -1,4 +1,5 @@
 from bottle import request, redirect, Bottle
+import datetime
 from henry.base.schema import NUsuario
 from henry.config import dbcontext, auth_decorator, jinja_env, clientapi, sessionmanager, prodapi, actionlogged
 from henry.dao import Client
@@ -41,6 +42,7 @@ def search_cliente_result():
 @auth_decorator
 def crear_cliente():
     cliente = Client.deserialize(request.forms)
+    cliente.cliente_desde = datetime.date.today()
     try:
         clientapi.create(cliente)
     except ItemAlreadyExists:

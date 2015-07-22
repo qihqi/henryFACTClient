@@ -2,7 +2,6 @@ import traceback
 import datetime
 
 from bottle import request, Bottle, abort, redirect
-from decimal import Decimal
 from henry.base.auth import get_user
 
 from henry.config import jinja_env, prodapi, actionlogged, transapi, BODEGAS_EXTERNAS, sessionmanager, revisionapi
@@ -10,7 +9,7 @@ from henry.config import (dbcontext, auth_decorator)
 from henry.dao import TransType, TransMetadata, Transferencia
 from henry.dao.productos import Bodega
 from henry.website.common import items_from_form, transmetadata_from_form, parse_start_end_date
-from henry.base.schema import NInventoryRevision, NInventoryRevisionItem
+from henry.base.schema import NInventoryRevision
 
 w = Bottle()
 web_inventory_webapp = w
@@ -156,6 +155,7 @@ def get_revision(rid):
         prods[key.replace('prod-cant-', '')] = value
     revisionapi.update_count(rid, prods)
     redirect('/app/revision/{}'.format(rid))
+
 
 @w.get('/app/list_revision')
 @dbcontext
