@@ -422,7 +422,3 @@ class RevisionApi:
             self.transactionapi.save(transaction)
         revision.status = 'AJUSTADO'
         return revision
-
-
-
-

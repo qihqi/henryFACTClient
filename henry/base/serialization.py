@@ -84,7 +84,7 @@ class SerializableMixin(object):
             their = getattr(obj, key, None)
             if their is None and hasattr(obj, 'get'):  # merge from dict
                 their = obj.get(key, None)
-            mine = getattr(self, key)
+            mine = getattr(self, key, None)
             setattr(self, key, their or mine)  # defaults to theirs
         return self
 

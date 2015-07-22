@@ -42,4 +42,9 @@ Hasta: <input name="end" value="{{end_value}}" />
 {% endmacro %}
 
 
+{% macro generate_form(form_data) %}
+{% for label, name in form_data %}
+<p>{{label}}: <input id="{{name}}" name="{{name}}"/></p>
+{% endfor %}
+{% endmacro %}
 

@@ -271,3 +271,72 @@ class NInventoryRevisionItem(Base):
     inv_cant = Column(Numeric(20, 3))
     real_cant = Column(Numeric(20, 3))
 
+
+class NBank(Base):
+    __tablename__ = 'cheque_banco'
+    uid = Column('id', Integer, primary_key=True, autoincrement=True)
+    name = Column('nombre', String(100))
+
+
+class NDepositAccount(Base):
+    __tablename__ = 'cheque_cuenta'
+    uid = Column('id', Integer, primary_key=True, autoincrement=True)
+    name = Column('nombre', String(100))
+
+
+class NCheckOld(Base):
+    __tablename__ = 'cheque_cheque'
+    uid = Column('id', Integer, primary_key=True, autoincrement=True)
+    bank = Column('banco', Integer, ForeignKey(NBank.uid))
+    cuenta = Column(String(100))
+
+    numero = Column(Integer)
+    titular = Column(String(100))
+
+    value = Column('valor', Numeric(20, 2))
+    fecha = Column(Date)
+
+    input_date = Column('fecha_ingreso', Date)
+    por_compra = Column(String(100))
+    deposit_account = Column('depositado_en', Integer, ForeignKey(NDepositAccount.uid))
+
+
+class NPayment(Base):
+    __tablename__ = 'pagos'
+    uid = Column(Integer, primary_key=True, autoincrement=True)
+    note_id = Column(Integer, ForeignKey(NNota.id))
+    client_id = Column(String(20))
+    value = Column('valor', Integer)
+    type = Column('tipo', String(10))
+    date = Column('fecha', Date)
+
+    nota = relationship('NNota', backref=backref('payments'))
+
+
+class NCheck(Base):
+    __tablename__ = 'cheques_recibidos'
+    uid = Column('id', Integer, primary_key=True, autoincrement=True)
+    bank = Column('banco', Integer, ForeignKey(NBank.uid))
+    accountno = Column(String(100))
+    checkno = Column('numero', Integer)
+    holder = Column('titular', String(100))
+    checkdate = Column('fecha_cheque', Date)
+
+    deposit_account = Column('depositado_en', Integer, ForeignKey(NDepositAccount.uid))
+    status = Column(String(10))
+
+    payment_id = Column(Integer, ForeignKey(NPayment.uid))
+    payment = relationship(NPayment)
+
+
+class NDeposit(Base):
+    __tablename__ = 'depositos'
+    uid = Column('id', Integer, primary_key=True, autoincrement=True)
+    account = Column('cuenta', Integer, ForeignKey(NDepositAccount.uid))
+    status = Column(String(10))
+    revised_by = Column(String(10))
+
+    payment_id = Column(Integer, ForeignKey(NPayment.uid))
+    payment = relationship(NPayment)
+
+

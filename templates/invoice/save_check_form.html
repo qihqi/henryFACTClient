@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "macros.html" import generate_form, selector, select_almacen%}
+
+{%block title %}Guardar Cheque{% endblock %}
+
+{% block content %}
+{% if msg %} <h4>{{ msg }}</h4> {% endif %}
+<form method="post">
+    <p>Banco: {{ selector(banks, 'bank', 'uid', 'name') }}</p>
+    {{ generate_form([('Cuenta', 'accountno'), ('Numero', 'checkno'), ('Titular', 'holder'), ('Valor', 'value')]) }}
+    <p>Fecha <input name="checkdate" value="{{today().isoformat()}}"/></p>
+    <p>Almacen: {{select_almacen(stores)}}</p>
+    <p>Codigo: <input name="codigo" /></p>
+    <p>Ingresado en:
+        <input name="ingresado" type="radio" value="hoy" checked>Hoy</input>
+        <input name="ingresado" type="radio" value="ayer">Ayer</input>
+    </p>
+    <p><input type="submit" value="Guardar"/></p>
+</form>
+
+{% endblock %}

@@ -14,6 +14,7 @@ from henry.base.session_manager import SessionManager, DBContext
 from henry.constants import (CONN_STRING, INGRESO_PATH, INVOICE_PATH, ENV,
                              LOGIN_URL, TRANSACTION_PATH, PEDIDO_PATH, ACTION_LOG_PATH,
                              BEAKER_DIR, EXTERNAL_URL, EXTERNAL_USER, EXTERNAL_PASS, INVOICE_MODE)
+from henry.dao.payment import PaymentApi
 from henry.dao.productos import RevisionApi
 from henry.misc import id_type, fix_id, abs_string, value_from_cents, get_total
 from henry.externalapi import ExternalApi
@@ -32,6 +33,7 @@ prodapi = ProductApiDB(sessionmanager)
 pedidoapi = PedidoApi(sessionmanager, FileService(PEDIDO_PATH))
 clientapi = ClientApiDB(sessionmanager)
 revisionapi = RevisionApi(sessionmanager, prodapi, transactionapi)
+paymentapi = PaymentApi(sessionmanager)
 
 transapi = DocumentApi(sessionmanager, FileService(INGRESO_PATH), transactionapi, object_cls=Transferencia)
 invapi = DocumentApi(sessionmanager, FileService(INVOICE_PATH), transactionapi, object_cls=Invoice)

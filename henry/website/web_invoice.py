@@ -8,8 +8,9 @@ from henry.base.auth import get_user
 from henry.base.schema import NUsuario, NNota, NAccountStat
 from henry.base.serialization import json_loads
 from henry.config import (dbcontext, auth_decorator, jinja_env, prodapi,
-                          sessionmanager, actionlogged, invapi, pedidoapi)
+                          sessionmanager, actionlogged, invapi, pedidoapi, paymentapi)
 from henry.dao import Status, PaymentFormat, Invoice
+from henry.dao.payment import Check
 from henry.website.reports import (get_notas_with_clients, split_records,
                                    group_by_records, payment_report)
 from henry.website.common import parse_start_end_date, parse_iso
@@ -269,3 +270,42 @@ def get_notas_de_pedido(uid):
     willprint = request.query.get('print')
     temp = jinja_env.get_template('invoice/ver_pedido.html')
     return temp.render(pedido=pedido, willprint=willprint)
+
+
+@w.get('/app/guardar_cheque')
+@dbcontext
+@auth_decorator
+def save_check_form():
+    msg = request.query.msg
+    temp = jinja_env.get_template('invoice/save_check_form.html')
+    return temp.render(banks=paymentapi.get_all_banks(),
+                       stores=prodapi.get_stores(),
+                       msg=msg)
+
+
+@w.post('/app/guardar_cheque')
+@dbcontext
+@auth_decorator
+def save_check():
+    codigo = request.forms.codigo
+    almacen = request.forms.almacen_id
+    date = datetime.date.today()
+    if request.forms.ingresado == 'ayer':
+        date = date - datetime.timedelta(days=1)
+    if codigo is not None:
+        nota = sessionmanager.session.query(NNota).filter_by(
+            codigo=codigo, almacen_id=almacen).first()
+        note_id = nota.id
+        client_id = nota.client_id
+    else:
+        note_id = None
+        client_id = None
+
+    check = Check.deserialize(request.forms)
+    print check.checkdate
+    check.checkdate = parse_iso(check.checkdate)
+    check.note_id = note_id
+    check.client_id = client_id
+    check.date = date
+    paymentapi.save_check(check)
+    redirect('/app/guardar_cheque?msg=Cheque+Guardado')
