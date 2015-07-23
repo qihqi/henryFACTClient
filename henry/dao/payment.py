@@ -1,4 +1,4 @@
-from henry.base.schema import NPayment, NCheck, NDeposit, NBank
+from henry.base.schema import NPayment, NCheck, NDeposit, NBank, NDepositAccount
 from henry.base.serialization import SerializableMixin
 
 
@@ -103,6 +103,14 @@ class PaymentApi:
     def get_check(self, uid):
         return self._get_doc(uid, NCheck, Check)
 
+    def list_checks(self, paymentdate=None, checkdate=None):
+        query = self.sm.session.query(NCheck).join(NPayment)
+        if paymentdate is not None:
+            query.filter(NPayment.date == paymentdate)
+        if checkdate is not None:
+            query.filter(NCheck.checkdate == checkdate)
+        return map(Check.from_db_instance, query)
+
     def get_deposit(self, uid):
         return self._get_doc(uid, NDeposit, Deposit)
 
@@ -111,3 +119,9 @@ class PaymentApi:
 
     def get_all_banks(self):
         return self.sm.session.query(NBank)
+
+    def create_account(self, name):
+        self.sm.session.add(NDepositAccount(name=name))
+
+    def get_all_accounts(self):
+        return self.sm.session.query(NDepositAccount)

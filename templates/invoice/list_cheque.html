@@ -1,0 +1,36 @@
+<html>
+<body>
+  {% from "macros.html" import selector %}
+  <h4>{{ title }}</h4>
+  <form>
+    <input name="date" value="{{date}}"/>
+    <input type="submit" value="Buscar"/>
+  </form>
+  <form method="post" action="/app/guardar_deposito">
+  <table>
+    <tr>
+      <th>Fecha de compra</th>
+      <th>Banco</th>
+      <th>Titular</th>
+      <th>Valor</th>
+      <th>Fecha de Cheque</th>
+      <th>Depositado</th>
+    </tr>
+    {% for c in checks %}
+    <tr>
+      <td>{{ c.date }}</td>
+      <td>{{ c.bank }}</td>
+      <td>{{ c.holder }}</td>
+      <td>{{ c.value }}</td>
+      <td>{{ c.checkdate }}</td>
+      {% if c.deposit_account %}
+      <td>{{ c.deposit_account }}</td>
+      {% else %}
+      <td>{{ selector(accounts, 'acct-{{c.uid}}', 'uid', 'name') }}</td>
+      {% endif %}
+    </tr>
+    {% endfor %}
+  </table>
+  <p><input type="submit" value="Guardar" /></p>
+  </form>
+</body>

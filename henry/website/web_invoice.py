@@ -302,10 +302,84 @@ def save_check():
         client_id = None
 
     check = Check.deserialize(request.forms)
-    print check.checkdate
     check.checkdate = parse_iso(check.checkdate)
     check.note_id = note_id
     check.client_id = client_id
     check.date = date
     paymentapi.save_check(check)
     redirect('/app/guardar_cheque?msg=Cheque+Guardado')
+
+@w.get('/app/ver_cheques_guardados')
+@dbcontext
+@auth_decorator
+def list_checks():
+    date = request.query.get('fecha')
+    if date is not None:
+        date = parse_iso(date)
+    else:
+        date = (datetime.datetime.now() - datetime.timedelta(hours=12)).date()
+
+    result = paymentapi.list_checks(paymentdate=date)
+    temp = jinja_env.get_template('invoice/list_cheque.html')
+    return temp.render(date=date, checks=result,
+                       title='Cheques para depositar',
+                       accounts=paymentapi.get_all_accounts())
+
+
+@w.get('/app/ver_cheques_para_depositar')
+@dbcontext
+@auth_decorator
+def list_checks():
+    date = request.query.get('fecha')
+    if date is not None:
+        date = parse_iso(date)
+    else:
+        date = datetime.date.today()
+
+    result = paymentapi.list_checks(checkdate=date)
+    temp = jinja_env.get_template('invoice/list_cheque.html')
+    return temp.render(date=date, checks=result,
+                       title='Cheques para depositar',
+                       accounts=paymentapi.get_all_accounts())
+
+@w.get('/app/crear_banco_form')
+@dbcontext
+@auth_decorator
+def create_bank():
+    msg = request.query.msg
+    temp = jinja_env.get_template('invoice/crear_banco_form.html')
+    return temp.render(msg=msg)
+
+
+@w.post('/app/crear_banco_form')
+@dbcontext
+@auth_decorator
+def post_create_bank():
+    name = request.forms.name
+    paymentapi.create_bank(name)
+    redirect('/app/crear_banco_form?msg=Banco+Creado')
+
+
+@w.get('/app/crear_cuenta_form')
+@dbcontext
+@auth_decorator
+def create_bank():
+    msg = request.query.msg
+    temp = jinja_env.get_template('invoice/crear_banco_form.html')
+    return temp.render(msg=msg)
+
+
+@w.post('/app/crear_cuenta_form')
+@dbcontext
+@auth_decorator
+def post_create_bank():
+    name = request.forms.name
+    paymentapi.create_account(name)
+    redirect('/app/crear_banco_form?msg=Cuenta+Creada')
+
+
+@w.post('/app/guardar_deposito')
+@dbcontext
+@auth_decorator
+def post_guardar_deposito():
+    pass
