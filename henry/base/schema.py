@@ -287,7 +287,8 @@ class NDepositAccount(Base):
 class NCheckOld(Base):
     __tablename__ = 'cheque_cheque'
     uid = Column('id', Integer, primary_key=True, autoincrement=True)
-    bank = Column('banco', Integer, ForeignKey(NBank.uid))
+    bank_id = Column('banco_id', Integer, ForeignKey(NBank.uid))
+    bank = relationship(NBank)
     cuenta = Column(String(100))
 
     numero = Column(Integer)
@@ -298,7 +299,8 @@ class NCheckOld(Base):
 
     input_date = Column('fecha_ingreso', Date)
     por_compra = Column(String(100))
-    deposit_account = Column('depositado_en', Integer, ForeignKey(NDepositAccount.uid))
+    deposit_account_id = Column('depositado_en_id', Integer, ForeignKey(NDepositAccount.uid))
+    deposit_account = relationship(NDepositAccount)
 
 
 class NPayment(Base):
@@ -316,13 +318,13 @@ class NPayment(Base):
 class NCheck(Base):
     __tablename__ = 'cheques_recibidos'
     uid = Column('id', Integer, primary_key=True, autoincrement=True)
-    bank = Column('banco', Integer, ForeignKey(NBank.uid))
+    bank = Column('banco', String(30))
     accountno = Column(String(100))
     checkno = Column('numero', Integer)
     holder = Column('titular', String(100))
     checkdate = Column('fecha_cheque', Date)
 
-    deposit_account = Column('depositado_en', Integer, ForeignKey(NDepositAccount.uid))
+    deposit_account = Column('depositado_en', String(30))
     status = Column(String(10))
 
     payment_id = Column(Integer, ForeignKey(NPayment.uid))

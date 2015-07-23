@@ -5,7 +5,7 @@ from operator import attrgetter
 from bottle import request, abort, redirect, response, Bottle
 
 from henry.base.auth import get_user
-from henry.base.schema import NUsuario, NNota, NAccountStat
+from henry.base.schema import NUsuario, NNota, NAccountStat, NCheck
 from henry.base.serialization import json_loads
 from henry.config import (dbcontext, auth_decorator, jinja_env, prodapi,
                           sessionmanager, actionlogged, invapi, pedidoapi, paymentapi)
@@ -292,9 +292,11 @@ def save_check():
     date = datetime.date.today()
     if request.forms.ingresado == 'ayer':
         date = date - datetime.timedelta(days=1)
-    if codigo is not None:
+    if codigo:
         nota = sessionmanager.session.query(NNota).filter_by(
             codigo=codigo, almacen_id=almacen).first()
+        if nota is None:
+            redirect('/app/guardar_cheque?msg=Orden+Despacho+No+{}+no+existe'.format(codigo))
         note_id = nota.id
         client_id = nota.client_id
     else:
@@ -302,6 +304,7 @@ def save_check():
         client_id = None
 
     check = Check.deserialize(request.forms)
+    check.value = int(Decimal(check.value) * 100)
     check.checkdate = parse_iso(check.checkdate)
     check.note_id = note_id
     check.client_id = client_id
@@ -309,38 +312,50 @@ def save_check():
     paymentapi.save_check(check)
     redirect('/app/guardar_cheque?msg=Cheque+Guardado')
 
+
 @w.get('/app/ver_cheques_guardados')
 @dbcontext
 @auth_decorator
 def list_checks():
-    date = request.query.get('fecha')
-    if date is not None:
-        date = parse_iso(date)
+    start, end = parse_start_end_date(request.query)
+    if end is None:
+        end = datetime.datetime.now() - datetime.timedelta(hours=12)
+    end = end.date()
+    if start is None:
+        start = end
     else:
-        date = (datetime.datetime.now() - datetime.timedelta(hours=12)).date()
+        start = start.date()
 
-    result = paymentapi.list_checks(paymentdate=date)
+    result = paymentapi.list_checks(paymentdate=(start, end))
     temp = jinja_env.get_template('invoice/list_cheque.html')
-    return temp.render(date=date, checks=result,
-                       title='Cheques para depositar',
-                       accounts=paymentapi.get_all_accounts())
+    return temp.render(start=start, end=end, checks=result,
+                       title='Cheques Guardados',
+                       accounts=paymentapi.get_all_accounts(),
+                       thisurl=request.url)
 
 
 @w.get('/app/ver_cheques_para_depositar')
 @dbcontext
 @auth_decorator
 def list_checks():
-    date = request.query.get('fecha')
-    if date is not None:
-        date = parse_iso(date)
+    start, end = parse_start_end_date(request.query)
+    if end is None:
+        end = datetime.date.today()
     else:
-        date = datetime.date.today()
-
-    result = paymentapi.list_checks(checkdate=date)
+        end = end.date()
+    if start is None:
+        start = end
+        if start.isoweekday() == 1:  # monday
+            start = start - datetime.timedelta(days=2)  # include saturday and sunday
+    else:
+        start = start.date()
+    result = paymentapi.list_checks(checkdate=(start, end))
     temp = jinja_env.get_template('invoice/list_cheque.html')
-    return temp.render(date=date, checks=result,
+    return temp.render(start=start, end=end, checks=result,
                        title='Cheques para depositar',
-                       accounts=paymentapi.get_all_accounts())
+                       accounts=paymentapi.get_all_accounts(),
+                       thisurl=request.url)
+
 
 @w.get('/app/crear_banco_form')
 @dbcontext
@@ -378,8 +393,17 @@ def post_create_bank():
     redirect('/app/crear_banco_form?msg=Cuenta+Creada')
 
 
-@w.post('/app/guardar_deposito')
+@w.post('/app/guardar_cheque_deposito')
 @dbcontext
 @auth_decorator
 def post_guardar_deposito():
-    pass
+    nexturl = request.forms.get('next', '/app')
+    for key, value in request.forms.items():
+        print key, value
+        if key.startswith('acct-'):
+            key = key.replace('acct-', '')
+            print key, value
+            sessionmanager.session.query(NCheck).filter_by(uid=key).update(
+                {NCheck.deposit_account: value})
+            sessionmanager.session.flush()
+    redirect(nexturl)

@@ -1,3 +1,4 @@
+from sqlalchemy import desc
 from henry.base.schema import NPayment, NCheck, NDeposit, NBank, NDepositAccount
 from henry.base.serialization import SerializableMixin
 
@@ -24,8 +25,9 @@ class Check(SerializableMixin):
     @classmethod
     def from_db_instance(cls, dbobj):
         new = cls()
-        new.merge_from(dbobj)
+        # this ordering is important
         new.merge_from(dbobj.payment)
+        new.merge_from(dbobj)
         return new
 
 
@@ -47,8 +49,8 @@ class Deposit(SerializableMixin):
     @classmethod
     def from_db_instance(cls, dbobj):
         new = cls()
-        new.merge_from(dbobj)
         new.merge_from(dbobj.payment)
+        new.merge_from(dbobj)
         return new
 
 
@@ -106,9 +108,15 @@ class PaymentApi:
     def list_checks(self, paymentdate=None, checkdate=None):
         query = self.sm.session.query(NCheck).join(NPayment)
         if paymentdate is not None:
-            query.filter(NPayment.date == paymentdate)
+            start, end = paymentdate
+            query = query.filter(NPayment.date >= start, NPayment.date <= end)
         if checkdate is not None:
-            query.filter(NCheck.checkdate == checkdate)
+            start, end = checkdate
+            query = query.filter(NCheck.checkdate >= start, NCheck.checkdate <= end)
+        if paymentdate:
+            query = query.order_by(desc(NPayment.date))
+        else:
+            query = query.order_by(desc(NCheck.checkdate))
         return map(Check.from_db_instance, query)
 
     def get_deposit(self, uid):

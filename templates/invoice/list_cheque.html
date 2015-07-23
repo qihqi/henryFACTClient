@@ -1,12 +1,31 @@
 <html>
+<head>
+  <style>
+    body {
+        text-align : center;
+    }
+    .centro {
+        text-align:center;
+    }
+    td, th{
+        text-align:right;
+    }
+    table {
+      width: 1000;
+      align: center;
+    }
+  </style>
+</head>
 <body>
-  {% from "macros.html" import selector %}
+  {% from "macros.html" import selector, start_end_date_oneline %}
+  <button onClick="window.print();" > Imprimir </button>
+  <button onClick="window.location='/app';" > Regresar al principio </button>
   <h4>{{ title }}</h4>
   <form>
-    <input name="date" value="{{date}}"/>
+      {{ start_end_date_oneline(start, end) }}
     <input type="submit" value="Buscar"/>
   </form>
-  <form method="post" action="/app/guardar_deposito">
+  <form method="post" action="/app/guardar_deposito_cheque">
   <table>
     <tr>
       <th>Fecha de compra</th>
@@ -14,6 +33,7 @@
       <th>Titular</th>
       <th>Valor</th>
       <th>Fecha de Cheque</th>
+      <th>No. Orden</th>
       <th>Depositado</th>
     </tr>
     {% for c in checks %}
@@ -21,16 +41,18 @@
       <td>{{ c.date }}</td>
       <td>{{ c.bank }}</td>
       <td>{{ c.holder }}</td>
-      <td>{{ c.value }}</td>
+      <td>{{ value_from_cents(c.value) }}</td>
       <td>{{ c.checkdate }}</td>
+      <td>{% if c.note_id is not none%} <a href="/app/nota/{{c.note_id}}">{{c.note_id}}</a>{% endif %} </td>
       {% if c.deposit_account %}
       <td>{{ c.deposit_account }}</td>
       {% else %}
-      <td>{{ selector(accounts, 'acct-{{c.uid}}', 'uid', 'name') }}</td>
+      <td>{{ selector(accounts, 'acct-%d' % c.uid, 'name', 'name') }}</td>
       {% endif %}
     </tr>
     {% endfor %}
   </table>
+    <input type="hidden" value="{{thisurl}}" name="next" />
   <p><input type="submit" value="Guardar" /></p>
   </form>
 </body>

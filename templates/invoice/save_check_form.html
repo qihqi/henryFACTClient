@@ -6,7 +6,7 @@
 {% block content %}
 {% if msg %} <h4>{{ msg }}</h4> {% endif %}
 <form method="post">
-    <p>Banco: {{ selector(banks, 'bank', 'uid', 'name') }}</p>
+    <p>Banco: {{ selector(banks, 'bank', 'name', 'name') }}</p>
     {{ generate_form([('Cuenta', 'accountno'), ('Numero', 'checkno'), ('Titular', 'holder'), ('Valor', 'value')]) }}
     <p>Fecha <input name="checkdate" value="{{today().isoformat()}}"/></p>
     <p>Almacen: {{select_almacen(stores)}}</p>
