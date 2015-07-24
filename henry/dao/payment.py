@@ -1,6 +1,19 @@
 from sqlalchemy import desc
+from .document import PaymentFormat
 from henry.base.schema import NPayment, NCheck, NDeposit, NBank, NDepositAccount
 from henry.base.serialization import SerializableMixin
+
+class Payment(SerializableMixin):
+    _name = (
+        'uid',
+        'note_id',
+        'client_id',
+        'value',
+        'date',
+    )
+
+    def __init__(self, **kwargs):
+        self.merge_from(kwargs)
 
 
 class Check(SerializableMixin):
@@ -64,37 +77,41 @@ def _extract_payment(payment):
 
 
 class PaymentApi:
+
     def __init__(self, sessionmanager):
         self.sm = sessionmanager
 
-    def save_check(self, check):
-        npayment = _extract_payment(check)
-        npayment.type = 'CHEQUE'
-        ncheck = NCheck(
-            bank=check.bank,
-            accountno=check.accountno,
-            checkno=check.checkno,
-            holder=check.holder,
-            checkdate=check.checkdate,
-            deposit_account=check.deposit_account,
-            status='NUEVO',
-        )
-        ncheck.payment = npayment
-        self.sm.session.add(ncheck)
+    def save_payment(self, payment, type):
+        npayment = _extract_payment(payment)
+        npayment.type = type
+        if type == PaymentFormat.CHECK:
+            dbinstance = NCheck(
+                bank=payment.bank,
+                accountno=payment.accountno,
+                checkno=payment.checkno,
+                holder=payment.holder,
+                checkdate=payment.checkdate,
+                deposit_account=payment.deposit_account,
+                status='NUEVO',
+            )
+            dbinstance.payment = npayment
+        elif type == PaymentFormat.DEPOSIT:
+            dbinstance = NDeposit(
+                account=payment.account,
+                status='NUEVO',
+            )
+            dbinstance.payment = npayment
+        else:
+            dbinstance = npayment
+        self.sm.session.add(dbinstance)
         self.sm.session.flush()
-        return ncheck.uid
+        return dbinstance.uid
+
+    def save_check(self, check):
+        return save_payment(check, PaymentFormat.CHECK)
 
     def save_deposit(self, deposit):
-        npayment = _extract_payment(deposit)
-        npayment.type = 'CHEQUE'
-        ndeposit = NDeposit(
-            account=deposit.account,
-            status='NUEVO',
-        )
-        ndeposit.payment = npayment
-        self.sm.session.add(npayment)
-        self.sm.session.flush()
-        return ndeposit.uid
+        return save_payment(check, PaymentFormat.CHECK)
 
     def _get_doc(self, uid, dbclazz, objclazz):
         ndoc = self.sm.session.query(dbclazz).filter_by(uid=uid).first()

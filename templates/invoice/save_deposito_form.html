@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "macros.html" import generate_form, selector, select_almacen%}
+
+{%block title %}Guardar Deposito{% endblock %}
+
+{% block content %}
+{% if msg %} <h4>{{ msg }}</h4> {% endif %}
+<form method="post">
+    <p>Cuenta: {{ selector(cuentas, 'account', 'name', 'name') }}</p>
+    <p>Valor: <input name="value"/> </p>
+    <p>Almacen: {{select_almacen(stores)}}</p>
+    <p>Codigo: <input name="codigo" /></p>
+    <p>
+        Ingresado en:
+        <input name="ingresado" type="radio" value="hoy" checked>Hoy</input>
+        <input name="ingresado" type="radio" value="ayer">Ayer</input>
+    </p>
+    <p><input type="submit" value="Guardar"/></p>
+</form>
+
+{% endblock %}

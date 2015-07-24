@@ -255,7 +255,7 @@ class NAccountStat(Base):
 
 class NInventoryRevision(Base):
     __tablename__ = 'revisiones_de_inventario'
-    uid = Column(Integer, primary_key=True, autoincrement=True)  
+    uid = Column(Integer, primary_key=True, autoincrement=True)
     bodega_id = Column(Integer)
     timestamp = Column(DateTime, index=True)
     created_by = Column(String(20))
@@ -319,9 +319,9 @@ class NCheck(Base):
     __tablename__ = 'cheques_recibidos'
     uid = Column('id', Integer, primary_key=True, autoincrement=True)
     bank = Column('banco', String(30))
-    accountno = Column(String(100))
+    accountno = Column(String(20))
     checkno = Column('numero', Integer)
-    holder = Column('titular', String(100))
+    holder = Column('titular', String(40))
     checkdate = Column('fecha_cheque', Date)
 
     deposit_account = Column('depositado_en', String(30))
@@ -334,11 +334,9 @@ class NCheck(Base):
 class NDeposit(Base):
     __tablename__ = 'depositos'
     uid = Column('id', Integer, primary_key=True, autoincrement=True)
-    account = Column('cuenta', Integer, ForeignKey(NDepositAccount.uid))
+    account = Column('cuenta', String(30))
     status = Column(String(10))
     revised_by = Column(String(10))
 
     payment_id = Column(Integer, ForeignKey(NPayment.uid))
     payment = relationship(NPayment)
-
-

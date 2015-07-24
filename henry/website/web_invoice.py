@@ -10,7 +10,7 @@ from henry.base.serialization import json_loads
 from henry.config import (dbcontext, auth_decorator, jinja_env, prodapi,
                           sessionmanager, actionlogged, invapi, pedidoapi, paymentapi)
 from henry.dao import Status, PaymentFormat, Invoice
-from henry.dao.payment import Check
+from henry.dao.payment import Check, Deposit, Payment
 from henry.website.reports import (get_notas_with_clients, split_records,
                                    group_by_records, payment_report)
 from henry.website.common import parse_start_end_date, parse_iso
@@ -272,6 +272,18 @@ def get_notas_de_pedido(uid):
     return temp.render(pedido=pedido, willprint=willprint)
 
 
+def extract_nota_and_client(form):
+    codigo = form.get('codigo')
+    almacen = form.get('almacen_id')
+    if codigo:
+        nota = sessionmanager.session.query(NNota).filter_by(
+            codigo=codigo, almacen_id=almacen).first()
+        if nota is None:
+            redirect('/app/guardar_cheque?msg=Orden+Despacho+No+{}+no+existe'.format(codigo))
+        return nota.id, nota.client_id
+    return None, None
+
+
 @w.get('/app/guardar_cheque')
 @dbcontext
 @auth_decorator
@@ -282,50 +294,48 @@ def save_check_form():
                        stores=prodapi.get_stores(),
                        msg=msg)
 
+def parse_payment_from_request(form, clazz):
+    date = datetime.date.today()
+    if request.forms.ingresado == 'ayer':
+        date = date - datetime.timedelta(days=1)
+    payment = clazz.deserialize(request.forms)
+    payment.note_id, payment.client_id = extract_nota_and_client(request.forms)
+    payment.value = int(Decimal(payment.value) * 100)
+    payment.date = date
+    return payment
+
 
 @w.post('/app/guardar_cheque')
 @dbcontext
 @auth_decorator
 def save_check():
-    codigo = request.forms.codigo
-    almacen = request.forms.almacen_id
-    date = datetime.date.today()
-    if request.forms.ingresado == 'ayer':
-        date = date - datetime.timedelta(days=1)
-    if codigo:
-        nota = sessionmanager.session.query(NNota).filter_by(
-            codigo=codigo, almacen_id=almacen).first()
-        if nota is None:
-            redirect('/app/guardar_cheque?msg=Orden+Despacho+No+{}+no+existe'.format(codigo))
-        note_id = nota.id
-        client_id = nota.client_id
-    else:
-        note_id = None
-        client_id = None
-
-    check = Check.deserialize(request.forms)
-    check.value = int(Decimal(check.value) * 100)
+    check = parse_payment_from_request(request.forms, Check)
     check.checkdate = parse_iso(check.checkdate)
-    check.note_id = note_id
-    check.client_id = client_id
-    check.date = date
-    paymentapi.save_check(check)
+    paymentapi.save_payment(deposit, PaymentFormat.CHECK)
     redirect('/app/guardar_cheque?msg=Cheque+Guardado')
+
+
+def parse_start_end_date_with_default(form, start, end):
+    newstart, newend = parse_start_end_date(request.query)
+    if newend is None:
+        newend = end
+    if newstart is None:
+        newstart = start
+    if not isinstance(newstart, datetime.date):
+        newstart = newstart.date()
+    if not isinstance(newend, datetime.date):
+        newstart = newend.date()
+    return newstart, newend
 
 
 @w.get('/app/ver_cheques_guardados')
 @dbcontext
 @auth_decorator
 def list_checks():
-    start, end = parse_start_end_date(request.query)
-    if end is None:
-        end = datetime.datetime.now() - datetime.timedelta(hours=12)
-    end = end.date()
-    if start is None:
-        start = end
-    else:
-        start = start.date()
-
+    today = datetime.datetime.today()
+    start, end = parse_start_end_date_with_default(
+        forms, today,
+        today - datetime.timedelta(hours=12))
     result = paymentapi.list_checks(paymentdate=(start, end))
     temp = jinja_env.get_template('invoice/list_cheque.html')
     return temp.render(start=start, end=end, checks=result,
@@ -338,17 +348,11 @@ def list_checks():
 @dbcontext
 @auth_decorator
 def list_checks():
-    start, end = parse_start_end_date(request.query)
-    if end is None:
-        end = datetime.date.today()
-    else:
-        end = end.date()
-    if start is None:
-        start = end
-        if start.isoweekday() == 1:  # monday
-            start = start - datetime.timedelta(days=2)  # include saturday and sunday
-    else:
-        start = start.date()
+    today = datetime.date.today()
+    start, end = parse_start_end_date_with_default(
+        request.query, today, today)
+    if start.isoweekday() == 1:
+        start = start - datetime.timedelta(days=2)
     result = paymentapi.list_checks(checkdate=(start, end))
     temp = jinja_env.get_template('invoice/list_cheque.html')
     return temp.render(start=start, end=end, checks=result,
@@ -356,14 +360,26 @@ def list_checks():
                        accounts=paymentapi.get_all_accounts(),
                        thisurl=request.url)
 
+def render_form_with_msg(path, title):
+    msg = request.query.msg
+    temp = jinja_env.get_template(path)
+    return temp.render(msg=msg, title=title)
+
+
+@w.get('/app/crear_cuenta_form')
+@dbcontext
+@auth_decorator
+def create_bank():
+    return render_form_with_msg(
+        'invoice/crear_banco_form.html', title='Crear Cuenta')
+
 
 @w.get('/app/crear_banco_form')
 @dbcontext
 @auth_decorator
 def create_bank():
-    msg = request.query.msg
-    temp = jinja_env.get_template('invoice/crear_banco_form.html')
-    return temp.render(msg=msg)
+    return render_form_with_msg(
+        'invoice/crear_banco_form.html', title='Crear Banco')
 
 
 @w.post('/app/crear_banco_form')
@@ -371,17 +387,8 @@ def create_bank():
 @auth_decorator
 def post_create_bank():
     name = request.forms.name
-    paymentapi.create_bank(name)
-    redirect('/app/crear_banco_form?msg=Banco+Creado')
-
-
-@w.get('/app/crear_cuenta_form')
-@dbcontext
-@auth_decorator
-def create_bank():
-    msg = request.query.msg
-    temp = jinja_env.get_template('invoice/crear_banco_form.html')
-    return temp.render(msg=msg)
+    paymentapi.create_account(name)
+    redirect('/app/crear_banco_form?msg=Cuenta+Creada')
 
 
 @w.post('/app/crear_cuenta_form')
@@ -407,3 +414,45 @@ def post_guardar_deposito():
                 {NCheck.deposit_account: value})
             sessionmanager.session.flush()
     redirect(nexturl)
+
+
+@w.get('/app/guardar_deposito')
+@dbcontext
+@auth_decorator
+def guardar_deposito():
+    msg = request.query.msg
+    temp = jinja_env.get_template('invoice/save_deposito_form.html')
+    return temp.render(cuentas=paymentapi.get_all_accounts(),
+                       stores=prodapi.get_stores(),
+                       msg=msg)
+
+
+@w.post('/app/guardar_deposito')
+@dbcontext
+@auth_decorator
+def post_guardar_deposito():
+    deposit = parse_payment_from_request(request.forms, Deposit)
+    paymentapi.save_payment(deposit, PaymentFormat.DEPOSIT)
+    redirect('/app/guardar_deposito?msg=Deposito+Guardado')
+
+
+@w.get('/app/guardar_abono')
+@dbcontext
+@auth_decorator
+def guardar_deposito():
+    msg = request.query.msg
+    temp = jinja_env.get_template('invoice/save_abono_form.html')
+    return temp.render(stores=prodapi.get_stores(),
+                       msg=msg)
+
+
+@w.post('/app/guardar_abono')
+@dbcontext
+@auth_decorator
+def post_guardar_deposito():
+    payment = Payment()
+    payment.note_id, payment.client_id = extract_nota_and_client(request.forms)
+    payment.value = request.forms.value
+    payment.date = datetime.date.today()
+    paymentapi.save_payment(payment, PaymentFormat.CASH)
+    redirect('/app/guardar_deposito?msg=Abono+Guardado')

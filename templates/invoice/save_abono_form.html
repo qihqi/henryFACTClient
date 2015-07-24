@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% from "macros.html" import generate_form, selector, select_almacen%}
+
+{%block title %}Guardar Abono{% endblock %}
+
+{% block content %}
+{% if msg %} <h4>{{ msg }}</h4> {% endif %}
+<form method="post">
+    <p>Valor: <input name="value"/> </p>
+    <p>Almacen: {{select_almacen(stores)}}</p>
+    <p>Codigo: <input name="codigo" /></p>
+    <p><input type="submit" value="Guardar"/></p>
+</form>
+
+{% endblock %}

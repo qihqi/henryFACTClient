@@ -2,7 +2,7 @@
     <head>
         <title> {%block title %} {%endblock %} </title>
         <style>
-            .menu { 
+            .menu {
                 float : left;
                 width : 300px;
                 border-right-color : black;
@@ -19,7 +19,7 @@
         <div class="menu">
         {% block menu %}
             <ul>
-                <li> Productos                 
+                <li> Productos
                     <ul>
                     <li> <a href="/app/crear_producto" > Nuevos Productos </a> </li>
                     <!--li> <a href="/r/producto/createbodega" > Crear Bodega </a> </li-->
@@ -31,10 +31,10 @@
                     </ul>
                 </li>
 
-                <li> Clientes 
+                <li> Clientes
                     <ul>
-                    <li> <a href="/app/crear_cliente"> Crear Clientes </a> </li>    
-                    <li> <a href="/app/ver_cliente"> Buscar Clientes </a> </li>    
+                    <li> <a href="/app/crear_cliente"> Crear Clientes </a> </li>
+                    <li> <a href="/app/ver_cliente"> Buscar Clientes </a> </li>
                     </ul>
                 </li>
                 <li> Facturacion
@@ -55,6 +55,16 @@
                 <li> Contabilidad
                     <ul>
                         <li> <a href="/app/accounting_form">ATS<a></li>
+                    </ul>
+                </li>
+                <li> Cheques
+                    <ul>
+                        <li> <a href="/app/guardar_cheque">Ingresar Cheque<a></li>
+                        <li> <a href="/app/crear_banco_form">Ingresar Banco<a></li>
+                        <li> <a href="/app/ver_cheques_guardados">Ver Cheques Ingresados<a></li>
+                        <li> <a href="/app/ver_cheques_para_depositar">Ver Cheques para depositar<a></li>
+                        <li> <a href="/app/guardar_deposito">Ingresar Depositos<a></li>
+                        <li> <a href="/app/guardar_abono">Ingresar Abono<a></li>
                     </ul>
                 </li>
         </ul>
