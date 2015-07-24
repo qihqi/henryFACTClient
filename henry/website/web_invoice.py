@@ -449,10 +449,12 @@ def save_check_image(cid, imgtype):
 
     if imgtype == 'deposit':
         row = NCheck.imgdeposit
+        newstatus = 'DEPOSITADO'
     else:
         row = NCheck.imgcheck
+        newstatus = 'RECIBIDO'
     sessionmanager.session.query(NCheck).filter_by(
-        uid=cid).update({row: filename})
+        uid=cid).update({row: filename, NCheck.status: newstatus})
     redirect('/app/ver_cheque/{}'.format(cid))
 
 
