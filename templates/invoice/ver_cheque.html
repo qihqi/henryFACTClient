@@ -23,6 +23,28 @@
         <th>Valor</th>
         <td>{{ value_from_cents(check.value)}}</td>
     </tr>
+    <tr>
+        <th>Fecha Compra</th>
+        <td>{{ check.date }}</td>
+    </tr>
+    <tr>
+        <th>Fecha Deposito</th>
+        <td>{{ check.checkdate}}</td>
+    </tr>
+    {% if check.note_id %}
+    <tr>
+        <th>Orden</th>
+        <td><a href="/app/nota/{{c.note_id}}">{{check.note_id}}</a></td>
+    </tr>
+    {% endif %}
+    <tr>
+        <th>Estado</th>
+        <td>{{ check.status }}</td>
+    </tr>
+    <tr>
+        <th>Depositado</th>
+        <td>{{ check.deposit_account }}</td>
+    </tr>
 </table>
 {% if check.imgcheck %}
 <img src="/app/img/{{check.imgcheck}}" width="500"/>

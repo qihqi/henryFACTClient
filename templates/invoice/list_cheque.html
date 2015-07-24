@@ -35,6 +35,7 @@
       <th>Fecha de Cheque</th>
       <th>No. Orden</th>
       <th>Depositado</th>
+      <th></th>
     </tr>
     {% for c in checks %}
     <tr>
@@ -49,6 +50,7 @@
       {% else %}
       <td>{{ selector(accounts, 'acct-%d' % c.uid, 'name', 'name') }}</td>
       {% endif %}
+      <td><a href="/app/ver_cheque/{{c.uid}}">Ver</a></td>
     </tr>
     {% endfor %}
   </table>
