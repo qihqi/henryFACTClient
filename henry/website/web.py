@@ -1,4 +1,4 @@
-from bottle import request, redirect, Bottle, static_file
+from bottle import request, redirect, Bottle, static_file, response
 import datetime
 from henry import constants
 from henry.base.schema import NUsuario
@@ -17,7 +17,7 @@ def img(rest):
     if constants.ENV == 'test':
         return static_file(rest, root=IMAGE_PATH)
     else:
-        request.set_header('X-Accel-Redirect', '/image/{}'.format(rest))
+        response.set_header('X-Accel-Redirect', '/image/{}'.format(rest))
 
 
 @w.get('/app')
