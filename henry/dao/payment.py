@@ -114,7 +114,7 @@ class PaymentApi:
         return self.save_payment(check, PaymentFormat.CHECK)
 
     def save_deposit(self, deposit):
-        return self.save_payment(deposit, PaymentFormat.CHECK)
+        return self.save_payment(deposit, PaymentFormat.DEPOSIT)
 
     def _get_doc(self, uid, dbclazz, objclazz):
         ndoc = self.sm.session.query(dbclazz).filter_by(uid=uid).first()

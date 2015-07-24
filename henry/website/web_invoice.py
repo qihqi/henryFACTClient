@@ -501,7 +501,7 @@ def guardar_deposito():
 def post_guardar_deposito():
     payment = Payment()
     payment.note_id, payment.client_id = extract_nota_and_client(request.forms)
-    payment.value = request.forms.value
+    payment.value = int(Decimal(request.forms.value) * 100)
     payment.date = datetime.date.today()
     paymentapi.save_payment(payment, PaymentFormat.CASH)
-    redirect('/app/guardar_deposito?msg=Abono+Guardado')
+    redirect('/app/guardar_abono?msg=Abono+Guardado')
