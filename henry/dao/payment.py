@@ -3,6 +3,7 @@ from .document import PaymentFormat
 from henry.base.schema import NPayment, NCheck, NDeposit, NBank, NDepositAccount
 from henry.base.serialization import SerializableMixin
 
+
 class Payment(SerializableMixin):
     _name = (
         'uid',
@@ -30,6 +31,8 @@ class Check(SerializableMixin):
         'client_id',
         'value',
         'date',
+        'imgcheck',
+        'imgdeposit',
     )
 
     def __init__(self, **kwargs):
@@ -81,10 +84,10 @@ class PaymentApi:
     def __init__(self, sessionmanager):
         self.sm = sessionmanager
 
-    def save_payment(self, payment, type):
+    def save_payment(self, payment, ptype):
         npayment = _extract_payment(payment)
-        npayment.type = type
-        if type == PaymentFormat.CHECK:
+        npayment.type = ptype
+        if ptype == PaymentFormat.CHECK:
             dbinstance = NCheck(
                 bank=payment.bank,
                 accountno=payment.accountno,
@@ -95,7 +98,7 @@ class PaymentApi:
                 status='NUEVO',
             )
             dbinstance.payment = npayment
-        elif type == PaymentFormat.DEPOSIT:
+        elif ptype == PaymentFormat.DEPOSIT:
             dbinstance = NDeposit(
                 account=payment.account,
                 status='NUEVO',
@@ -108,10 +111,10 @@ class PaymentApi:
         return dbinstance.uid
 
     def save_check(self, check):
-        return save_payment(check, PaymentFormat.CHECK)
+        return self.save_payment(check, PaymentFormat.CHECK)
 
     def save_deposit(self, deposit):
-        return save_payment(check, PaymentFormat.CHECK)
+        return self.save_payment(deposit, PaymentFormat.CHECK)
 
     def _get_doc(self, uid, dbclazz, objclazz):
         ndoc = self.sm.session.query(dbclazz).filter_by(uid=uid).first()

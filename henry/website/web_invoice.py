@@ -1,14 +1,17 @@
 import datetime
 from decimal import Decimal
 from operator import attrgetter
+import os
+import uuid
 
-from bottle import request, abort, redirect, response, Bottle
+from bottle import request, abort, redirect, response, Bottle, static_file
+from PIL import Image
 
 from henry.base.auth import get_user
 from henry.base.schema import NUsuario, NNota, NAccountStat, NCheck
 from henry.base.serialization import json_loads
 from henry.config import (dbcontext, auth_decorator, jinja_env, prodapi,
-                          sessionmanager, actionlogged, invapi, pedidoapi, paymentapi)
+                          sessionmanager, actionlogged, invapi, pedidoapi, paymentapi, imagefiles)
 from henry.dao import Status, PaymentFormat, Invoice
 from henry.dao.payment import Check, Deposit, Payment
 from henry.website.reports import (get_notas_with_clients, split_records,
@@ -417,6 +420,48 @@ def post_guardar_deposito():
             sessionmanager.session.flush()
     redirect(nexturl)
 
+
+@w.get('/app/ver_cheque/<cid>')
+@dbcontext
+@auth_decorator
+def ver_cheque(cid):
+    check = paymentapi.get_check(cid)
+    if check.imgcheck:
+        _, check.imgcheck = os.path.split(check.imgcheck)
+    if check.imgdeposit:
+        _, check.imgdeposit = os.path.split(check.imgdeposit)
+    temp = jinja_env.get_template('invoice/ver_cheque.html')
+    return temp.render(check=check)
+
+
+@w.post('/app/save_check_img/<imgtype>/<cid>')
+@dbcontext
+@auth_decorator
+def save_check_image(cid, imgtype):
+    upload = request.files.get('imgcheck')
+    _, ext = os.path.splitext(upload.raw_filename)
+    filename = uuid.uuid1().hex + ext
+    filename = imagefiles.make_fullpath(filename)
+    im = Image.open(upload.file)
+    if im.size[0] > 1024:
+        im.resize((1024, 768))
+    im.save(filename)
+
+    if imgtype == 'deposit':
+        row = NCheck.imgdeposit
+    else:
+        row = NCheck.imgcheck
+    sessionmanager.session.query(NCheck).filter_by(
+        uid=cid).update({row: filename})
+    redirect('/app/ver_cheque/{}'.format(cid))
+
+
+@w.get('/app/imgcheck/<cid>')
+@dbcontext
+@auth_decorator
+def check_image_get(cid):
+    check = paymentapi.get_check(cid)
+    return static_file(check.imgcheck, root='.')
 
 @w.get('/app/guardar_deposito')
 @dbcontext

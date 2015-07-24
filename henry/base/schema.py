@@ -324,6 +324,9 @@ class NCheck(Base):
     holder = Column('titular', String(40))
     checkdate = Column('fecha_cheque', Date)
 
+    imgcheck = Column(String(100))
+    imgdeposit = Column(String(100))
+
     deposit_account = Column('depositado_en', String(30))
     status = Column(String(10))
 

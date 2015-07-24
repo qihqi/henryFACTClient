@@ -44,7 +44,7 @@ class ClientApiDB(object):
 
     def create(self, cliente):
         newc = cliente
-        if not isinstance(cliente, NCliente):
+        if not isinstance(newc, NCliente):
             newc = NCliente(codigo=cliente.codigo,
                             nombres=cliente.nombres,
                             apellidos=cliente.apellidos,
@@ -57,8 +57,9 @@ class ClientApiDB(object):
         session = self.manager.session
         try:
             session.add(newc)
-            session.flush()
+            session.commit()
         except IntegrityError:
+            session.rollback()
             raise ItemAlreadyExists('client {} already exists'.format(newc.codigo))
 
     def update(self, client_id, new_content):

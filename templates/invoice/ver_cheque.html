@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<table>
+    <tr>
+        <th>Banco</th>
+        <td>{{ check.bank }}</td>
+    </tr>
+    <tr>
+        <th>Cuenta</th>
+        <td>{{ check.accountno}}</td>
+    </tr>
+    <tr>
+        <th>Numero</th>
+        <td>{{ check.checkno}}</td>
+    </tr>
+    <tr>
+        <th>Titular</th>
+        <td>{{ check.holder}}</td>
+    </tr>
+    <tr>
+        <th>Valor</th>
+        <td>{{ value_from_cents(check.value)}}</td>
+    </tr>
+</table>
+{% if check.imgcheck %}
+<img src="/app/img/{{check.imgcheck}}" width="500"/>
+{% else %}
+<form method="post" action="/app/save_check_img/check/{{check.uid}}" enctype="multipart/form-data">
+    <input type="file" name="imgcheck" />
+    <input type="submit" />
+</form>
+{% endif %}
+{% if check.imgdeposit%}
+<img src="/app/img/{{check.imgdeposit}}" width="500"/>
+{% else %}
+<form method="post" action="/app/save_check_img/deposit/{{check.uid}}" enctype="multipart/form-data">
+    <input type="file" name="imgcheck" />
+    <input type="submit" />
+</form>
+{% endif %}
+
+
+
+{% endblock %}

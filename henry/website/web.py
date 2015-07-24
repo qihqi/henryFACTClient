@@ -1,11 +1,23 @@
-from bottle import request, redirect, Bottle
+from bottle import request, redirect, Bottle, static_file
 import datetime
+from henry import constants
 from henry.base.schema import NUsuario
 from henry.config import dbcontext, auth_decorator, jinja_env, clientapi, sessionmanager, prodapi, actionlogged
+from henry.constants import IMAGE_PATH
 from henry.dao import Client
 from henry.dao.exceptions import ItemAlreadyExists
 
 webmain = w = Bottle()
+
+
+@w.get('/app/img/<rest:path>')
+@dbcontext
+@auth_decorator
+def img(rest):
+    if constants.ENV == 'test':
+        return static_file(rest, root=IMAGE_PATH)
+    else:
+        request.set_header('X-Accel-Redirect', rest)
 
 
 @w.get('/app')
