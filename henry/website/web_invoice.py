@@ -294,12 +294,13 @@ def save_check_form():
                        stores=prodapi.get_stores(),
                        msg=msg)
 
+
 def parse_payment_from_request(form, clazz):
     date = datetime.date.today()
     if request.forms.ingresado == 'ayer':
         date = date - datetime.timedelta(days=1)
     payment = clazz.deserialize(request.forms)
-    payment.note_id, payment.client_id = extract_nota_and_client(request.forms)
+    payment.note_id, payment.client_id = extract_nota_and_client(form)
     payment.value = int(Decimal(payment.value) * 100)
     payment.date = date
     return payment
@@ -311,20 +312,20 @@ def parse_payment_from_request(form, clazz):
 def save_check():
     check = parse_payment_from_request(request.forms, Check)
     check.checkdate = parse_iso(check.checkdate)
-    paymentapi.save_payment(deposit, PaymentFormat.CHECK)
+    paymentapi.save_payment(check, PaymentFormat.CHECK)
     redirect('/app/guardar_cheque?msg=Cheque+Guardado')
 
 
 def parse_start_end_date_with_default(form, start, end):
-    newstart, newend = parse_start_end_date(request.query)
+    newstart, newend = parse_start_end_date(form)
     if newend is None:
         newend = end
     if newstart is None:
         newstart = start
-    if not isinstance(newstart, datetime.date):
+    if isinstance(newstart, datetime.datetime):
         newstart = newstart.date()
-    if not isinstance(newend, datetime.date):
-        newstart = newend.date()
+    if isinstance(newend, datetime.datetime):
+        newend = newend.date()
     return newstart, newend
 
 
@@ -332,9 +333,9 @@ def parse_start_end_date_with_default(form, start, end):
 @dbcontext
 @auth_decorator
 def list_checks():
-    today = datetime.datetime.today()
+    today = datetime.date.today()
     start, end = parse_start_end_date_with_default(
-        forms, today,
+        request.query, today,
         today - datetime.timedelta(hours=12))
     result = paymentapi.list_checks(paymentdate=(start, end))
     temp = jinja_env.get_template('invoice/list_cheque.html')
@@ -347,7 +348,7 @@ def list_checks():
 @w.get('/app/ver_cheques_para_depositar')
 @dbcontext
 @auth_decorator
-def list_checks():
+def list_checks_deposit():
     today = datetime.date.today()
     start, end = parse_start_end_date_with_default(
         request.query, today, today)
@@ -359,6 +360,7 @@ def list_checks():
                        title='Cheques para depositar',
                        accounts=paymentapi.get_all_accounts(),
                        thisurl=request.url)
+
 
 def render_form_with_msg(path, title):
     msg = request.query.msg
