@@ -7,10 +7,13 @@ import re
 DB_ENCODING = 'latin1'
 
 
-def decode(s, codec=DB_ENCODING):
+def decode(s):
     if s is None:
         return None
-    return s.decode(codec)
+    try:
+        return s.decode('utf8')
+    except UnicodeDecodingError:
+        return s.decode('latin1')
 
 
 def json_dumps(content):
@@ -72,6 +75,8 @@ class DbMixin(object):
         for thisname, dbname in cls._get_name_pairs(cls._db_attr):
             if thisname not in excluded:
                 value = getattr(db_instance, dbname, None)
+                if isinstance(value, str):
+                    value = decode(value)
                 setattr(y, thisname, value)
         return y
 
@@ -85,6 +90,8 @@ class SerializableMixin(object):
             if their is None and hasattr(obj, 'get'):  # merge from dict
                 their = obj.get(key, None)
             mine = getattr(self, key, None)
+            if isinstance(their, str):
+                their = decode(their)
             setattr(self, key, their or mine)  # defaults to theirs
         return self
 

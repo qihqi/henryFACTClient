@@ -20,7 +20,7 @@ from henry.misc import id_type, fix_id, abs_string, value_from_cents, get_total
 from henry.externalapi import ExternalApi
 import sys
 reload(sys)
-sys.setdefaultencoding('latin1')
+sys.setdefaultencoding('utf8')
 
 engine = create_engine(CONN_STRING, pool_recycle=3600)
 sessionfactory = sessionmaker(bind=engine)
@@ -75,4 +75,3 @@ BEAKER_SESSION_OPTS = {
 BODEGAS_EXTERNAS = (
     ('POLICENTRO', externaltransapi, 1),  # nombre, api, numero de bodega
 )
-
