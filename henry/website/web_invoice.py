@@ -5,7 +5,6 @@ import os
 import uuid
 
 from bottle import request, abort, redirect, response, Bottle, static_file
-from PIL import Image
 
 from henry.base.auth import get_user
 from henry.base.schema import NUsuario, NNota, NAccountStat, NCheck
@@ -442,7 +441,13 @@ def save_check_image(cid, imgtype):
     _, ext = os.path.splitext(upload.raw_filename)
     filename = uuid.uuid1().hex + ext
     filename = imagefiles.make_fullpath(filename)
-    im = Image.open(upload.file)
+    if save_check_image.image is None:
+        try:
+            from PIL import Image
+            save_check_image.image = Image
+        except ImportError:
+            return 'Image module not installed'
+    im = save_check_image.image.open(upload.file)
     if im.size[0] > 1024:
         im.resize((1024, 768))
     im.save(filename)
@@ -456,6 +461,7 @@ def save_check_image(cid, imgtype):
     sessionmanager.session.query(NCheck).filter_by(
         uid=cid).update({row: filename, NCheck.status: newstatus})
     redirect('/app/ver_cheque/{}'.format(cid))
+save_check_image.image = None
 
 
 @w.get('/app/imgcheck/<cid>')
