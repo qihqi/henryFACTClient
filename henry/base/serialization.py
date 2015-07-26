@@ -12,7 +12,7 @@ def decode(s):
         return None
     try:
         return s.decode('utf8')
-    except UnicodeDecodingError:
+    except UnicodeDecodeError:
         return s.decode('latin1')
 
 

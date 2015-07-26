@@ -1,10 +1,12 @@
 from sqlalchemy.exc import IntegrityError
-from henry.base.serialization import SerializableMixin
+from henry.base.serialization import SerializableMixin, DbMixin
 from henry.base.schema import NCliente
 from henry.dao.exceptions import ItemAlreadyExists
 
 
-class Client(SerializableMixin, NCliente):
+class Client(SerializableMixin, DbMixin):
+    _db_class = NCliente
+
     _name = (
         'codigo',
         'nombres',
@@ -14,6 +16,7 @@ class Client(SerializableMixin, NCliente):
         'telefono',
         'tipo',
         'cliente_desde',)
+    _db_attr = _name
 
     @property
     def fullname(self):
@@ -38,22 +41,12 @@ class ClientApiDB(object):
 
     def search(self, apellido):
         session = self.manager.session
-        clientes = session.query(Client).filter(
+        clientes = session.query(NCliente).filter(
             NCliente.apellidos.startswith(apellido))
-        return clientes
+        return map(Client.from_db_instance, clientes)
 
     def create(self, cliente):
-        newc = cliente
-        if not isinstance(newc, NCliente):
-            newc = NCliente(codigo=cliente.codigo,
-                            nombres=cliente.nombres,
-                            apellidos=cliente.apellidos,
-                            direccion=cliente.direccion,
-                            telefono=cliente.telefono,
-                            ciudad=cliente.ciudad,
-                            tipo=cliente.tipo,
-                            cliente_desde=cliente.cliente_desde
-                            )
+        newc = cliente.db_instance()
         session = self.manager.session
         try:
             session.add(newc)
