@@ -277,8 +277,10 @@ def ver_entrega_de_cuenta_list():
 def get_nota(uid):
     doc = invapi.get_doc(uid)
     if doc:
+        comments = list(sessionmanager.session.query(NComment).filter_by(
+            objtype='notas', objid=doc.meta.uid))
         temp = jinja_env.get_template('invoice/nota.html')
-        return temp.render(inv=doc)
+        return temp.render(inv=doc, comments=comments)
     return 'Documento con codigo {} no existe'.format(uid)
 
 

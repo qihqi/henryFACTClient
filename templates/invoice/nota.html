@@ -88,5 +88,12 @@
                 <th class="cant"> Total: </th>
                 <td class="cant"> {{value_from_cents(inv.meta.total)}} </td>
             </tr>
+        </table>
+    {% if comments %}
+        <h4>Commentarios:</h4>
+    {% for c in comments %}
+    <p><i>{{c.timestamp}} por {{c.user_id}}</i>: {{c.comment}}</p>
+    {% endfor %}
+    {% endif %}
     </body>
 </html>
