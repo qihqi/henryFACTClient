@@ -7,7 +7,7 @@ import uuid
 from bottle import request, abort, redirect, response, Bottle, static_file
 
 from henry.base.auth import get_user
-from henry.base.schema import NUsuario, NNota, NAccountStat, NCheck
+from henry.base.schema import NUsuario, NNota, NAccountStat, NCheck, NPayment
 from henry.base.serialization import json_loads
 from henry.config import (dbcontext, auth_decorator, jinja_env, prodapi,
                           sessionmanager, actionlogged, invapi, pedidoapi, paymentapi, imagefiles)
@@ -186,21 +186,27 @@ def crear_entrega_de_cuenta():
     else:
         date = datetime.date.today()
 
-    report = payment_report(sessionmanager.session, date, date)
-    cashed = report.list_by_payment[PaymentFormat.CASH]
+    all_sale = list(get_notas_with_clients(sessionmanager.session, date, date))
+    split_by_status = split_records(all_sale, lambda x: x.status == Status.DELETED)
+    deleted = split_by_status[True]
+    other = split_by_status[False]
+    split_by_cash = split_records(other, lambda x: x.payment_format == PaymentFormat.CASH)
+    cashed = split_by_cash[True]
+    noncash = split_by_cash[False]
     sale_by_store = group_by_records(cashed, attrgetter('almacen_name'), attrgetter('total'))
     total_cash = sum(sale_by_store.values())
-
-    otros_pagos = report.list_by_payment
-    del otros_pagos[PaymentFormat.CASH]
-
+    ids = [c.uid for c in noncash]
+    noncash = split_records(noncash, lambda x: x.client.codigo)
+    query = sessionmanager.session.query(NPayment).filter(NPayment.note_id.in_(ids))
+    payments = split_records(query, attrgetter('client_id'))
     existing = sessionmanager.session.query(NAccountStat).filter_by(date=date).first()
     temp = jinja_env.get_template('invoice/crear_entregar_cuenta_form.html')
     return temp.render(
-        cash=sale_by_store, others=otros_pagos,
+        cash=sale_by_store, others=noncash,
         total_cash=total_cash,
-        deleted=report.deleted,
+        deleted=deleted,
         date=date.isoformat(),
+        pagos=payments,
         existing=existing)
 
 

@@ -23,17 +23,31 @@
     {% endfor %}
 </ul>
 
-{% for forma, items in others.items() %}
+{% for client_id, items in others.items() %}
     {% if items %}
-    <h4> {{ forma }}</h4>
+    <h4> {{ items[0].client.fullname }}: Compra: {{ value_from_cents(items|sum(attribute='total'))}}
+         Pago: {{ value_from_cents(pagos[client_id]|sum(attribute='value')) }}
+    </h4>
     <table>
         {% for i in items %}
         <tr>
+            <td> <a href="/app/nota/{{ i.uid }}">{{i.uid}}</a> </td>
             <td> {{ i.codigo }} </td>
             <td> {{ i.client.fullname}} </td>
+            <td> {{ i.payment_format}} </td>
             <td> {{ value_from_cents(i.total) }} </td>
         </tr>
         {% endfor %}
+        {% for i in pagos[client_id] %}
+        <tr>
+            <td> {{ i.note_id}} </td>
+            <td></td>
+            <td> {{ i.date}} </td>
+            <td> {{ i.type}} </td>
+            <td> {{ value_from_cents(i.value)}} </td>
+        </tr>
+        {% endfor %}
+
     </table>
     {% endif %}
 {% endfor %}
@@ -59,7 +73,7 @@
     <p>Efectivo:
         <input name="valor" placeholder="Valor a entregar" value="{{turned_cash}}"{%if not display%}readonly{%endif%} /></p>
     {% if existing %}
-    <p>Diff: {{ value_from_cents(existing.diff) }} </p>
+    <p>Diff: {{ value_from_cents(total_cash - existing.deposit - existing.turned_cash - existing.total_spend) }} </p>
     <input id="Revisar" type="submit" name="submit" value="Revisar" />
     {% else %}
     <input type="submit" name="submit" value="Crear" />
