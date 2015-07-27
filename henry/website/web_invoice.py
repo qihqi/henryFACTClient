@@ -387,6 +387,29 @@ def list_checks_deposit():
                        accounts=paymentapi.get_all_accounts(),
                        thisurl=request.url)
 
+@w.get('/app/ver_cheques_por_titular')
+@dbcontext
+@auth_decorator
+def ver_cheques_por_titular():
+    start, end = parse_start_end_date_with_default(request.query, None, None)
+    titular = request.query.titular
+    if titular:
+        result = sessionmanager.session.query(NCheck).filter(
+            NCheck.holder.contains(titular))
+        if start is not None:
+            result = result.filter(NCheck.checkdate >= start)
+        if end is not None:
+            result = result.filter(NCheck.checkdate <= end)
+        result = map(Check.from_db_instance, result)
+    else:
+        result = []
+    temp = jinja_env.get_template('invoice/list_cheque.html')
+    return temp.render(start=start, end=end, checks=result,
+                       title='Cheques para depositar',
+                       accounts=paymentapi.get_all_accounts(),
+                       thisurl=request.url,
+                       show_titular=True, titular=titular)
+
 
 def render_form_with_msg(path, title):
     msg = request.query.msg

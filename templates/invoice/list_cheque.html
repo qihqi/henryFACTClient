@@ -22,6 +22,9 @@
   <button onClick="window.location='/app';" > Regresar al principio </button>
   <h4>{{ title }}</h4>
   <form>
+    {% if show_titular %}
+    Titular: <input name="titular" value="{{titular}}"/>
+    {% endif %}
       {{ start_end_date_oneline(start, end) }}
     <input type="submit" value="Buscar"/>
   </form>
