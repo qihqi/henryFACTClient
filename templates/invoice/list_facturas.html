@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+<table>
+    {% from "macros.html" import start_end_date_oneline, select_almacen %}
+    <form>
+        {{ start_end_date_oneline(start.date(), end.date()) }}
+        {{ select_almacen(almacenes) }}
+        <input type="submit" />
+    </form>
+    <tr>
+        <th>ID</th>
+        <th>Almancen Id</th>
+        <th>Almancen Name</th>
+        <th>Almancen RUC</th>
+        <th>Client Id</th>
+        <th>Fecha</th>
+        <th>Vendido por</th>
+        <th>Subtotal</th>
+        <th>Desc</th>
+        <th>IVA</th>
+        <th>Total</th>
+        <th>Forma Pago</th>
+    </tr>
+    {%for x in notas %}
+    <tr>
+        <th><a href="/app/nota/{{x.id}}">{{ x.id }}</a></th>
+        <th>{{ x.almacen_id }}</th>
+        <th>{{ x.almacen_name}}</th>
+        <th>{{ x.almacen_ruc }}</th>
+        <th>{{ x.client_id }}</th>
+        <th>{{ x.timestamp.date() }}</th>
+        <th>{{ x.user_id }}</th>
+        <th>{{ value_from_cents(x.subtotal) }}</th>
+        <th>{{ value_from_cents(x.discount) }}</th>
+        <th>{{ value_from_cents(x.tax) }}</th>
+        <th>{{ value_from_cents(x.total) }}</th>
+        <th>{{ x.payment_format }}</th>
+    </tr>
+    {% endfor %}
+</table>
+</body>
+</html>

@@ -95,6 +95,24 @@ def get_resumen_viejo():
         eliminados=deleted)
 
 
+@w.get('/app/list_facturas')
+@dbcontext
+@auth_decorator
+def list_facturas():
+    start, end = parse_start_end_date(request.query)
+    if not start:
+        start = datetime.datetime.today() - datetime.timedelta(days=1)
+    if not end:
+        end = datetime.datetime.today()
+    alm = request.query.almacen_id
+    query = sessionmanager.session.query(NNota).filter(
+        NNota.timestamp >= start, NNota.timestamp < end)
+    if alm:
+        query = query.filter_by(almacen_id=alm)
+    temp = jinja_env.get_template('invoice/list_facturas.html')
+    return temp.render(notas=query, start=start, end=end, almacenes=prodapi.get_stores())
+
+
 @w.get('/app/eliminar_factura')
 @dbcontext
 @auth_decorator
@@ -461,6 +479,8 @@ def save_check_image(cid, imgtype):
     sessionmanager.session.query(NCheck).filter_by(
         uid=cid).update({row: filename, NCheck.status: newstatus})
     redirect('/app/ver_cheque/{}'.format(cid))
+
+
 save_check_image.image = None
 
 
@@ -470,6 +490,7 @@ save_check_image.image = None
 def check_image_get(cid):
     check = paymentapi.get_check(cid)
     return static_file(check.imgcheck, root='.')
+
 
 @w.get('/app/guardar_deposito')
 @dbcontext

@@ -7,19 +7,19 @@
   <p> Almacen: {{note.almacen_id}} </p>
   <p> Almacen name: {{note.almacen_name}} </p>
   <p> Almacen ruc: {{note.almacen_ruc}} </p>
-  <p> Cliente_id: {{note.cliente_id}} </p>
+  <p> Cliente_id: {{note.client_id}} </p>
   <p> user_id: {{note.user_id}} </p>
 
   <p> payment_format:
-    <input name="payment_format" value="{{note.payment_format}}"></input> </p>
+    <input name="payment_format" value="{{note.payment_format}}"/> </p>
   <p> subtotal:
-    <input name="subtotal" value="{{note.subtotal}}" /> </p>
+    <input name="subtotal" disabled value="{{note.subtotal}}" /> </p>
   <p> total:
-    <input name="total" value="{{note.total}}" /> </p>
+    <input name="total" disabled value="{{note.total}}" /> </p>
   <p> tax:
-    <input name="tax" value="{{note.tax}}" /> </p>
+    <input name="tax" disabled value="{{note.tax}}" /> </p>
   <p> discount:
-    <input name="discount" value="{{note.discount}}" </p>
+    <input name="discount" disabled value="{{note.discount}}"/> </p>
   <p><input type="submit" />
 </form>
 
