@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<form method="post">
+  <p>{{note.id}}
+  <p> Codigo: {{note.codigo}} </p>
+  <p> Almacen: {{note.almacen_id}} </p>
+  <p> Almacen name: {{note.almacen_name}} </p>
+  <p> Almacen ruc: {{note.almacen_ruc}} </p>
+  <p> Cliente_id: {{note.cliente_id}} </p>
+  <p> user_id: {{note.user_id}} </p>
+
+  <p> payment_format:
+    <input name="payment_format" value="{{note.payment_format}}"></input> </p>
+  <p> subtotal:
+    <input name="subtotal" value="{{note.subtotal}}" /> </p>
+  <p> total:
+    <input name="total" value="{{note.total}}" /> </p>
+  <p> tax:
+    <input name="tax" value="{{note.tax}}" /> </p>
+  <p> discount:
+    <input name="discount" value="{{note.discount}}" </p>
+  <p><input type="submit" />
+</form>
+
+{% endblock %}
