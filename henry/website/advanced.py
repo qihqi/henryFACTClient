@@ -1,9 +1,14 @@
 from collections import defaultdict
 import datetime
-from bottle import Bottle, request, abort
-from henry.base.schema import NProducto, NContenido, NBodega, NCategory, NPriceList
-from henry.config import dbcontext, auth_decorator, prodapi, jinja_env, sessionmanager, invapi, transactionapi
-from henry.dao import Item
+from bottle import Bottle, request, abort, redirect
+
+from henry.base.auth import get_user
+from henry.base.schema import (NProducto, NContenido, NBodega, NCategory,
+                               NPriceList, NNota)
+from henry.config import (dbcontext, auth_decorator, prodapi, jinja_env,
+                          sessionmanager, invapi, transactionapi,
+                          actionlogged)
+from henry.dao import Item, PaymentFormat
 from henry.website.common import parse_start_end_date
 
 webadv = w = Bottle()
@@ -154,3 +159,27 @@ def ver_prod_advanced(pid):
 
     temp = jinja_env.get_template('adv_producto.html')
     return temp.render(prod=prod, contenidos=contenidos, pricelist=pricelist)
+
+
+@w.get('/app/edit_note/<uid>')
+@dbcontext
+@auth_decorator
+def edit_note(uid):
+    note = sessionmanager.session.query(NNota).filter_by(id=uid).first()
+    temp = jinja_env.get_template('edit_note.html')
+    return temp.render(note=note)
+
+
+@w.post('/app/edit_note/<uid>')
+@dbcontext
+@auth_decorator
+@actionlogged
+def post_edit_note(uid):
+    values = dict(request.forms)
+    if values['payment_format'] not in PaymentFormat.names:
+        return 'invalid payment format'
+    for key in ('subtotal', 'total', 'tax', 'discount'):
+        values[key] = int(values[key])
+    sessionmanager.session.query(NNota).filter_by(id=uid).update(
+        values)
+    redirect(request.url)
