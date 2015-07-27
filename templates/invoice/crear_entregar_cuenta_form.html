@@ -31,17 +31,17 @@
     <table>
         {% for i in items %}
         <tr>
+            <th>Compra: </th>
             <td> <a href="/app/nota/{{ i.uid }}">{{i.uid}}</a> </td>
             <td> {{ i.codigo }} </td>
-            <td> {{ i.client.fullname}} </td>
             <td> {{ i.payment_format}} </td>
             <td> {{ value_from_cents(i.total) }} </td>
         </tr>
         {% endfor %}
         {% for i in pagos[client_id] %}
         <tr>
+            <td>Pago: </td>
             <td> {{ i.note_id}} </td>
-            <td></td>
             <td> {{ i.date}} </td>
             <td> {{ i.type}} </td>
             <td> {{ value_from_cents(i.value)}} </td>

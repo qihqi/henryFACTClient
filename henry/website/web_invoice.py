@@ -7,7 +7,7 @@ import uuid
 from bottle import request, abort, redirect, response, Bottle, static_file
 
 from henry.base.auth import get_user
-from henry.base.schema import NUsuario, NNota, NAccountStat, NCheck, NPayment
+from henry.base.schema import NUsuario, NNota, NAccountStat, NCheck, NPayment, NComment
 from henry.base.serialization import json_loads
 from henry.config import (dbcontext, auth_decorator, jinja_env, prodapi,
                           sessionmanager, actionlogged, invapi, pedidoapi, paymentapi, imagefiles)
@@ -130,9 +130,20 @@ def eliminar_factura_form(message=None):
 def eliminar_factura():
     almacen_id = int(request.forms.get('almacen_id'))
     codigo = request.forms.get('codigo').strip()
-    ref = request.forms.get('ref')  # TODO: have to save this
-    print almacen_id, codigo, ref
+    ref = request.forms.get('motivo')  # TODO: have to save this
+    if not ref:
+        abort(400, 'escriba el motivo')
+    user = get_user(request)
     db_instance = get_inv_db_instance(sessionmanager.session, almacen_id, codigo)
+
+    comment = NComment(
+        user_id=user['username'],
+        timestamp=datetime.datetime.now(),
+        comment=ref,
+        objtype='notas',
+        objid=str(db_instance.id),
+    )
+    sessionmanager.session.add(comment)
     if db_instance is None:
         return eliminar_factura_form('Factura no existe')
     doc = invapi.get_doc_from_file(db_instance.items_location)

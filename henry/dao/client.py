@@ -35,9 +35,9 @@ class ClientApiDB(object):
         self.manager = smanager
 
     def get(self, cliente_id):
-        cliente = self.manager.session.query(Client).filter(
-            Client.codigo == cliente_id)
-        return cliente.first()
+        cliente = self.manager.session.query(NCliente).filter(
+            NCliente.codigo == cliente_id).first()
+        return Client.from_db_instance(cliente)
 
     def search(self, apellido):
         session = self.manager.session

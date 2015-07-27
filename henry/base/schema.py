@@ -343,3 +343,17 @@ class NDeposit(Base):
 
     payment_id = Column(Integer, ForeignKey(NPayment.uid))
     payment = relationship(NPayment)
+
+
+class NComment(Base):
+    __tablename__ = 'commentarios'
+    uid = Column(Integer, primary_key=True, autoincrement=True)
+    objtype = Column(String(10))
+    objid = Column(String(10))
+    timestamp = Column(DateTime)
+    user_id = Column(String(10))
+    comment = Column(String(200))
+
+Index('ix_comment_2', NComment.objtype, NComment.objid)
+
+

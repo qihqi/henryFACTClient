@@ -50,26 +50,36 @@ class EndToEndTest(unittest.TestCase):
         p2 = content[1]
         p3 = content[2]
 
+        with Timing('get producto'):
+            p3 = requests.get(url + '/' + p3['codigo']).json()
+
         url = self.url_base + '/cliente'
         client = None
         with Timing('Search client'):
             clients = requests.get(url, params={'prefijo': 'N'}).json()
             client = clients[0]
 
+        with Timing('get cliente'):
+            client = requests.get(url + '/na').json()
+
         content = {
-            'meta': {
+            'items': [
+                {'prod': x, 'cant': 10} for x in (p1, p2, p3)
+                ],
+            'options': {
+                'incrementar_codigo': True
+                }
+        }
+
+        content['meta'] = {
                 'client': client,
                 'total': 123,
-                'subtotal': 123,
-                'tax' : '1.23',
+                'subtotal': sum( (x['precio1'] * 10 for x in (p1, p2, p3))),
+                'tax' : 123,
                 'user_id': 'yu',
                 'codigo': str(number),
                 'almacen_id': 1,
-            },
-            'items': [
-                {'prod': x, 'cant': 10} for x in (p1, p2, p3)
-                ]
-        }
+            }
 
         nota_url = self.url_base + '/nota'
         codigo = None
