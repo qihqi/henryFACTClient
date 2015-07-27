@@ -14,10 +14,17 @@ def parse_iso(date_string):
 def parse_start_end_date(forms, start_name='start', end_name='end'):
     start = forms.get(start_name, None)
     end = forms.get(end_name, None)
-    if start is not None:
-        start = parse_iso(start)
-    if end is not None:
-        end = parse_iso(end)
+    try:
+        if start:
+            start = parse_iso(start)
+        else:
+            start = None
+        if end:
+            end = parse_iso(end)
+        else:
+            end = None
+    except:
+        abort(400, 'Fecha en formato equivocada')
     return start, end
 
 
