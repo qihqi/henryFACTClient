@@ -76,3 +76,16 @@ def convert_to_cent(dec):
     if not isinstance(dec, Decimal):
         dec = Decimal(dec)
     return int(dec * 100)
+
+
+def parse_start_end_date_with_default(form, start, end):
+    newstart, newend = parse_start_end_date(form)
+    if newend is None:
+        newend = end
+    if newstart is None:
+        newstart = start
+    if isinstance(newstart, datetime.datetime):
+        newstart = newstart.date()
+    if isinstance(newend, datetime.datetime):
+        newend = newend.date()
+    return newstart, newend

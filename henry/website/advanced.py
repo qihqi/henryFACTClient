@@ -9,7 +9,7 @@ from henry.config import (dbcontext, auth_decorator, prodapi, jinja_env,
                           sessionmanager, invapi, transactionapi,
                           actionlogged)
 from henry.dao import Item, PaymentFormat
-from henry.website.common import parse_start_end_date
+from henry.website.common import parse_start_end_date_with_default, parse_start_end_date
 
 webadv = w = Bottle()
 
@@ -87,11 +87,9 @@ def vendidos_por_categoria():
 def ver_transacciones():
     prod_id = request.query.prod_id or '123'
     bodega_id = request.query.bodega_id or 1
-    start, end = parse_start_end_date(request.query)
-    if end is None:
-        end = datetime.date.today()
-    if start is None:
-        start = datetime.date.today() - datetime.timedelta(days=7)
+    today = datetime.date.today()
+    start, end = parse_start_end_date_with_default(
+        request.query, today - datetime.timedelta(days=7), today)
     items = sorted(transactionapi.get_transactions(prod_id, start, end),
                    key=lambda i: i.fecha, reverse=True)
     counts = {}
@@ -121,13 +119,11 @@ def ver_transacciones():
 @dbcontext
 @auth_decorator
 def sale_by_product():
-    start, end = parse_start_end_date(request.query)
+    today = datetime.datetime.now()
+    start, end = parse_start_end_date_with_default(
+        request.query, today - datetime.timedelta(days=7), today)
     alm_id = int(request.query.get('almacen_id', 1))
     almacen = prodapi.get_store_by_id(alm_id)
-    if not end:
-        end = datetime.datetime.now()
-    if not start:
-        start = end - datetime.timedelta(days=7)
 
     prods_sale = defaultdict(Item)
     for inv, x in full_invoice_items(invapi, start, end):

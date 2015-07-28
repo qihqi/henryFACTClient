@@ -19,7 +19,7 @@
     {% from "macros.html" import start_end_date, select_bodega %}
     <form action="/app/ver_transacciones" method="get">
         {% from "macros.html" import start_end_date_oneline %}
-        {{ start_end_date_oneline(start.date(), end.date()) }}
+        {{ start_end_date_oneline(start, end) }}
         Codigo:
         <input name="prod_id" value="{{prod_id}}" />
         Bodega:

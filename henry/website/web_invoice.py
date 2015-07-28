@@ -7,7 +7,7 @@ import uuid
 from bottle import request, abort, redirect, response, Bottle, static_file
 
 from henry.base.auth import get_user
-from henry.base.schema import NUsuario, NNota, NAccountStat, NCheck, NPayment, NComment
+from henry.base.schema import NUsuario, NNota, NAccountStat, NCheck, NPayment, NComment, ObjType
 from henry.base.serialization import json_loads
 from henry.config import (dbcontext, auth_decorator, jinja_env, prodapi,
                           sessionmanager, actionlogged, invapi, pedidoapi, paymentapi, imagefiles)
@@ -15,7 +15,7 @@ from henry.dao import Status, PaymentFormat, Invoice
 from henry.dao.payment import Check, Deposit, Payment
 from henry.website.reports import (get_notas_with_clients, split_records,
                                    group_by_records, payment_report)
-from henry.website.common import parse_start_end_date, parse_iso
+from henry.website.common import parse_start_end_date, parse_iso, parse_start_end_date_with_default
 
 webinvoice = w = Bottle()
 
@@ -355,19 +355,6 @@ def save_check():
     redirect('/app/guardar_cheque?msg=Cheque+Guardado')
 
 
-def parse_start_end_date_with_default(form, start, end):
-    newstart, newend = parse_start_end_date(form)
-    if newend is None:
-        newend = end
-    if newstart is None:
-        newstart = start
-    if isinstance(newstart, datetime.datetime):
-        newstart = newstart.date()
-    if isinstance(newend, datetime.datetime):
-        newend = newend.date()
-    return newstart, newend
-
-
 @w.get('/app/ver_cheques_guardados')
 @dbcontext
 @auth_decorator
@@ -490,7 +477,31 @@ def ver_cheque(cid):
     if check.imgdeposit:
         _, check.imgdeposit = os.path.split(check.imgdeposit)
     temp = jinja_env.get_template('invoice/ver_cheque.html')
-    return temp.render(check=check)
+    comments = list(sessionmanager.session.query(NComment).filter_by(
+        objtype=ObjType.CHECK, objid=str(cid)))
+    return temp.render(check=check, comments=comments)
+
+
+@w.post('/app/postregar_cheque')
+@dbcontext
+@auth_decorator
+def postregar_cheque():
+    checkid = request.forms.checkid
+    new_date = parse_iso(request.forms.new_date).date()
+    session = sessionmanager.session
+    check = session.query(NCheck).filter_by(uid=checkid).first()
+    comment = NComment(
+        timestamp=datetime.datetime.now(),
+        user_id=get_user(request)['username'],
+        comment='Cheque postponer desde {} hasta {}'.format(
+            check.checkdate.isoformat(), new_date.isoformat()),
+        objtype=ObjType.CHECK,
+        objid=str(checkid),
+    )
+    session.add(comment)
+    check.checkdate = new_date
+    session.flush()
+    redirect('/app/ver_cheque/{}'.format(checkid))
 
 
 @w.post('/app/save_check_img/<imgtype>/<cid>')

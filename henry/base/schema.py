@@ -345,11 +345,17 @@ class NDeposit(Base):
     payment = relationship(NPayment)
 
 
+class ObjType:
+    INV = 'notas'
+    TRANS = 'transfer'
+    CHECK = 'cheque'
+
+
 class NComment(Base):
-    __tablename__ = 'commentarios'
+    __tablename__ = 'comentarios'
     uid = Column(Integer, primary_key=True, autoincrement=True)
-    objtype = Column(String(10))
-    objid = Column(String(10))
+    objtype = Column(String(20))
+    objid = Column(String(20))
     timestamp = Column(DateTime)
     user_id = Column(String(10))
     comment = Column(String(200))

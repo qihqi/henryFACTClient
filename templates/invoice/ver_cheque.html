@@ -46,6 +46,12 @@
         <td>{{ check.deposit_account }}</td>
     </tr>
 </table>
+<form method="post" action="/app/postregar_cheque">
+    Postponer cheque:
+    <input name="checkid" type="hidden" value="{{check.uid}}" />
+    <input name="new_date" value="{{today().isoformat()}}"/>
+    <input type="submit" />
+</form>
 {% if check.imgcheck %}
 <img src="/app/img/{{check.imgcheck}}" width="500"/>
 {% else %}
@@ -62,6 +68,11 @@
     <input type="submit" />
 </form>
 {% endif %}
+
+<h4>Comentarios</h4>
+{% for x in comments %}
+<p><i>{{x.timestamp}} {{x.user_id}}: </i>  {{x.comment}}</p>
+{% endfor %}
 
 
 

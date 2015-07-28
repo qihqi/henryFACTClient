@@ -7,7 +7,7 @@
 </head>
 <body>
     <form method="get" >
-        {{ start_end_date_oneline(start.date().isoformat(), end.date().isoformat()) }}
+        {{ start_end_date_oneline(start, end) }}
         {{ select_almacen(almacenes) }}
         <input type="submit"/>
     </form>
@@ -21,10 +21,12 @@
         </tr>
         {% for x in items %}
         <tr>
-            <th>{{x.prod.codigo}}</th>
-            <th>{{x.prod.nombre}}</th>
-            <th>{{x.cant}}</th>
-            <th>{{value_from_cents(x.cant * x.prod.precio1)}}</th>
+            <td><a href="/app/adv/producto/{{x.prod.codigo.replace('+', '')}}">VerProd</a></td>
+            <td><a href="/app/ver_transacciones?prod_id={{x.prod.codigo.replace('+', '')}}&start={{start}}&end={{end}}">
+                {{x.prod.codigo}}</a></td>
+            <td>{{x.prod.nombre}}</td>
+            <td>{{x.cant}}</td>
+            <td>{{value_from_cents(x.cant * x.prod.precio1)}}</td>
         </tr>
         {% endfor %}
     </table>
