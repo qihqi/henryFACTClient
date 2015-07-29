@@ -363,3 +363,22 @@ class NComment(Base):
 Index('ix_comment_2', NComment.objtype, NComment.objid)
 
 
+class SpentType:
+    LOCAL = 'local'
+    LOCALN = 'n'  # local pero doesn't go into daily account
+    FOREIGN = 'extrangero'
+
+
+class NSpent(Base):
+    __tablename__ = 'gastos'
+    uid = Column(Integer, primary_key=True, autoincrement=True)
+    seller = Column('provedor', String(50))
+    seller_ruc = Column('ruc_provedor', String(20))
+    invnumber = Column('no_factura', String(50))
+    invdate = Column('fecha_factura', DateTime)
+    inputdate = Column('fecha_ingreso', DateTime)
+    desc = Column(String(100))
+    total = Column(Integer)
+    tax = Column(Integer)
+    spent_type = Column(String(10))
+    imgreceipt = Column(String(100))
