@@ -11,10 +11,11 @@ api = Bottle()
 
 
 # ######### PRODUCT ########################
-@api.get('/api/alm/<almacen_id>/producto/<prod_id>')
+@api.get('/api/alm/<almacen_id>/producto/<prod_id:path>')
 @dbcontext
 @actionlogged
 def get_prod_from_inv(almacen_id, prod_id):
+    print prod_id
     prod = prodapi.get_producto(prod_id, almacen_id)
     if prod is None:
         response.status = 404
@@ -24,7 +25,7 @@ def get_prod_from_inv(almacen_id, prod_id):
     return json_dumps(prod)
 
 
-@api.get('/api/producto/<prod_id>')
+@api.get('/api/producto/<prod_id:path>')
 @dbcontext
 @actionlogged
 def get_prod(prod_id):
@@ -42,7 +43,7 @@ def get_prod(prod_id):
         response.status = 404
     return json_dumps(prod)
 
-@api.get('/api/bod/<bodega_id>/producto/<prod_id>')
+@api.get('/api/bod/<bodega_id>/producto/<prod_id:path>')
 @dbcontext
 @actionlogged
 def get_prod_cant(bodega_id, prod_id):
@@ -102,7 +103,7 @@ def crear_producto(pid):
     prodapi.update_prod(pid, content)
 
 
-@api.put('/api/alm/<alm_id:int>/producto/<pid>')
+@api.put('/api/alm/<alm_id:int>/producto/<pid:path>')
 @dbcontext
 @auth_decorator
 @actionlogged
@@ -113,7 +114,7 @@ def update_price(alm_id, pid):
     prodapi.update_or_create_price(alm_id, pid, content)
 
 
-@api.delete('/api/alm/<alm_id>/producto/<pid>')
+@api.delete('/api/alm/<alm_id>/producto/<pid:path>')
 @dbcontext
 @auth_decorator
 @actionlogged

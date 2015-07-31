@@ -23,6 +23,18 @@ def get_invoice(inv_id):
         return
     return json_dumps(doc.serialize())
 
+@napi.get('/api/alm/<alm_id>/nota/<inv_id>')
+@dbcontext
+@actionlogged
+def get_invoice(alm_id, inv_id):
+    docdb = sessionmanager.session.query(NNota).filter_by(almacen_id=alm_id,
+        codigo=inv_id)
+    if docdb is None:
+        abort(404, 'Nota no encontrado')
+        return
+    doc = invapi.get_doc_from_file(docdb.items_location)
+    return json_dumps(doc.serialize())
+
 
 @napi.get('/api/nota')
 @dbcontext
