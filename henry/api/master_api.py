@@ -54,13 +54,14 @@ def get_invoice_by_date():
 
 class InvoiceOptions(SerializableMixin):
     _name = ('crear_cliente', 'revisar_producto',
-             'incrementar_codigo', 'usar_decimal')
+             'incrementar_codigo', 'usar_decimal', 'no_alm_id')
 
     def __init__(self):
         self.crear_cliente = False
         self.revisar_producto = False
         self.incrementar_codigo = False
         self.usar_decimal = False
+        self.no_alm_id = False
 
 
 def get_store_by(field, value):
@@ -105,6 +106,8 @@ def fix_inv_by_options(inv, options):
         alm = prodapi.get_store_by_id(inv.meta.almacen_id)
 
     inv.meta.almacen_id = alm.almacen_id
+    if options.no_alm_id:
+        inv.meta.almacen_id = None
     inv.meta.almacen_name = alm.nombre
     inv.meta.almacen_ruc = alm.ruc
     inv.meta.bodega_id = alm.bodega_id
