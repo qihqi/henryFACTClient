@@ -34,10 +34,37 @@
             <td>{{p.codigo}}</td>
             <td>{{p.nombre}}</td>
             <td>{{ p.cantidad }}</td>
+            <td id="{{p.codigo}}-activo">{% if p.inactivo %} Inactivo {% else %} Activo {% endif %}</td>
+            <td><button class="toggle" bod="{{p.bodega_id}}" prod="{{p.codigo}}">Cambiar estado</button></td>
         </tr>
         {% endfor %}
     </table>
 </div>
+<script src="/static/jquery.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script>
+    $('document').ready(function() {
+        $('.toggle').click(function() {
+            var bod = $(this).attr('bod');
+            var prod = $(this).attr('prod');
+            var act = $('#' + prod + '-activo').html();
+            var boolact = (act.replace(/^\s+|\s+$/g, '') == 'Activo');
+            var url = '/api/bod/' + bod + '/producto/' + prod;
+            $.ajax({
+                'url': url,
+                'data': JSON.stringify({'inactivo': boolact}),
+                'method': 'PUT',
+                'success': function(data) {
+                    var newval = data.inactivo ? 'Inactivo' : 'Activo';
+                    $('#' + prod + '-activo').html(newval);
+                },
+                'failure': function(result) {
+                    alert(result);
+                }
+            });
+        });
+    });
+</script>
 </body>
 </html>
 

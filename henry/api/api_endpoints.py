@@ -1,6 +1,6 @@
 from bottle import Bottle, response, request, abort
 
-from henry.base.schema import NPriceList
+from henry.base.schema import NPriceList, NContenido
 from henry.config import (prodapi, dbcontext, clientapi,
                           auth_decorator, pedidoapi, sessionmanager,
                           actionlogged)
@@ -62,6 +62,18 @@ def search_prod_cant(bodega_id):
         return json_dumps(prod)
     response.status = 400
     return None
+
+
+@api.put('/api/bod/<bodega_id>/producto/<prod_id:path>')
+@dbcontext
+@actionlogged
+def toggle_inactive(bodega_id, prod_id):
+    inactive = json_loads(request.body.read())['inactivo']
+    sessionmanager.session.query(NContenido).filter_by(
+        bodega_id=bodega_id, prod_id=prod_id).update(
+        {NContenido.inactivo: inactive})
+    sessionmanager.session.commit()
+    return {'inactivo': inactive}
 
 
 @api.get('/api/producto')

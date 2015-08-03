@@ -29,7 +29,7 @@ def ver_cantidades():
     bodega_id = int(request.query.get('bodega_id', 1))
     prefix = request.query.get('prefix', None)
     if prefix:
-        all_prod = prodapi.search_prod_cant(prefix, bodega_id)
+        all_prod = prodapi.get_cant_prefix(prefix, bodega_id, showall=True)
     else:
         all_prod = []
     temp = jinja_env.get_template('inventory/ver_cantidad.html')

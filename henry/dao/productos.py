@@ -44,7 +44,8 @@ class Product(SerializableMixin):
              'almacen_id',
              'bodega_id',
              'upi',
-             'multiplicador')
+             'multiplicador',
+             'inactivo',)
 
     def __init__(self,
                  codigo=None,
@@ -56,7 +57,8 @@ class Product(SerializableMixin):
                  almacen_id=None,
                  bodega_id=None,
                  upi=None,
-                 multiplicador=None):
+                 multiplicador=None,
+                 inactivo=None):
         self.codigo = codigo
         self.nombre = nombre
         self.almacen_id = almacen_id
@@ -67,6 +69,7 @@ class Product(SerializableMixin):
         self.cantidad = cantidad
         self.upi = upi
         self.multiplicador = multiplicador
+        self.inactivo = inactivo
 
     @classmethod
     def deserialize(cls, dict_input):
@@ -207,6 +210,7 @@ class ProductApiDB:
     _PROD_CANT_KEYS = (
         NContenido.cant.label('cantidad'),
         NContenido.bodega_id,
+        NContenido.inactivo,
     )
 
     def __init__(self, sessionmanager):
@@ -237,11 +241,13 @@ class ProductApiDB:
             return Product().merge_from(item)
         return None
 
-    def get_cant_prefix(self, prefix, bodega_id):
+    def get_cant_prefix(self, prefix, bodega_id, showall=False):
         session = self.db_session.session
         query = session.query(*(self._PROD_KEYS + self._PROD_CANT_KEYS)).filter(
             NProducto.nombre.startswith(prefix), NContenido.prod_id == NProducto.codigo,
-            NContenido.bodega_id == bodega_id, NContenido.inactivo != True)
+            NContenido.bodega_id == bodega_id)
+        if not showall:
+            query = query.filter(NContenido.inactivo != True)
         for r in query:
             yield Product().merge_from(r)
 
@@ -258,15 +264,6 @@ class ProductApiDB:
         p.precios = contents
         return p
 
-    def search_prod_cant(self, prefix, bodega_id):
-        session = self.db_session.session
-        query = session.query(*(self._PROD_KEYS + self._PROD_CANT_KEYS)).filter(
-            NProducto.nombre.startswith(prefix)).filter(
-            NContenido.prod_id == NProducto.codigo).filter(
-            NContenido.bodega_id == bodega_id).filter(
-            NContenido.inactivo != True)
-        for r in query:
-            yield Product().merge_from(r)
 
     def search_producto(self, prefix, almacen_id=None):
         session = self.db_session.session
