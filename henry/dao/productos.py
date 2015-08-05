@@ -168,17 +168,19 @@ class TransactionApi:
         if isinstance(date_end, datetime.datetime):
             date_end = date_end.date()
 
-        pupper = os.path.join(self.fileservice.root, prod_id.upper())
-        plower = os.path.join(self.fileservice.root, prod_id.lower())
-        print 'upper', pupper, 'lower', plower
-        all_names_upper = filter(lambda x: date_end.isoformat() >= x >= date_start.isoformat(),
-                                 os.listdir(pupper))
-        all_names_lower = filter(lambda x: date_end.isoformat() >= x >= date_start.isoformat(),
-                                 os.listdir(plower))
-        all_names = ([os.path.join(prod_id.upper(), x) for x in all_names_upper] +
-                     [os.path.join(prod_id.lower(), x) for x in all_names_lower])
-        all_lines = list(self.fileservice.get_file_lines(all_names))
+        all_lines = list(self._get_transaction_single(prod_id.upper(), date_start, date_end))
+        all_lines.extend(self._get_transaction_single(prod_id.lower(), date_start, date_end))
         return all_lines
+
+    def _get_transaction_single(self, prod_id, date_start, date_end):
+        root = os.path.join(self.fileservice.root, prod_id)
+        all_names = filter(lambda x: date_end.isoformat() >= x >= date_start.isoformat(),
+                           os.listdir(root)) if os.path.exists(root) else []
+        all_names = [os.path.join(prod_id, x) for x in all_names]
+        if not all_names:
+            return []
+        return self.fileservice.get_file_lines(all_names)
+
 
     def get_transactions(self, prod_id, date_start, date_end):
         for raw_item in self.get_transactions_raw(prod_id, date_start, date_end):
