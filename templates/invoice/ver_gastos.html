@@ -1,0 +1,37 @@
+<html>
+  <head>
+  </head>
+  <body>
+    <form>
+      {% from "macros.html" import start_end_date_oneline %}
+      {{ start_end_date_oneline(start, end) }}
+      <input type="submit" />
+    </form>
+    <table>
+      <tr>
+        <th>ID</th>
+        <th>Provedor</th>
+        <th>RUC Provedor</th>
+        <th>Codigo</th>
+        <th>Fecha Factura</th>
+        <th>Fecha Ingresado</th>
+        <th>Total</th>
+        <th>Iva</th>
+        <th>Retension</th>
+      </tr>
+      {% for x in all_spent %}
+      <tr>
+        <td>{{x.uid}}</td>
+        <td>{{x.seller}}</td>
+        <td>{{x.seller_ruc}}</td>
+        <td>{{x.invnumber}}</td>
+        <td>{{x.invdate}}</td>
+        <td>{{x.inputdate}}</td>
+        <td>{{value_from_cents(x.total)}}</td>
+        <td>{{value_from_cents(x.tax)}}</td>
+        <td>{{value_from_cents(x.retension)}}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </body>
+</html>

@@ -5,7 +5,8 @@ from operator import attrgetter
 from bottle import request, abort, redirect, response, Bottle
 
 from henry.base.auth import get_user
-from henry.base.schema import NUsuario, NNota, NAccountStat, NPayment, NComment
+from henry.base.schema import (NUsuario, NNota, NAccountStat, NPayment, NComment,
+                               NSpent)
 from henry.base.serialization import json_loads
 from henry.config import (dbcontext, auth_decorator, jinja_env, prodapi,
                           sessionmanager, actionlogged, invapi, pedidoapi)
@@ -207,6 +208,10 @@ def crear_entrega_de_cuenta():
     noncash = split_records(noncash, lambda x: x.client.codigo)
     query = sessionmanager.session.query(NPayment).filter(NPayment.note_id.in_(ids))
     payments = split_records(query, attrgetter('client_id'))
+
+    all_spent = list(sessionmanager.session.query(NSpent).filter(
+        NSpent.inputdate >= date, NSpent.inputdate < date + datetime.timedelta(days=1)))
+    total_spent = sum( ( x.total for x in all_spent) )
     existing = sessionmanager.session.query(NAccountStat).filter_by(date=date).first()
     temp = jinja_env.get_template('invoice/crear_entregar_cuenta_form.html')
     return temp.render(
@@ -215,6 +220,8 @@ def crear_entrega_de_cuenta():
         deleted=deleted,
         date=date.isoformat(),
         pagos=payments,
+        all_spent=all_spent,
+        total_spent=total_spent,
         existing=existing)
 
 

@@ -52,6 +52,11 @@
     {% endif %}
 {% endfor %}
 
+<h4>Gastos: {{ value_from_cents(total_spent) }}</h4>
+{% for x in all_spent %}
+<p> {{x.uid}} {{x.desc}} {{value_from_cents(x.total)}} </p>
+{% endfor %}
+
 <h3>A entregar:</h3>
 {% set deposit = "" %}
 {% set total_spend = "" %}
@@ -66,8 +71,7 @@
 <form method="post" action="/app/crear_entrega_de_cuenta">
     <input type="hidden" name="date" value="{{date}}" />
     <input type="hidden" name="cash" value="{{value_from_cents(total_cash)}}" />
-    <p>Gastos:
-        <input name="gastos" placeholder="Total de Gastos" value="{{total_spend}}" {%if not display%}readonly{%endif%}/></p>
+    <input type="hidden" name="gastos" value="{{value_from_cents(total_spent)}}" />
     <p>Deposito:
         <input name="deposito" placeholder="Valor que entrego al brindado" value="{{deposit}}"{%if not display%}readonly{%endif%} /></p>
     <p>Efectivo:

@@ -301,10 +301,12 @@ def save_spent(msg=''):
 def post_save_spent():
     spent = NSpent()
     for x in ('seller', 'seller_ruc', 'invnumber',
-              'invdate', 'desc', 'total', 'tax'):
+              'invdate', 'desc', 'total', 'tax', 'retension'):
         setattr(spent, x, request.forms.get(x))
     spent.total = int(Decimal(spent.total) * 100)
     spent.tax = int(Decimal(spent.tax) * 100)
+    spent.retension = int(Decimal(spent.retension) * 100)
+    
     spent.invdate = parse_iso(spent.invdate)
     spent.inputdate = datetime.datetime.now()
 
@@ -318,3 +320,17 @@ def post_save_spent():
     return save_spent('Gasto Guardado')
 
 
+@w.get('/app/ver_gastos')
+@dbcontext
+@auth_decorator
+def ver_gastos():
+    today = datetime.datetime.today()
+    start, end = parse_start_end_date_with_default(
+        request.query, today, today)
+
+    all_spent = sessionmanager.session.query(NSpent).filter(
+        NSpent.inputdate >= start,
+        NSpent.inputdate <= end+ datetime.timedelta(days=1))
+
+    temp = jinja_env.get_template('invoice/ver_gastos.html')
+    return temp.render(start=start, end=end, all_spent=all_spent)

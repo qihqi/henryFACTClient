@@ -2,6 +2,7 @@
 
 {% block content %}
 <h4>Compras o Gastos:</h4>
+{{ msg }}
 <form method="post">
     <p>Provedor: <input name="seller" /></p>
     <p>Provedor RUC: <input name="seller_ruc" /></p>
@@ -10,8 +11,8 @@
     <p>Descripcion: <input name="desc" /></p>
     <p>total: <input name="total" /></p>
     <p>iva: <input name="tax" /></p>
+    <p>retension: <input name="retension" /></p>
     <p>Pagado desde la caja: <input type="checkbox" name="paid_with_sale" checked /></p>
     <p><input type="submit" value="Guardar"/></p>
-
 </form>
 {% endblock %}
