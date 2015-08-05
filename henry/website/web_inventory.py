@@ -9,7 +9,7 @@ from henry.config import (dbcontext, auth_decorator)
 from henry.dao import TransType, TransMetadata, Transferencia
 from henry.dao.productos import Bodega
 from henry.website.common import items_from_form, transmetadata_from_form, parse_start_end_date
-from henry.base.schema import NInventoryRevision
+from henry.base.schema import NInventoryRevision, NUsuario
 
 w = Bottle()
 web_inventory_webapp = w
@@ -137,7 +137,8 @@ def get_revision(rid):
     items = []
     for y in meta.items:
         item = prodapi.get_cant(prod_id=y.prod_id, bodega_id=meta.bodega_id)
-        item.cantidad = y.inv_cant
+        if y.inv_cant:
+            item.cantidad = y.inv_cant
         if y.real_cant is not None:
             item.contado = y.real_cant
         items.append(item)
@@ -172,3 +173,23 @@ def list_revision():
 
     temp = jinja_env.get_template('inventory/list_revisions.html')
     return temp.render(revisions=revisions, start=start, end=end)
+
+
+@w.get('/app/revisiones')
+@dbcontext
+@auth_decorator
+def revisiones_main():
+    user = get_user(request)
+    if 'level' not in user:
+        userdb = sessionmanager.session.query(
+            NUsuario).filter(NUsuario.username == user['username']).first()
+        user['level'] = userdb.level
+        beaker = request.environ['beaker.session']
+        beaker['login_info'] = user
+        beaker.save()
+    level = user['level']
+    print level
+    if level < 2:
+        return 'no autorizado'
+    temp = jinja_env.get_template('inventory/revisiones.html')
+    return temp.render()

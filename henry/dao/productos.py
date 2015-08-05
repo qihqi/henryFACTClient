@@ -170,18 +170,13 @@ class TransactionApi:
 
         pupper = os.path.join(self.fileservice.root, prod_id.upper())
         plower = os.path.join(self.fileservice.root, prod_id.lower())
-        if os.path.exists(pupper):
-            dirname = pupper
-        elif os.path.exists(pupper):
-            dirname = plower
-        else:
-            return []
-        all_names = filter(lambda x: date_end.isoformat() >= x >= date_start.isoformat(),
-                           os.listdir(dirname))
-        if not all_names:
-            return []
-        all_names = [os.path.join(prod_id, x) for x in all_names]
-        print all_names
+        print 'upper', pupper, 'lower', plower
+        all_names_upper = filter(lambda x: date_end.isoformat() >= x >= date_start.isoformat(),
+                                 os.listdir(pupper))
+        all_names_lower = filter(lambda x: date_end.isoformat() >= x >= date_start.isoformat(),
+                                 os.listdir(plower))
+        all_names = ([os.path.join(prod_id.upper(), x) for x in all_names_upper] +
+                     [os.path.join(prod_id.lower(), x) for x in all_names_lower])
         all_lines = list(self.fileservice.get_file_lines(all_names))
         return all_lines
 
@@ -394,6 +389,7 @@ class RevisionApi:
             prod = self.prodapi.get_cant(item.prod_id, revision.bodega_id)
             item.inv_cant = prod.cantidad
             item.real_cant = items_counts[item.prod_id]
+
         revision.status = self.CONTADO
         self.sm.session.flush()
         return revision

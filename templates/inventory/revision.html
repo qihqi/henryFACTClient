@@ -14,6 +14,7 @@
                     url: url,
                     success: function() {
                         alert('Ajustado');
+                        $('#status').html('AJUSTADO');
                     },
                     failure: function() {
                         alert('fallo en ajustar');
@@ -33,7 +34,7 @@
     {% elif meta.status == 'NUEVO'%}
         <input type="submit" value="Guardar"/>
     {% endif %}
-    <h4>Estado: {{meta.status}}</h4>
+    <h4>Estado: <span id="status">{{meta.status}}</span></h4>
     <h4>Creado por: {{meta.created_by}}</h4>
     <h4>Fecha: {{meta.timestamp.date().isoformat()}}</h4>
     <table>
