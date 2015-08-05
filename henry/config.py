@@ -1,4 +1,5 @@
 import datetime
+import os
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
@@ -55,6 +56,9 @@ auth_decorator = lambda x: x
 if ENV == 'prod':
     auth_decorator = AuthDecorator(LOGIN_URL, sessionmanager)
 
+def fix_path(x):
+    return os.path.split(x)[1]
+
 jinja_env.globals.update({
     'id_type': id_type,
     'fix_id': fix_id,
@@ -63,6 +67,7 @@ jinja_env.globals.update({
     'get_total': get_total,
     'today': datetime.date.today,
     'PaymentFormat': PaymentFormat,
+    'fix_path': fix_path,
 })
 
 BEAKER_SESSION_OPTS = {

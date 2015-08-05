@@ -31,6 +31,7 @@
   <form method="post" action="/app/guardar_cheque_deposito">
   <table>
     <tr>
+      <th></th>
       <th>Fecha de compra</th>
       <th>Banco</th>
       <th>Titular</th>
@@ -39,13 +40,14 @@
       <th>No. Orden</th>
       <th>Depositado</th>
       <th></th>
+      <th></th>
     </tr>
     {% for c in checks %}
     <tr>
       <td>
-        {% if check.imgcheck%}
-        <img src="/app/img/{{check.imgcheck}}" height="100"/>
-        {% else %}
+        {% if c.imgcheck%}
+        <img src="/app/img/{{fix_path(c.imgcheck)}}" height="100"/>
+        {% endif %}
       </td>
       <td>{{ c.date }}</td>
       <td>{{ c.bank }}</td>
@@ -60,9 +62,9 @@
       {% endif %}
       <td><a href="/app/ver_cheque/{{c.uid}}">Ver</a></td>
       <td>
-        {% if check.imgdeposit%}
-        <img src="/app/img/{{check.imgdeposit}}" height="100"/>
-        {% else %}
+        {% if c.imgdeposit%}
+        <img src="/app/img/{{fix_path(c.imgdeposit)}}" height="100"/>
+        {% endif %}
       </td>
     </tr>
     {% endfor %}

@@ -169,7 +169,8 @@ class TransactionApi:
             date_end = date_end.date()
 
         all_lines = list(self._get_transaction_single(prod_id.upper(), date_start, date_end))
-        all_lines.extend(self._get_transaction_single(prod_id.lower(), date_start, date_end))
+        if prod_id.upper() != prod_id.lower():
+            all_lines.extend(self._get_transaction_single(prod_id.lower(), date_start, date_end))
         return all_lines
 
     def _get_transaction_single(self, prod_id, date_start, date_end):
