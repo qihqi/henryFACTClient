@@ -53,7 +53,7 @@
     <input type="submit" />
 </form>
 {% if check.imgcheck %}
-<img src="/app/img/{{check.imgcheck}}" width="500"/>
+<img src="/app/img/{{check.imgcheck}}" height="250"/>
 {% else %}
 <form method="post" action="/app/save_check_img/check/{{check.uid}}" enctype="multipart/form-data">
     <input type="file" name="imgcheck" />
@@ -61,7 +61,7 @@
 </form>
 {% endif %}
 {% if check.imgdeposit%}
-<img src="/app/img/{{check.imgdeposit}}" width="500"/>
+<img src="/app/img/{{check.imgdeposit}}" width="250"/>
 {% else %}
 <form method="post" action="/app/save_check_img/deposit/{{check.uid}}" enctype="multipart/form-data">
     <input type="file" name="imgcheck" />

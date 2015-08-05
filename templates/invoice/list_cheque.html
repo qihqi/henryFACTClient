@@ -42,6 +42,11 @@
     </tr>
     {% for c in checks %}
     <tr>
+      <td>
+        {% if check.imgcheck%}
+        <img src="/app/img/{{check.imgcheck}}" height="100"/>
+        {% else %}
+      </td>
       <td>{{ c.date }}</td>
       <td>{{ c.bank }}</td>
       <td>{{ c.holder }}</td>
@@ -54,6 +59,11 @@
       <td>{{ selector(accounts, 'acct-%d' % c.uid, 'name', 'name') }}</td>
       {% endif %}
       <td><a href="/app/ver_cheque/{{c.uid}}">Ver</a></td>
+      <td>
+        {% if check.imgdeposit%}
+        <img src="/app/img/{{check.imgdeposit}}" height="100"/>
+        {% else %}
+      </td>
     </tr>
     {% endfor %}
   </table>
