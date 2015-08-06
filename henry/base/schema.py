@@ -379,6 +379,7 @@ class NSpent(Base):
     inputdate = Column('fecha_ingreso', DateTime)
     desc = Column(String(100))
     total = Column(Integer)
+    paid_from_cashier = Column('pagado_de_caja', Integer)
     tax = Column(Integer)
     retension = Column(Integer)
     spent_type = Column(String(10))

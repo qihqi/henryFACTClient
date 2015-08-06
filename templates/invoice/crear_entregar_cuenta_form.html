@@ -54,7 +54,7 @@
 
 <h4>Gastos: {{ value_from_cents(total_spent) }}</h4>
 {% for x in all_spent %}
-<p> {{x.uid}} {{x.desc}} {{value_from_cents(x.total)}} </p>
+<p> {{x.uid}} {{x.desc}} {{value_from_cents(x.total)}} {{value_from_cents(x.paid_from_cashier)}}</p>
 {% endfor %}
 
 <h3>A entregar:</h3>
@@ -77,7 +77,7 @@
     <p>Efectivo:
         <input name="valor" placeholder="Valor a entregar" value="{{turned_cash}}"{%if not display%}readonly{%endif%} /></p>
     {% if existing %}
-    <p>Diff: {{ value_from_cents(total_cash - existing.deposit - existing.turned_cash - existing.total_spend) }} </p>
+    <p>Diff: {{ value_from_cents(total_cash - existing.deposit - existing.turned_cash - total_spend) }} </p>
     <input id="Revisar" type="submit" name="submit" value="Revisar" />
     {% else %}
     <input type="submit" name="submit" value="Crear" />

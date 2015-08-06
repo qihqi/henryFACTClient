@@ -7,12 +7,13 @@
     <p>Provedor: <input name="seller" /></p>
     <p>Provedor RUC: <input name="seller_ruc" /></p>
     <p>Numero Factura: <input name="invnumber" /></p>
-    <p>Fecha Factura: <input name="invdate" /></p>
+    <p>Fecha Factura: <input name="invdate" value="{{today().isoformat()}}"/></p>
+    <p>Fecha Ingreso: <input name="inputdate" value="{{today().isoformat()}}"/></p>
     <p>Descripcion: <input name="desc" /></p>
     <p>total: <input name="total" /></p>
     <p>iva: <input name="tax" /></p>
     <p>retension: <input name="retension" /></p>
-    <p>Pagado desde la caja: <input type="checkbox" name="paid_with_sale" checked /></p>
+    <p>Pagado desde la caja: <input name="paid_from_cashier" /></p>
     <p><input type="submit" value="Guardar"/></p>
 </form>
 {% endblock %}

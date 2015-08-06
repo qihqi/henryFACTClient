@@ -211,7 +211,7 @@ def crear_entrega_de_cuenta():
 
     all_spent = list(sessionmanager.session.query(NSpent).filter(
         NSpent.inputdate >= date, NSpent.inputdate < date + datetime.timedelta(days=1)))
-    total_spent = sum( ( x.total for x in all_spent) )
+    total_spent = sum((x.paid_from_cashier for x in all_spent))
     existing = sessionmanager.session.query(NAccountStat).filter_by(date=date).first()
     temp = jinja_env.get_template('invoice/crear_entregar_cuenta_form.html')
     return temp.render(
