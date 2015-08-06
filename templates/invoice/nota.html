@@ -89,6 +89,26 @@
                 <td class="cant"> {{value_from_cents(inv.meta.total)}} </td>
             </tr>
         </table>
+        <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+        <script>
+            function addcomment(objtype, objid) {
+                var comment = $('#comment_box').val()
+                var data = JSON.stringify({
+                    objid: objid,
+                    objtype: objtype,
+                    comment: comment
+                });
+                $.ajax({
+                    method: 'POST',
+                    url: '/api/comment',
+                    data: data,
+                    success: function() {
+                        alert('comentario guardado');
+                    }
+                });
+            }
+        </script>
+        <input id="comment_box" /><button onclick="addcomment('notas', '{{inv.meta.uid}}');">Guardar</button>
     {% if comments %}
         <h4>Commentarios:</h4>
     {% for c in comments %}

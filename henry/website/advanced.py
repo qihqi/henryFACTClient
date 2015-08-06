@@ -1,10 +1,11 @@
 from collections import defaultdict
 import datetime
 from bottle import Bottle, request, abort, redirect
+from sqlalchemy import desc
 
 from henry.base.auth import get_user
 from henry.base.schema import (NProducto, NContenido, NBodega, NCategory,
-                               NPriceList, NNota)
+                               NPriceList, NNota, NComment, ObjType)
 from henry.config import (dbcontext, auth_decorator, prodapi, jinja_env,
                           sessionmanager, invapi, transactionapi,
                           actionlogged)
@@ -103,11 +104,12 @@ def ver_transacciones():
         counts[x.bodega_id] = x.cant
     if bodega_id:
         items = filter(lambda i: i.bodega_id == bodega_id, items)
+    print items
     for i in items:
         i.bodega_name = prodapi.get_bodega_by_id(i.bodega_id).nombre
         i.count = counts[i.bodega_id]
         counts[i.bodega_id] -= i.delta
-
+    print items
     bodegas = prodapi.get_bodegas()
     bodegas.append(NBodega(id=-1, nombre='Todas'))
     temp = jinja_env.get_template('ver_transacciones.html')
@@ -179,3 +181,26 @@ def post_edit_note(uid):
     sessionmanager.session.query(NNota).filter_by(id=uid).update(
         values)
     redirect(request.url)
+
+
+@w.get('/app/ver_comentarios')
+@dbcontext
+@auth_decorator
+def ver_comentarios():
+    today = datetime.datetime.now() + datetime.timedelta(days=1)
+    start, end = parse_start_end_date_with_default(
+        request.query, today - datetime.timedelta(days=7), today)
+    comments = list(sessionmanager.session.query(NComment).filter(
+        NComment.timestamp >= start, NComment.timestamp < end).order_by(
+        desc(NComment.timestamp)))
+    obj_template = {
+        ObjType.CHECK: '/app/ver_cheque/{}',
+        ObjType.INV: '/app/nota/{}',
+        ObjType.TRANS: '/app/ingreso/{}',
+    }
+    for c in comments:
+        c.url = obj_template[c.objtype].format(c.objid)
+
+    temp = jinja_env.get_template('ver_comentarios.html')
+    return temp.render(comentarios=comments, start=start, end=end)
+

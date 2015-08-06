@@ -1,6 +1,8 @@
 from bottle import Bottle, response, request, abort
+import datetime
+from henry.base.auth import get_user
 
-from henry.base.schema import NPriceList, NContenido
+from henry.base.schema import NPriceList, NContenido, NComment
 from henry.config import (prodapi, dbcontext, clientapi,
                           auth_decorator, pedidoapi, sessionmanager,
                           actionlogged)
@@ -196,6 +198,23 @@ def get_pedido(uid):
     if f is None:
         response.status = 404
     return f
+
+
+@api.post('/api/comment')
+@dbcontext
+@auth_decorator
+@actionlogged
+def post_comment():
+    comment = json_loads(request.body.read())
+    c = NComment()
+    c.objid = comment['objid']
+    c.objtype = comment['objtype']
+    c.user_id = get_user(request)['username']
+    c.timestamp = datetime.datetime.now()
+    c.comment = comment['comment']
+    sessionmanager.session.add(c)
+    sessionmanager.session.commit()
+    return {'comment': c.uid}
 
 
 from henry.authentication import app
