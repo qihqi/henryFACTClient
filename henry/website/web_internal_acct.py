@@ -156,14 +156,14 @@ def guardar_deposito():
                        msg=msg)
 
 
-def extract_nota_and_client(form):
+def extract_nota_and_client(form, redirect_url):
     codigo = form.get('codigo')
     almacen = form.get('almacen_id')
     if codigo:
         nota = sessionmanager.session.query(NNota).filter_by(
             codigo=codigo, almacen_id=almacen).first()
         if nota is None:
-            redirect('/app/guardar_cheque?msg=Orden+Despacho+No+{}+no+existe'.format(codigo))
+            redirect('{}?msg=Orden+Despacho+No+{}+no+existe'.format(redirect_url, codigo))
         return nota.id, nota.client_id
     return None, None
 
@@ -179,12 +179,12 @@ def save_check_form():
                        msg=msg)
 
 
-def parse_payment_from_request(form, clazz):
+def parse_payment_from_request(form, clazz, url):
     date = datetime.date.today()
     if request.forms.ingresado == 'ayer':
         date = date - datetime.timedelta(days=1)
     payment = clazz.deserialize(request.forms)
-    payment.note_id, payment.client_id = extract_nota_and_client(form)
+    payment.note_id, payment.client_id = extract_nota_and_client(form, url)
     payment.value = int(Decimal(payment.value) * 100)
     payment.date = date
     return payment
@@ -194,7 +194,7 @@ def parse_payment_from_request(form, clazz):
 @dbcontext
 @auth_decorator
 def save_check():
-    check = parse_payment_from_request(request.forms, Check)
+    check = parse_payment_from_request(request.forms, Check, '/app/guardar_cheque')
     check.checkdate = parse_iso(check.checkdate)
     paymentapi.save_payment(check, PaymentFormat.CHECK)
     redirect('/app/guardar_cheque?msg=Cheque+Guardado')
@@ -261,7 +261,7 @@ def ver_cheques_por_titular():
 @dbcontext
 @auth_decorator
 def post_guardar_deposito():
-    deposit = parse_payment_from_request(request.forms, Deposit)
+    deposit = parse_payment_from_request(request.forms, Deposit, '/app/guardar_deposito')
     paymentapi.save_payment(deposit, PaymentFormat.DEPOSIT)
     redirect('/app/guardar_deposito?msg=Deposito+Guardado')
 
@@ -273,7 +273,19 @@ def guardar_abono():
     msg = request.query.msg
     temp = jinja_env.get_template('invoice/save_abono_form.html')
     return temp.render(stores=prodapi.get_stores(),
-                       msg=msg)
+                       action='/app/guardar_abono',
+                       msg=msg, payment_type=PaymentFormat.CASH)
+
+
+@w.get('/app/guardar_retension')
+@dbcontext
+@auth_decorator
+def guardar_retension():
+    msg = request.query.msg
+    temp = jinja_env.get_template('invoice/save_abono_form.html')
+    return temp.render(stores=prodapi.get_stores(),
+                       action='/app/guardar_abono',
+                       msg=msg, payment_type='retension')
 
 
 @w.post('/app/guardar_abono')
@@ -281,11 +293,18 @@ def guardar_abono():
 @auth_decorator
 def post_guardar_abono():
     payment = Payment()
-    payment.note_id, payment.client_id = extract_nota_and_client(request.forms)
+    url = '/app/guardar_abono'
+    payment_type = request.forms.payment_type
+    if payment_type != PaymentFormat.CASH:
+        url = '/app/guardar_retension'
+    payment.note_id, payment.client_id = extract_nota_and_client(request.forms, url)
     payment.value = int(Decimal(request.forms.value) * 100)
     payment.date = datetime.date.today()
-    paymentapi.save_payment(payment, PaymentFormat.CASH)
-    redirect('/app/guardar_abono?msg=Abono+Guardado')
+    paymentapi.save_payment(payment, payment_type)
+    url = '/app/guardar_abono?msg=Abono+Guardado'
+    if payment_type != PaymentFormat.CASH:
+        url = '/app/guardar_retension?msg=Retension+Guardado'
+    redirect(url)
 
 
 @w.get('/app/guardar_gastos')

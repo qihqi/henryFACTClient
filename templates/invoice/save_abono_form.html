@@ -4,8 +4,10 @@
 {%block title %}Guardar Abono{% endblock %}
 
 {% block content %}
+<h4> {% if payment_type == 'efectivo' %}Ingresar Abono {% else %} Ingresar Retension {% endif %}</h4>
 {% if msg %} <h4>{{ msg }}</h4> {% endif %}
-<form method="post">
+<form method="post" action='{{action}}'>
+    <input type="hidden" name="payment_type" value="{{payment_type}}"  />
     <p>Valor: <input name="value"/> </p>
     <p>Almacen: {{select_almacen(stores)}}</p>
     <p>Codigo: <input name="codigo" /></p>
