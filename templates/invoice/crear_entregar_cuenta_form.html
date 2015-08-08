@@ -1,5 +1,12 @@
 
 {% extends "base.html" %}
+{% block script %}
+<style>
+    td, input{
+        text-align: right;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <h3>Entrega de Cuenta: {{date}}</h3>
@@ -76,12 +83,33 @@
     <input type="hidden" name="date" value="{{date}}" />
     <input type="hidden" name="cash" value="{{value_from_cents(total_cash)}}" />
     <input type="hidden" name="gastos" value="{{value_from_cents(total_spent)}}" />
-    <p>Deposito:
-        <input name="deposito" placeholder="Valor que entrego al brindado" value="{{deposit}}"{%if not display%}readonly{%endif%} /></p>
-    <p>Efectivo:
-        <input name="valor" placeholder="Valor a entregar" value="{{turned_cash}}"{%if not display%}readonly{%endif%} /></p>
-    {% if existing %}
-    <p>Diff: {{ value_from_cents(total_cash - existing.deposit - existing.turned_cash - total_spent - total_retension + other_cash) }} </p>
+    <table>
+        <tr>
+            <td>Deposito:</td>
+            <td><input name="deposito" placeholder="Valor que entrego al brindado" value="{{deposit}}"{%if not display%}readonly{%endif%} /></td>
+        </tr>
+        <tr>
+            <td>Efectivo:</td>
+            <td><input name="valor" placeholder="Valor a entregar" value="{{turned_cash}}"{%if not display%}readonly{%endif%} /></td>
+        </tr>
+
+        {% if existing %}
+        {% set entrega_total = total_retension + total_spent + existing.deposit + existing.turned_cash %}
+        <tr>
+            <td>Gastos:</td> 
+            <td>{{value_from_cents(total_strent)}}</td>
+        </tr>
+        <tr>
+            <td>Retensiones:</td>
+            <td>{{value_from_cents(total_retension)}}</td>
+        </tr>
+        <tr>
+            <td>Total:  </td> 
+            <td>{{value_from_cents(entrega_total)}}</td>
+        </tr>
+    </table>
+    <p>{{value_from_cents(entrega_total)}} - {{ value_from_cents(total_cash) }} = {{ value_from_cents(entrega_total - total_cash) }}</p>
+
     <input id="Revisar" type="submit" name="submit" value="Revisar" />
     {% else %}
     <input type="submit" name="submit" value="Crear" />

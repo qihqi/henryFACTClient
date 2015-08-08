@@ -261,7 +261,7 @@ def post_crear_entrega_de_cuenta():
         sessionmanager.session.flush()
     else:
         sessionmanager.session.query(NAccountStat).filter_by(date=date).update(
-            {'revised_by': userid})
+                {'revised_by': userid, 'turned_cash': turned_cash, 'deposit': deposito})
     redirect('/app/crear_entrega_de_cuenta?fecha={}'.format(date.isoformat()))
 
 
