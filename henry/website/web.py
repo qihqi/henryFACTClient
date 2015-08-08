@@ -38,6 +38,14 @@ def modificar_cliente_form(id, message=None):
     return temp.render(client=client, message=message, action='/app/modificar_cliente',
                        button_text='Modificar')
 
+@w.post('/app/modificar_cliente')
+@dbcontext
+@auth_decorator
+def modificar_cliente():
+    clientid = request.forms.codigo
+    clientapi.update(clientid, request.forms)
+    redirect('/app/cliente/{}'.format(clientid))
+
 
 @w.get('/app/cliente')
 @dbcontext
