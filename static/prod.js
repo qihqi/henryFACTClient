@@ -22,12 +22,12 @@ function popup(){
     return false;
 }
 function getProdAjaxCall(codigo, bodega_id, callback) {
-    var url = '/api/bod/' + bodega_id + '/producto/' + codigo;
+    var url = '/api/producto/' + codigo;
     getRequest(url, callback);
 }
 
 function searchProdAjax(prefix, bodega_id, callback) {
-    var url = '/api/bod/' + bodega_id + '/producto?prefijo=' + prefix;
+    var url = '/api/producto?prefijo=' + prefix;
     getRequest(url, callback);
 }
 

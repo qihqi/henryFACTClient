@@ -68,11 +68,31 @@
     <input type="submit" />
 </form>
 {% endif %}
+<script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+<script>
+            function addcomment(objtype, objid) {
+                var comment = $('#comment_box').val()
+                var data = JSON.stringify({
+                    objid: objid,
+                    objtype: objtype,
+                    comment: comment
+                });
+                $.ajax({
+                    method: 'POST',
+                    url: '/api/comment',
+                    data: data,
+                    success: function() {
+                        alert('comentario guardado');
+                    }
+                });
+            }
+        </script>
 
 <h4>Comentarios</h4>
 {% for x in comments %}
 <p><i>{{x.timestamp}} {{x.user_id}}: </i>  {{x.comment}}</p>
 {% endfor %}
+<input id="comment_box" /><button onclick="addcomment('cheque', '{{check.uid}}');">Guardar</button>
 
 
 
