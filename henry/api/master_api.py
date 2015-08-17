@@ -3,7 +3,7 @@ from decimal import Decimal
 from bottle import Bottle, request, abort
 
 from henry.base.serialization import json_dumps, json_loads, SerializableMixin
-from henry.base.schema import NUsuario, NInventoryRevision, NInventoryRevisionItem
+from henry.base.schema import NUsuario, NInventoryRevision, NInventoryRevisionItem, NNota
 from henry.config import (transapi, dbcontext, prodapi, clientapi,
                           invapi, auth_decorator, sessionmanager,
                           actionlogged, transactionapi, revisionapi)
@@ -22,6 +22,7 @@ def get_invoice(inv_id):
         abort(404, 'Nota no encontrado')
         return
     return json_dumps(doc.serialize())
+
 
 @napi.get('/api/alm/<alm_id>/nota/<inv_id>')
 @dbcontext
