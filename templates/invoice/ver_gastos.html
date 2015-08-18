@@ -18,6 +18,7 @@
         <th>Total</th>
         <th>Iva</th>
         <th>Retension</th>
+        <th></th>
       </tr>
       {% for x in all_spent %}
       <tr>
@@ -30,6 +31,7 @@
         <td>{{value_from_cents(x.total)}}</td>
         <td>{{value_from_cents(x.tax)}}</td>
         <td>{{value_from_cents(x.retension)}}</td>
+        <td><a href="/app/guardar_gastos/{{x.uid}}">Editar</a></td>
       </tr>
       {% endfor %}
     </table>

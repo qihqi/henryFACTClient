@@ -59,6 +59,13 @@ if ENV == 'prod':
 def fix_path(x):
     return os.path.split(x)[1]
 
+
+def display_date(x):
+    if isinstance(x, datetime.datetime):
+        return x.date().isoformat()
+    return x.isoformat()
+
+
 jinja_env.globals.update({
     'id_type': id_type,
     'fix_id': fix_id,
@@ -68,6 +75,7 @@ jinja_env.globals.update({
     'today': datetime.date.today,
     'PaymentFormat': PaymentFormat,
     'fix_path': fix_path,
+    'display_date': display_date,
 })
 
 BEAKER_SESSION_OPTS = {

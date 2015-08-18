@@ -3,17 +3,45 @@
 {% block content %}
 <h4>Compras o Gastos:</h4>
 {{ msg }}
-<form method="post">
-    <p>Provedor: <input name="seller" /></p>
-    <p>Provedor RUC: <input name="seller_ruc" /></p>
-    <p>Numero Factura: <input name="invnumber" /></p>
-    <p>Fecha Factura: <input name="invdate" value="{{today().isoformat()}}"/></p>
-    <p>Fecha Ingreso: <input name="inputdate" value="{{today().isoformat()}}"/></p>
-    <p>Descripcion: <input name="desc" /></p>
-    <p>total: <input name="total" /></p>
-    <p>iva: <input name="tax" /></p>
-    <p>retension: <input name="retension" /></p>
-    <p>Pagado desde la caja: <input name="paid_from_cashier" /></p>
+{% if spent %}
+    {% set uid=spent.uid %}
+    {% set seller=spent.seller %}
+    {% set seller_ruc=spent.seller_ruc %}
+    {% set invnumber=spent.invnumber %}
+    {% set invdate=display_date(spent.invdate) %}
+    {% set inputdate=display_date(spent.inputdate) %}
+    {% set desc=spent.desc %}
+    {% set total=value_from_cents(spent.total) %}
+    {% set tax=value_from_cents(spent.tax) %}
+    {% set retension=value_from_cents(spent.retension) %}
+    {% set paid_from_cashier=value_from_cents(spent.paid_from_cashier) %}
+    {% set title = 'Editar Gasto' %}
+{% else %}
+    {% set seller='' %}
+    {% set seller_ruc='' %}
+    {% set invnumber='' %}
+    {% set invdate=today().isoformat() %}
+    {% set inputdate=today().isoformat() %}
+    {% set desc='' %}
+    {% set total='' %}
+    {% set tax='' %}
+    {% set retension='' %}
+    {% set paid_from_cashier='' %}
+    {% set title = 'Crear Gasto' %}
+{% endif %}
+{{ title }}
+<form method="post" action="/app/guardar_gastos">
+    {% if uid %} <input type="hidden" name="uid" value="{{uid}}" /> {% endif %}
+    <p>Provedor: <input name="seller" value="{{seller}}"/></p>
+    <p>Provedor RUC: <input name="seller_ruc" value="{{seller_ruc}}" /></p>
+    <p>Numero Factura: <input name="invnumber" value="{{invnumber}}"/></p>
+    <p>Fecha Factura: <input name="invdate" value="{{invdate}}"/></p>
+    <p>Fecha Ingreso: <input name="inputdate" value="{{inputdate}}"/></p>
+    <p>Descripcion: <input name="desc" value="{{desc}}"/></p>
+    <p>total: <input name="total" value="{{total}}" /></p>
+    <p>iva: <input name="tax" value="{{tax}}"/></p>
+    <p>retension: <input name="retension" value="{{retension}}"/></p>
+    <p>Pagado desde la caja: <input name="paid_from_cashier" value="{{paid_from_cashier}}"/></p>
     <p><input type="submit" value="Guardar"/></p>
 </form>
 {% endblock %}

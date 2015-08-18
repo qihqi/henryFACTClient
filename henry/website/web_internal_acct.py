@@ -308,17 +308,33 @@ def post_guardar_abono():
 
 
 @w.get('/app/guardar_gastos')
+@w.get('/app/guardar_gastos/<uid>')
 @dbcontext
 @auth_decorator
-def save_spent(msg=''):
-    return render_form_with_msg('invoice/guardar_gastos.html', msg)
+def save_spent(msg='', uid=-1):
+    spent = None
+    if uid >= 0:
+        spent = sessionmanager.session.query(NSpent).filter_by(uid=uid).first()
+        if spent is None:
+            msg = 'Gasto no encontrado'
+    temp = jinja_env.get_template('invoice/guardar_gastos.html')
+    return temp.render(msg=msg, spent=spent)
 
 
 @w.post('/app/guardar_gastos')
 @dbcontext
 @auth_decorator
 def post_save_spent():
-    spent = NSpent()
+    uid = request.forms.get('uid')
+    spent = None
+    create = True
+    if uid is not None:
+        spent = sessionmanager.session.query(NSpent).filter_by(uid=uid).first()
+        create = False
+        if spent is None:
+            redirect('/app/guardar_gastos/{}'.format(uid))
+    if spent is None:
+        spent = NSpent()
     for x in ('seller', 'seller_ruc', 'invnumber',
               'invdate', 'desc', 'total', 'tax', 'retension',
               'paid_from_cashier', 'inputdate'):
@@ -331,7 +347,8 @@ def post_save_spent():
     spent.invdate = parse_iso(spent.invdate)
     spent.inputdate = parse_iso(spent.inputdate)
 
-    sessionmanager.session.add(spent)
+    if create:
+        sessionmanager.session.add(spent)
     sessionmanager.session.commit()
     return save_spent('Gasto Guardado')
 
