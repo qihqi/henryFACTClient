@@ -29,7 +29,7 @@ def get_invoice(inv_id):
 @actionlogged
 def get_invoice(alm_id, inv_id):
     docdb = sessionmanager.session.query(NNota).filter_by(almacen_id=alm_id,
-        codigo=inv_id)
+        codigo=inv_id).first()
     if docdb is None:
         abort(404, 'Nota no encontrado')
         return
