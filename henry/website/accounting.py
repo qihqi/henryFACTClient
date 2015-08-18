@@ -2,6 +2,7 @@ from collections import defaultdict
 from operator import attrgetter
 
 from bottle import request, Bottle, response
+import datetime
 
 from henry.dao import Status
 from henry.website.reports import split_records
@@ -58,6 +59,7 @@ class Meta(object):
 @dbcontext
 def get_sells_xml():
     start_date, end_date = parse_start_end_date(request.query)
+    end_date = end_date + datetime.timedelta(days=1) - datetime.timedelta(seconds=1)
     form_type = request.query.get('form_type')
 
     ruc = request.query.get('alm')
