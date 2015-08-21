@@ -203,10 +203,14 @@ def crear_entrega_de_cuenta():
     cashed = split_by_cash[True]
     noncash = split_by_cash[False]
     sale_by_store = group_by_records(cashed, attrgetter('almacen_name'), attrgetter('total'))
+
     ids = [c.uid for c in all_sale]
+    cashids = {c.uid for c in cashed}
     noncash = split_records(noncash, lambda x: x.client.codigo)
     query = sessionmanager.session.query(NPayment).filter(NPayment.note_id.in_(ids))
-    by_retension = split_records(query, lambda x: x.type == 'retension')
+
+    # only retension for cash invoices need to be accounted separately.
+    by_retension = split_records(query, lambda x: x.type == 'retension' and x.note_id in cashids)
     other_cash = sum((x.value for x in by_retension[False] if x.type == PaymentFormat.CASH))
     total_cash = sum(sale_by_store.values()) + other_cash
     payments = split_records(by_retension[False], attrgetter('client_id'))

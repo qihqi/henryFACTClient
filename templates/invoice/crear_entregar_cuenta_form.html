@@ -59,6 +59,21 @@
     </table>
     {% endif %}
 {% endfor %}
+
+<h4>Eliminados</h4>
+<table>
+{% for i in deleted %}
+<tr>
+    <td> <a href="/app/nota/{{ i.uid }}">{{i.uid}}</a> </td>
+    <td> {{ i.codigo }} </td>
+    <td> {{i.client.fullname}}</a> </td>
+    <td> {{ i.payment_format}} </td>
+    <td> {{ value_from_cents(i.total) }} </td>
+</tr>
+{% endfor %}
+</table>
+
+
 {% set total_retension =  retension| sum(attribute='value')%}
 <h4> Retensiones: {{value_from_cents(retension| sum(attribute='value')) }}</h4>
 {% for x in retension%}
