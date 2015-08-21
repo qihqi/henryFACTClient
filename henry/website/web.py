@@ -88,9 +88,8 @@ def get_secuencia():
 def post_secuencia():
     username = request.forms.usuario
     seq = request.forms.secuencia
-    alm = request.forms.almacen_id
     sessionmanager.session.query(NUsuario).filter_by(
-        username=username).update({'last_factura': seq, 'bodega_factura_id': alm})
+        username=username).update({'last_factura': seq})
     redirect('/app/secuencia')
 
 

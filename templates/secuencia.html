@@ -28,13 +28,10 @@
             </select>
         </td>
     </tr>
-<tr><th>
-    <label for="id_bodega">Bodega:</label></th><td><select name="almacen_id" id="id_bodega">
-    {% for u, v in stores.items()%}
-    <option value="{{u}}">{{v}}</option>
-    {% endfor %}
-    </select></td></tr>
-<tr><th><label for="id_seguencia">Seguencia:</label></th><td><input type="text" name="secuencia" id="id_seguencia" /></td></tr>
+    <tr>
+        <th><label for="id_seguencia">Seguencia:</label></th>
+        <td><input type="text" name="secuencia" id="id_seguencia" /></td>
+    </tr>
     <tr>
         <td></td>
         <td><input type="submit" value="Guardar" />
