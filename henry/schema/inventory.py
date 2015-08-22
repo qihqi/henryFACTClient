@@ -61,7 +61,7 @@ class NItemGroup(Base):
 class NItem(Base):
     __tablename__ = 'items'
     uid = Column(Integer, primary_key=True, autoincrement=True)
-    itemgroupid = Column(Integer, ForeignKey(NItemGroup))
+    itemgroupid = Column(Integer, ForeignKey(NItemGroup.uid))
     prod_id = Column(String(20), index=True)
     multiplier = Column(Numeric(11, 3))
     unit = Column(String(20))
@@ -98,5 +98,4 @@ class NContenido(Base):
     precio = Column(Numeric(20, 2))
     precio2 = Column(Numeric(20, 2))
     cant_mayorista = Column(Integer)
-    pricelist = relationship('NPriceList', backref=backref('cantidad'))
     inactivo = Column(Boolean)
