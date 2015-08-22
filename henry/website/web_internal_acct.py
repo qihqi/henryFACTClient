@@ -4,7 +4,9 @@ import os
 import uuid
 from bottle import request, redirect, static_file, Bottle
 from henry.base.auth import get_user
-from henry.base.schema import NCheck, NComment, ObjType, NNota, NSpent, SpentType
+from henry.schema.meta import ObjType, NComment
+from henry.schema.account import NCheck, SpentType, NSpent
+from henry.schema.core import NNota
 from henry.config import jinja_env, dbcontext, auth_decorator, paymentapi, sessionmanager, imagefiles, prodapi
 from henry.dao import PaymentFormat
 from henry.dao.payment import Check, Deposit, Payment

@@ -1,8 +1,8 @@
 import sys
 from datetime import date
 from henry.config import sessionmanager, prodapi
-from henry.base.schema import (NIngreso, NIngresoItem, NOrdenDespacho,
-    NItemDespacho, NContenido, NTransform)
+from henry.schema.inventory import NContenido
+from henry.schema.legacy import NOrdenDespacho, NItemDespacho, NIngreso, NIngresoItem, NTransform
 from collections import defaultdict
 from decimal import Decimal
 

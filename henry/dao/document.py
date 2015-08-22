@@ -7,7 +7,9 @@ from itertools import imap
 
 from sqlalchemy.exc import SQLAlchemyError
 
-from henry.base.schema import NNota, NTransferencia, NPedidoTemporal, NOrdenDespacho
+from henry.schema.inventory import NTransferencia
+from henry.schema.core import NNota, NPedidoTemporal
+from henry.schema.legacy import NOrdenDespacho
 from henry.base.serialization import DbMixin, SerializableMixin
 from henry.base.serialization import json_loads, parse_iso_date
 from .client import Client

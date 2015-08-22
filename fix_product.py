@@ -1,6 +1,8 @@
-from collections import defaultdict
 from henry.config import sessionmanager
-from henry.base.schema import *
+from henry.schema.core import NPriceList
+from henry.schema.inventory import NContenido
+from henry.schema.legacy import NTransform
+
 
 def main():
     content = []

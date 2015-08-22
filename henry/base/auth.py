@@ -2,7 +2,8 @@ from hashlib import sha1
 
 from bottle import request, response, parse_auth
 
-from henry.base.schema import NUsuario, NDjangoSession
+from henry.schema.core import NUsuario
+from henry.schema.legacy import NDjangoSession
 
 
 def get_user_info(session, username):

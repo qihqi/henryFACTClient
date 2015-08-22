@@ -28,7 +28,7 @@ def main():
         app.merge(get_master())
     app = SessionMiddleware(app, BEAKER_SESSION_OPTS)
     sys.path.append(os.path.dirname(os.path.realpath(__file__)))
-    from henry.base.schema import Base
+    from henry.schema.base import Base
     from henry.config import engine
 
     Base.metadata.create_all(engine)

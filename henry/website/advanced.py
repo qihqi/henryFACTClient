@@ -4,8 +4,9 @@ from bottle import Bottle, request, abort, redirect
 from sqlalchemy import desc
 
 from henry.base.auth import get_user
-from henry.base.schema import (NProducto, NContenido, NBodega, NCategory,
-                               NPriceList, NNota, NComment, ObjType)
+from henry.schema.meta import ObjType, NComment
+from henry.schema.inventory import NCategory, NBodega, NProducto, NContenido
+from henry.schema.core import NNota, NPriceList
 from henry.config import (dbcontext, auth_decorator, prodapi, jinja_env,
                           sessionmanager, invapi, transactionapi,
                           actionlogged)

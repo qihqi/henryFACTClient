@@ -4,7 +4,7 @@ import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from henry.base.schema import Base
+from henry.schema.base import Base
 from henry.dao.client import Client, ClientApiDB
 from henry.base.session_manager import SessionManager
 from henry.misc import validate_uid_and_ruc

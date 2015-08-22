@@ -2,7 +2,9 @@ from datetime import datetime, date, time
 from collections import defaultdict
 from datetime import date
 from henry.config import sessionmanager, invapi, prodapi
-from henry.base.schema import NItemDespacho, NOrdenDespacho, NCliente, NProducto, NNota
+from henry.schema.inventory import NProducto
+from henry.schema.core import NNota, NCliente
+from henry.schema.legacy import NOrdenDespacho, NItemDespacho
 from henry.dao import InvMetadata, Client, PaymentFormat, Item, Product, Invoice, Status
 
 

@@ -1,7 +1,8 @@
 from collections import defaultdict
 from datetime import timedelta
 from operator import attrgetter
-from henry.base.schema import NNota, NCliente
+from henry.schema.legacy import NCliente
+from henry.schema.core import NNota, NCliente
 from henry.config import prodapi
 from henry.dao import InvMetadata, Status
 

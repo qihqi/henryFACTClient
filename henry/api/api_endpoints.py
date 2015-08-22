@@ -2,7 +2,9 @@ from bottle import Bottle, response, request, abort
 import datetime
 from henry.base.auth import get_user
 
-from henry.base.schema import NPriceList, NContenido, NComment
+from henry.schema.meta import NComment
+from henry.schema.inventory import NContenido
+from henry.schema.core import NPriceList
 from henry.config import (prodapi, dbcontext, clientapi,
                           auth_decorator, pedidoapi, sessionmanager,
                           actionlogged)

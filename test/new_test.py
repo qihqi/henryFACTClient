@@ -1,6 +1,6 @@
 import time
 import unittest
-from henry.base.schema import NProducto, NContenido
+from henry.schema.inventory import NProducto, NContenido
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 

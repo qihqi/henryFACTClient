@@ -4,7 +4,7 @@ import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from henry.base.schema import Base
+from henry.schema.base import Base
 from henry.base.fileservice import FileService
 from henry.base.serialization import parse_iso_date
 from henry.dao.payment import PaymentApi, Check

@@ -1,5 +1,5 @@
 from henry.config import sessionmanager
-from henry.base.schema import NItemDespacho, NOrdenDespacho
+from henry.schema.legacy import NOrdenDespacho, NItemDespacho
 import datetime
 from datetime import timedelta
 

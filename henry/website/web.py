@@ -1,7 +1,7 @@
 from bottle import request, redirect, Bottle, static_file, response
 import datetime
 from henry import constants
-from henry.base.schema import NUsuario
+from henry.schema.core import NUsuario
 from henry.config import dbcontext, auth_decorator, jinja_env, clientapi, sessionmanager, prodapi, actionlogged
 from henry.constants import IMAGE_PATH
 from henry.dao import Client

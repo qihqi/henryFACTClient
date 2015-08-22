@@ -1,5 +1,6 @@
 from decimal import Decimal
-from henry.base.schema import NProducto, NContenido, NPriceList, NTransform
+from henry.schema.core import NPriceList
+from henry.schema.legacy import NTransform
 from henry.config import sessionmanager
 from sqlalchemy.orm.session import make_transient
 

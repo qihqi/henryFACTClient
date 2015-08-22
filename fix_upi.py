@@ -1,5 +1,6 @@
-from henry.base.schema import *
 from henry.config import sessionmanager
+from henry.schema.core import NPriceList
+from henry.schema.inventory import NContenido
 
 
 def main():

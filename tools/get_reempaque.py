@@ -1,8 +1,10 @@
-from henry.config import sessionfactory
-from henry.constants import CONN_STRING
-from henry.base.schema import *
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+from henry.config import sessionfactory
+from henry.constants import CONN_STRING
+from henry.schema.inventory import NProducto
+from henry.schema.legacy import NTransform
 
 poli_session = sessionmaker(
         bind=create_engine(CONN_STRING[:-5]+'policentro'))

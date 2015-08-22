@@ -1,6 +1,7 @@
 from henry.config import sessionmanager
 
-from henry.base.schema import *
+from henry.schema.inventory import NContenido
+from henry.schema.legacy import NTransform
 
 with sessionmanager as session:
     reglas = list(session.query(NTransform, NContenido).filter(

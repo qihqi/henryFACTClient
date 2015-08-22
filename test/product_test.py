@@ -5,7 +5,9 @@ from decimal import Decimal
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from henry.base.schema import Base, NBodega, NStore
+from henry.schema.base import Base
+from henry.schema.core import NStore
+from henry.schema.inventory import NBodega
 from henry.base.fileservice import FileService
 from henry.dao.productos import ProductApiDB, Product
 from henry.dao import (DocumentApi, TransMetadata, Transferencia, Invoice,

@@ -3,7 +3,8 @@ from decimal import Decimal
 from bottle import Bottle, request, abort
 
 from henry.base.serialization import json_dumps, json_loads, SerializableMixin
-from henry.base.schema import NUsuario, NInventoryRevision, NInventoryRevisionItem, NNota
+from henry.schema.inventory import NInventoryRevision, NInventoryRevisionItem
+from henry.schema.core import NNota, NUsuario
 from henry.config import (transapi, dbcontext, prodapi, clientapi,
                           invapi, auth_decorator, sessionmanager,
                           actionlogged, transactionapi, revisionapi)

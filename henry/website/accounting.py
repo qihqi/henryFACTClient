@@ -6,7 +6,7 @@ import datetime
 
 from henry.dao import Status
 from henry.website.reports import split_records
-from henry.base.schema import NUsuario
+from henry.schema.core import NUsuario
 from henry.config import sessionmanager, jinja_env, dbcontext, fix_id, prodapi, invapi
 from .common import parse_start_end_date
 

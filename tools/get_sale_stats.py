@@ -4,8 +4,7 @@ from collections import defaultdict
 
 from sqlalchemy.orm import sessionmaker 
 from sqlalchemy import create_engine
-from henry.base.schema import NOrdenDespacho
-
+from henry.schema.legacy import NOrdenDespacho
 
 CONN_STRING = 'mysql+mysqldb://root:wolverineaccess@localhost/henry'
 engine = create_engine(CONN_STRING)

@@ -1,6 +1,6 @@
 from sqlalchemy.exc import IntegrityError
 from henry.base.serialization import SerializableMixin, DbMixin
-from henry.base.schema import NCliente
+from henry.schema.core import NCliente
 from henry.dao.exceptions import ItemAlreadyExists
 
 

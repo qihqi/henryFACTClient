@@ -4,7 +4,7 @@ from bottle import Bottle, request, json_loads
 from henry.api.master_api import InvoiceOptions
 
 from henry.dao.document import Status, Invoice, InvMetadata
-from henry.base.schema import NPedidoTemporal
+from henry.schema.core import NPedidoTemporal
 from henry.config import (pedidoapi, sessionmanager,
                           dbcontext, auth_decorator, actionlogged)
 from henry.externalapi import ExternalApi

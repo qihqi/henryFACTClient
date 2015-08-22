@@ -9,7 +9,8 @@ from henry.config import (dbcontext, auth_decorator)
 from henry.dao import TransType, TransMetadata, Transferencia
 from henry.dao.productos import Bodega
 from henry.website.common import items_from_form, transmetadata_from_form, parse_start_end_date
-from henry.base.schema import NInventoryRevision, NUsuario
+from henry.schema.inventory import NInventoryRevision
+from henry.schema.core import NUsuario
 
 w = Bottle()
 web_inventory_webapp = w

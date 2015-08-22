@@ -5,8 +5,9 @@ from operator import attrgetter
 from bottle import request, abort, redirect, response, Bottle
 
 from henry.base.auth import get_user
-from henry.base.schema import (NUsuario, NNota, NAccountStat, NPayment, NComment,
-                               NSpent)
+from henry.schema.meta import NComment
+from henry.schema.account import NAccountStat, NPayment, NSpent
+from henry.schema.core import NNota, NUsuario
 from henry.base.serialization import json_loads
 from henry.config import (dbcontext, auth_decorator, jinja_env, prodapi,
                           sessionmanager, actionlogged, invapi, pedidoapi)

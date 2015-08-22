@@ -3,8 +3,8 @@ import datetime
 from decimal import Decimal
 from sqlalchemy.exc import IntegrityError
 
-from henry.base.schema import (NProducto, NContenido, NStore, NCategory,
-                               NBodega, NPriceList, NInventoryRevision, NInventoryRevisionItem)
+from henry.schema.inventory import NInventoryRevision, NInventoryRevisionItem, NCategory, NBodega, NProducto, NContenido
+from henry.schema.core import NPriceList, NStore
 from henry.base.serialization import SerializableMixin, json_dumps, DbMixin, json_loads
 
 
