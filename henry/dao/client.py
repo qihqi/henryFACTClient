@@ -1,17 +1,17 @@
 from henry.base.dbapi import DBApi, dbmix
 from henry.schema.core import NCliente
 
-def fullname(self):
-    nombres = self.nombres
-    if not nombres:
-        nombres = ''
-    apellidos = self.apellidos
-    if not apellidos:
-        apellidos = ''
-    return apellidos + ' ' + nombres
+class Client(dbmix(NCliente)):
 
-Client = dbmix(NCliente)
-Client.fullname = property(fullname)
+    @property
+    def fullname(self):
+        nombres = self.nombres
+        if not nombres:
+            nombres = ''
+        apellidos = self.apellidos
+        if not apellidos:
+            apellidos = ''
+        return apellidos + ' ' + nombres
 
 
 class ClientApiDB(object):

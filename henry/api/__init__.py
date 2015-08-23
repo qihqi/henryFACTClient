@@ -14,6 +14,8 @@ def get_slave():
 
 
 def get_master():
+    from .coreapi import api
+    return api
     from .master_api import napi
     a = bottle.Bottle()
     a.merge(api)

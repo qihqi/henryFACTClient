@@ -22,7 +22,7 @@ def fieldcopy(src, dest, fields):
         except:
             pass
 
-def dbmix(database_class):
+def dbmix(database_class, override_name=()):
     class DataObjectMixin(object):
         db_class = database_class
         _columns = inspect(database_class).columns
@@ -44,19 +44,28 @@ def dbmix(database_class):
 
         def merge_from(self, obj):
             fieldcopy(obj, self, self._columns.keys())
+            return self
 
         def serialize(self):
             return self._serialize_helper(self, self._columns.keys())
 
         @classmethod
         def deserialize(cls, dict_input):
-            return cls().merge_from(dict_input)
+            result = cls().merge_from(dict_input)
+            for x, y in override_name:
+                original = dict_input[x]
+                setattr(result, y, original)
+            return result
 
         @classmethod
         def _serialize_helper(cls, obj, names):
-            return {
-                name: getattr(obj, name) for name in names if getattr(obj, name, None) is not None
-            }
+            result = {}
+            fieldcopy(obj, result, names)
+            for x, y in override_name:
+                original = result[x]
+                result[y] = original
+                del result[x]
+            return result
     return DataObjectMixin
 
 
@@ -93,7 +102,10 @@ class DBApi(object):
             if '-' in key:
                 key, mode = key.split('-')
             f = self.objclass._columns[key] == value
+            print key, mode
             if mode == 'prefix':
+                print self.objclass._columns[key]
                 f = self.objclass._columns[key].startswith(value)
+                print 'i am here', f
             query = query.filter(f)
         return map(self.objclass.from_db_instance, query)

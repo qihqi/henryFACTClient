@@ -76,7 +76,7 @@ class EndToEndTest(unittest.TestCase):
                 'total': 123,
                 'subtotal': sum( (x['precio1'] * 10 for x in (p1, p2, p3))),
                 'tax' : 123,
-                'user_id': 'yu',
+                'user': 'yu',
                 'codigo': str(number),
                 'almacen_id': 1,
             }

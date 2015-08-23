@@ -2,32 +2,19 @@ from bottle import Bottle, response, request, abort
 import datetime
 from henry.base.auth import get_user
 
+from henry.bottlehelper import get_property_or_fail
 from henry.schema.meta import NComment
 from henry.schema.inventory import NContenido
 from henry.schema.core import NPriceList
 from henry.config import (prodapi, dbcontext, clientapi,
                           auth_decorator, pedidoapi, sessionmanager,
-                          actionlogged)
+                          actionlogged, priceapi)
 from henry.base.serialization import json_dumps, json_loads
 from henry.dao import Client
 
 api = Bottle()
 
-
 # ######### PRODUCT ########################
-@api.get('/api/alm/<almacen_id>/producto/<prod_id:path>')
-@dbcontext
-@actionlogged
-def get_prod_from_inv(almacen_id, prod_id):
-    print prod_id
-    prod = prodapi.get_producto(prod_id, almacen_id)
-    if prod is None:
-        response.status = 404
-    use_thousandth = request.query.get('use_thousandth', '1')
-    if int(use_thousandth) and prod.threshold:
-        prod.threshold *= 1000
-    return json_dumps(prod)
-
 
 @api.get('/api/producto/<prod_id:path>')
 @dbcontext
@@ -91,23 +78,6 @@ def search_prod():
     return None
 
 
-@api.get('/api/alm/<almacen_id>/producto')
-@dbcontext
-@actionlogged
-def search_prod_alm(almacen_id):
-    prefijo = request.query.prefijo
-    if prefijo:
-        result = list(prodapi.search_producto(
-            prefix=prefijo,
-            almacen_id=almacen_id))
-        use_thousandth = request.query.get('use_thousandth', 1)
-        if int(use_thousandth):
-            for x in result:
-                if x.threshold:
-                    x.threshold *= 1000
-        return json_dumps(result)
-    response.status = 400
-    return None
 
 
 @api.put('/api/producto/<pid>')
@@ -141,67 +111,6 @@ def delete_price(alm_id, pid):
     return {'deleted': count}
 
 
-# ################ CLIENT ############################
-@api.get('/api/cliente/<codigo>')
-@dbcontext
-@actionlogged
-def get_cliente(codigo):
-    client = clientapi.get(codigo)
-    if client is None:
-        abort(404, 'cliente no encontrado')
-    return json_dumps(client.serialize())
-
-
-@api.put('/api/cliente/<codigo>')
-@dbcontext
-@auth_decorator
-@actionlogged
-def update_client(codigo):
-    client_dict = json_loads(request.body.read())
-    clientapi.update(codigo, client_dict)
-
-
-@api.post('/api/cliente/<codigo>')
-@dbcontext
-@auth_decorator
-@actionlogged
-def create_client(codigo):
-    client = Client.deserialize(json_loads(request.body.read()))
-    client.codigo = codigo
-    clientapi.create(client)
-
-
-@api.get('/api/cliente')
-@dbcontext
-@actionlogged
-def search_client():
-    prefijo = request.query.prefijo
-    if prefijo:
-        return json_dumps(list(clientapi.search(apellido=prefijo)))
-    response.status = 400
-    return None
-
-
-# ####################### PEDIDO ############################
-@api.post('/api/pedido')
-@dbcontext
-@auth_decorator
-@actionlogged
-def save_pedido():
-    json_content = request.body.read()
-    uid, _ = pedidoapi.save(json_content)
-    return {'codigo': uid}
-
-
-@api.get('/api/pedido/<uid>')
-@actionlogged
-def get_pedido(uid):
-    f = pedidoapi.get_doc(uid)
-    if f is None:
-        response.status = 404
-    return f
-
-
 @api.post('/api/comment')
 @dbcontext
 @auth_decorator
@@ -217,7 +126,3 @@ def post_comment():
     sessionmanager.session.add(c)
     sessionmanager.session.commit()
     return {'comment': c.uid}
-
-
-from henry.authentication import app
-api.merge(app)

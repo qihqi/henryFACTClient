@@ -6,32 +6,35 @@ from sqlalchemy.exc import IntegrityError
 from henry.schema.inventory import NInventoryRevision, NInventoryRevisionItem, NCategory, NBodega, NProducto, NContenido
 from henry.schema.core import NPriceList, NStore
 from henry.base.serialization import SerializableMixin, json_dumps, DbMixin, json_loads
+from henry.base.dbapi import dbmix
 
 
-class Store(SerializableMixin, DbMixin):
-    _db_class = NStore
-    _db_attr = {
-        'almacen_id': 'almacen_id',
-        'ruc': 'ruc',
-        'nombre': 'nombre',
-        'bodega_id': 'bodega_id'
-    }
-    _name = _db_attr.keys()
+Store = dbmix(NStore)
+Bodega = dbmix(NBodega)
+Item = dbmix(NItem)
+ItemGroup = dbmix(NItemGroup)
+Contenido = dbmix(NContenido)
+
+price_override_name = (('prod_id', 'codigo'), ('cant_mayorista', 'threshold'))
 
 
-class Bodega(SerializableMixin, DbMixin):
-    _db_class = NBodega
-    _db_attr = {
-        'id': 'id',
-        'nombre': 'nombre',
-        'nivel': 'nivel'
-    }
-    _name = _db_attr.keys()
+class PriceList(dbmix(NPriceList, price_override_name)):
 
-    def __init__(self, id=None, nombre=None, nivel=0):
-        self.id = id
-        self.nombre = nombre
-        self.nivel = nivel
+    @classmethod
+    def deserialize(cls, dict_input):
+        prod = super(cls, PriceList).deserialize(dict_input)
+        if prod.multiplicador:
+            prod.multiplicador = Decimal(prod.multiplicador)
+        return prod
+
+class AllProdApi:
+
+    def __init__(self, bodapi, alm, itemgroup, item, pricelist):
+        self.bod = bodapi
+        self.alm = alm
+        self.itemgroup = itemgroup
+        self.item = item
+        self.pricelist = pricelist
 
 
 class Product(SerializableMixin):
@@ -79,16 +82,6 @@ class Product(SerializableMixin):
         return prod
 
 
-# An augmented product is treated to be a collection of
-# products. The representation is '<real_prod_id>+' where
-# real_prod_id is a prod_id that exists.
-# An augmented product is equivalent to 10x the normal one
-# This function returns the real prod id and multiplier(10)
-# if it is augmented and None, 0 otherwise
-def get_augmented_prod(prod_id):
-    if prod_id[-1] == '+':
-        return prod_id[:-1], 10
-    return None, 0
 
 
 class Transaction(SerializableMixin):
@@ -212,10 +205,6 @@ class ProductApiDB:
     )
 
     def __init__(self, sessionmanager):
-        self._prod_name_cache = {}
-        self._prod_price_cache = {}
-        self._stores = {}
-        self._bodegas = {}
         self.db_session = sessionmanager
 
     def get_producto(self, prod_id, almacen_id=None):
@@ -274,24 +263,20 @@ class ProductApiDB:
             yield Product().merge_from(r)
 
     def get_bodegas(self):
-        if not self._bodegas:
-            bodegas = self.db_session.session.query(NBodega)
-            self._bodegas = {b.id: Bodega.from_db_instance(b) for b in bodegas}
-        return self._bodegas.values()
+        bodegas = self.db_session.session.query(NBodega)
+        return {b.id: Bodega.from_db_instance(b) for b in bodegas}
 
     def get_bodega_by_id(self, uid):
-        self.get_bodegas()
-        return self._bodegas[uid]
+        bodegas = self.get_bodegas()
+        return bodegas[uid]
 
     def get_stores(self):
-        if not self._stores:
-            stores = self.db_session.session.query(NStore)
-            self._stores = {b.almacen_id: Store.from_db_instance(b) for b in stores}
-        return self._stores.values()
+        stores = self.db_session.session.query(NStore)
+        return {b.almacen_id: Store.from_db_instance(b) for b in stores}
 
     def get_store_by_id(self, uid):
-        self.get_stores()
-        return self._stores[uid]
+        stores = self.get_stores()
+        return stores[uid]
 
     def get_category(self):
         return self.db_session.session.query(NCategory)

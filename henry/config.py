@@ -4,6 +4,8 @@ import os
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from jinja2 import Environment, FileSystemLoader
+from henry.dao.client import Client
+from henry.dao.productos import PriceList
 
 from henry.dao import (DocumentApi, Transferencia, Invoice,
                        ProductApiDB, PedidoApi, ClientApiDB,
@@ -11,6 +13,7 @@ from henry.dao import (DocumentApi, Transferencia, Invoice,
 from henry.dao.actionlog import ActionLogApi, ActionLogApiDecor
 from henry.base.fileservice import FileService
 from henry.base.auth import AuthDecorator
+from henry.base.dbapi import DBApi
 from henry.base.session_manager import SessionManager, DBContext
 from henry.constants import (CONN_STRING, INGRESO_PATH, INVOICE_PATH, ENV,
                              LOGIN_URL, TRANSACTION_PATH, PEDIDO_PATH, ACTION_LOG_PATH,
@@ -32,7 +35,10 @@ dbcontext = DBContext(sessionmanager)
 transactionapi = TransactionApi(sessionmanager, FileService(TRANSACTION_PATH))
 prodapi = ProductApiDB(sessionmanager)
 pedidoapi = PedidoApi(sessionmanager, FileService(PEDIDO_PATH))
-clientapi = ClientApiDB(sessionmanager)
+
+clientapi = DBApi(sessionmanager, Client)
+priceapi = DBApi(sessionmanager, PriceList)
+
 revisionapi = RevisionApi(sessionmanager, prodapi, transactionapi)
 paymentapi = PaymentApi(sessionmanager)
 
