@@ -11,21 +11,7 @@ from henry.base.dbapi import dbmix
 
 Store = dbmix(NStore)
 Bodega = dbmix(NBodega)
-Item = dbmix(NItem)
-ItemGroup = dbmix(NItemGroup)
-Contenido = dbmix(NContenido)
 
-price_override_name = (('prod_id', 'codigo'), ('cant_mayorista', 'threshold'))
-
-
-class PriceList(dbmix(NPriceList, price_override_name)):
-
-    @classmethod
-    def deserialize(cls, dict_input):
-        prod = super(cls, PriceList).deserialize(dict_input)
-        if prod.multiplicador:
-            prod.multiplicador = Decimal(prod.multiplicador)
-        return prod
 
 class AllProdApi:
 

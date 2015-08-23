@@ -4,12 +4,13 @@ from bottle import Bottle, response, request, abort
 
 from henry.bottlehelper import get_property_or_fail
 from henry.base.serialization import SerializableMixin
+from henry.base.auth import create_user_dict, get_user_info, authenticate
 
-from henry.config import (prodapi, dbcontext, clientapi, invapi,
+from henry.coreconfig import (dbcontext, clientapi, invapi,
                           auth_decorator, pedidoapi, sessionmanager,
                           actionlogged, priceapi)
 from henry.base.serialization import json_dumps, json_loads
-from henry.schema.core import NNota
+from henry.schema.core import NNota, NStore
 from henry.dao import Client, Invoice
 
 
@@ -41,7 +42,6 @@ def searchprice(almacen_id):
 @dbcontext
 @actionlogged
 def get_price_by_id(almacen_id, prod_id):
-    prod = prodapi.get_producto(prod_id, almacen_id)
     prod = list(priceapi.search(prod_id=prod_id, almacen_id=almacen_id))
     if not prod:
         abort(404)
@@ -154,9 +154,8 @@ class InvoiceOptions(SerializableMixin):
 
 
 def get_store_by(field, value):
-    if field == 'almacen_id':
-        return prodapi.get_store_by_id(value)
-    canditates = [a for a in prodapi.get_stores() if getattr(a, field) == value]
+    stores = sessionmanager.session.query(NStore)
+    canditates = [a for a in stores if getattr(a, field) == value]
     if canditates:
         return canditates[0]
     return None
@@ -174,8 +173,8 @@ def fix_inv_by_options(inv, options):
             item.cant = Decimal(item.cant) / 1000
 
         if getattr(item.prod, 'upi', None) is None:
-            newprod = prodapi.get_producto(prod_id=item.prod.codigo,
-                                           almacen_id=inv.meta.almacen_id)
+            newprod = priceapi.search(prod_id=item.prod.codigo,
+                                      almacen_id=inv.meta.almacen_id)[0]
             item.prod.upi = newprod.upi
             item.prod.multiplicador = newprod.multiplicador
 
@@ -192,7 +191,7 @@ def fix_inv_by_options(inv, options):
     if name and alm is None:
         alm = get_store_by('nombre', name)
     if alm is None:
-        alm = prodapi.get_store_by_id(inv.meta.almacen_id)
+        alm = get_store_by('almacen_id', inv.meta.almacen_id)
 
     inv.meta.almacen_id = alm.almacen_id
     if options.no_alm_id:
@@ -224,12 +223,6 @@ def create_invoice():
         if not clientapi.get(client.codigo):
             clientapi.save(client)
 
-    if options.revisar_producto:  # make sure all product exists
-        for item in inv.items:
-            prod_id = item.prod.codigo
-            if not prodapi.get_producto(prod_id):
-                abort(400, 'Producto con codigo {} no existe'.format(prod_id))
-
     inv = invapi.save(inv)
     # increment the next invoice's number
     if options.incrementar_codigo:
@@ -259,5 +252,22 @@ def delete_invoice(uid):
     invapi.delete(inv)
     return {'status': inv.meta.status}
 
-from henry.authentication import app
-api.merge(app)
+@api.post('/api/authenticate')
+def post_authenticate():
+    beaker = request.environ.get('beaker.session')
+    login_info = beaker.get('login_info')
+    if login_info is not None:  # user is already logged in
+        return login_info
+
+    username = request.forms.get('username')
+    password = request.forms.get('password')
+    with sessionmanager as session:
+        info = get_user_info(session, username)
+        if info is None:
+            return {'status': False, 'message': 'Usuario no encontrado'}
+        if authenticate(password, info):
+            data = create_user_dict(info)
+            beaker['login_info'] = data
+            beaker.save()
+            return data
+        return {'status': False, 'message': 'Clave equivocada'}
