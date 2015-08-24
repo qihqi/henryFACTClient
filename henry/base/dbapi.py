@@ -53,8 +53,8 @@ def dbmix(database_class, override_name=()):
         def deserialize(cls, dict_input):
             result = cls().merge_from(dict_input)
             for x, y in override_name:
-                original = dict_input[x]
-                setattr(result, y, original)
+                original = dict_input[y]
+                setattr(result, x, original)
             return result
 
         @classmethod
@@ -102,10 +102,7 @@ class DBApi(object):
             if '-' in key:
                 key, mode = key.split('-')
             f = self.objclass._columns[key] == value
-            print key, mode
             if mode == 'prefix':
-                print self.objclass._columns[key]
                 f = self.objclass._columns[key].startswith(value)
-                print 'i am here', f
             query = query.filter(f)
         return map(self.objclass.from_db_instance, query)

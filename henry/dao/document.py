@@ -1,19 +1,14 @@
 import logging
-import uuid
 import datetime
 import os
 from decimal import Decimal
-from itertools import imap
 
 from sqlalchemy.exc import SQLAlchemyError
 
-from henry.schema.inventory import NTransferencia
-from henry.schema.core import NNota, NPedidoTemporal
-from henry.schema.legacy import NOrdenDespacho
-from henry.base.serialization import DbMixin, SerializableMixin
-from henry.base.serialization import json_loads, parse_iso_date
-from .client import Client
-from .productos import Product, Transaction
+from henry.base.serialization import SerializableMixin
+from henry.base.serialization import json_loads
+from henry.schema.inv import NPedidoTemporal
+from .coredao import PriceList
 
 
 class Status:
@@ -26,23 +21,6 @@ class Status:
              DELETED)
 
 
-class PaymentFormat:
-    CASH = "efectivo"
-    CARD = "tarjeta"
-    CHECK = "cheque"
-    DEPOSIT = "deposito"
-    CREDIT = "credito"
-    VARIOUS = "varios"
-    names = (
-        CASH,
-        CARD,
-        CHECK,
-        DEPOSIT,
-        CREDIT,
-        VARIOUS,
-    )
-
-
 class Item(SerializableMixin):
     _name = ('prod', 'cant')
 
@@ -52,7 +30,7 @@ class Item(SerializableMixin):
 
     @classmethod
     def deserialize(cls, the_dict):
-        prod = Product.deserialize(the_dict['prod'])
+        prod = PriceList.deserialize(the_dict['prod'])
         cant = Decimal(the_dict['cant'])
         return cls(prod, cant)
 
@@ -73,224 +51,6 @@ class MetaItemSet(SerializableMixin):
         x.meta = cls._metadata_cls.deserialize(the_dict['meta'])
         x.items = map(Item.deserialize, the_dict['items'])
         return x
-
-
-class InvMetadata(SerializableMixin, DbMixin):
-    _db_class = NNota
-    _excluded_vars = ('client',)
-    _db_attr = {
-        'uid': 'id',
-        'codigo': 'codigo',
-        'user': 'user_id',
-        'timestamp': 'timestamp',
-        'status': 'status',
-        'total': 'total',
-        'tax': 'tax',
-        'tax_percent': 'tax_percent',
-        'discount_percent': 'discount_percent',
-        'subtotal': 'subtotal',
-        'discount': 'discount',
-        'bodega_id': 'bodega_id',
-        'paid': 'paid',
-        'paid_amount': 'paid_amount',
-        'almacen_id': 'almacen_id',
-        'almacen_name': 'almacen_name',
-        'almacen_ruc': 'almacen_ruc',
-        'payment_format': 'payment_format',
-        'retension': 'retension',
-    }
-
-    _name = tuple(_db_attr.keys()) + ('client',)
-
-    def __init__(
-            self,
-            uid=None,
-            codigo=None,
-            client=None,
-            user=None,
-            timestamp=None,
-            status=None,
-            total=None,
-            tax=None,
-            subtotal=None,
-            discount=None,
-            bodega_id=None,
-            tax_percent=None,
-            discount_percent=None,
-            paid=None,
-            paid_amount=None,
-            payment_format=None,
-            almacen_id=None,
-            almacen_name=None,
-            almacen_ruc=None,
-            retension=None):
-        self.uid = uid
-        self.codigo = codigo
-        self.client = client
-        self.user = user
-        self.timestamp = timestamp if timestamp else datetime.datetime.now()
-        self.status = status
-        self.total = total
-        self.tax = tax
-        self.subtotal = subtotal
-        self.discount = discount
-        self.bodega_id = bodega_id
-        self.almacen_id = almacen_id
-        self.almacen_name = almacen_name
-        self.almacen_ruc = almacen_ruc
-        self.tax_percent = tax_percent
-        self.discount_percent = discount_percent
-        self.paid = paid
-        self.payment_format = payment_format
-        self.paid_amount = paid_amount
-        self.retension = retension
-
-    @classmethod
-    def deserialize(cls, the_dict):
-        x = cls().merge_from(the_dict)
-        if not isinstance(x.timestamp, datetime.datetime):
-            x.timestamp = parse_iso_date(x.timestamp)
-        if 'client' in the_dict:
-            client = Client.deserialize(the_dict['client'])
-            x.client = client
-        else:
-            x.client = None
-        return x
-
-    def db_instance(self):
-        db_instance = super(InvMetadata, self).db_instance()
-        db_instance.client_id = self.client.codigo
-        return db_instance
-
-    @classmethod
-    def from_db_instance(cls, db_instance):
-        this = super(InvMetadata, cls).from_db_instance(db_instance)
-        this.client = Client()
-        this.client.codigo = db_instance.client_id
-        return this
-
-
-class Invoice(MetaItemSet):
-    _metadata_cls = InvMetadata
-
-    def items_to_transaction(self):
-        reason = 'factura: id={} codigo={}'.format(
-            self.meta.uid, self.meta.codigo)
-        tipo = 'venta'
-        for item in self.items:
-            pid = item.prod.codigo
-            cant = item.cant
-            if item.prod.multiplicador:
-                cant *= item.prod.multiplicador
-            yield Transaction(item.prod.upi, self.meta.bodega_id, pid, -cant, item.prod.nombre,
-                              reason, self.meta.timestamp, tipo)
-
-    def validate(self):
-        if getattr(self.meta, 'codigo', None) is None:
-            raise ValueError('codigo cannot be None to save an invoice')
-
-    @property
-    def filepath_format(self):
-        path = getattr(self, '_path', None)
-        if path is None:
-            self._path = os.path.join(
-                self.meta.timestamp.date().isoformat(), uuid.uuid1().hex)
-        return self._path
-
-
-class TransType:
-    INGRESS = 'INGRESO'
-    TRANSFER = 'TRANSFER'
-    EXTERNAL = 'EXTERNA'
-    EGRESS = 'EGRESO'
-
-    names = (INGRESS,
-             TRANSFER,
-             EXTERNAL,
-             EGRESS)
-
-
-class TransMetadata(SerializableMixin, DbMixin):
-    _db_attr = {
-        'uid': 'id',
-        'origin': 'origin',
-        'dest': 'dest',
-        'user': 'user',
-        'trans_type': 'trans_type',
-        'ref': 'ref',
-        'timestamp': 'timestamp',
-        'status': 'status'}
-    _name = _db_attr.keys()
-    _db_class = NTransferencia
-
-    def __init__(self,
-                 trans_type=None,
-                 uid=None,
-                 origin=None,
-                 dest=None,
-                 user=None,
-                 ref=None,
-                 status=None,
-                 timestamp=None):
-        self.uid = uid
-        self.origin = origin
-        self.dest = dest
-        self.user = user
-        self.trans_type = trans_type
-        self.ref = ref
-        self.timestamp = timestamp if timestamp else datetime.datetime.now()
-        self.status = status
-
-    @classmethod
-    def deserialize(cls, the_dict):
-        x = super(cls, TransMetadata).deserialize(the_dict)
-        if not isinstance(x.timestamp, datetime.datetime):
-            x.timestamp = parse_iso_date(x.timestamp)
-        return x
-
-
-class Transferencia(MetaItemSet):
-    _metadata_cls = TransMetadata
-
-    def items_to_transaction(self):
-        reason = '{}: codigo={}'.format(self.meta.trans_type, self.meta.uid)
-        tipo = self.meta.trans_type
-        for item in self.items:
-            prod, cant = item.prod, item.cant
-            if self.meta.origin:
-                yield Transaction(
-                    upi=None,
-                    bodega_id=self.meta.origin,
-                    prod_id=prod.codigo,
-                    delta=-cant, name=prod.nombre,
-                    ref=reason, fecha=self.meta.timestamp)
-            if self.meta.dest:
-                yield Transaction(
-                    upi=None,
-                    bodega_id=self.meta.dest,
-                    prod_id=prod.codigo,
-                    delta=cant, name=prod.nombre,
-                    ref=reason, fecha=self.meta.timestamp, tipo=tipo)
-
-    def validate(self):
-        if self.meta.trans_type not in (TransType.EXTERNAL, TransType.EGRESS):
-            if self.meta.dest is None:
-                raise ValueError('dest is none for non external')
-        else:
-            self.meta.dest = None
-        if self.meta.trans_type != TransType.INGRESS:
-            if self.meta.origin is None:
-                raise ValueError('origin is none for non ingress')
-        else:
-            self.meta.origin = None
-
-    @property
-    def filepath_format(self):
-        path = getattr(self, '_path', None)
-        if path is None:
-            self._path = os.path.join(
-                self.meta.timestamp.date().isoformat(), uuid.uuid1().hex)
-        return self._path
 
 
 class DocumentApi:
@@ -433,25 +193,3 @@ class PedidoApi:
                 return f
         logging.info('Could not find pedido within {} days of lookback'.format(look_back))
         return None
-
-
-class InvApiOld(object):
-    def __init__(self, sessionmanager):
-        self.session = sessionmanager
-
-    def get_dated_report(self, start_date, end_date, almacen,
-                         seller=None, status=Status.COMITTED):
-        dbmeta = self.session.session.query(NOrdenDespacho).filter_by(
-            bodega_id=almacen).filter(
-            NOrdenDespacho.fecha < end_date).filter(
-            NOrdenDespacho.fecha >= start_date)
-
-        if status == Status.DELETED:
-            dbmeta = dbmeta.filter_by(eliminado=True)
-        else:
-            dbmeta = dbmeta.filter_by(eliminado=False)
-
-        if seller is not None:
-            dbmeta = dbmeta.filter_by(vendedor_id=seller)
-
-        return dbmeta

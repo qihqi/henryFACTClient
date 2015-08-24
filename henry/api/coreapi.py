@@ -1,17 +1,19 @@
 from decimal import Decimal
-from henry.schema.core import NUsuario
 from bottle import Bottle, response, request, abort
 
 from henry.bottlehelper import get_property_or_fail
 from henry.base.serialization import SerializableMixin
 from henry.base.auth import create_user_dict, get_user_info, authenticate
+from henry.base.serialization import json_dumps, json_loads
 
 from henry.coreconfig import (dbcontext, clientapi, invapi,
-                          auth_decorator, pedidoapi, sessionmanager,
-                          actionlogged, priceapi)
-from henry.base.serialization import json_dumps, json_loads
-from henry.schema.core import NNota, NStore
-from henry.dao import Client, Invoice
+                              auth_decorator, pedidoapi, sessionmanager,
+                              actionlogged, priceapi, usuarioapi, storeapi)
+
+from henry.schema.inv import NNota
+from henry.schema.prod import NStore
+from henry.dao.coredao import Client
+from henry.dao.order import Invoice
 
 
 api = Bottle()
@@ -154,7 +156,7 @@ class InvoiceOptions(SerializableMixin):
 
 
 def get_store_by(field, value):
-    stores = sessionmanager.session.query(NStore)
+    stores = storeapi.search()
     canditates = [a for a in stores if getattr(a, field) == value]
     if canditates:
         return canditates[0]
@@ -181,7 +183,8 @@ def fix_inv_by_options(inv, options):
     # Get store: if ruc exists get it takes prescendence. Then name, then id.
     # The reason is that id is mysql autoincrement integer and may not be
     # consistent across different servers
-    # using None as default value is buggy. Because there could be store with store.ruc == None
+    # using None as default value is buggy. Because there could
+    # be store with store.ruc == None
     ruc = getattr(inv.meta, 'almacen_ruc', None)
     name = getattr(inv.meta, 'almacen_name', None)
 
@@ -217,7 +220,8 @@ def create_invoice():
         del content['options']
 
     inv = Invoice.deserialize(content)
-    fix_inv_by_options(inv, options)  # at this point, inv should no longer change
+    # at this point, inv should no longer change
+    fix_inv_by_options(inv, options)
     if options.crear_cliente:  # create client if not exist
         client = inv.meta.client
         if not clientapi.get(client.codigo):
@@ -227,9 +231,8 @@ def create_invoice():
     # increment the next invoice's number
     if options.incrementar_codigo:
         user = inv.meta.user
-        sessionmanager.session.query(NUsuario).filter_by(username=user).update(
-            {NUsuario.last_factura: int(inv.meta.codigo) + 1})
-        sessionmanager.session.commit()
+        usuarioapi.update(user, {'last_factura': int(inv.meta.codigo) + 1})
+    sessionmanager.session.commit()
     return {'codigo': inv.meta.uid}
 
 

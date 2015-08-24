@@ -1,6 +1,6 @@
-from sqlalchemy import Column, Integer, String, Date, ForeignKey, Numeric, Boolean, Text, DateTime
+from sqlalchemy import (Column, Integer, String, Date, ForeignKey,
+                        Numeric, Boolean, Text, DateTime)
 from sqlalchemy.orm import relationship, backref
-
 from henry.schema.base import Base
 
 __author__ = 'han'
@@ -19,7 +19,8 @@ class NVenta(Base):
 class NItemVenta(Base):
     __tablename__ = 'items_de_venta'
     id = Column('id', Integer, primary_key=True)
-    venta_cod_id = Column('venta_cod_id', Integer, ForeignKey('notas_de_venta.id'))
+    venta_cod_id = Column('venta_cod_id', Integer,
+                          ForeignKey('notas_de_venta.id'))
     num = Column('num', Integer)
     producto_id = Column('producto_id', String(20))
     cantidad = Column('cantidad', Numeric(23, 3))
@@ -44,7 +45,8 @@ class NOrdenDespacho(Base):
 class NItemDespacho(Base):
     __tablename__ = 'items_de_despacho'
     id = Column('id', Integer, primary_key=True)
-    desp_cod_id = Column('desp_cod_id', Integer, ForeignKey('ordenes_de_despacho.id'))
+    desp_cod_id = Column('desp_cod_id', Integer,
+                         ForeignKey('ordenes_de_despacho.id'))
     num = Column('num', Integer)
     producto_id = Column('producto_id', String(20))
     cantidad = Column('cantidad', Numeric(23, 3))
@@ -90,5 +92,3 @@ class NDjangoSession(Base):
     session_key = Column(String(40), primary_key=True)
     session_data = Column(Text)
     expire_date = Column(DateTime)
-
-
