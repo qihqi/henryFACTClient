@@ -46,9 +46,12 @@ class EndToEndTest(unittest.TestCase):
             r = requests.get(url, params={'prefijo': 'A'})
             content = r.json()
 
+
         p1 = content[0]
         p2 = content[1]
         p3 = content[2]
+
+        del p1['upi']  # test one without upi
 
         with Timing('get producto'):
             p3 = requests.get(url + '/' + p3['codigo']).json()
@@ -64,7 +67,7 @@ class EndToEndTest(unittest.TestCase):
 
         content = {
             'items': [
-                {'prod': x, 'cant': 10} for x in (p1, p2, p3)
+                {'prod': x, 'cant': 10000} for x in (p1, p2, p3)
                 ],
             'options': {
                 'incrementar_codigo': True

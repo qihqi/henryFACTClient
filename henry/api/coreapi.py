@@ -189,7 +189,7 @@ def fix_inv_by_options(inv, options):
             item.cant = Decimal(item.cant) / 1000
 
         if getattr(item.prod, 'upi', None) is None:
-            newprod = priceapi.search(prod_id=item.prod.codigo,
+            newprod = priceapi.search(prod_id=item.prod.prod_id,
                                       almacen_id=inv.meta.almacen_id)[0]
             item.prod.upi = newprod.upi
             item.prod.multiplicador = newprod.multiplicador
