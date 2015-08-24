@@ -6,12 +6,12 @@
                 text-align : center;
             }
             .cant {
-                text-align: right; 
+                text-align: right;
             }
             .codigo {
-                text-align: left; 
+                text-align: left;
             }
-            
+
         </style>
     </head>
 
@@ -22,9 +22,9 @@
         <table align="center" width=600>
             <tr>
                 <th width=100>Fecha</th>
-                <td>{{inv.meta.timestamp.date().isoformat()}}</td> 
+                <td>{{inv.meta.timestamp.date().isoformat()}}</td>
                 <th width=100>Vendido Por</th>
-                <td>{{ inv.meta.user }}</td> 
+                <td>{{ inv.meta.user }}</td>
                 <th width=100>RUC</th>
                 <td>{{inv.meta.client.codigo}}</td>
             </tr>
@@ -52,11 +52,11 @@
             </tr>
             {% for i in inv.items %}
             <tr>
-                <td width=100>{{i.prod.codigo}}</td> 
-                <td>{{i.prod.nombre}}</td> 
-                <td width=100 class="cant">{{ i.cant }}</td> 
-                <td width=100 class="cant">{{ value_from_cents(i.prod.precio1) }}</td> 
-                <td width=100 class="cant">{{ value_from_cents(i.prod.precio1 * i.cant) }}</td> 
+                <td width=100>{{i.prod.codigo}}</td>
+                <td>{{i.prod.nombre}}</td>
+                <td width=100 class="cant">{{ i.cant }}</td>
+                <td width=100 class="cant">{{ value_from_cents(i.prod.precio1) }}</td>
+                <td width=100 class="cant">{{ value_from_cents(i.prod.precio1 * i.cant) }}</td>
             </tr>
             {%endfor %}
             <tr> <td></td></tr>
@@ -100,7 +100,7 @@
                 });
                 $.ajax({
                     method: 'POST',
-                    url: '/api/comment',
+                    url: '/app/api/comment',
                     data: data,
                     success: function() {
                         alert('comentario guardado');

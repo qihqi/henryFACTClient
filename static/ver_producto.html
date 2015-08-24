@@ -39,7 +39,7 @@
         $(document).ready(function() {
             $('#buscar_por_codigo').click(function() {
                 var id = $('#codigo').val();
-                var url = '/api/producto/' + id + '?options=all';
+                var url = '/app/api/producto/' + id + '?options=all';
                 getRequest(url, function(status, result) {
                     var codigo = result.codigo;
                     data[codigo] = result;

@@ -21,7 +21,7 @@
                 $('#post_button').click(function() {
                     var button = $(this);
                     $.ajax({
-                        'url': '/api/ingreso/' + current_id,
+                        'url': '/app/api/ingreso/' + current_id,
                         'type': 'PUT',
                         'success': function(data) {
                             $('#estado').html(data.status);
@@ -39,7 +39,7 @@
                 $('#delete_button').click(function() {
                     var button = $(this);
                     $.ajax({
-                        'url': '/api/ingreso/' + current_id,
+                        'url': '/app/api/ingreso/' + current_id,
                         'type': 'DELETE',
                         'success': function(data) {
                             $('#estado').html(data.status);
@@ -95,7 +95,7 @@
             </tr>
             {% for i in ingreso.items %}
             <tr>
-                <td width=100>{{i.prod.prod_id}}</td> 
+                <td width=100>{{i.prod.prod_id}}</td>
                 <td>{{i.prod.nombre}}</td>
                 <td width=100 class="cant">{{i.cant}}</td>
             </tr>

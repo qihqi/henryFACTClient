@@ -8,7 +8,7 @@
         $(document).ready(function() {
             $('#ajustar').click(function(event) {
                 event.preventDefault();
-                var url = '/api/revision/' + rid;
+                var url = '/app/api/revision/' + rid;
                 $.ajax({
                     method: 'PUT',
                     url: url,

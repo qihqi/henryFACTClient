@@ -16,7 +16,7 @@ api = Bottle()
 
 
 # ######### PRODUCT ########################
-@api.get('/api/producto/<prod_id:path>')
+@api.get('/app/api/producto/<prod_id:path>')
 @dbcontext
 @actionlogged
 def get_prod(prod_id):
@@ -35,7 +35,7 @@ def get_prod(prod_id):
     return json_dumps(prod)
 
 
-@api.get('/api/bod/<bodega_id>/producto/<prod_id:path>')
+@api.get('/app/api/bod/<bodega_id>/producto/<prod_id:path>')
 @dbcontext
 @actionlogged
 def get_prod_cant(bodega_id, prod_id):
@@ -45,7 +45,7 @@ def get_prod_cant(bodega_id, prod_id):
     return json_dumps(prod)
 
 
-@api.get('/api/bod/<bodega_id>/producto')
+@api.get('/app/api/bod/<bodega_id>/producto')
 @dbcontext
 @actionlogged
 def search_prod_cant(bodega_id):
@@ -54,7 +54,7 @@ def search_prod_cant(bodega_id):
     return json_dumps(prod)
 
 
-@api.put('/api/bod/<bodega_id>/producto/<prod_id:path>')
+@api.put('/app/api/bod/<bodega_id>/producto/<prod_id:path>')
 @dbcontext
 @actionlogged
 def toggle_inactive(bodega_id, prod_id):
@@ -66,18 +66,19 @@ def toggle_inactive(bodega_id, prod_id):
     return {'inactivo': inactive}
 
 
-@api.get('/api/producto')
+@api.get('/app/api/producto')
 @dbcontext
 @actionlogged
 def search_prod():
     prefijo = request.query.prefijo
     if prefijo:
-        return json_dumps(list(prodapi.search_producto(prefix=prefijo)))
+        return json_dumps(list(
+            prodapi.prod.search(**{'nombre-prefix': prefijo})))
     response.status = 400
     return None
 
 
-@api.put('/api/producto/<pid>')
+@api.put('/app/api/producto/<pid>')
 @dbcontext
 @auth_decorator
 @actionlogged
@@ -86,7 +87,7 @@ def crear_producto(pid):
     prodapi.update_prod(pid, content)
 
 
-@api.post('/api/comment')
+@api.post('/app/api/comment')
 @dbcontext
 @auth_decorator
 @actionlogged
@@ -103,7 +104,7 @@ def post_comment():
     return {'comment': c.uid}
 
 
-@api.get('/api/nota')
+@api.get('/app/api/nota')
 @dbcontext
 @actionlogged
 def get_invoice_by_date():
@@ -120,7 +121,7 @@ def get_invoice_by_date():
 
 
 # ################# INGRESO ###########################3
-@api.post('/api/ingreso')
+@api.post('/app/api/ingreso')
 @dbcontext
 @auth_decorator
 @actionlogged
@@ -132,7 +133,7 @@ def crear_ingreso():
     return {'codigo': ingreso.meta.uid}
 
 
-@api.put('/api/ingreso/<ingreso_id>')
+@api.put('/app/api/ingreso/<ingreso_id>')
 @dbcontext
 @auth_decorator
 @actionlogged
@@ -142,7 +143,7 @@ def postear_ingreso(ingreso_id):
     return {'status': trans.meta.status}
 
 
-@api.delete('/api/ingreso/<ingreso_id>')
+@api.delete('/app/api/ingreso/<ingreso_id>')
 @dbcontext
 @actionlogged
 def delete_ingreso(ingreso_id):
@@ -151,7 +152,7 @@ def delete_ingreso(ingreso_id):
     return {'status': trans.meta.status}
 
 
-@api.get('/api/ingreso/<ingreso_id>')
+@api.get('/app/api/ingreso/<ingreso_id>')
 @dbcontext
 @actionlogged
 def get_ingreso(ingreso_id):
@@ -162,7 +163,7 @@ def get_ingreso(ingreso_id):
     return json_dumps(ing.serialize())
 
 
-@api.put('/api/revision/<rid>')
+@api.put('/app/api/revision/<rid>')
 @dbcontext
 @auth_decorator
 @actionlogged

@@ -22,17 +22,17 @@ function popup(){
     return false;
 }
 function getProdAjaxCall(codigo, bodega_id, callback) {
-    var url = '/api/producto/' + codigo;
+    var url = '/app/api/producto/' + codigo;
     getRequest(url, callback);
 }
 
 function searchProdAjax(prefix, bodega_id, callback) {
-    var url = '/api/producto?prefijo=' + prefix;
+    var url = '/app/api/producto?prefijo=' + prefix;
     getRequest(url, callback);
 }
 
 function getIngreso(codigo, callback) {
-    var url = '/api/ingreso/' + codigo;
+    var url = '/app/api/ingreso/' + codigo;
     getRequest(url, callback);
 }
 
@@ -52,7 +52,7 @@ function getRow(includePrice) {
     var buscar = $("<a id=\"here"+ count + "\" name=\"nombre\" href=\"\" class=\"text_field\" >");
    // var trans = $("<input id=\"here"+ count + "\" name=\"transform\" class=\"text_field\" type=\"checkbox\">");
     buscar.click(popup);
-    buscar.html("buscar"); 
+    buscar.html("buscar");
     codigo_cell.append(codigo);
     cant_cell.append(cant);
     nombre_cell.append(nombre);
@@ -99,7 +99,7 @@ function initEvents() {
         if (event.which == 13) {
             event.preventDefault();
             var number = $(this).val();
-            if (!isNumber(number)) { 
+            if (!isNumber(number)) {
                 alert("cantidad debe ser numero");
                 return;
             }
@@ -134,4 +134,3 @@ function initEvents() {
         }
     });
 }
-

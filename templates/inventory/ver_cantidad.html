@@ -49,7 +49,7 @@
             var prod = $(this).attr('prod');
             var act = $('#' + prod + '-activo').html();
             var boolact = (act.replace(/^\s+|\s+$/g, '') == 'Activo');
-            var url = '/api/bod/' + bod + '/producto/' + prod;
+            var url = '/app/api/bod/' + bod + '/producto/' + prod;
             $.ajax({
                 'url': url,
                 'data': JSON.stringify({'inactivo': boolact}),

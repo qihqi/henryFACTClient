@@ -48,7 +48,7 @@
                         event.preventDefault();
                         var codigo = $(this).val();
                         var bodega_id = $('select[name=bodega_id]').val();
-                        var url = '/api/bod/' + bodega_id + '/producto/' + codigo;
+                        var url = '/app/api/bod/' + bodega_id + '/producto/' + codigo;
                         getRequest(url, function(status, result) {
                             state.current = result;
                             handleResult(result);
@@ -59,7 +59,7 @@
                 $('#buscar').click(function() {
                     var bodega_id = $('select[name=bodega_id]').val();
                     var prodHandler = {
-                        url: '/api/bod/' + bodega_id + '/producto?prefijo=',
+                        url: '/app/api/bod/' + bodega_id + '/producto?prefijo=',
                         handle: handleResult,
                         display: function(prod) {
                             return prod.nombre;
