@@ -1,13 +1,15 @@
 import datetime
 import os
 import uuid
+from decimal import Decimal
 
 from henry.base.serialization import parse_iso_date
 from henry.base.serialization import SerializableMixin, DbMixin
+from henry.dao.productos import ProdItemGroup
 from henry.schema.inventory import NTransferencia
 
-from .document import MetaItemSet
-from .coredao import Transaction
+from .document import MetaItemSet, Item
+from .coredao import Transaction, PriceList
 
 
 class TransType:
@@ -31,7 +33,8 @@ class TransMetadata(SerializableMixin, DbMixin):
         'trans_type': 'trans_type',
         'ref': 'ref',
         'timestamp': 'timestamp',
-        'status': 'status'}
+        'status': 'status',
+        'value': 'value'}
     _name = _db_attr.keys()
     _db_class = NTransferencia
 
@@ -61,6 +64,19 @@ class TransMetadata(SerializableMixin, DbMixin):
         return x
 
 
+class TransItem(Item):
+
+    @classmethod
+    def deserialize(cls, the_dict):
+        if 'name' in the_dict['prod'] and 'prod_id' in the_dict['prod']:
+            prod = ProdItemGroup.deserialize(the_dict['prod'])
+        else:
+            price = PriceList.deserialize(the_dict['prod'])
+            prod = ProdItemGroup(prod_id=price.prod_id, name=price.nombre)
+        cant = Decimal(the_dict['cant'])
+        return cls(prod, cant)
+
+
 class Transferencia(MetaItemSet):
     _metadata_cls = TransMetadata
 
@@ -74,14 +90,14 @@ class Transferencia(MetaItemSet):
                     upi=None,
                     bodega_id=self.meta.origin,
                     prod_id=prod.prod_id,
-                    delta=-cant, name=prod.nombre,
+                    delta=-cant, name=prod.name,
                     ref=reason, fecha=self.meta.timestamp)
             if self.meta.dest:
                 yield Transaction(
                     upi=None,
                     bodega_id=self.meta.dest,
                     prod_id=prod.prod_id,
-                    delta=cant, name=prod.nombre,
+                    delta=cant, name=prod.name,
                     ref=reason, fecha=self.meta.timestamp, tipo=tipo)
 
     def validate(self):
@@ -103,3 +119,12 @@ class Transferencia(MetaItemSet):
             self._path = os.path.join(
                 self.meta.timestamp.date().isoformat(), uuid.uuid1().hex)
         return self._path
+
+
+    @classmethod
+    def deserialize(cls, the_dict):
+        x = cls()
+        x.meta = cls._metadata_cls.deserialize(the_dict['meta'])
+        x.items = map(TransItem.deserialize, the_dict['items'])
+        return x
+

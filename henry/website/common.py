@@ -3,10 +3,21 @@ from decimal import Decimal
 
 from bottle import abort
 
-from henry.config import prodapi
-from henry.dao.document import Item
-from henry.dao.inventory import TransMetadata, TransType
+from henry.config import itemgroupapi, prodapi
+from henry.dao.inventory import TransMetadata, TransType, TransItem
+from henry.dao.productos import ProdItemGroup
 
+
+def get_base_price(prod_id):
+    plus = prod_id + '+'
+    price = prodapi.price.search(prod_id=plus, almacen_id=2)
+    if not price:
+        price = prodapi.price.search(prod_id=prod_id, almacen_id=2)
+    if not price:
+        return None
+    price = price[0]
+    mult = price.multiplicador or 1
+    return Decimal(price.precio1) / 100 / mult
 
 def parse_iso(date_string):
     return datetime.datetime.strptime(date_string, '%Y-%m-%d')
@@ -43,7 +54,19 @@ def items_from_form(form):
             abort(400, 'cantidad debe ser entero positivo')
         if cant < 0:
             abort(400, 'cantidad debe ser entero positivo')
-        items.append(Item(prodapi.prod.get(prod_id), cant))
+        itemg_list = itemgroupapi.search(prod_id=prod_id)
+        if not itemg_list:
+            #  this item does not exist. Probably it was never backfilled
+            prod = prodapi.prod.get(prod_id)
+            baseprice = get_base_price(prod_id)
+            itemg = ProdItemGroup(
+                name=prod.nombre,
+                prod_id=prod.codigo,
+                base_price_usd=baseprice)
+            itemgroupapi.create(itemg)
+        else:
+            itemg = itemg_list[0]
+        items.append(TransItem(itemg, cant))
     return items
 
 
@@ -53,7 +76,6 @@ def transmetadata_from_form(form):
     meta.origin = form.get('origin')
     fecha = form.get('fecha')
     if fecha:
-
         fecha = parse_iso(fecha)
         meta.timestamp = datetime.datetime.combine(
             fecha.date(), datetime.datetime.now().time())

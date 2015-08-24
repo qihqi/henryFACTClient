@@ -12,7 +12,7 @@ from henry.constants import (
 
 from henry.dao.payment import PaymentApi
 from henry.dao.productos import (
-    RevisionApi, ProdCount, Product, Bodega, Category, ProdApi)
+    RevisionApi, ProdCount, Product, Bodega, Category, ProdApi, ProdItem, ProdItemGroup)
 from henry.dao.document import DocumentApi
 from henry.dao.inventory import Transferencia
 from henry.dao.order import PaymentFormat
@@ -34,6 +34,7 @@ prodapi = ProdApi(sm, storeapi, bodegaapi,
                   DBApi(sm, Product),
                   DBApi(sm, ProdCount),
                   priceapi, DBApi(sm, Category))
+itemgroupapi = DBApi(sessionmanager, ProdItemGroup)
 
 externaltransapi = ExternalApi(EXTERNAL_URL, 'ingreso',
                                EXTERNAL_USER, EXTERNAL_PASS)

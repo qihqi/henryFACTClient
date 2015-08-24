@@ -77,6 +77,7 @@ def crear_ingreso():
 def post_crear_ingreso():
     meta = transmetadata_from_form(request.forms)
     items = items_from_form(request.forms)
+    meta.value = sum((x.cant * (x.prod.base_price_usd or 0) for x in items))
     try:
         transferencia = Transferencia(meta, items)
         if meta.trans_type == TransType.EXTERNAL:

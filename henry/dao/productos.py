@@ -1,9 +1,10 @@
 import datetime
+from decimal import Decimal
 
 from henry.base.dbapi import dbmix
 from henry.schema.inventory import NInventoryRevision, NInventoryRevisionItem
 from henry.schema.prod import (NBodega, NProducto, NContenido, NCategory,
-                               NPriceList)
+                               NPriceList, NItemGroup, NItem)
 from .coredao import Transaction
 
 
@@ -11,6 +12,17 @@ Bodega = dbmix(NBodega)
 Product = dbmix(NProducto)
 ProdCount = dbmix(NContenido)
 Category = dbmix(NCategory)
+ProdItem = dbmix(NItem)
+
+
+class ProdItemGroup(dbmix(NItemGroup)):
+
+    @classmethod
+    def deserialize(cls, the_dict):
+        result = super(cls, ProdItemGroup).deserialize(the_dict)
+        if result.base_price_usd:
+            result.base_price_usd = Decimal(result.base_price_usd)
+        return result
 
 
 class ProdApi:

@@ -35,6 +35,7 @@ class NTransferencia(Base):
 
     trans_type = Column(String(10))
     ref = Column(String(100))
+    value = Column(Numeric(11, 4))
 
     # unix filepath where the items is stored
     items_location = Column(String(200))

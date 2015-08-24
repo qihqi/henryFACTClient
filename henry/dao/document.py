@@ -37,6 +37,7 @@ class Item(SerializableMixin):
 
 class MetaItemSet(SerializableMixin):
     _name = ('meta', 'items')
+    _metadata_cls = None
 
     def __init__(self, meta=None, items=None):
         self.meta = meta
