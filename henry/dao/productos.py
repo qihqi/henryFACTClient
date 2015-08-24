@@ -55,7 +55,7 @@ class ProdApi:
 
         # this is a many-to-one relationship
         alm_to_bodega = {x.almacen_id: x.bodega_id for x in
-                         self.storeapi.search()}
+                         self.store.search()}
         contenidos_creados = {}
         for almacen, (p1, p2, thres) in price_list.items():
             bodega_id = alm_to_bodega[almacen]

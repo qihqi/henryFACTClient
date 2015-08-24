@@ -105,4 +105,4 @@ class DBApi(object):
             if mode == 'prefix':
                 f = self.objclass._columns[key].startswith(value)
             query = query.filter(f)
-        return map(self.objclass.from_db_instance, query)
+        return map(self.objclass.from_db_instance, iter(query))
