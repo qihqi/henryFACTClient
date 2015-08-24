@@ -11,7 +11,7 @@ from henry.coreconfig import (dbcontext, clientapi, invapi,
                               actionlogged, priceapi, usuarioapi, storeapi)
 
 from henry.schema.inv import NNota
-from henry.schema.prod import NStore
+from henry.schema.prod import NPriceList
 from henry.dao.coredao import Client
 from henry.dao.order import Invoice
 
@@ -53,6 +53,20 @@ def get_price_by_id(almacen_id, prod_id):
         mult_thousand(obj)
     print obj.serialize()
     return json_dumps(obj.serialize())
+
+
+@api.put('/api/alm/<alm_id:int>/producto/<pid:path>')
+@dbcontext
+@auth_decorator
+@actionlogged
+def update_price(alm_id, pid):
+    content = json_loads(request.body.read())
+    if not content:
+        abort(400)
+    count = sessionmanager.session.query(NPriceList).filter_by(
+        almacen_id=alm_id, prod_id=pid).update(content)
+    sessionmanager.session.commit()
+    return {'updated': count}
 
 
 # ################ CLIENT ############################

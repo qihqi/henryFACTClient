@@ -15,21 +15,17 @@ def static(rest):
     return static_file(rest, root='./static/')
 
 
-
-
 def main():
     global app
-    from henry.api import get_master, get_slave
     from beaker.middleware import SessionMiddleware
-
-    if INVOICE_MODE == 'slave':
-        app.merge(get_slave())
-    else:
-        app.merge(get_master())
+    from henry.api.coreapi import api
+    from henry.api.api_endpoints import api as napi
+    app.merge(api)
+    app.merge(napi)
     app = SessionMiddleware(app, BEAKER_SESSION_OPTS)
     sys.path.append(os.path.dirname(os.path.realpath(__file__)))
     from henry.schema.base import Base
-    from henry.config import engine
+    from henry.coreconfig import engine
 
     Base.metadata.create_all(engine)
     host, port = '0.0.0.0', 8080

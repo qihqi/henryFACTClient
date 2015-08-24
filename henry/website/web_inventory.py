@@ -4,13 +4,17 @@ import datetime
 from bottle import request, Bottle, abort, redirect
 from henry.base.auth import get_user
 
-from henry.config import jinja_env, prodapi, actionlogged, transapi, BODEGAS_EXTERNAS, sessionmanager, revisionapi
-from henry.config import (dbcontext, auth_decorator)
-from henry.dao import TransType, TransMetadata, Transferencia
+from henry.coreconfig import (
+    actionlogged, sessionmanager, dbcontext, auth_decorator)
+from henry.config import (jinja_env, prodapi,
+                          transapi, BODEGAS_EXTERNAS, revisionapi,
+                          bodegaapi)
+from henry.dao.inventory import TransType, TransMetadata, Transferencia
 from henry.dao.productos import Bodega
-from henry.website.common import items_from_form, transmetadata_from_form, parse_start_end_date
+from henry.website.common import (
+    items_from_form, transmetadata_from_form, parse_start_end_date)
 from henry.schema.inventory import NInventoryRevision
-from henry.schema.core import NUsuario
+from henry.schema.user import NUsuario
 
 w = Bottle()
 web_inventory_webapp = w
@@ -34,8 +38,9 @@ def ver_cantidades():
     else:
         all_prod = []
     temp = jinja_env.get_template('inventory/ver_cantidad.html')
-    return temp.render(prods=all_prod, bodegas=prodapi.get_bodegas(),
-                       prefix=prefix, bodega_name=prodapi.get_bodega_by_id(bodega_id).nombre)
+    return temp.render(
+        prods=all_prod, bodegas=bodegaapi.search(),
+        prefix=prefix, bodega_name=bodegaapi.get(bodega_id).nombre)
 
 
 @w.get('/app/ingreso/<uid>')
@@ -47,9 +52,9 @@ def get_ingreso(uid):
         return 'Documento con codigo {} no existe'.format(uid)
     temp = jinja_env.get_template('inventory/ingreso.html')
     if trans.meta.origin is not None:
-        trans.meta.origin = prodapi.get_bodega_by_id(trans.meta.origin).nombre
+        trans.meta.origin = bodegaapi.get(trans.meta.origin).nombre
     if trans.meta.dest is not None:
-        trans.meta.dest = prodapi.get_bodega_by_id(trans.meta.dest).nombre
+        trans.meta.dest = bodegaapi.get(trans.meta.dest).nombre
     return temp.render(ingreso=trans)
 
 
@@ -58,8 +63,9 @@ def get_ingreso(uid):
 @auth_decorator
 def crear_ingreso():
     temp = jinja_env.get_template('inventory/crear_ingreso.html')
-    bodegas = prodapi.get_bodegas()
-    bodegas_externas = [Bodega(id=i, nombre=n[0]) for i, n in enumerate(BODEGAS_EXTERNAS)]
+    bodegas = bodegaapi.search()
+    bodegas_externas = [Bodega(id=i, nombre=n[0])
+                        for i, n in enumerate(BODEGAS_EXTERNAS)]
     return temp.render(bodegas=bodegas, externas=bodegas_externas,
                        types=TransType.names)
 
@@ -104,7 +110,7 @@ def list_ingress():
         start = end - datetime.timedelta(days=7)
     trans_list = transapi.search_metadata_by_date_range(start, end)
     temp = jinja_env.get_template('inventory/ingresos_list.html')
-    bodega = {b.id: b.nombre for b in prodapi.get_bodegas()}
+    bodega = {b.id: b.nombre for b in bodegaapi.search()}
     print start, end
     return temp.render(trans=trans_list, start=start, end=end, bodega=bodega)
 
@@ -114,7 +120,7 @@ def list_ingress():
 @auth_decorator
 def revisar_inv_form():
     temp = jinja_env.get_template('inventory/crear_revision.html')
-    return temp.render(bodegas=prodapi.get_bodegas())
+    return temp.render(bodegas=bodegaapi.search())
 
 
 @w.post('/app/revisar_inventario')
@@ -134,10 +140,11 @@ def post_revisar_inv():
 @auth_decorator
 def get_revision(rid):
     meta = revisionapi.get(rid)
-    bodega_name = prodapi.get_bodega_by_id(meta.bodega_id).nombre
+    bodega_name = bodegaapi.get(meta.bodega_id).nombre
     items = []
     for y in meta.items:
-        item = prodapi.get_cant(prod_id=y.prod_id, bodega_id=meta.bodega_id)
+        item = prodapi.count.search(
+            prod_id=y.prod_id, bodega_id=meta.bodega_id)[0]
         if y.inv_cant:
             item.cantidad = y.inv_cant
         if y.real_cant is not None:
@@ -151,7 +158,7 @@ def get_revision(rid):
 @w.post('/app/revision/<rid>')
 @dbcontext
 @auth_decorator
-def get_revision(rid):
+def post_revision(rid):
     prods = {}
     for key, value in request.forms.items():
         prods[key.replace('prod-cant-', '')] = value
@@ -170,7 +177,8 @@ def list_revision():
         start = end - datetime.timedelta(days=7)
 
     revisions = sessionmanager.session.query(NInventoryRevision).filter(
-        NInventoryRevision.timestamp <= end, NInventoryRevision.timestamp >= start)
+        NInventoryRevision.timestamp <= end,
+        NInventoryRevision.timestamp >= start)
 
     temp = jinja_env.get_template('inventory/list_revisions.html')
     return temp.render(revisions=revisions, start=start, end=end)

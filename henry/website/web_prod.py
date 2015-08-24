@@ -1,8 +1,10 @@
 from bottle import Bottle, request, redirect
 from sqlalchemy.exc import IntegrityError
 
-from henry.config import dbcontext, auth_decorator, jinja_env, prodapi
-from henry.dao import Product
+from henry.coreconfig import (dbcontext, auth_decorator,
+                              storeapi, priceapi)
+from henry.config import jinja_env, prodapi
+from henry.dao.productos import Product
 from henry.website.common import convert_to_cent
 
 __author__ = 'han'
@@ -15,9 +17,10 @@ webprod = w = Bottle()
 @auth_decorator
 def create_prod_form(message=''):
     temp = jinja_env.get_template('prod/crear_producto.html')
-    stores = prodapi.get_stores()
-    categorias = prodapi.get_category()
-    return temp.render(almacenes=stores, categorias=categorias, message=message)
+    stores = storeapi.search()
+    categorias = prodapi.category.search()
+    return temp.render(almacenes=stores, categorias=categorias,
+                       message=message)
 
 
 @w.get('/app/ver_lista_precio')
@@ -27,12 +30,14 @@ def ver_lista_precio():
     almacen_id = int(request.query.get('almacen_id', 1))
     prefix = request.query.get('prefix', None)
     if prefix:
-        prods = prodapi.search_producto(prefix=prefix, almacen_id=almacen_id)
+        prods = priceapi.search(**{'nombre-prefix': prefix,
+                                     'almacen_id': almacen_id})
     else:
         prods = []
     temp = jinja_env.get_template('prod/ver_lista_precio.html')
-    return temp.render(prods=prods, stores=prodapi.get_stores(),
-                       prefix=prefix, almacen_name=prodapi.get_store_by_id(almacen_id).nombre)
+    return temp.render(
+        prods=prods, stores=storeapi.search(), prefix=prefix,
+        almacen_name=storeapi.get(almacen_id).nombre)
 
 
 @w.post('/app/crear_producto')
@@ -45,7 +50,7 @@ def create_prod():
     p.categoria = request.forms.categoria
 
     precios = {}
-    for alm in prodapi.get_stores():
+    for alm in storeapi.search():
         p1 = request.forms.get('{}-precio1'.format(alm.almacen_id))
         p2 = request.forms.get('{}-precio2'.format(alm.almacen_id))
         thres = request.forms.get('{}-thres'.format(alm.almacen_id))
@@ -54,7 +59,7 @@ def create_prod():
             p2 = convert_to_cent(p2)
             precios[alm.almacen_id] = (p1, p2, thres)
     try:
-        prodapi.create_product(p, precios)
+        prodapi.create_product_full(p, precios)
         message = 'producto con codigo "{}" creado'.format(p.codigo)
     except IntegrityError:
         message = 'Producto con codigo {} ya existe'.format(p.codigo)
@@ -81,7 +86,7 @@ def ver_producto(uid):
         price_dict[x.almacen_id] = x
     prod.precios = price_dict
     temp = jinja_env.get_template('prod/producto.html')
-    return temp.render(prod=prod, stores=prodapi.get_stores())
+    return temp.render(prod=prod, stores=storeapi.search())
 
 
 @w.get('/app/producto')
@@ -91,6 +96,6 @@ def buscar_producto_result():
     prefix = request.query.prefijo
     if prefix is None:
         redirect('/app/ver_producto_form')
-    prods = prodapi.search_producto(prefix)
+    prods = prodapi.prod.search(**{'nombre-prefix': prefix})
     temp = jinja_env.get_template('prod/buscar_producto_result.html')
     return temp.render(prods=prods)

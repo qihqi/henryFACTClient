@@ -65,7 +65,7 @@
         </tr>
         {% for p in prods %}
         <tr id="{{p.codigo}}">
-            <td><input class="small" id="{{loop.index}}-codigo" value="{{p.codigo}}" disabled/></td>
+            <td><input class="small" id="{{loop.index}}-codigo" value="{{p.prod_id}}" disabled/></td>
             <td><input class="big" id="{{loop.index}}-nombre" value="{{p.nombre}}" /></td>
             <td><input class="small" id="{{loop.index}}-precio1" value="{{value_from_cents(p.precio1)}}" /></td>
             <td><input class="small" id="{{loop.index}}-precio2" value="{{value_from_cents(p.precio2)}}" /></td>
@@ -77,4 +77,3 @@
 </div>
 </body>
 </html>
-

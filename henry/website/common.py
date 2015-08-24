@@ -4,7 +4,8 @@ from decimal import Decimal
 from bottle import abort
 
 from henry.config import prodapi
-from henry.dao import Item, TransMetadata, TransType
+from henry.dao.document import Item
+from henry.dao.inventory import TransMetadata, TransType
 
 
 def parse_iso(date_string):
@@ -42,7 +43,7 @@ def items_from_form(form):
             abort(400, 'cantidad debe ser entero positivo')
         if cant < 0:
             abort(400, 'cantidad debe ser entero positivo')
-        items.append(Item(prodapi.get_producto(prod_id), cant))
+        items.append(Item(prodapi.prod.get(prod_id), cant))
     return items
 
 

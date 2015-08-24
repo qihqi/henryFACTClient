@@ -3,12 +3,16 @@ from decimal import Decimal
 import os
 import uuid
 from bottle import request, redirect, static_file, Bottle
+
 from henry.base.auth import get_user
 from henry.schema.meta import ObjType, NComment
-from henry.schema.account import NCheck, SpentType, NSpent
-from henry.schema.core import NNota
-from henry.config import jinja_env, dbcontext, auth_decorator, paymentapi, sessionmanager, imagefiles, prodapi
-from henry.dao import PaymentFormat
+from henry.schema.accounting import NCheck, NSpent
+from henry.schema.inv import NNota
+
+from henry.coreconfig import (
+    dbcontext, auth_decorator, sessionmanager, storeapi)
+from henry.config import jinja_env, paymentapi, imagefiles
+from henry.dao.order import PaymentFormat
 from henry.dao.payment import Check, Deposit, Payment
 from henry.website.common import parse_iso, parse_start_end_date_with_default
 
@@ -154,7 +158,7 @@ def guardar_deposito():
     msg = request.query.msg
     temp = jinja_env.get_template('invoice/save_deposito_form.html')
     return temp.render(cuentas=paymentapi.get_all_accounts(),
-                       stores=prodapi.get_stores(),
+                       stores=storeapi.search(),
                        msg=msg)
 
 
@@ -165,7 +169,8 @@ def extract_nota_and_client(form, redirect_url):
         nota = sessionmanager.session.query(NNota).filter_by(
             codigo=codigo, almacen_id=almacen).first()
         if nota is None:
-            redirect('{}?msg=Orden+Despacho+No+{}+no+existe'.format(redirect_url, codigo))
+            redirect('{}?msg=Orden+Despacho+No+{}+no+existe'.format(
+                redirect_url, codigo))
         return nota.id, nota.client_id
     return None, None
 
@@ -177,7 +182,7 @@ def save_check_form():
     msg = request.query.msg
     temp = jinja_env.get_template('invoice/save_check_form.html')
     return temp.render(banks=paymentapi.get_all_banks(),
-                       stores=prodapi.get_stores(),
+                       stores=storeapi.search(),
                        msg=msg)
 
 
@@ -196,7 +201,8 @@ def parse_payment_from_request(form, clazz, url):
 @dbcontext
 @auth_decorator
 def save_check():
-    check = parse_payment_from_request(request.forms, Check, '/app/guardar_cheque')
+    check = parse_payment_from_request(
+        request.forms, Check, '/app/guardar_cheque')
     check.checkdate = parse_iso(check.checkdate)
     paymentapi.save_payment(check, PaymentFormat.CHECK)
     redirect('/app/guardar_cheque?msg=Cheque+Guardado')
@@ -263,7 +269,8 @@ def ver_cheques_por_titular():
 @dbcontext
 @auth_decorator
 def post_guardar_deposito():
-    deposit = parse_payment_from_request(request.forms, Deposit, '/app/guardar_deposito')
+    deposit = parse_payment_from_request(
+        request.forms, Deposit, '/app/guardar_deposito')
     paymentapi.save_payment(deposit, PaymentFormat.DEPOSIT)
     redirect('/app/guardar_deposito?msg=Deposito+Guardado')
 
@@ -274,7 +281,7 @@ def post_guardar_deposito():
 def guardar_abono():
     msg = request.query.msg
     temp = jinja_env.get_template('invoice/save_abono_form.html')
-    return temp.render(stores=prodapi.get_stores(),
+    return temp.render(stores=storeapi.search(),
                        action='/app/guardar_abono',
                        msg=msg, payment_type=PaymentFormat.CASH)
 
@@ -285,7 +292,7 @@ def guardar_abono():
 def guardar_retension():
     msg = request.query.msg
     temp = jinja_env.get_template('invoice/save_abono_form.html')
-    return temp.render(stores=prodapi.get_stores(),
+    return temp.render(stores=storeapi.search(),
                        action='/app/guardar_abono',
                        msg=msg, payment_type='retension')
 
@@ -299,7 +306,8 @@ def post_guardar_abono():
     payment_type = request.forms.payment_type
     if payment_type != PaymentFormat.CASH:
         url = '/app/guardar_retension'
-    payment.note_id, payment.client_id = extract_nota_and_client(request.forms, url)
+    payment.note_id, payment.client_id = extract_nota_and_client(
+        request.forms, url)
     payment.value = int(Decimal(request.forms.value) * 100)
     payment.date = datetime.date.today()
     paymentapi.save_payment(payment, payment_type)
@@ -345,7 +353,7 @@ def post_save_spent():
     spent.tax = int(Decimal(spent.tax) * 100)
     spent.retension = int(Decimal(spent.retension) * 100)
     spent.paid_from_cashier = int(Decimal(spent.paid_from_cashier) * 100)
-    
+
     spent.invdate = parse_iso(spent.invdate)
     spent.inputdate = parse_iso(spent.inputdate)
 

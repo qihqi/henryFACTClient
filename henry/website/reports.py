@@ -1,12 +1,16 @@
 from collections import defaultdict
 from datetime import timedelta
 from operator import attrgetter
-from henry.schema.core import NNota, NCliente
-from henry.config import prodapi
-from henry.dao import InvMetadata, Status
+from henry.schema.inv import NNota
+from henry.schema.user import NCliente
+
+from henry.coreconfig import storeapi
+from henry.dao.order import InvMetadata
+from henry.dao.document import Status
 
 
-def get_notas_with_clients(session, end_date, start_date, store=None, user_id=None):
+def get_notas_with_clients(session, end_date, start_date,
+                           store=None, user_id=None):
     end_date = end_date + timedelta(days=1) - timedelta(seconds=1)
 
     def decode_db_row_with_client(db_raw):
@@ -14,7 +18,7 @@ def get_notas_with_clients(session, end_date, start_date, store=None, user_id=No
         m.client.nombres = db_raw.nombres
         m.client.apellidos = db_raw.apellidos
         if not m.almacen_name:
-            alm = prodapi.get_store_by_id(m.almacen_id)
+            alm = storeapi.get(m.almacen_id)
             m.almacen_name = alm.nombre
         return m
 
@@ -55,7 +59,8 @@ def payment_report(session, start, end, store_id=None, user_id=None):
     Each payment format can be printed as a single total or a list of invoices
     :return:
     """
-    all_sale = list(get_notas_with_clients(session, start, end, store_id, user_id))
+    all_sale = list(get_notas_with_clients(
+        session, start, end, store_id, user_id))
     report = Report()
 
     by_status = split_records(all_sale, attrgetter('status'))
@@ -67,5 +72,7 @@ def payment_report(session, start, end, store_id=None, user_id=None):
 
     def get_total(content):
         return reduce(lambda acc, x: acc + x.total, content, 0)
-    report.total_by_payment = {key: get_total(value) for key, value in report.list_by_payment.items()}
+    report.total_by_payment = {
+        key: get_total(value) for key, value in
+        report.list_by_payment.items()}
     return report

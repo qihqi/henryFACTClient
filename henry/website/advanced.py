@@ -3,15 +3,18 @@ import datetime
 from bottle import Bottle, request, abort, redirect
 from sqlalchemy import desc
 
-from henry.base.auth import get_user
 from henry.schema.meta import ObjType, NComment
-from henry.schema.inventory import NCategory, NBodega, NProducto, NContenido
-from henry.schema.core import NNota, NPriceList
-from henry.config import (dbcontext, auth_decorator, prodapi, jinja_env,
-                          sessionmanager, invapi, transactionapi,
-                          actionlogged)
-from henry.dao import Item, PaymentFormat
-from henry.website.common import parse_start_end_date_with_default, parse_start_end_date
+from henry.schema.prod import NProducto, NContenido, NPriceList
+from henry.coreconfig import (dbcontext, auth_decorator, priceapi, storeapi,
+                              sessionmanager, invapi, actionlogged)
+from henry.config import transactionapi, jinja_env, bodegaapi, prodapi
+
+from henry.dao.document import Item
+from henry.dao.order import PaymentFormat
+from henry.dao.productos import Bodega
+
+from henry.website.common import (
+    parse_start_end_date_with_default, parse_start_end_date)
 
 webadv = w = Bottle()
 
@@ -37,7 +40,8 @@ def get_price_list():
         prefix = ''
     if almacen_id is None:
         abort(400, 'input almacen_id')
-    prods = prodapi.search_producto(prefix=prefix, almacen_id=almacen_id)
+    prods = priceapi.search(**{'nombre-prefix': prefix,
+                               'almacen_id': almacen_id})
     temp = jinja_env.get_template('buscar_precios.html')
     return temp.render(prods=prods)
 
@@ -47,7 +51,7 @@ def get_price_list():
 @auth_decorator
 def vendidos_por_categoria_form():
     temp = jinja_env.get_template('vendidos_por_categoria_form.html')
-    categorias = sessionmanager.session.query(NCategory)
+    categorias = prodapi.category.search()
     return temp.render(cat=categorias)
 
 
@@ -73,9 +77,9 @@ def vendidos_por_categoria():
     all_items = []
     total = 0
     for inv, x in full_invoice_items(invapi, start, end):
-        if x.prod.codigo in all_codigos:
-            x.prod.precio = (x.prod.precio1 if x.cant >= x.prod.threshold
-                             else x.prod.precio2)
+        if x.prod.prod_id in all_codigos:
+            x.prod.precio = (x.prod.precio1 if x.cant >= x.prod.cant_mayorista
+                else x.prod.precio2)
             x.subtotal = x.prod.precio * x.cant
             total += x.subtotal
             all_items.append((inv, x))
@@ -95,7 +99,8 @@ def ver_transacciones():
     items = sorted(transactionapi.get_transactions(prod_id, start, end),
                    key=lambda i: i.fecha, reverse=True)
     counts = {}
-    count_expr = sessionmanager.session.query(NContenido).filter_by(prod_id=prod_id)
+    count_expr = sessionmanager.session.query(NContenido).filter_by(
+        prod_id=prod_id)
     if bodega_id is not None:
         bodega_id = int(bodega_id)
         if bodega_id == -1:
@@ -105,14 +110,12 @@ def ver_transacciones():
         counts[x.bodega_id] = x.cant
     if bodega_id:
         items = filter(lambda i: i.bodega_id == bodega_id, items)
-    print items
     for i in items:
-        i.bodega_name = prodapi.get_bodega_by_id(i.bodega_id).nombre
+        i.bodega_name = bodegaapi.get(i.bodega_id).nombre
         i.count = counts[i.bodega_id]
         counts[i.bodega_id] -= i.delta
-    print items
-    bodegas = prodapi.get_bodegas()
-    bodegas.append(NBodega(id=-1, nombre='Todas'))
+    bodegas = bodegaapi.search()
+    bodegas.append(Bodega(id=-1, nombre='Todas'))
     temp = jinja_env.get_template('ver_transacciones.html')
     return temp.render(items=items, start=start, end=end,
                        prod_id=prod_id, bodegas=bodegas, bodega_id=bodega_id)
@@ -126,7 +129,7 @@ def sale_by_product():
     start, end = parse_start_end_date_with_default(
         request.query, today - datetime.timedelta(days=7), today)
     alm_id = int(request.query.get('almacen_id', 1))
-    almacen = prodapi.get_store_by_id(alm_id)
+    almacen = storeapi.get(alm_id)
 
     prods_sale = defaultdict(Item)
     for inv, x in full_invoice_items(invapi, start, end):
@@ -139,11 +142,13 @@ def sale_by_product():
         else:
             obj.cant = x.cant
     temp = jinja_env.get_template('ver_ventas_por_prod.html')
-    values = sorted(prods_sale.values(), key=lambda x: -x.cant * x.prod.precio1)
+    values = sorted(prods_sale.values(),
+                    key=lambda x: -x.cant * x.prod.precio1)
     for x in values:
         print x.serialize()
-    return temp.render(items=values, start=start, end=end, almacen=almacen.nombre,
-                       almacenes=prodapi.get_stores())
+    return temp.render(items=values, start=start, end=end,
+                       almacen=almacen.nombre,
+                       almacenes=storeapi.search())
 
 
 @w.get('/app/adv/producto/<pid>')
@@ -204,4 +209,3 @@ def ver_comentarios():
 
     temp = jinja_env.get_template('ver_comentarios.html')
     return temp.render(comentarios=comments, start=start, end=end)
-

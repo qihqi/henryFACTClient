@@ -62,7 +62,7 @@
         <ul>
             <li>Precio1: <input id="p1-{{s.almacen_id}}" disabled value="{% if precio %}{{value_from_cents(precio.precio1)}} {% endif %}"/></li>
             <li>Precio2: <input id="p2-{{s.almacen_id}}" disabled value="{% if precio %}{{value_from_cents(precio.precio2)}}{% endif %}"/></li>
-            <li>Cant Mayorista: <input id="cant_mayorista-{{s.almacen_id}}" disabled value="{% if precio %}{{precio.threshold}}{% endif %}"/></li>
+            <li>Cant Mayorista: <input id="cant_mayorista-{{s.almacen_id}}" disabled value="{% if precio %}{{precio.cant_mayorista}}{% endif %}"/></li>
         </ul>
     </li>
     {% endfor %}

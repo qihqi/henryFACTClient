@@ -5,13 +5,17 @@ from operator import attrgetter
 from bottle import request, abort, redirect, response, Bottle
 
 from henry.base.auth import get_user
+
 from henry.schema.meta import NComment
-from henry.schema.account import NAccountStat, NPayment, NSpent
-from henry.schema.core import NNota, NUsuario
+from henry.schema.accounting import NAccountStat, NPayment, NSpent
+from henry.schema.inv import NNota
+from henry.schema.user import NUsuario
 from henry.base.serialization import json_loads
-from henry.config import (dbcontext, auth_decorator, jinja_env, prodapi,
-                          sessionmanager, actionlogged, invapi, pedidoapi)
-from henry.dao import Status, PaymentFormat, Invoice
+from henry.coreconfig import (dbcontext, auth_decorator, storeapi,
+                              sessionmanager, actionlogged, invapi, pedidoapi)
+from henry.config import jinja_env
+from henry.dao.order import PaymentFormat, Invoice
+from henry.dao.document import Status
 from henry.website.reports import (get_notas_with_clients, split_records,
                                    group_by_records, payment_report)
 from henry.website.common import parse_start_end_date, parse_iso
@@ -30,7 +34,7 @@ def get_inv_db_instance(session, almacen_id, codigo):
 @auth_decorator
 def resume_form():
     temp = jinja_env.get_template('invoice/resumen_form.html')
-    stores = prodapi.get_stores()
+    stores = storeapi.search()
     users = list(sessionmanager.session.query(NUsuario))
     return temp.render(almacenes=stores, users=users)
 
@@ -56,7 +60,7 @@ def get_resumen():
         start=start,
         end=end,
         user=user,
-        store=prodapi.get_store_by_id(store),
+        store=storeapi.get(store),
         report=report)
 
 
@@ -88,7 +92,7 @@ def get_resumen_viejo():
         start=start,
         end=end,
         user=user,
-        store=prodapi.get_store_by_id(store),
+        store=storeapi.get(store),
         ventas=ventas,
         gtotal=gtotal,
         eliminados=deleted)
@@ -109,14 +113,15 @@ def list_facturas():
     if alm:
         query = query.filter_by(almacen_id=alm)
     temp = jinja_env.get_template('invoice/list_facturas.html')
-    return temp.render(notas=query, start=start, end=end, almacenes=prodapi.get_stores())
+    return temp.render(notas=query, start=start, end=end,
+                       almacenes=storeapi.search())
 
 
 @w.get('/app/eliminar_factura')
 @dbcontext
 @auth_decorator
 def eliminar_factura_form(message=None):
-    almacenes = list(prodapi.get_stores())
+    almacenes = list(storeapi.search())
     print almacenes
     temp = jinja_env.get_template('invoice/eliminar_factura.html')
     return temp.render(almacenes=almacenes, message=message)
@@ -160,7 +165,7 @@ def eliminar_factura():
 @dbcontext
 @auth_decorator
 def get_nota_form(message=None):
-    almacenes = list(prodapi.get_stores())
+    almacenes = list(storeapi.search())
     temp = jinja_env.get_template('invoice/ver_factura_form.html')
     return temp.render(almacenes=almacenes, message=message)
 

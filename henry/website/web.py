@@ -1,10 +1,12 @@
 from bottle import request, redirect, Bottle, static_file, response
 import datetime
 from henry import constants
-from henry.schema.core import NUsuario
-from henry.config import dbcontext, auth_decorator, jinja_env, clientapi, sessionmanager, prodapi, actionlogged
+from henry.schema.user import NUsuario
+from henry.coreconfig import (dbcontext, storeapi, auth_decorator,
+                              clientapi, sessionmanager, actionlogged)
+from henry.config import jinja_env
 from henry.constants import IMAGE_PATH
-from henry.dao import Client
+from henry.dao.coredao import Client
 from henry.dao.exceptions import ItemAlreadyExists
 
 webmain = w = Bottle()
@@ -52,7 +54,7 @@ def modificar_cliente():
 @auth_decorator
 def search_cliente_result():
     prefix = request.query.prefijo
-    clientes = list(clientapi.search(prefix))
+    clientes = list(clientapi.search(**{'apellidos-prefix': prefix}))
     temp = jinja_env.get_template('search_cliente_result.html')
     return temp.render(clientes=clientes)
 
@@ -76,7 +78,7 @@ def crear_cliente():
 def get_secuencia():
     users = list(sessionmanager.session.query(NUsuario))
     temp = jinja_env.get_template('secuencia.html')
-    store_dict = {s.almacen_id: s.nombre for s in prodapi.get_stores()}
+    store_dict = {s.almacen_id: s.nombre for s in storeapi.search()}
     store_dict[-1] = 'Ninguno'
     return temp.render(users=users, stores=store_dict)
 

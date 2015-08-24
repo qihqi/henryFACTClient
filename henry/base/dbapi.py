@@ -53,7 +53,7 @@ def dbmix(database_class, override_name=()):
         def deserialize(cls, dict_input):
             result = cls().merge_from(dict_input)
             for x, y in override_name:
-                original = dict_input[y]
+                original = dict_input.get(y, None)
                 setattr(result, x, original)
             return result
 
@@ -77,7 +77,7 @@ class DBApi(object):
 
     def create(self, obj):
         dbobj = obj.db_instance()
-        self.sm.add(dbobj)
+        self.sm.session.add(dbobj)
 
     def get(self, pkey):
         db_instance = self.sm.session.query(self.objclass.db_class).filter(

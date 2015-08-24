@@ -1,12 +1,12 @@
 import zmq
 from multiprocessing import Process
 from bottle import Bottle, request, json_loads
-from henry.api.master_api import InvoiceOptions
+from henry.api.coreapi import InvoiceOptions
 
-from henry.dao.document import Status, Invoice, InvMetadata
-from henry.schema.core import NPedidoTemporal
-from henry.config import (pedidoapi, sessionmanager,
-                          dbcontext, auth_decorator, actionlogged)
+from henry.dao.order import Status, Invoice, InvMetadata
+from henry.schema.inv import NPedidoTemporal
+from henry.coreconfig import (pedidoapi, sessionmanager,
+                              dbcontext, auth_decorator, actionlogged)
 from henry.externalapi import ExternalApi
 
 api = Bottle()

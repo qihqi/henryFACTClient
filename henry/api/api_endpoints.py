@@ -4,18 +4,18 @@ from henry.base.auth import get_user
 
 from henry.bottlehelper import get_property_or_fail
 from henry.schema.meta import NComment
-from henry.schema.inventory import NContenido
-from henry.schema.core import NPriceList
-from henry.config import (prodapi, dbcontext, clientapi,
-                          auth_decorator, pedidoapi, sessionmanager,
-                          actionlogged, priceapi)
+from henry.schema.prod import NContenido, NPriceList
+from henry.coreconfig import (dbcontext, invapi,
+                          auth_decorator, sessionmanager,
+                          actionlogged)
+from henry.config import prodapi, revisionapi, transapi
 from henry.base.serialization import json_dumps, json_loads
-from henry.dao import Client
+from henry.dao.inventory import Transferencia
 
 api = Bottle()
 
-# ######### PRODUCT ########################
 
+# ######### PRODUCT ########################
 @api.get('/api/producto/<prod_id:path>')
 @dbcontext
 @actionlogged
@@ -29,30 +29,29 @@ def get_prod(prod_id):
             for x in result.precios]
         return json_dumps(result_dict)
 
-    prod = prodapi.get_producto(prod_id=prod_id)
+    prod = prodapi.prod.get(prod_id)
     if prod is None:
         response.status = 404
     return json_dumps(prod)
+
 
 @api.get('/api/bod/<bodega_id>/producto/<prod_id:path>')
 @dbcontext
 @actionlogged
 def get_prod_cant(bodega_id, prod_id):
-    prod = prodapi.get_cant(prod_id, bodega_id)
+    prod = prodapi.count.search(prod_id=prod_id, bodega_id=bodega_id)
     if prod is None:
         response.status = 404
     return json_dumps(prod)
+
 
 @api.get('/api/bod/<bodega_id>/producto')
 @dbcontext
 @actionlogged
 def search_prod_cant(bodega_id):
-    prefix = request.query.prefijo
-    if prefix:
-        prod = list(prodapi.get_cant_prefix(prefix, bodega_id))
-        return json_dumps(prod)
-    response.status = 400
-    return None
+    prefix = get_property_or_fail(request.query, 'prefijo')
+    prod = list(prodapi.get_cant_prefix(prefix, bodega_id))
+    return json_dumps(prod)
 
 
 @api.put('/api/bod/<bodega_id>/producto/<prod_id:path>')
@@ -78,8 +77,6 @@ def search_prod():
     return None
 
 
-
-
 @api.put('/api/producto/<pid>')
 @dbcontext
 @auth_decorator
@@ -87,28 +84,6 @@ def search_prod():
 def crear_producto(pid):
     content = json_loads(request.body.read())
     prodapi.update_prod(pid, content)
-
-
-@api.put('/api/alm/<alm_id:int>/producto/<pid:path>')
-@dbcontext
-@auth_decorator
-@actionlogged
-def update_price(alm_id, pid):
-    content = json_loads(request.body.read())
-    if not content:
-        abort(400)
-    prodapi.update_or_create_price(alm_id, pid, content)
-
-
-@api.delete('/api/alm/<alm_id>/producto/<pid:path>')
-@dbcontext
-@auth_decorator
-@actionlogged
-def delete_price(alm_id, pid):
-    session = sessionmanager.session
-    count = session.query(NPriceList).filter_by(
-        almacen_id=alm_id, prod_id=pid).delete()
-    return {'deleted': count}
 
 
 @api.post('/api/comment')
@@ -126,3 +101,72 @@ def post_comment():
     sessionmanager.session.add(c)
     sessionmanager.session.commit()
     return {'comment': c.uid}
+
+
+@api.get('/api/nota')
+@dbcontext
+@actionlogged
+def get_invoice_by_date():
+    start = request.query.get('start_date')
+    end = request.query.get('end_date')
+    if start is None or end is None:
+        abort(400, 'invalid input')
+    datestrp = datetime.datetime.strptime
+    start_date = datestrp(start, "%Y-%m-%d")
+    end_date = datestrp(end, "%Y-%m-%d")
+    status = request.query.get('status')
+    result = invapi.search_metadata_by_date_range(start_date, end_date, status)
+    return json_dumps(list(result))
+
+
+# ################# INGRESO ###########################3
+@api.post('/api/ingreso')
+@dbcontext
+@auth_decorator
+@actionlogged
+def crear_ingreso():
+    json_content = request.body.read()
+    json_dict = json_loads(json_content)
+    ingreso = Transferencia.deserialize(json_dict)
+    ingreso = transapi.save(ingreso)
+    return {'codigo': ingreso.meta.uid}
+
+
+@api.put('/api/ingreso/<ingreso_id>')
+@dbcontext
+@auth_decorator
+@actionlogged
+def postear_ingreso(ingreso_id):
+    trans = transapi.get_doc(ingreso_id)
+    transapi.commit(trans)
+    return {'status': trans.meta.status}
+
+
+@api.delete('/api/ingreso/<ingreso_id>')
+@dbcontext
+@actionlogged
+def delete_ingreso(ingreso_id):
+    trans = transapi.get_doc(ingreso_id)
+    transapi.delete(trans)
+    return {'status': trans.meta.status}
+
+
+@api.get('/api/ingreso/<ingreso_id>')
+@dbcontext
+@actionlogged
+def get_ingreso(ingreso_id):
+    ing = transapi.get_doc(ingreso_id)
+    if ing is None:
+        abort(404, 'Ingreso No encontrada')
+        return
+    return json_dumps(ing.serialize())
+
+
+@api.put('/api/revision/<rid>')
+@dbcontext
+@auth_decorator
+@actionlogged
+def put_revision(rid):
+    if revisionapi.commit(rid):
+        return {'status': 'AJUSTADO'}
+    abort(404)

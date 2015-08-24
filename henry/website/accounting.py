@@ -4,10 +4,12 @@ from operator import attrgetter
 from bottle import request, Bottle, response
 import datetime
 
-from henry.dao import Status
+from henry.dao.document import Status
 from henry.website.reports import split_records
-from henry.schema.core import NUsuario
-from henry.config import sessionmanager, jinja_env, dbcontext, fix_id, prodapi, invapi
+from henry.schema.user import NUsuario
+from henry.coreconfig import (sessionmanager, dbcontext,
+                              invapi, storeapi)
+from henry.config import jinja_env, fix_id
 from .common import parse_start_end_date
 
 w = Bottle()
@@ -47,7 +49,7 @@ def group_by_customer(inv):
 @dbcontext
 def get_sells_xml_form():
     temp = jinja_env.get_template('accounting/ats_form.html')
-    stores = filter(lambda x: x.ruc, prodapi.get_stores())
+    stores = filter(lambda x: x.ruc, storeapi.search())
     return temp.render(stores=stores, title='ATS')
 
 
@@ -74,11 +76,10 @@ def get_sells_xml():
     meta.date = start_date
     meta.total = reduce(lambda acc, x: acc + x.subtotal, grouped.values(), 0)
     meta.almacen_ruc = ruc
-    meta.almacen_name = [x.nombre for x in prodapi.get_stores() if x.ruc == ruc][0]
+    meta.almacen_name = [x.nombre for x in storeapi.search() if x.ruc == ruc][0]
     temp = jinja_env.get_template('accounting/resumen_agrupado.html')
     if form_type == 'ats':
         temp = jinja_env.get_template('accounting/ats.xml')
         response.set_header('Content-disposition', 'attachment')
         response.set_header('Content-type', 'application/xml')
     return temp.render(vendidos=grouped, eliminados=deleted, meta=meta)
-

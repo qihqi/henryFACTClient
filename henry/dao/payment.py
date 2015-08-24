@@ -1,7 +1,8 @@
 from sqlalchemy import desc
-from .document import PaymentFormat
-from henry.schema.account import NBank, NDepositAccount, NPayment, NCheck, NDeposit
+from henry.schema.accounting import (NBank, NDepositAccount, NPayment,
+                                     NCheck, NDeposit)
 from henry.base.serialization import SerializableMixin
+from .order import PaymentFormat
 
 
 class Payment(SerializableMixin):

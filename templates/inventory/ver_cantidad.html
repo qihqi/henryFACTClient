@@ -30,12 +30,12 @@
             <th></th>
         </tr>
         {% for p in prods %}
-        <tr id="{{p.codigo}}">
-            <td>{{p.codigo}}</td>
+        <tr id="{{p.prod_id}}">
+            <td>{{p.prod_id}}</td>
             <td>{{p.nombre}}</td>
-            <td>{{ p.cantidad }}</td>
-            <td id="{{p.codigo}}-activo">{% if p.inactivo %} Inactivo {% else %} Activo {% endif %}</td>
-            <td><button class="toggle" bod="{{p.bodega_id}}" prod="{{p.codigo}}">Cambiar estado</button></td>
+            <td>{{ p.cant }}</td>
+            <td id="{{p.prod_id}}-activo">{% if p.inactivo %} Inactivo {% else %} Activo {% endif %}</td>
+            <td><button class="toggle" bod="{{p.bodega_id}}" prod="{{p.prod_id}}">Cambiar estado</button></td>
         </tr>
         {% endfor %}
     </table>
@@ -67,4 +67,3 @@
 </script>
 </body>
 </html>
-

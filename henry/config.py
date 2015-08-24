@@ -1,66 +1,52 @@
 import datetime
 import os
 
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
 from jinja2 import Environment, FileSystemLoader
-from henry.dao.client import Client
-from henry.dao.productos import PriceList
 
-from henry.dao import (DocumentApi, Transferencia, Invoice,
-                       ProductApiDB, PedidoApi, ClientApiDB,
-                       TransactionApi, InvApiOld, PaymentFormat)
-from henry.dao.actionlog import ActionLogApi, ActionLogApiDecor
 from henry.base.fileservice import FileService
-from henry.base.auth import AuthDecorator
 from henry.base.dbapi import DBApi
-from henry.base.session_manager import SessionManager, DBContext
-from henry.constants import (CONN_STRING, INGRESO_PATH, INVOICE_PATH, ENV,
-                             LOGIN_URL, TRANSACTION_PATH, PEDIDO_PATH, ACTION_LOG_PATH,
-                             BEAKER_DIR, EXTERNAL_URL, EXTERNAL_USER, EXTERNAL_PASS, INVOICE_MODE, IMAGE_PATH)
+from henry.constants import (
+    INGRESO_PATH, BEAKER_DIR,
+    EXTERNAL_URL, EXTERNAL_USER, EXTERNAL_PASS,
+    IMAGE_PATH)
+
 from henry.dao.payment import PaymentApi
-from henry.dao.productos import RevisionApi
+from henry.dao.productos import (
+    RevisionApi, ProdCount, Product, Bodega, Category, ProdApi)
+from henry.dao.document import DocumentApi
+from henry.dao.inventory import Transferencia
+from henry.dao.order import PaymentFormat
+
 from henry.misc import id_type, fix_id, abs_string, value_from_cents, get_total
 from henry.externalapi import ExternalApi
-import sys
-reload(sys)
-sys.setdefaultencoding('utf8')
+from henry.coreconfig import (sessionmanager, transactionapi, priceapi,
+                              storeapi)
 
-engine = create_engine(CONN_STRING, pool_recycle=3600)
-sessionfactory = sessionmaker(bind=engine)
-sessionmanager = SessionManager(sessionfactory)
-# this is a decorator
-dbcontext = DBContext(sessionmanager)
-
-transactionapi = TransactionApi(sessionmanager, FileService(TRANSACTION_PATH))
-prodapi = ProductApiDB(sessionmanager)
-pedidoapi = PedidoApi(sessionmanager, FileService(PEDIDO_PATH))
-
-clientapi = DBApi(sessionmanager, Client)
-priceapi = DBApi(sessionmanager, PriceList)
-
-revisionapi = RevisionApi(sessionmanager, prodapi, transactionapi)
+sm = sessionmanager
+countapi = DBApi(sessionmanager, ProdCount)
+revisionapi = RevisionApi(sessionmanager, countapi, transactionapi)
 paymentapi = PaymentApi(sessionmanager)
-
 imagefiles = FileService(IMAGE_PATH)
+transapi = DocumentApi(sessionmanager, FileService(INGRESO_PATH),
+                       transactionapi, object_cls=Transferencia)
+bodegaapi = DBApi(sessionmanager, Bodega)
+prodapi = ProdApi(sm, storeapi, bodegaapi,
+                  DBApi(sm, Product),
+                  DBApi(sm, ProdCount),
+                  priceapi, DBApi(sm, Category))
 
-transapi = DocumentApi(sessionmanager, FileService(INGRESO_PATH), transactionapi, object_cls=Transferencia)
-invapi = DocumentApi(sessionmanager, FileService(INVOICE_PATH), transactionapi, object_cls=Invoice)
+externaltransapi = ExternalApi(EXTERNAL_URL, 'ingreso',
+                               EXTERNAL_USER, EXTERNAL_PASS)
 
-invapi2 = InvApiOld(sessionmanager)
-externaltransapi = ExternalApi(EXTERNAL_URL, 'ingreso', EXTERNAL_USER, EXTERNAL_PASS)
-actionlogapi = ActionLogApi(ACTION_LOG_PATH)
-actionlogged = ActionLogApiDecor(actionlogapi)
 
 def my_finalize(x):
     return '' if x is None else x
-template_paths = ['./templates']
-jinja_env = Environment(loader=FileSystemLoader(template_paths), finalize=my_finalize)
 
-# for testing, make auth_decorator do nothing
-auth_decorator = lambda x: x
-if ENV == 'prod':
-    auth_decorator = AuthDecorator(LOGIN_URL, sessionmanager)
+
+template_paths = ['./templates']
+jinja_env = Environment(loader=FileSystemLoader(template_paths),
+                        finalize=my_finalize)
+
 
 def fix_path(x):
     return os.path.split(x)[1]
@@ -84,12 +70,14 @@ jinja_env.globals.update({
     'display_date': display_date,
 })
 
+
 BEAKER_SESSION_OPTS = {
     'session.type': 'file',
     'session.cookie_expires': False,
     'session.data_dir': BEAKER_DIR,
     'session.auto': True
 }
+
 
 BODEGAS_EXTERNAS = (
     ('POLICENTRO', externaltransapi, 1),  # nombre, api, numero de bodega
