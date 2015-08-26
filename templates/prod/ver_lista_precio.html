@@ -69,8 +69,8 @@
             <td><input class="big" id="{{loop.index}}-nombre" value="{{p.nombre}}" /></td>
             <td><input class="small" id="{{loop.index}}-precio1" value="{{value_from_cents(p.precio1)}}" /></td>
             <td><input class="small" id="{{loop.index}}-precio2" value="{{value_from_cents(p.precio2)}}" /></td>
-            <td><input class="small" id="{{loop.index}}-threshold" value="{{p.threshold}}" /></td>
-            <td><button num="{{loop.index}}" alm="{{p.almacen_id}}" codigo="{{p.codigo}}" class="guardar">Guardar</button></td>
+            <td><input class="small" id="{{loop.index}}-threshold" value="{{p.cant_mayorista}}" /></td>
+            <td><button num="{{loop.index}}" alm="{{p.almacen_id}}" codigo="{{p.prod_id}}" class="guardar">Guardar</button></td>
         </tr>
         {% endfor %}
     </table>

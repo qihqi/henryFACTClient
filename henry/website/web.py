@@ -67,6 +67,7 @@ def crear_cliente():
     cliente.cliente_desde = datetime.date.today()
     try:
         clientapi.create(cliente)
+        sessionmanager.session.commit()
     except ItemAlreadyExists:
         return crear_cliente_form('Cliente con codigo {} ya existe'.format(cliente.codigo))
     return crear_cliente_form('Cliente {} {} creado'.format(cliente.apellidos, cliente.nombres))

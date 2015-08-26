@@ -1,6 +1,6 @@
 <html>
     <head>
-        <title> Documento: {{inv.meta.uid}} </title>
+        <title>cid={{inv.meta.id}}</title>
         <style>
             body {
                 text-align : center;
@@ -18,7 +18,8 @@
     <body>
         <button onClick="window.print();" > Imprimir </button>
         <button onClick="window.location='/app';" > Regresar al principio </button>
-        <h4>Documento Duplicado Codigo: {{inv.meta.uid}} {% if inv.meta.status == 'ELIMINADO': %} ELIMINADO {% endif %}</h4>
+        <h4>Documento Duplicado Codigo: {{inv.meta.codigo}} {% if inv.meta.status == 'ELIMINADO': %} ELIMINADO {% endif %}</h4>
+        <h4>{{inv.meta.almancen_name}}</h4>
         <table align="center" width=600>
             <tr>
                 <th width=100>Fecha</th>

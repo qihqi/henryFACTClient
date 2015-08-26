@@ -18,7 +18,7 @@ import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
 
-engine = create_engine(CONN_STRING, pool_recycle=3600, echo=True)
+engine = create_engine(CONN_STRING, pool_recycle=3600, echo=False)
 sessionfactory = sessionmaker(bind=engine)
 sessionmanager = SessionManager(sessionfactory)
 # this is a decorator
