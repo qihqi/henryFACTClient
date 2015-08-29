@@ -1,6 +1,7 @@
 """ Miscellanous stuff"""
 
 import re
+from decimal import Decimal
 from henry.hack import fix_id_error
 
 
@@ -69,8 +70,7 @@ def validate_uid_and_ruc(uid):
 def value_from_cents(cents):
     if not cents:
         return '0.00'
-    cents = int(cents)
-    return '{}.{:02d}'.format(cents // 100, cents % 100)
+    return Decimal(cents) / 100
 
 
 def get_total(items):

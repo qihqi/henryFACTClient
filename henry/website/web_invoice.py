@@ -249,6 +249,7 @@ def post_crear_entrega_de_cuenta():
     gastos = request.forms.get('gastos', 0)
     deposito = request.forms.get('deposito', 0)
     turned_cash = request.forms.get('valor', 0)
+    diff = request.forms.get('diff', 0)
     date = request.forms.get('date')
 
     cash = int(float(cash) * 100)
@@ -256,6 +257,7 @@ def post_crear_entrega_de_cuenta():
     deposito = int(float(deposito) * 100)
     turned_cash = int(float(turned_cash) * 100)
     date = parse_iso(date).date()
+    diff = int(float(diff) * 100)
 
     userid = get_user(request)['username']
     if request.forms.get('submit') == 'Crear':
@@ -264,14 +266,14 @@ def post_crear_entrega_de_cuenta():
             total_spend=gastos,
             turned_cash=turned_cash,
             deposit=deposito,
-            diff=(cash - gastos - deposito - turned_cash),
             created_by=userid
         )
         sessionmanager.session.add(stat)
         sessionmanager.session.flush()
     else:
         sessionmanager.session.query(NAccountStat).filter_by(date=date).update(
-                {'revised_by': userid, 'turned_cash': turned_cash, 'deposit': deposito})
+            {'revised_by': userid, 'turned_cash': turned_cash,
+             'deposit': deposito, 'diff': diff})
     redirect('/app/crear_entrega_de_cuenta?fecha={}'.format(date.isoformat()))
 
 

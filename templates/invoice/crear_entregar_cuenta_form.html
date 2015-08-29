@@ -112,7 +112,7 @@
         {% set entrega_total = total_retension + total_spent + existing.deposit + existing.turned_cash %}
         <tr>
             <td>Gastos:</td> 
-            <td>{{value_from_cents(total_strent)}}</td>
+            <td>{{value_from_cents(total_spent)}}</td>
         </tr>
         <tr>
             <td>Retensiones:</td>
@@ -124,7 +124,7 @@
         </tr>
     </table>
     <p>{{value_from_cents(entrega_total)}} - {{ value_from_cents(total_cash) }} = {{ value_from_cents(entrega_total - total_cash) }}</p>
-
+    <input type="hidden" name="diff" value="{{value_from_cents(entrega_total - total_cash)}}" />
     <input id="Revisar" type="submit" name="submit" value="Revisar" />
     {% else %}
     <input type="submit" name="submit" value="Crear" />
