@@ -21,6 +21,7 @@
             <th>Estado</th>
             <th>Desde</th>
             <th>Hasta</th>
+            <th>Valor</th>
             <th></th>
         </tr>
         {% for t in trans %}
@@ -30,6 +31,7 @@
             <td>{{ t.status }}</td>
             <td>{{ bodega[t.origin] }}</td>
             <td>{{ bodega[t.dest] }}</td>
+            <td>{{ t.value }}</td>
             <td><a href="/app/ingreso/{{t.uid}}">Ver</a></td>
         </tr>
         {% endfor %}

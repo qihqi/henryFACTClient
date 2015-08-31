@@ -1,10 +1,10 @@
 import sys
 from datetime import date
 from henry.config import sessionmanager, prodapi
-from henry.schema.inventory import NContenido
 from henry.schema.legacy import NOrdenDespacho, NItemDespacho, NIngreso, NIngresoItem, NTransform
 from collections import defaultdict
 from decimal import Decimal
+from henry.schema.prod import NContenido
 
 child_price_map = {}
 parent_to_child_map = {}
@@ -79,7 +79,7 @@ def main():
     #for key, value in sale_per_week.items():
     #    print '{}\t{}\t{}'.format(key, value, ing_per_week[key])
     for key, value in sale_by_prod.items():
-        print '{}\t{}\t{}\t{}'.format(prodapi.get_producto(key).nombre, key, value, ing_by_prod[key])
+        print '{}\t{}\t{}\t{}'.format(prodapi.prod.get(key).nombre, key, value, ing_by_prod[key])
     print >>sys.stderr, sum(sale_per_week.values()), sum(ing_per_week.values())
     print >>sys.stderr, 'sale not found', len(sale_prod_not_found), sale_prod_not_found
     print >>sys.stderr, 'ing not found', len(ing_prod_not_found), ing_prod_not_found
