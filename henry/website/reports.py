@@ -1,10 +1,12 @@
 from collections import defaultdict
 from datetime import timedelta
 from operator import attrgetter
+from decimal import Decimal
+from henry.config import prodapi, transapi
 from henry.schema.inv import NNota
 from henry.schema.user import NCliente
 
-from henry.coreconfig import storeapi
+from henry.coreconfig import storeapi, invapi
 from henry.dao.order import InvMetadata
 from henry.dao.document import Status
 
@@ -72,7 +74,46 @@ def payment_report(session, start, end, store_id=None, user_id=None):
 
     def get_total(content):
         return reduce(lambda acc, x: acc + x.total, content, 0)
+
     report.total_by_payment = {
         key: get_total(value) for key, value in
         report.list_by_payment.items()}
     return report
+
+
+class InvRecord(object):
+    def __init__(self, thedate, thetype, value, status=None, comment=None):
+        self.date = thedate
+        self.type = thetype
+        self.value = value
+        self.status = status
+        self.comment = comment
+
+
+def bodega_reports(bodega_id, start, end):
+    alms = prodapi.store.search(bodega_id=bodega_id)
+    alms = set((x.almacen_id for x in alms))
+    sale = invapi.search_metadata_by_date_range(start, end)
+    sale = filter(lambda x: x.almacen_id in alms and x.status != Status.DELETED, sale)
+
+    sale_by_date = group_by_records(
+        source=sale,
+        classifier=lambda x: x.timestamp.date(),
+        valuegetter=lambda x: Decimal(x.subtotal - (x.discount if x.discount else 0)) / (-100)
+    )
+
+    records = []
+    records.extend((InvRecord(d, 'SALE', i, None) for d, i in sale_by_date.items()))
+
+    def addtrans(trans, thetype):
+        in_, out = (lambda x: x.dest == bodega_id), (lambda x: x.origin == bodega_id)
+        thefilter, m = ((in_, 1) if thetype == 'INGRESS' else (out, -1))
+        filtered = filter(thefilter, trans)
+        records.extend((InvRecord(i.timestamp.date(), thetype, m * i.value, i.status, i.uid)
+                        for i in filtered))
+
+    alltrans = list(transapi.search_metadata_by_date_range(start, end))
+    addtrans(alltrans, 'INGRESS')
+    addtrans(alltrans, 'EGRESS')
+    records.sort(key=attrgetter('date'), reverse=True)
+    return records

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+<form>
+    {% from "macros.html" import select_bodega, start_end_date_oneline %}
+    {{ select_bodega(bodegas) }} {{ start_end_date_oneline(start, end) }}
+    <input type="submit" />
+</form>
+<h4>Neto: {{records | sum(attribute='value') }}</h4>
+<h4>Invalue: {{invalue }}</h4>
+<h4>Outvalue: {{outvalue}}</h4>
+<table>
+    <tr>
+        <td>Fecha</td>
+        <td>Tipo</td>
+        <td>Entra</td>
+        <td>Sale</td>
+        <td>status</td>
+        <td>comment</td>
+    </tr>
+    {% for r in records %}
+    <tr>
+        <td>{{r.date}}</td>
+        <td>{{r.type}}</td>
+        <td>{% if r.value > 0 %} {{r.value }}{% endif %}</td>
+        <td>{% if r.value <= 0 %} {{r.value }}{% endif %}</td>
+        <td>{{r.status}}</td>
+        <td>{{r.comment}}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>

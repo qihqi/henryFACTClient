@@ -15,6 +15,7 @@ from henry.dao.productos import Bodega
 
 from henry.website.common import (
     parse_start_end_date_with_default, parse_start_end_date)
+from henry.website.reports import bodega_reports
 
 webadv = w = Bottle()
 
@@ -209,3 +210,23 @@ def ver_comentarios():
 
     temp = jinja_env.get_template('ver_comentarios.html')
     return temp.render(comentarios=comments, start=start, end=end)
+
+
+@w.get('/app/bodega_report')
+@dbcontext
+@auth_decorator
+def get_bodega_report():
+    today = datetime.date.today()
+    bodega_id = int(request.query.bodega_id or 1)
+    bodegas = list(prodapi.bodega.search())
+    start, end = parse_start_end_date_with_default(
+        request.query, today - datetime.timedelta(days=7), today)
+    records = bodega_reports(bodega_id, start, end)
+    invalue = sum((r.value for r in records if r.value > 0))
+    outvalue = sum((r.value for r in records if r.value < 0))
+    temp = jinja_env.get_template('bodega_report.html')
+    return temp.render(records=records, start=start, end=end,
+                       bodega_id=bodega_id, bodegas=bodegas, invalue=invalue,
+                       outvalue=outvalue)
+
+
