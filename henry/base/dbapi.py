@@ -95,6 +95,12 @@ class DBApi(object):
             self.objclass.primary_key == pkey).delete()
         return count
 
+    def getone(self, **kwargs):
+        result = self.search(**kwargs)
+        if not result:
+            return None
+        return result[0]
+
     def search(self, **kwargs):
         query = self.sm.session.query(self.objclass.db_class)
         for key, value in kwargs.items():

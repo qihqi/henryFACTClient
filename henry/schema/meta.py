@@ -20,3 +20,11 @@ class NComment(Base):
     comment = Column(String(200))
 
 Index('ix_comment_2', NComment.objtype, NComment.objid)
+
+
+class NImage(Base):
+    __tablename__ = 'images'
+    uid = Column(Integer, primary_key=True, autoincrement=True)
+    objtype = Column(String(20))
+    objid = Column(String(20))
+    path = Column(String(100))
