@@ -5,6 +5,7 @@ from sqlalchemy import desc
 
 from henry.schema.meta import ObjType, NComment
 from henry.schema.prod import NProducto, NContenido, NPriceList
+from henry.schema.inv import NNota
 from henry.coreconfig import (dbcontext, auth_decorator, priceapi, storeapi,
                               sessionmanager, invapi, actionlogged)
 from henry.config import transactionapi, jinja_env, bodegaapi, prodapi
@@ -184,7 +185,8 @@ def post_edit_note(uid):
     if values['payment_format'] not in PaymentFormat.names:
         return 'invalid payment format'
     for key in ('subtotal', 'total', 'tax', 'discount'):
-        values[key] = int(values[key])
+        if key in values:
+            values[key] = int(values[key])
     sessionmanager.session.query(NNota).filter_by(id=uid).update(
         values)
     redirect(request.url)
