@@ -14,7 +14,7 @@
     </tr>
     <tr>
         <th>Total:</th>
-        <td>{{value_from_cents(meta.total)}}</td>
+        <td>{{'%.2f' % value_from_cents(meta.total)}}</td>
     </tr>
 </table>
 
@@ -41,9 +41,9 @@
         <tr>
             <td>{{ fix_id(id) }}</td>
             <td>{{ detalle.count }}</td>
-            <td>{{ value_from_cents(detalle.subtotal)}}</td>
-            <td>{{ value_from_cents(detalle.iva) }}</td>
-            <td>{{ value_from_cents(detalle.total) }}</td>
+            <td>{{ '%.2f' % value_from_cents(detalle.subtotal)}}</td>
+            <td>{{ '%.2f' % value_from_cents(detalle.iva) }}</td>
+            <td>{{ '%.2f' % value_from_cents(detalle.total) }}</td>
         </tr>
     {% endfor %}
     </table>
@@ -60,9 +60,9 @@
         <tr>
             <td>{{venta.codigo}}</td>
             <td>{{venta.client.codigo}}</td>
-            <td>{{ value_from_cents(venta.subtotal)}}</td>
-            <td>{{ value_from_cents(venta.tax)}}</td>
-            <td>{{ value_from_cents(venta.total)}}</td>
+            <td>{{ '%.2f' % value_from_cents(venta.subtotal)}}</td>
+            <td>{{ '%.2f' % value_from_cents(venta.tax)}}</td>
+            <td>{{ '%.2f' % value_from_cents(venta.total)}}</td>
         </tr>
         {% endfor %}
     </table>
