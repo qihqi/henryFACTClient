@@ -8,7 +8,7 @@ from henry.schema.prod import NProducto, NContenido, NPriceList
 from henry.schema.inv import NNota
 from henry.coreconfig import (dbcontext, auth_decorator, priceapi, storeapi,
                               sessionmanager, invapi, actionlogged)
-from henry.config import transactionapi, jinja_env, bodegaapi, prodapi
+from henry.config import transactionapi, jinja_env, bodegaapi, prodapi, imgserver
 
 from henry.dao.document import Item
 from henry.dao.order import PaymentFormat
@@ -162,9 +162,9 @@ def ver_prod_advanced(pid):
     contenidos = list(session.query(NContenido).filter_by(prod_id=pid))
     pricelist = list(session.query(NPriceList).filter(
         NPriceList.prod_id.in_((pid, pid + '+', pid + '-'))))
-
+    images = imgserver.getimg('prod', pid)
     temp = jinja_env.get_template('adv_producto.html')
-    return temp.render(prod=prod, contenidos=contenidos, pricelist=pricelist)
+    return temp.render(prod=prod, contenidos=contenidos, pricelist=pricelist, images=images)
 
 
 @w.get('/app/edit_note/<uid>')

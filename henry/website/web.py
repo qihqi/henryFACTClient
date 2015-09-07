@@ -4,7 +4,7 @@ from henry import constants
 from henry.schema.user import NUsuario
 from henry.coreconfig import (dbcontext, storeapi, auth_decorator,
                               clientapi, sessionmanager, actionlogged)
-from henry.config import jinja_env
+from henry.config import jinja_env, imgserver
 from henry.constants import IMAGE_PATH
 from henry.dao.coredao import Client
 from henry.dao.exceptions import ItemAlreadyExists
@@ -112,3 +112,15 @@ def crear_cliente_form(message=None):
     temp = jinja_env.get_template('crear_cliente.html')
     return temp.render(client=None, message=message, action='/app/crear_cliente',
                        button_text='Crear')
+
+@w.post('/app/attachimg')
+@dbcontext
+@auth_decorator
+def post_img():
+    imgdata = request.files.get('img')
+    objtype = request.forms.get('objtype')
+    objid = request.forms.get('objid')
+    redirect_url = request.forms.get('redirect_url')
+    imgserver.saveimg(objtype, objid, imgdata)
+    redirect(redirect_url)
+

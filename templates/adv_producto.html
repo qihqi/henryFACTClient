@@ -49,5 +49,12 @@
             </tr>
             {% endfor %}
         </table>
+        <div>
+            {% for x in images %}
+            <img src="{{x.imgurl}}" height="100" width="100" />
+            {% endfor %}
+        </div>
+        {% from "macros.html" import post_img_form %}
+        {{ post_img_form('prod', prod.codigo, '/app/adv/producto/{}'.format(prod.codigo)) }}
     </body>
 </html>

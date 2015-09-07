@@ -2,6 +2,7 @@ import os
 import uuid
 from henry.base.dbapi import DBApi, dbmix
 from henry.schema.meta import NComment, NImage
+
 from PIL import Image as PilImage
 
 Comment = dbmix(NComment)
@@ -35,6 +36,6 @@ class ImageServer:
         img = Image(
             objtype=objtype, objid=objid,
             path=filename)
-        self.imgapi.save(img)
+        self.imgapi.create(img)
         return img
 

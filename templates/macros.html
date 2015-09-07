@@ -48,3 +48,14 @@ Hasta: <input name="end" value="{{end_value}}" />
 {% endfor %}
 {% endmacro %}
 
+
+{% macro post_img_form(objtype, objid, rurl) %}
+<form method="post" action="/app/attachimg" enctype="multipart/form-data">
+    <input type="hidden" name="objtype" value="{{objtype}}" />
+    <input type="hidden" name="objid" value="{{objid}}" />
+    <input type="hidden" name="redirect_url" value="{{rurl}}" />
+    <input type="file" name="img" />
+    <input type="submit" />
+</form>
+{% endmacro %}
+

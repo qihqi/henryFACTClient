@@ -9,6 +9,7 @@ from henry.constants import (
     INGRESO_PATH, BEAKER_DIR,
     EXTERNAL_URL, EXTERNAL_USER, EXTERNAL_PASS,
     IMAGE_PATH)
+from henry.dao.comments import ImageServer, Image
 
 from henry.dao.payment import PaymentApi
 from henry.dao.productos import (
@@ -38,6 +39,8 @@ itemgroupapi = DBApi(sessionmanager, ProdItemGroup)
 
 externaltransapi = ExternalApi(EXTERNAL_URL, 'ingreso',
                                EXTERNAL_USER, EXTERNAL_PASS)
+
+imgserver = ImageServer('/app/img', DBApi(sm, Image), imagefiles)
 
 
 def my_finalize(x):

@@ -8,6 +8,7 @@ class ObjType:
     INV = 'notas'
     TRANS = 'transfer'
     CHECK = 'cheque'
+    PROD = 'prod'
 
 
 class NComment(Base):
