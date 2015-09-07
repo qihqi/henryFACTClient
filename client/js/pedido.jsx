@@ -9,8 +9,11 @@ var SearchBar = React.createClass({
         alert('searching');
     },
     render: function() {
+        return (<div>
         <button onClick={this.search}>Buscar</button>
         <input placeholder="codigo" ref="codigo" />
+        </div>);
+
     }
 });
 
@@ -28,8 +31,8 @@ var ItemTable = React.createClass({
                 <td>{x.prod.nombre}</td>
                 <td>{x.cant}</td>
                 <td>{display(precio)}</td>
-                <td>{display(precio * x.cant}</td>
-            </td>);
+                <td>{display(precio * x.cant)}</td>
+            </tr>);
         });
         return (<table>
             <tr>
@@ -40,7 +43,7 @@ var ItemTable = React.createClass({
                 <th>Subtotal</th>
             </tr>
             {rows}
-        </table);
+        </table>);
     }
 });
 
@@ -78,8 +81,10 @@ var Pedido = React.createClass({
     },
     render: function() {
         return (
+            <div>
             <ClientBox client={this.state.client}/>
             <ItemTable items={this.state.items}/>
+            </div>
         );
     }
 });
