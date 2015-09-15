@@ -1,5 +1,6 @@
 package henry.ui;
 
+import henry.Helpers;
 import henry.api.FacturaInterface;
 import henry.model.BaseModel;
 import henry.model.Item;
@@ -10,12 +11,9 @@ import net.miginfocom.swing.MigLayout;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -61,24 +59,6 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         @Override
         public void  mouseClicked(MouseEvent e) {
             parent.setCurrent(ItemPanel.this);
-        }
-    }
-
-    //This class gives TextField ability to select all text
-    //when gain focus
-    private static class HighlightFocusListener extends FocusAdapter {
-        private JTextField text;
-        public HighlightFocusListener(JTextField t) {
-            text = t;
-        }
-        @Override
-        public void focusGained(FocusEvent e) {
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    text.selectAll();
-                }
-            });
         }
     }
 
@@ -187,11 +167,11 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         final JButton eraserow = new JButton();
         eraserow.setText("-");
         eraserow.addActionListener(new EraseRow());
-        codigo.addFocusListener(new HighlightFocusListener(codigo));
+        codigo.addFocusListener(new Helpers.HighlightFocusListener(codigo));
         codigo.addMouseListener(new ReFocusListener());
         codigo.addActionListener(new ProductoLoader());
 
-        cantidad.addFocusListener(new HighlightFocusListener(cantidad));
+        cantidad.addFocusListener(new Helpers.HighlightFocusListener(cantidad));
         cantidad.addMouseListener(new ReFocusListener());
         cantidad.addActionListener(new CantidadUpdater());
 

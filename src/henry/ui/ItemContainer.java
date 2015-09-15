@@ -1,5 +1,6 @@
 package henry.ui;
 
+import henry.Helpers;
 import henry.model.BaseModel;
 import henry.model.Documento;
 import henry.model.Item;
@@ -49,6 +50,7 @@ public class ItemContainer extends JPanel
 
     private JTextField valorBruto;
     private JTextField valorNeto;
+    private JTextField retension;
     private JLabel message;
 
     private Observable<Documento> documento;
@@ -62,6 +64,22 @@ public class ItemContainer extends JPanel
            int iva = Integer.parseInt(ivaPorciento.getText());
            documento.getRef().setIvaPorciento(iva);
            documento.notifyListeners();
+        }
+    }
+
+    private class RetensionUpdater implements ActionListener {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+
+            try {
+                int retensionValor = (int) (Double.parseDouble(retension.getText()) * 100);
+                documento.getRef().setRetension(retensionValor);
+                documento.notifyListeners();
+            }
+            catch (NumberFormatException exception){
+                setMessage("Ingrese un numero para retension");
+            }
         }
     }
 
@@ -123,7 +141,7 @@ public class ItemContainer extends JPanel
         JPanel totales = new JPanel();
 
         add(totales, BorderLayout.PAGE_END);
-        totales.setLayout(new MigLayout("", "[400][right][30][][100]","[][][][][]"));
+        totales.setLayout(new MigLayout("", "[400][right][30][][100]","[][][][][][]"));
 
         JLabel ivaLabel = new JLabel("IVA: ");
         JLabel totalLabel = new JLabel("Total: ");
@@ -131,6 +149,7 @@ public class ItemContainer extends JPanel
         JLabel netLabel = new JLabel("Valor Neto: ");
         JLabel descLabel = new JLabel("Descuento: ");
         JLabel subLabel = new JLabel("Valor Bruto: ");
+        JLabel retensionLabel = new JLabel("Retension: ");
 
 
 
@@ -139,6 +158,7 @@ public class ItemContainer extends JPanel
         ivaValor.setEditable(false);
 
         ivaPorciento.addActionListener(new IvaUpdater());
+        ivaPorciento.addFocusListener(new Helpers.HighlightFocusListener(ivaPorciento));
 
 
         message = new JLabel();
@@ -169,10 +189,16 @@ public class ItemContainer extends JPanel
         totales.add(porciento, "cell 3 3");
         totales.add(ivaValor, "cell 4 3,width :100:");
 
-        totales.add(totalLabel, "cell 1 4" );
+        totales.add(retensionLabel, "cell 1 4");
+        retension = new JTextField();
+        retension.addActionListener(new RetensionUpdater());
+        retension.addFocusListener(new Helpers.HighlightFocusListener(retension));
+        totales.add(retension, "cell 4 4, width :100:");
+
+        totales.add(totalLabel, "cell 1 5");
         totalValor = new JTextField();
         totalValor.setEditable(false);
-        totales.add(totalValor, "cell 4 4,width :100:");
+        totales.add(totalValor, "cell 4 5,width :100:");
     }
 
     public void scrollDown() {
@@ -252,6 +278,7 @@ public class ItemContainer extends JPanel
         valorNeto.setText("");
         ivaValor.setText("");
         totalValor.setText("");
+        retension.setText("");
         scrollUp();
     }
 

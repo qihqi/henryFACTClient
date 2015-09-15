@@ -3,9 +3,13 @@ package henry;
 /**
  * Created by han on 12/15/13.
  */
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.math.BigDecimal;
 import java.io.InputStream;
 import java.util.Scanner;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
 public class Helpers {
     /** Imprimir centavos como dolares en 2 decimales
@@ -43,5 +47,23 @@ public class Helpers {
     public static String streamToString(InputStream stream) {
         Scanner scanner = new Scanner(stream).useDelimiter("\\A");
         return scanner.hasNext() ? scanner.next() : null;
+    }
+
+    //This class gives TextField ability to select all text
+    //when gain focus
+    public static class HighlightFocusListener extends FocusAdapter {
+        private JTextField text;
+        public HighlightFocusListener(JTextField t) {
+            text = t;
+        }
+        @Override
+        public void focusGained(FocusEvent e) {
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    text.selectAll();
+                }
+            });
+        }
     }
 }

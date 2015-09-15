@@ -10,17 +10,18 @@ public class Documento {
     @Getter @Setter private Cliente cliente;
     @Getter private List<Item> items;
 
-    @Getter @Setter private int subtotal;
-    @Getter @Setter private int descuentoIndividual;
+    @Getter @Setter private int subtotal = 0;
+    @Getter @Setter private int descuentoIndividual = 0;
 
     @Getter @Setter private Usuario user;
 
     @Getter @Setter private int ivaPorciento = 12;
-    @Getter @Setter private int descuentoGlobalPorciento;
+    @Getter @Setter private int descuentoGlobalPorciento = 0;
 
     @Getter @Setter private String formaPago;
-    @Getter @Setter private int pagado;
-    @Getter @Setter private int cambio;
+    @Getter @Setter private int pagado = 0;
+    @Getter @Setter private int cambio = 0;
+    @Getter @Setter private int retension = 0;
 
     @Getter @Setter private int codigo;
 
@@ -47,6 +48,6 @@ public class Documento {
     }
 
     public int getTotal() {
-        return getTotalNeto() + getIva();
+        return getTotalNeto() + getIva() - getRetension();
     }
 }

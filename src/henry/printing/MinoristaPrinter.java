@@ -18,10 +18,6 @@ public class MinoristaPrinter extends GenericPrinter{
         super(config);
         double[] tamano = config.getImpression().getTamano();
         data = new char[(int) tamano[1]][(int) tamano[0]];
-        cleanData();
-    }
-
-    private void cleanData() {
         for (char[] x : data) {
             for (int i = 0; i < x.length; i++) {
                 x[i] = ' ';
@@ -30,15 +26,18 @@ public class MinoristaPrinter extends GenericPrinter{
     }
 
     private byte[] getBytesFromMatrix(char[][] data) {
-        StringBuilder buffer = new StringBuilder();
+        StringBuffer buffer = new StringBuffer();
         for (char[] x : data) {
             buffer.append(x).append('\n');
         }
-        return buffer.toString().getBytes();
+        String content = buffer.toString();
+        System.out.println(content);
+        return content.getBytes();
     }
 
     @Override
     public boolean printFactura(Documento documento) {
+        System.out.println("MinoristaPrinter::printFactura");
         setDocumento(documento);
         PrintService defaultprinter = PrintServiceLookup.lookupDefaultPrintService();
         DocPrintJob job = defaultprinter.createPrintJob();
@@ -51,7 +50,6 @@ public class MinoristaPrinter extends GenericPrinter{
         Doc doc = new SimpleDoc(b, flavour, null);
         try {
             job.print(doc, null);
-            cleanData();
             return true;
         } catch (PrintException e1) {
             e1.printStackTrace();
@@ -60,20 +58,15 @@ public class MinoristaPrinter extends GenericPrinter{
     }
 
     @Override
-    public void printContent(String content, double x, double y) {
+    public void printContent(String content, double x, double y, double maxLength) {
         int posx = (int) x;
         int posy = (int) y;
         if ( posy >= data.length) {
             posy = data.length - 1;
         }
-        if (posx < 0) {
-            posx = 0;
-        }
-        if (posy < 0) {
-            posy = 0;
-        }
-        int length = (content.length() + posx >= data[posy].length) ?
-                data[posy].length - posx - 1 : content.length();
+        int contentLength = content.length() > maxLength ? (int) maxLength : content.length();
+        int length = (contentLength + posx >= data[posy].length) ?
+                data[posy].length - posx - 1 : contentLength;
         System.arraycopy(content.toCharArray(), 0, data[posy], posx, length);
     }
 }

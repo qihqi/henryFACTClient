@@ -205,6 +205,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
         meta.addProperty("paid_amount", doc.getPagado());
         meta.addProperty("change", doc.getCambio());
         meta.addProperty("payment_format", doc.getFormaPago());
+        meta.addProperty("retension", doc.getRetension());
 
         JsonObject options = new JsonObject();
         options.addProperty("incrementar_codigo", true);
