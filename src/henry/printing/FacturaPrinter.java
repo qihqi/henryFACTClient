@@ -1,6 +1,15 @@
 package henry.printing;
 
+import static henry.Helpers.displayMilesimas;
+import static henry.Helpers.displayAsMoney;
+import henry.printing.Config.ImpressionConfig;
 import henry.model.Documento;
+import henry.model.Cliente;
+import henry.model.Item;
+import henry.model.Producto;
+
+import lombok.Setter;
+
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -10,6 +19,11 @@ import java.awt.print.Paper;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Date;
+import java.text.SimpleDateFormat;
 
 public class FacturaPrinter extends GenericPrinter implements Printable  {
 
@@ -71,11 +85,11 @@ public class FacturaPrinter extends GenericPrinter implements Printable  {
     }
 
     @Override
-    public void printContent(String content, double x, double y) {
+    public void printContent(String content, double x, double y, double maxLength) {
         g2d.drawString(content, (float) x, (float) y);
     }
 
-    private void setPaperSize(PrinterJob job) {
+    public void setPaperSize(PrinterJob job) {
         if (config.isFacturaBlanco()) {
             return;
         }
