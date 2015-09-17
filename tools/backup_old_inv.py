@@ -1,4 +1,4 @@
-from datetime import datetime, date, time
+
 from collections import defaultdict
 from datetime import date
 from henry.config import sessionmanager, invapi, prodapi
@@ -54,10 +54,6 @@ def main():
             if codigo < 0:
                 codigo = abs(codigo)
                 almacen_id = 3
-            existing = session.query(NNota).filter_by(almacen_id=almacen_id, codigo=codigo).first()
-            if existing is not None:
-                print 'codigo {} en bodega {} ya existe, pasando'.format(m.codigo, bodega_id)
-                continue
 
             store = prodapi.get_store_by_id(almacen_id)
             meta = InvMetadata(
