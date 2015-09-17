@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<iva>
+  <TipoIDInformante>R</TipoIDInformante>
+  <IdInformante>{{meta.almacen_ruc}}</IdInformante> <!-- RUC -->
+  <razonSocial>{{meta.almacen_name}}</razonSocial> <!-- nombre de la compania -->
+  <Anio>{{'%04d' % meta.date.year}}</Anio>
+  <Mes>{{'%02d' % meta.date.month}}</Mes>
+  <numEstabRuc>001</numEstabRuc>
+  <totalVentas>{{'%.2f' % value_from_cents(meta.total)}}</totalVentas>
+  <codigoOperativo>IVA</codigoOperativo>
+  <compras>
+  </compras>
+  <ventas>
+    {% for id, detalle in vendidos.items() %}
+    <detalleVentas>
+      <tpIdCliente>{{ id_type(id) }}</tpIdCliente> <!-- 05 = venta cedula, 04 = venta ruc, 07 = consumidor final--> 
+      <idCliente>{{ fix_id(id) }}</idCliente>
+      {% if id_type(id) in ['05', '04', '06'] %}<parteRelVtas>NO</parteRelVtas>{% endif %}
+      <tipoComprobante>18</tipoComprobante>
+      <numeroComprobantes>{{ detalle.count }}</numeroComprobantes>
+      <baseNoGraIva>0.00</baseNoGraIva>
+      <baseImponible>0.00</baseImponible>
+      <baseImpGrav>{{ '%.2f' % value_from_cents(detalle.subtotal)}}</baseImpGrav>
+      <montoIva>{{ '%.2f' % value_from_cents(detalle.iva) }}</montoIva>
+      <valorRetIva>0.00</valorRetIva>
+      <valorRetRenta>0.00</valorRetRenta>
+    </detalleVentas>
+    {% endfor %}
+  </ventas>
+  <ventasEstablecimiento>
+    <ventaEst>
+      <codEstab>001</codEstab>
+      <ventasEstab>{{'%.2f' % value_from_cents(meta.total)}}</ventasEstab>
+    </ventaEst>
+  </ventasEstablecimiento>
+
+  <anulados>
+    {% for venta in eliminados %}
+        <detalleAnulados>
+          <tipoComprobante>01</tipoComprobante>
+          <establecimiento>001</establecimiento>
+          <puntoEmision>001</puntoEmision>
+          <secuencialInicio>{{abs(venta.codigo)}}</secuencialInicio>
+          <secuencialFin>{{venta.codigo}}</secuencialFin>
+          <autorizacion>1111897538</autorizacion>
+        </detalleAnulados>
+    {% endfor %}
+  </anulados>
+</iva>
