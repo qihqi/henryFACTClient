@@ -1,5 +1,12 @@
 from sqlalchemy.inspection import inspect
 
+def decode_str(strobj):
+    try:
+        return strobj.decode('utf8')
+    except:
+        return strobj.decode('latin1')
+
+
 def mkgetter(obj):
     if hasattr(obj, 'get'):
         return obj.get
@@ -18,6 +25,8 @@ def fieldcopy(src, dest, fields):
     for f in fields:
         try:
             value = srcgetter(f)
+            if isinstance(value, str):
+                value = decode_str(value)
             destsetter(f, value)
         except:
             pass
