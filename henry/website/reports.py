@@ -5,6 +5,7 @@ from decimal import Decimal
 from henry.config import prodapi, transapi
 from henry.schema.inv import NNota
 from henry.schema.user import NCliente
+from henry.base.dbapi import decode_str
 
 from henry.coreconfig import storeapi, invapi
 from henry.dao.order import InvMetadata
@@ -17,8 +18,8 @@ def get_notas_with_clients(session, end_date, start_date,
 
     def decode_db_row_with_client(db_raw):
         m = InvMetadata.from_db_instance(db_raw[0])
-        m.client.nombres = db_raw.nombres
-        m.client.apellidos = db_raw.apellidos
+        m.client.nombres = decode_str(db_raw.nombres)
+        m.client.apellidos = decode_str(db_raw.apellidos)
         if not m.almacen_name:
             alm = storeapi.get(m.almacen_id)
             m.almacen_name = alm.nombre
