@@ -58,6 +58,13 @@
         {% endfor %}
 
     </table>
+    <div>
+        {% for i in pagos[client_id]%}
+        {% if i.uid in checkimgs %}
+        <img height="200" src="/app/img/{{checkimgs[i.uid]}}" />
+        {% endif %}
+        {% endfor %}
+    </div>
     {% endif %}
 {% endfor %}
 
@@ -144,5 +151,6 @@
         <input type="file" name="img"/> <input type="submit" />
     </form>
 </div>
+<hr/>
 
 {% endblock %}

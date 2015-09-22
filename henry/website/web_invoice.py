@@ -1,13 +1,14 @@
 import datetime
 from decimal import Decimal
 from operator import attrgetter
+import os
 
 from bottle import request, abort, redirect, response, Bottle
 
 from henry.base.auth import get_user
 
 from henry.schema.meta import NComment
-from henry.schema.accounting import NAccountStat, NPayment, NSpent
+from henry.schema.accounting import NAccountStat, NPayment, NSpent, NCheck
 from henry.schema.inv import NNota
 from henry.schema.user import NUsuario
 from henry.base.serialization import json_loads
@@ -221,6 +222,9 @@ def crear_entrega_de_cuenta():
     total_cash = sum(sale_by_store.values()) + other_cash
     payments = split_records(by_retension[False], attrgetter('client_id'))
     retension = by_retension[True]
+    check_ids = [x.uid for x in by_retension[False] if x.type == PaymentFormat.CHECK]
+    checks = sessionmanager.session.query(NCheck).filter(NCheck.payment_id.in_(check_ids))
+    checkimgs = {check.payment_id: os.path.split(check.imgcheck)[1] for check in checks if check.imgcheck}
 
     all_spent = list(sessionmanager.session.query(NSpent).filter(
         NSpent.inputdate >= date, NSpent.inputdate < date + datetime.timedelta(days=1)))
@@ -239,6 +243,7 @@ def crear_entrega_de_cuenta():
         retension=retension,
         other_cash=other_cash,
         imgs=all_img,
+        checkimgs=checkimgs,
         existing=existing)
 
 
