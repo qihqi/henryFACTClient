@@ -13,7 +13,7 @@ from henry.schema.user import NUsuario
 from henry.base.serialization import json_loads
 from henry.coreconfig import (dbcontext, auth_decorator, storeapi,
                               sessionmanager, actionlogged, invapi, pedidoapi)
-from henry.config import jinja_env
+from henry.config import jinja_env, imgserver
 from henry.dao.order import PaymentFormat, Invoice
 from henry.dao.document import Status
 from henry.website.reports import (get_notas_with_clients, split_records,
@@ -226,6 +226,7 @@ def crear_entrega_de_cuenta():
         NSpent.inputdate >= date, NSpent.inputdate < date + datetime.timedelta(days=1)))
     total_spent = sum((x.paid_from_cashier for x in all_spent))
     existing = sessionmanager.session.query(NAccountStat).filter_by(date=date).first()
+    all_img = list(imgserver.getimg(objtype='entrega_cuenta', objid=date.isoformat()))
     temp = jinja_env.get_template('invoice/crear_entregar_cuenta_form.html')
     return temp.render(
         cash=sale_by_store, others=noncash,
@@ -237,8 +238,8 @@ def crear_entrega_de_cuenta():
         total_spent=total_spent,
         retension=retension,
         other_cash=other_cash,
+        imgs=all_img,
         existing=existing)
-
 
 
 @w.post('/app/crear_entrega_de_cuenta')

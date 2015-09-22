@@ -132,4 +132,17 @@
     {% endif %}
 </form>
 
+<hr />
+<div>
+    {% for i in imgs %}
+        <img height="200" src="{{i.imgurl}}" />
+    {% endfor %}
+    <form method="post" action="/app/attachimg" enctype="multipart/form-data">
+        <input type="hidden" name="objtype" value="entrega_cuenta"/>
+        <input type="hidden" name="objid" value="{{date}}"/>
+        <input type="hidden" name="redirect_url" value="/app/crear_entrega_de_cuenta?fecha={{date}}"/>
+        <input type="file" name="img"/> <input type="submit" />
+    </form>
+</div>
+
 {% endblock %}
