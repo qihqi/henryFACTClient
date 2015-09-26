@@ -8,7 +8,7 @@ from henry.base.dbapi import DBApi
 from henry.constants import (
     INGRESO_PATH, BEAKER_DIR,
     EXTERNAL_URL, EXTERNAL_USER, EXTERNAL_PASS,
-    IMAGE_PATH)
+    IMAGE_PATH, EXTERNAL_AUTH_URL)
 from henry.dao.comments import ImageServer, Image
 
 from henry.dao.payment import PaymentApi
@@ -38,7 +38,8 @@ prodapi = ProdApi(sm, storeapi, bodegaapi,
 itemgroupapi = DBApi(sessionmanager, ProdItemGroup)
 
 externaltransapi = ExternalApi(EXTERNAL_URL, 'ingreso',
-                               EXTERNAL_USER, EXTERNAL_PASS)
+                               EXTERNAL_USER, EXTERNAL_PASS,
+                               EXTERNAL_AUTH_URL)
 
 imgserver = ImageServer('/app/img', DBApi(sm, Image), imagefiles)
 

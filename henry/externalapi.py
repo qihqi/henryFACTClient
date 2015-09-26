@@ -8,16 +8,18 @@ from henry.dao.exceptions import BaseServiceException
 
 
 class ExternalApi:
-    def __init__(self, root, path, user=None, password=None):
+    def __init__(self, root, path, user=None, password=None, auth_url=None):
         self.root = root
         self.path = path
         self.user = user
         self.password = password
         self.cookies = None
+        self.auth_url = auth_url
+        if not self.auth_url:
+            self.auth_url = urljoin(self.root, 'authenticate')
 
     def authenticate(self):
-        auth_url = urljoin(self.root, 'authenticate')
-        r = requests.post(auth_url, data={'username': self.user, 'password': self.password})
+        r = requests.post(self.auth_url, data={'username': self.user, 'password': self.password})
         self.cookies = r.cookies
 
     def execute_query_with_auth(self, func, url, data=None):

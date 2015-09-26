@@ -70,6 +70,11 @@ def crear_ingreso():
                        types=TransType.names)
 
 
+def remove_upi(items):
+    for i in items:
+        i.prod.upi = None
+
+
 @w.post('/app/crear_ingreso')
 @dbcontext
 @auth_decorator
@@ -87,6 +92,7 @@ def post_crear_ingreso():
             newmeta.dest = dest_id
             newmeta.origin = None
             newmeta.trans_type = TransType.INGRESS
+            remove_upi(items)
             t = api.save(Transferencia(newmeta, items))
             if t is None:
                 abort(400)
