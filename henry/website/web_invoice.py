@@ -140,6 +140,12 @@ def eliminar_factura():
         abort(400, 'escriba el motivo')
     user = get_user(request)
     db_instance = get_inv_db_instance(sessionmanager.session, almacen_id, codigo)
+    if db_instance is None:
+        alm = storeapi.get(almacen_id)
+        db_instance = sessionmanager.session.query(NNota).filter_by(
+            almacen_ruc=alm.ruc, codigo=codigo).first()
+    if db_instance is None:
+        return eliminar_factura_form('Factura no existe')
 
     comment = NComment(
         user_id=user['username'],
@@ -149,8 +155,6 @@ def eliminar_factura():
         objid=str(db_instance.id),
     )
     sessionmanager.session.add(comment)
-    if db_instance is None:
-        return eliminar_factura_form('Factura no existe')
     doc = invapi.get_doc_from_file(db_instance.items_location)
     doc.meta.status = db_instance.status
 
