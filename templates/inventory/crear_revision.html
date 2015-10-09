@@ -12,21 +12,21 @@
             state.meta = {};
             function prodToDom(row) {
                 var p = $("<tr>");
-                p.addClass('row-' + row.codigo);
+                p.addClass('row-' + row.prod_id);
                 var codigo_cell = $('<td class="content">');
                 var cant_cell = $('<td class="content">');
                 var nombre_cell = $('<td class="content">');
                 var borrar = $('<td class="content">');
                 var borrar_button = $('<button class="borrar">');
                 borrar_button.html('Borrar');
-                borrar_button.attr('codigo', row.codigo);
+                borrar_button.attr('codigo', row.prod_id);
                 borrar.append(borrar_button);
                 var codigo_input = $('<input name="prod_id">');
                 codigo_input.attr('readonly', true);
-                codigo_input.val(row.codigo);
+                codigo_input.val(row.prod_id);
                 codigo_cell.append(codigo_input);
                 nombre_cell.html(row.nombre);
-                cant_cell.html(row.cantidad);
+                cant_cell.html(row.cant);
                 p.append(codigo_cell);
                 p.append(nombre_cell);
                 p.append(cant_cell);
@@ -81,7 +81,7 @@
 
             function handleResult(result) {
                 $('#nombre').html(result.nombre);
-                $('#cantidad').html(result.cantidad);
+                $('#cantidad').html(result.cant);
                 var p = prodToDom(result);
                 state.current = null;
                 p.insertAfter('#header');

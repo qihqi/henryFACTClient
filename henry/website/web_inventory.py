@@ -150,8 +150,10 @@ def get_revision(rid):
     bodega_name = bodegaapi.get(meta.bodega_id).nombre
     items = []
     for y in meta.items:
-        item = prodapi.count.search(
-            prod_id=y.prod_id, bodega_id=meta.bodega_id)[0]
+        item = prodapi.count.getone(
+            prod_id=y.prod_id, bodega_id=meta.bodega_id)
+        name = prodapi.prod.getone(codigo=y.prod_id).nombre
+        item.nombre = name
         if y.inv_cant:
             item.cantidad = y.inv_cant
         if y.real_cant is not None:

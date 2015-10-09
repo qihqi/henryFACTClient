@@ -46,13 +46,13 @@
         </tr>
         {% for p in items %}
         <tr>
-            <td>{{ p.codigo }}</td>
+            <td>{{ p.prod_id }}</td>
             <td>{{ p.nombre}}</td>
-            <td>{{ p.cantidad}}</td>
+            <td>{{ p.cant}}</td>
 
             <td>
                 {% if meta.status == 'NUEVO' %}
-                <input name="prod-cant-{{p.codigo}}"/>
+                <input name="prod-cant-{{p.prod_id}}"/>
                 {% else %}
                 {{ p.contado}}
                 {% endif%}

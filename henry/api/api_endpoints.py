@@ -39,10 +39,13 @@ def get_prod(prod_id):
 @dbcontext
 @actionlogged
 def get_prod_cant(bodega_id, prod_id):
-    prod = prodapi.count.search(prod_id=prod_id, bodega_id=bodega_id)
-    if prod is None:
+    prod = list(prodapi.count.search(prod_id=prod_id, bodega_id=bodega_id))
+    if not prod:
         response.status = 404
-    return json_dumps(prod)
+    prod = prod[0]
+    prod_dict = prod.serialize()
+    prod_dict['nombre'] = prodapi.prod.getone(codigo=prod_id).nombre
+    return json_dumps(prod_dict)
 
 
 @api.get('/app/api/bod/<bodega_id>/producto')

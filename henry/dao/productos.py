@@ -125,9 +125,9 @@ class RevisionApi:
         if revision is None:
             return None
         for item in revision.items:
-            prod = self.countapi.search(prod_id=item.prod_id,
-                                        bodega_id=revision.bodega_id)[0]
-            item.inv_cant = prod.cantidad
+            prod = self.countapi.getone(prod_id=item.prod_id,
+                                        bodega_id=revision.bodega_id)
+            item.inv_cant = prod.cant
             item.real_cant = items_counts[item.prod_id]
 
         revision.status = self.CONTADO
