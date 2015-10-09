@@ -137,7 +137,7 @@ def sale_by_product():
     for inv, x in full_invoice_items(invapi, start, end):
         if inv.almacen_id != almacen.almacen_id:
             continue
-        obj = prods_sale[x.prod.codigo]
+        obj = prods_sale[x.prod.prod_id]
         obj.prod = x.prod
         if obj.cant:
             obj.cant += x.cant
