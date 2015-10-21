@@ -91,6 +91,8 @@ class DBApi(object):
     def get(self, pkey):
         db_instance = self.sm.session.query(self.objclass.db_class).filter(
             self.objclass.pkey == pkey).first()
+        if db_instance is None:
+            return None
         return self.objclass.from_db_instance(db_instance)
 
     def update(self, pkey, content_dict):

@@ -1,9 +1,11 @@
+import os
 from bottle import Bottle, request, redirect
 from sqlalchemy.exc import IntegrityError
+import barcode
 
 from henry.coreconfig import (dbcontext, auth_decorator,
                               storeapi, priceapi)
-from henry.config import jinja_env, prodapi
+from henry.config import jinja_env, prodapi, imagefiles
 from henry.dao.productos import Product
 from henry.website.common import convert_to_cent
 
@@ -99,3 +101,45 @@ def buscar_producto_result():
     prods = prodapi.prod.search(**{'nombre-prefix': prefix})
     temp = jinja_env.get_template('prod/buscar_producto_result.html')
     return temp.render(prods=prods)
+
+
+@w.get('/app/barcode_form')
+@dbcontext
+@auth_decorator
+def barcode_form():
+    msg = request.query.msg
+    temp = jinja_env.get_template('prod/barcode_form.html')
+    return temp.render(alms=prodapi.store.search(), msg=msg)
+
+
+@w.get('/app/barcode')
+@dbcontext
+@auth_decorator
+def get_barcode():
+    prod_id = request.query.get('prod_id')
+    almacen_id = request.query.get('almacen_id')
+    quantity = int(request.query.get('quantity', 1))
+
+    prod = priceapi.getone(prod_id=prod_id, almacen_id=almacen_id)
+
+    if quantity > 1000:
+        redirect('/app/barcode_form?msg=cantidad+muy+grande')
+
+    if not prod:
+        redirect('/app/barcode_form?msg=producto+no+existe')
+
+    encoded_string = '{:03d}{:09d}'.format(quantity, prod.pid)
+    bar = barcode.EAN13(encoded_string)
+    filename = bar.ean + '.svg'
+    path = imagefiles.make_fullpath(filename)
+    if not os.path.exists(path):
+        with open(path, 'w') as barcode_file:
+            bar.write(barcode_file)
+    url = '/app/img/{}'.format(filename)
+
+    column = 5
+    row = 9
+
+    temp = jinja_env.get_template('prod/barcode.html')
+    return temp.render(url=url, row=row, column=column, prodname=prod.nombre, price=prod.precio1)
+

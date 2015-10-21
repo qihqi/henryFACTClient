@@ -288,3 +288,15 @@ def post_authenticate():
             beaker.save()
             return data
         return {'status': False, 'message': 'Clave equivocada'}
+
+@api.get('/api/barcode/<bcode>')
+@dbcontext
+def get_barcoded_item(bcode):
+    cant = int(bcode[:3])
+    pid = int(bcode[3:-1])
+    price = priceapi.get(pid)
+    if price is None:
+        abort(404)
+    result = price.serialize()
+    result['cant'] = cant
+    return json_dumps(result)

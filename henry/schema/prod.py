@@ -90,3 +90,4 @@ class NProdTag(Base):
     uid = Column(Integer, primary_key=True, autoincrement=True)
     tag = Column(String(30), index=True)
     prod_id = Column(String(20), index=True)
+

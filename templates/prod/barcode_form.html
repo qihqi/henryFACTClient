@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% from "macros.html" import select_almacen %}
+{% block content %}
+<h2>{{msg}}</h2>
+<form action="/app/barcode" method="get">
+    <p>Codigo de Producto: <input name="prod_id"/></p>
+    <p>Almacen: {{ select_almacen(alms) }}</p>
+    <p>Cantidad por funda: <input name="quantity" value="1"/></p>
+    <p><input type="submit" /></p>
+</form>
+{% endblock %}

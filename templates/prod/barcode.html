@@ -1,0 +1,24 @@
+<html>
+<head>
+    <style>
+        p {
+            font-size: 10;
+        }
+    </style>
+</head>
+<body>
+<table>
+    {% for i in range(1) %}
+    <tr>
+        {% for j in range(column) %}
+        <td style="text-align:center;">
+            <p>{{prodname}}
+                <br/>${{value_from_cents(price)}}</p>
+            <img src="{{url}}"/>
+        </td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+</table>
+</body>
+</html>
