@@ -141,5 +141,5 @@ def get_barcode():
     row = 9
 
     temp = jinja_env.get_template('prod/barcode.html')
-    return temp.render(url=url, row=row, column=column, prodname=prod.nombre, price=prod.precio1)
+    return temp.render(url=url, row=row, column=column, prodname=prod.nombre, price=prod.precio1*quantity)
 

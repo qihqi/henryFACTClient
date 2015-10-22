@@ -20,6 +20,7 @@ def img(rest):
         return static_file(rest, root=IMAGE_PATH)
     else:
         response.set_header('X-Accel-Redirect', '/image/{}'.format(rest))
+        response.set_header('Content-Type', '')
 
 
 @w.get('/app')
