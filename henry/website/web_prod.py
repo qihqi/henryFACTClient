@@ -2,6 +2,7 @@ import os
 from bottle import Bottle, request, redirect
 from sqlalchemy.exc import IntegrityError
 import barcode
+from decimal import Decimal
 
 from henry.coreconfig import (dbcontext, auth_decorator,
                               storeapi, priceapi)
@@ -139,7 +140,8 @@ def get_barcode():
 
     column = 5
     row = 9
+    price = int(prod.precio1 * quantity * Decimal('1.12') + Decimal('0.5'))
 
     temp = jinja_env.get_template('prod/barcode.html')
-    return temp.render(url=url, row=row, column=column, prodname=prod.nombre, price=prod.precio1*quantity)
+    return temp.render(url=url, row=row, column=column, prodname=prod.nombre, price=price)
 
