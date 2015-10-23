@@ -18,11 +18,6 @@ public class MinoristaPrinter extends GenericPrinter{
         super(config);
         double[] tamano = config.getImpression().getTamano();
         data = new char[(int) tamano[1]][(int) tamano[0]];
-        for (char[] x : data) {
-            for (int i = 0; i < x.length; i++) {
-                x[i] = ' ';
-            }
-        }
     }
 
     private byte[] getBytesFromMatrix(char[][] data) {
@@ -38,6 +33,13 @@ public class MinoristaPrinter extends GenericPrinter{
     @Override
     public boolean printFactura(Documento documento) {
         System.out.println("MinoristaPrinter::printFactura");
+
+        // clean bytes before printing
+        for (char[] x : data) {
+            for (int i = 0; i < x.length; i++) {
+                x[i] = ' ';
+            }
+        }
         setDocumento(documento);
         PrintService defaultprinter = PrintServiceLookup.lookupDefaultPrintService();
         DocPrintJob job = defaultprinter.createPrintJob();

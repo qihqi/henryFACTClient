@@ -107,12 +107,12 @@ public abstract class GenericPrinter {
         for (int i = start; i < end; i++) {
             Item item = items.get(i);
             if (item!= null && item.getProducto() != null && item.getCantidad() > 0) {
-                for (int j = 1; j < 5; j++) {
+                for (int j = 0; j < 5; j++) {
                     double posx = x;
                     double maxLength = BIG;
                     if (j < 4) {
                         x += spacing[j];
-                        maxLength = spacing[j] - 2;
+                        maxLength = (spacing[j] - 2 < 0) ? 0 : spacing[j] - 2;
                     }
                     printContent(getItemValue(j, items.get(i)), posx, y, maxLength);
                 }
