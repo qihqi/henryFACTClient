@@ -4,6 +4,7 @@ import henry.model.Cliente;
 import henry.model.Documento;
 import henry.model.Producto;
 import henry.model.Usuario;
+import henry.model.Item;
 
 import java.util.List;
 
@@ -19,6 +20,8 @@ public interface FacturaInterface {
 
     Usuario authenticate(String username, String password);
     boolean commitDocument(int docId);
+
+    Item getItemFromBarcode(String barcode);
 
     class NotFoundException extends Exception {
         public NotFoundException(String message) {

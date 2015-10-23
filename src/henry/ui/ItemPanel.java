@@ -66,27 +66,30 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         @Override
         public void actionPerformed(ActionEvent e) {
             final String code = codigo.getText();
-            System.out.println("Started requesting");
-            Producto prod;
-            try {
-                prod = api.getProductoPorCodigo(code);
-            } catch (FacturaInterface.NotFoundException e1) {
-                codigo.requestFocus();
-                codigo.selectAll();
-                parent.setMessage("Codigo no existe");
+
+            // if code is barcode
+            // query barcode
+            // get item back
+            // set stuff, 
+            // next line
+            if (ItemPanel.this.isBarcode(code)) {
+                System.out.println("barcode");
+                ItemPanel.this.handleBarcodeEvent(code);
                 return;
-            }
-            System.out.println("Finished requesting");
-            if (prod != null) {
-                item.getRef().setProducto(prod);
-                item.notifyListeners();
-                if (item.getRef().getCantidad() > 0) {
-                    loadNextRow();
-                } else {
-                    cantidad.requestFocus();
-                }
             } else {
-                codigo.requestFocus();
+                System.out.println("Started requesting");
+                Producto prod;
+                try {
+                    prod = api.getProductoPorCodigo(code);
+                    if (prod != null) {
+                        item.getRef().setProducto(prod);
+                    }
+                } catch (FacturaInterface.NotFoundException e1) {
+                    loadingFailed();
+                }
+                item.notifyListeners();
+                loadNextRowIfComplete();
+                System.out.println("Finished requesting");
             }
         }
     }
@@ -94,23 +97,32 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
     private class CantidadUpdater implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
+            if (item.getRef().getProducto() == null) {
+                codigo.requestFocus();
+                return;
+            }
+
             String cantString = cantidad.getText();
             int cantReal;
-            try {
-                cantReal = (int) Math.round(Double.parseDouble(cantString) * 1000);
-            }
-            catch (NumberFormatException e1) {
-                parent.setMessage("Cantidad debe ser un numero");
-                return;
+            boolean barcode = false;
+            if (isBarcode(cantString)) {
+                barcode = true;
+                cantReal = 1000;
+            } else {
+                try {
+                    cantReal = (int) Math.round(Double.parseDouble(cantString) * 1000);
+                }
+                catch (NumberFormatException e1) {
+                    parent.setMessage("Cantidad debe ser un numero");
+                    return;
+                }
             }
             item.getRef().setCantidad(cantReal);
             item.notifyListeners();
-            if (item.getRef().getProducto() != null) {
-                // no point to notify listener now if product is not there yet
-                loadNextRow();
-            }
-            else {
-                codigo.requestFocus();
+            loadNextRowIfComplete();
+            
+            if (barcode) {
+                parent.getCurrent().handleBarcodeEvent(cantString);
             }
         }
     }
@@ -223,4 +235,41 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
         }
     }
 
+    private boolean isBarcode(String s) {
+        if (s.length() < 5) {
+            return false;
+        }
+        try {
+            Long.parseLong(s);
+            return true;
+        }
+        catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private void handleBarcodeEvent(String s) {
+        Item newItem = api.getItemFromBarcode(s);
+        if (newItem == null) {
+            loadingFailed();
+            return;
+        }
+        item.setRef(newItem);
+        item.notifyListeners();
+        loadNextRowIfComplete();
+    }
+
+    private void loadNextRowIfComplete() {
+        if (item.getRef().getProducto() != null && item.getRef().getCantidad() > 0) {
+            loadNextRow();
+        } else {
+            cantidad.requestFocus();
+        }
+    }
+
+    private void loadingFailed() {
+        codigo.requestFocus();
+        codigo.selectAll();
+        parent.setMessage("Codigo no existe");
+    }
 }

@@ -46,6 +46,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
     private static final String FACTURA_URL_PATH = "/api/nota";
     private static final String PROD_URL = "/api/alm/%d/producto/%s";
     private static final String LOGIN_URL = "/api/authenticate";
+    private static final String BARCODE_PATH = "/api/barcode";
 
     private CloseableHttpClient httpClient;
     private String baseUrl;
@@ -327,6 +328,24 @@ public class FacturaInterfaceRest implements FacturaInterface {
         return null;
     }
 
+    public Item getItemFromBarcode(String barcode) {
+        try {
+            URI uri = new URIBuilder().setScheme("http")
+                .setHost(baseUrl)
+                .setPath(BARCODE_PATH + "/" + barcode).build();
+            String content = getUrl(uri);
+            if (content == null) {
+                return null;
+            }
+            Item result = gson.fromJson(content, Item.class);
+            result.setCantidad(result.getCantidad() * 1000);
+            return result;
+        }
+        catch (URISyntaxException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
     private String getUrl(URI uri) {
         HttpGet req = new HttpGet(uri);

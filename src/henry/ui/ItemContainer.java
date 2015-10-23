@@ -26,6 +26,7 @@ import java.util.Map;
 import static henry.Helpers.displayAsMoney;
 @SuppressWarnings("serial")
 public class ItemContainer extends JPanel
+
         implements BaseModel.Listener, MessageDisplay {
 
     /** Tiene arreglo de itemPanel, representa los contenidos
@@ -251,6 +252,10 @@ public class ItemContainer extends JPanel
 
     public void setCurrent(ItemPanel item) {
         current = reverseItem.get(item);
+    }
+
+    public ItemPanel getCurrent() {
+        return items.get(current);
     }
 
     private void addItemPanel(Item item) {
