@@ -292,11 +292,21 @@ def post_authenticate():
 @api.get('/api/barcode/<bcode>')
 @dbcontext
 def get_barcoded_item(bcode):
-    cant = int(bcode[:3])
-    pid = int(bcode[3:-1])
+    bcode = str(int(bcode))
+    pos = 0
+    for i, x in enumerate(bcode):
+        if x == '0':
+            pos = i
+            break
+    cant = int(bcode[:pos])
+    pid = int(bcode[pos:-1])
+    print cant, pid
     price = priceapi.get(pid)
     if price is None:
-        abort(404)
-    result = price.serialize()
+        price = priceapi.get(bcode[pos:])
+        if price is None:
+            abort(404)
+    result = {}
+    result['prod'] = price
     result['cant'] = cant
     return json_dumps(result)
