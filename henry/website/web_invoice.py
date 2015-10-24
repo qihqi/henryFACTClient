@@ -206,7 +206,9 @@ def crear_entrega_de_cuenta():
     else:
         date = datetime.date.today()
 
-    all_sale = list(get_notas_with_clients(sessionmanager.session, date, date))
+    # I don't care those without almacen id for now
+    all_sale = list(filter(attrgetter('almacen_id'),
+                           get_notas_with_clients(sessionmanager.session, date, date)))
     split_by_status = split_records(all_sale, lambda x: x.status == Status.DELETED)
     deleted = split_by_status[True]
     other = split_by_status[False]
