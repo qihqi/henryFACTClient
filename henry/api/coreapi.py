@@ -300,13 +300,13 @@ def get_barcoded_item(bcode):
             break
     cant = int(bcode[:pos])
     pid = int(bcode[pos:-1])
-    print cant, pid
     price = priceapi.get(pid)
     if price is None:
         price = priceapi.get(bcode[pos:])
         if price is None:
             abort(404)
     result = {}
+    mult_thousand(price)
     result['prod'] = price
     result['cant'] = cant
     return json_dumps(result)
