@@ -1,11 +1,15 @@
-
 from collections import defaultdict
-from datetime import date
-from henry.config import sessionmanager, invapi, prodapi
-from henry.schema.inventory import NProducto
-from henry.schema.core import NNota, NCliente
+from datetime import date, datetime, time
+from henry.coreconfig import sessionmanager, invapi, clientapi
+from henry.config import prodapi
+from henry.schema.prod import NProducto
+from henry.schema.inv import NNota
+from henry.schema.user import NCliente
 from henry.schema.legacy import NOrdenDespacho, NItemDespacho
-from henry.dao import InvMetadata, Client, PaymentFormat, Item, Product, Invoice, Status
+from henry.dao.document import Item, Status
+from henry.dao.coredao import  Client
+from henry.dao.productos import Product
+from henry.dao.order import Invoice, InvMetadata, PaymentFormat
 
 
 def query_all_fully_joined(session, start, end, bodega_id):
@@ -31,22 +35,22 @@ def newpayformat(oldformat):
     }
     return format_dict[oldformat.upper()]
 
-def get_all_client(session):
+def get_all_client():
     cliente = {}
-    for x in session.query(Client):
+    for x in clientapi.search():
         cliente[x.codigo] = x
     return cliente
 
 def main():
     with sessionmanager as session:
 
-        all_client = get_all_client(session)
+        all_client = get_all_client()
         meta_item = defaultdict(list)
         bodega_id = 1
         tax_percent = 12
         for meta, item, prod in query_all_fully_joined(
                 session,
-                date(2015, 6, 1), date(2015, 7, 4), bodega_id):
+                date(2015, 6, 1), date(2015, 6, 30), bodega_id):
             meta_item[meta].append((item, prod))
         for m, i in meta_item.items():
             almacen_id = bodega_id
@@ -55,7 +59,7 @@ def main():
                 codigo = abs(codigo)
                 almacen_id = 3
 
-            store = prodapi.get_store_by_id(almacen_id)
+            store = prodapi.store.get(almacen_id)
             meta = InvMetadata(
                 almacen_id=almacen_id,
                 almacen_name=store.nombre,

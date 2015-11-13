@@ -8,7 +8,7 @@ from henry.schema.prod import NProducto, NContenido, NPriceList
 from henry.schema.inv import NNota
 from henry.coreconfig import (dbcontext, auth_decorator, priceapi, storeapi,
                               sessionmanager, invapi, actionlogged)
-from henry.config import transactionapi, jinja_env, bodegaapi, prodapi, imgserver
+from henry.config import transactionapi, jinja_env, bodegaapi, prodapi, imgserver, todoapi
 
 from henry.dao.document import Item
 from henry.dao.order import PaymentFormat
@@ -230,5 +230,15 @@ def get_bodega_report():
     return temp.render(records=records, start=start, end=end,
                        bodega_id=bodega_id, bodegas=bodegas, invalue=invalue,
                        outvalue=outvalue)
+
+
+@w.get('/app/todos')
+@dbcontext
+@auth_decorator
+def show_todos():
+    todos = todoapi.search(status='PENDING')
+    temp = jinja_env.get_template('todos.html')
+    return temp.render(todos=todos)
+
 
 

@@ -1,0 +1,28 @@
+<html>
+<body>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="/static/jquery.min.js"></script>
+<script>
+    function put_todo(rid) {
+        $.ajax({
+            url: '/app/api/todo/'+ rid,
+            method: 'PUT',
+            success: function() {
+                alert('success');
+            }
+        });
+    }
+</script>
+
+<table>
+{% for x in todos %}
+    <tr>
+        <td>{{ x.due_date }}</td>
+        <td>{{ x.status }}</td>
+        <td>{{ x.msg }}</td>
+        <td><button onclick="put_todo({{x.uid}});">Done</button> </td>
+    </tr>
+{% endfor %}
+</table>
+</body>
+</html>

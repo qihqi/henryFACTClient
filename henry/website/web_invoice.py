@@ -6,15 +6,16 @@ import os
 from bottle import request, abort, redirect, response, Bottle
 
 from henry.base.auth import get_user
+from henry.dao.comments import Todo
 
-from henry.schema.meta import NComment
+from henry.schema.meta import NComment, ObjType
 from henry.schema.accounting import NAccountStat, NPayment, NSpent, NCheck
 from henry.schema.inv import NNota
 from henry.schema.user import NUsuario
 from henry.base.serialization import json_loads
 from henry.coreconfig import (dbcontext, auth_decorator, storeapi,
                               sessionmanager, actionlogged, invapi, pedidoapi)
-from henry.config import jinja_env, imgserver
+from henry.config import jinja_env, imgserver, todoapi
 from henry.dao.order import PaymentFormat, Invoice
 from henry.dao.document import Status
 from henry.website.reports import (get_notas_with_clients, split_records,
@@ -286,6 +287,16 @@ def post_crear_entrega_de_cuenta():
         sessionmanager.session.query(NAccountStat).filter_by(date=date).update(
             {'revised_by': userid, 'turned_cash': turned_cash,
              'deposit': deposito, 'diff': diff})
+        now = datetime.datetime.now()
+        todo1 = Todo(objtype=ObjType.ACCOUNT, objid=date, status='PENDING',
+                     msg='Papeleta de deposito: ${}'.format(Decimal(deposito) / 100),
+                     creation_date=now, due_date=now)
+        todo2 = Todo(objtype=ObjType.ACCOUNT, objid=date, status='PENDING',
+                     msg='Papeleta de deposito: ${}'.format(Decimal(turned_cash) / 100),
+                     creation_date=now, due_date=now)
+        todoapi.create(todo1)
+        todoapi.create(todo2)
+
     redirect('/app/crear_entrega_de_cuenta?fecha={}'.format(date.isoformat()))
 
 

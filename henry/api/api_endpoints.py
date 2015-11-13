@@ -8,7 +8,7 @@ from henry.schema.prod import NContenido, NPriceList
 from henry.coreconfig import (dbcontext, invapi,
                           auth_decorator, sessionmanager,
                           actionlogged)
-from henry.config import prodapi, revisionapi, transapi
+from henry.config import prodapi, revisionapi, transapi, todoapi
 from henry.base.serialization import json_dumps, json_loads
 from henry.dao.inventory import Transferencia
 
@@ -174,3 +174,14 @@ def put_revision(rid):
     if revisionapi.commit(rid):
         return {'status': 'AJUSTADO'}
     abort(404)
+
+
+@api.put('/app/api/todo/<rid>')
+@dbcontext
+@auth_decorator
+@actionlogged
+def put_todo(rid):
+    count = todoapi.update(rid, {'status': 'RESOLVED'})
+    return {'modified': count}
+
+

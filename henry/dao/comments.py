@@ -1,12 +1,13 @@
 import os
 import uuid
 from henry.base.dbapi import DBApi, dbmix
-from henry.schema.meta import NComment, NImage
+from henry.schema.meta import NComment, NImage, NTodo
 
 from PIL import Image as PilImage
 
 Comment = dbmix(NComment)
 Image = dbmix(NImage)
+Todo = dbmix(NTodo)
 
 
 class ImageServer:
