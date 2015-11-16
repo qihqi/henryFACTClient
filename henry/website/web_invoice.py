@@ -289,10 +289,10 @@ def post_crear_entrega_de_cuenta():
              'deposit': deposito, 'diff': diff})
         now = datetime.datetime.now()
         todo1 = Todo(objtype=ObjType.ACCOUNT, objid=date, status='PENDING',
-                     msg='Papeleta de deposito: ${}'.format(Decimal(deposito) / 100),
+                     msg='Papeleta de deposito de {}: ${}'.format(date, Decimal(deposito) / 100),
                      creation_date=now, due_date=now)
         todo2 = Todo(objtype=ObjType.ACCOUNT, objid=date, status='PENDING',
-                     msg='Papeleta de deposito: ${}'.format(Decimal(turned_cash) / 100),
+                     msg='Papeleta de deposito de {}: ${}'.format(date, Decimal(turned_cash) / 100),
                      creation_date=now, due_date=now)
         todoapi.create(todo1)
         todoapi.create(todo2)
