@@ -47,4 +47,7 @@
 <div style="float:top;">
     <p>Nota: Numero de cedula SIN guion</p>
 </div>
+{% if client %}
+<a href="/app/client_stat/{{client.codigo}}"> Ver Actividades</a>
+{% endif %}
 {% endblock %}

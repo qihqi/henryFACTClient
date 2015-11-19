@@ -82,9 +82,10 @@ var Pedido = React.createClass({
     render: function() {
         return (
             <div>
-            <ClientBox client={this.state.client}/>
             <ItemTable items={this.state.items}/>
             </div>
         );
     }
 });
+
+module.exports.Pedido = Pedido;

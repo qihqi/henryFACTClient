@@ -119,7 +119,10 @@ def get_invoice_by_date():
     start_date = datestrp(start, "%Y-%m-%d")
     end_date = datestrp(end, "%Y-%m-%d")
     status = request.query.get('status')
-    result = invapi.search_metadata_by_date_range(start_date, end_date, status)
+    client = request.query.get('client')
+    other_filters = {'client_id', client} if client else None
+    result = invapi.search_metadata_by_date_range(
+        start_date, end_date, status, other_filters)
     return json_dumps(list(result))
 
 

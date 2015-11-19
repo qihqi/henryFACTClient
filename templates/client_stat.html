@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+<h3>{{ client.codigo }}</h3>
+<h3>{{ client.nombres }} {{ client.apellidos }}</h3>
+<h2> Solo Mostrando datos despues de 27 de Julio de 2015</h2>
+<p>Compra: {{ compra }} Pagado {{ pago}} Saldo {{compra - pago}}</p>
+<table>
+    <tr>
+        <th>Actividad</th>
+        <th>Codigo</th>
+        <th>Fecha</th>
+        <th>Pago</th>
+        <th>Compra</th>
+    </tr>
+    {% for r in activities %}
+    <tr>
+        <td>{{r[0]}}</td>
+        <td>
+            {% if r[0] == 'COMPRA' %}
+                <a href="/app/nota/{{r[1]}}">{{r[1]}}</a>
+            {% else %}
+                {{r[1]}}
+            {% endif %}
+        </td>
+        <td>{{r[2]}}</td>
+        <td>{{r[3]}}</td>
+        <td>{{r[4]}}</td>
+    </tr>
+    {% endfor %}
+</table>
+</body>
+</html>
