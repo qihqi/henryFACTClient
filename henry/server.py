@@ -4,7 +4,7 @@ import os
 from bottle import run, static_file, Bottle
 
 from henry.config import BEAKER_SESSION_OPTS
-from henry.constants import INVOICE_MODE
+from henry.constants import INVOICE_MODE, FORWARD_INV
 from henry.website import webmain
 
 app = webmain
@@ -33,6 +33,10 @@ def main():
         url = sys.argv[1]
         host, port = url.split(':')
         port = int(port)
+    if FORWARD_INV:
+        from henry.api import slave_api
+        slave_api.start_server()
+        slave_api.start_worker()
     run(app, host=host, debug=True, port=port)
     return 'http://localhost:8080'
 

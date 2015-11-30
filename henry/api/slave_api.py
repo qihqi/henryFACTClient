@@ -2,14 +2,18 @@ import zmq
 from multiprocessing import Process
 from bottle import Bottle, request, json_loads
 from henry.api.coreapi import InvoiceOptions
+from henry.base.serialization import json_dumps
 
-from henry.dao.order import Status, Invoice, InvMetadata
+from henry.dao.document import Status
+from henry.dao.order import Invoice, InvMetadata
 from henry.schema.inv import NPedidoTemporal
 from henry.coreconfig import (pedidoapi, sessionmanager,
                               dbcontext, auth_decorator, actionlogged)
 from henry.externalapi import ExternalApi
 
 api = Bottle()
+
+ZEROMQ_PORT = 1234
 
 
 class Command(object):
@@ -25,9 +29,9 @@ class Command(object):
 def do_work():
     context = zmq.Context()
     receiver = context.socket(zmq.SUB)
-    receiver.connect("tcp://localhost:1234")
+    receiver.connect('tcp://localhost:{}'.format(ZEROMQ_PORT))
     receiver.setsockopt(zmq.SUBSCRIBE, '')
-    externalapi = ExternalApi('http://45.55.88.99/api/', 'nota', 'yu', 'yu')
+    externalapi = ExternalApi('http://45.55.88.99:99/api/', 'nota', 'yu', 'yu')
     print 'worker ready'
 
     while True:
@@ -40,7 +44,9 @@ def do_work():
                 options.revisar_producto = False
                 options.crear_cliente = True
                 data['options'] = options
-                codigo = externalapi.save_data(data).json()['codigo']
+                del data.timestamp
+                serialized = json_dumps(data.serialize())
+                codigo = externalapi.save(serialized).json()['codigo']
                 with sessionmanager as session:
                     session.query(NPedidoTemporal).filter_by(
                         id=s.uid).update({
@@ -76,12 +82,7 @@ def start_server():
     return queue
 
 
-@api.post('/api/nota')
-@dbcontext
-@auth_decorator
-@actionlogged
-def post_inv():
-    json_content = request.body.read()
+def post_inv(json_content):
     uid, path = pedidoapi.save(json_content)
     command = Command(Command.SAVE, uid, path)
     workerqueue.send_pyobj(command)

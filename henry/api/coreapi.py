@@ -1,6 +1,7 @@
 from decimal import Decimal
 from bottle import Bottle, response, request, abort
 
+from henry.constants import FORWARD_INV
 from henry.bottlehelper import get_property_or_fail
 from henry.base.serialization import SerializableMixin
 from henry.base.auth import create_user_dict, get_user_info, authenticate
@@ -247,6 +248,9 @@ def create_invoice():
         user = inv.meta.user
         usuarioapi.update(user, {'last_factura': int(inv.meta.codigo) + 1})
     sessionmanager.session.commit()
+    if FORWARD_INV:
+        from .slave_api import post_inv
+        post_inv(json_content)
     return {'codigo': inv.meta.uid}
 
 
@@ -257,6 +261,9 @@ def create_invoice():
 def postear_invoice(uid):
     inv = invapi.get_doc(uid)
     invapi.commit(inv)
+    if FORWARD_INV:
+        from .slave_api import put_inv
+        put_inv(uid)
     return {'status': inv.meta.status}
 
 
@@ -268,6 +275,7 @@ def delete_invoice(uid):
     inv = invapi.get_doc(uid)
     invapi.delete(inv)
     return {'status': inv.meta.status}
+
 
 @api.post('/api/authenticate')
 def post_authenticate():
@@ -288,6 +296,7 @@ def post_authenticate():
             beaker.save()
             return data
         return {'status': False, 'message': 'Clave equivocada'}
+
 
 @api.get('/api/barcode/<bcode>')
 @dbcontext

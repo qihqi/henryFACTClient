@@ -3,6 +3,10 @@ POST /pedido
 
 GET /nota/<id>
 POST /nota
+    options:
+        increment codigo
+        update/create prod
+        update/create client
 PUT /nota/<id> #commit a nota
 DELETE /nota/<id>
 
