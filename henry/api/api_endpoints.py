@@ -1,8 +1,10 @@
+from operator import attrgetter
 from bottle import Bottle, response, request, abort
 import datetime
 from henry.base.auth import get_user
 
 from henry.bottlehelper import get_property_or_fail
+from henry.schema.inv import NNota
 from henry.schema.meta import NComment
 from henry.schema.prod import NContenido, NPriceList
 from henry.coreconfig import (dbcontext, invapi,
@@ -11,6 +13,8 @@ from henry.coreconfig import (dbcontext, invapi,
 from henry.config import prodapi, revisionapi, transapi, todoapi
 from henry.base.serialization import json_dumps, json_loads
 from henry.dao.inventory import Transferencia
+from henry.website.common import parse_start_end_date
+from henry.website.reports import group_by_records
 
 api = Bottle()
 
@@ -188,3 +192,32 @@ def put_todo(rid):
     return {'modified': count}
 
 
+@api.get('/app/api/sales')
+@dbcontext
+def get_sales():
+    ''' start=<start>&end=<end>&almacen_id=<>&almacen_ruc=<>&group_by=''
+    '''
+    start_date, end_date = parse_start_end_date(request.query)
+    if not end_date:
+        end_date = datetime.datetime.now()
+
+    alm_id = request.query.get('almacen_id', None)
+    alm_ruc = request.query.get('almacen_ruc', None)
+    group_by = request.query.get('group_by', None)
+    print group_by
+
+    filters = {}
+    if alm_id:
+        filters['almacen_id'] = alm_id
+    if alm_ruc:
+        filters['almacen_ruc'] = alm_ruc
+    items = invapi.search_metadata_by_date_range(start_date, end_date, other_filters=filters)
+    items = list(items)
+    total = sum(x.total for x in items)
+    iva = sum(x.tax or 0 for x in items)
+    count = len(items)
+    result = {'total': total, 'iva': iva, 'count': count}
+    if group_by:
+        subgroups = group_by_records(items, attrgetter(group_by), attrgetter('total'))
+        result['groups'] = subgroups
+    return result
