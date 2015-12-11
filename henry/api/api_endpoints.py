@@ -1,15 +1,15 @@
 from operator import attrgetter
-from bottle import Bottle, response, request, abort
 import datetime
-from henry.base.auth import get_user
 
+from bottle import Bottle, response, request, abort
+
+from henry.base.auth import get_user
 from henry.bottlehelper import get_property_or_fail
-from henry.schema.inv import NNota
 from henry.schema.meta import NComment
-from henry.schema.prod import NContenido, NPriceList
+from henry.schema.prod import NContenido
 from henry.coreconfig import (dbcontext, invapi,
-                          auth_decorator, sessionmanager,
-                          actionlogged)
+                              auth_decorator, sessionmanager,
+                              actionlogged)
 from henry.config import prodapi, revisionapi, transapi, todoapi
 from henry.base.serialization import json_dumps, json_loads
 from henry.dao.inventory import Transferencia
@@ -111,22 +111,22 @@ def post_comment():
     return {'comment': c.uid}
 
 
+
+
 @api.get('/app/api/nota')
 @dbcontext
 @actionlogged
 def get_invoice_by_date():
-    start = request.query.get('start_date')
-    end = request.query.get('end_date')
-    if start is None or end is None:
-        abort(400, 'invalid input')
-    datestrp = datetime.datetime.strptime
-    start_date = datestrp(start, "%Y-%m-%d")
-    end_date = datestrp(end, "%Y-%m-%d")
+    start, end = parse_start_end_date(
+        request.query, start_name='start_date', end_name='end_date')
     status = request.query.get('status')
-    client = request.query.get('client')
-    other_filters = {'client_id', client} if client else None
+    other_filters = {}
+    for x in ('client', 'almacen_id'):
+        t = request.query.get(x)
+        if t:
+            other_filters[x] = t
     result = invapi.search_metadata_by_date_range(
-        start_date, end_date, status, other_filters)
+        start, end, status, other_filters)
     return json_dumps(list(result))
 
 
@@ -173,6 +173,23 @@ def get_ingreso(ingreso_id):
     return json_dumps(ing.serialize())
 
 
+@api.get('/app/api/ingreso')
+@dbcontext
+@actionlogged
+def get_trans_by_date():
+    start, end = parse_start_end_date(
+        request.query, start_name='start_date', end_name='end_date')
+    status = request.query.get('status')
+    other_filters = {}
+    for x in ('origin', 'dest'):
+        t = request.query.get(x)
+        if t:
+            other_filters[x] = t
+    result = transapi.search_metadata_by_date_range(
+        start, end, status, other_filters)
+    return json_dumps(list(result))
+
+
 @api.put('/app/api/revision/<rid>')
 @dbcontext
 @auth_decorator
@@ -204,8 +221,6 @@ def get_sales():
     alm_id = request.query.get('almacen_id', None)
     alm_ruc = request.query.get('almacen_ruc', None)
     group_by = request.query.get('group_by', None)
-    print group_by
-
     filters = {}
     if alm_id:
         filters['almacen_id'] = alm_id
@@ -218,6 +233,10 @@ def get_sales():
     count = len(items)
     result = {'total': total, 'iva': iva, 'count': count}
     if group_by:
-        subgroups = group_by_records(items, attrgetter(group_by), attrgetter('total'))
+        if group_by == 'day':
+            group_func = lambda x: x.timestamp.date().isoformat()
+        else:
+            group_func = attrgetter(group_by)
+        subgroups = group_by_records(items, group_func, attrgetter('total'))
         result['groups'] = subgroups
     return result
