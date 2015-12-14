@@ -2,6 +2,7 @@ import datetime
 import os
 
 from jinja2 import Environment, FileSystemLoader
+from henry.analytics.report import ExportManager
 
 from henry.base.fileservice import FileService
 from henry.base.dbapi import DBApi
@@ -43,7 +44,6 @@ externaltransapi = ExternalApi(EXTERNAL_URL, 'ingreso',
 
 imgserver = ImageServer('/app/img', DBApi(sm, Image), imagefiles)
 todoapi = DBApi(sm, Todo)
-
 
 def my_finalize(x):
     return '' if x is None else x
