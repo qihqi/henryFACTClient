@@ -211,6 +211,11 @@ def fix_inv_by_options(inv, options):
     if alm is None:
         alm = get_store_by('almacen_id', inv.meta.almacen_id)
 
+    # FIXME huge hack!!
+    if alm is None:
+        if ruc.upper() == 'CORPESUT':
+            alm = storeapi.get(3)
+
     inv.meta.almacen_id = alm.almacen_id
     if options.no_alm_id:
         inv.meta.almacen_id = None
