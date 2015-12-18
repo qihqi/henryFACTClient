@@ -111,8 +111,6 @@ def post_comment():
     return {'comment': c.uid}
 
 
-
-
 @api.get('/app/api/nota')
 @dbcontext
 @actionlogged
@@ -212,8 +210,8 @@ def put_todo(rid):
 @api.get('/app/api/sales')
 @dbcontext
 def get_sales():
-    ''' start=<start>&end=<end>&almacen_id=<>&almacen_ruc=<>&group_by=''
-    '''
+    """ start=<start>&end=<end>&almacen_id=<>&almacen_ruc=<>&group_by=''
+    """
     start_date, end_date = parse_start_end_date(request.query)
     if not end_date:
         end_date = datetime.datetime.now()

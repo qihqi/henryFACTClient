@@ -15,7 +15,7 @@ URL = 'http://192.168.0.22'
 
 def main():
     parse_date = datetime.datetime.strptime
-    dump_date = (parse_date('%Y-%m-%D', sys.argv[1])
+    dump_date = (parse_date(sys.argv[1], '%Y-%m-%d')
                  if len(sys.argv) > 1 else datetime.date.today())
     export(dump_date, DIRECTORY, URL)
 

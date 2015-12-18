@@ -26,7 +26,7 @@ def all_daily_stats():
 
     result = {}
     for x in timerange(start, end):
-        if x.isoweekday() != '7':
+        if x.isoweekday() != 7:  # skips Sundays
             report = invmanager.get(x)
             if report is not None:
                 result[x.isoformat()] = (report.total_count, report.total_value, report.total_tax)

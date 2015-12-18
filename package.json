@@ -1,7 +1,0 @@
-{
-  "scripts": {
-    "build-dev":
-        "browserify -e client/js/*.jsx -t reactify -o static/scripts/bundle.js -d",
-    "build-min": "browserify -e client/js/*.jsx -t reactify -t uglifyify -o static/scripts/bundle.js"
-  }
-}

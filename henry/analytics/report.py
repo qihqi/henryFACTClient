@@ -8,6 +8,82 @@ from henry.dao.order import Invoice
 from .exporting import dump_content
 
 
+class SaleItem(object):
+
+    def __init__(self, item):
+        self.item = item
+
+    @property
+    def uid(self):
+        return self.item.prod.prod_id
+
+    @property
+    def price(self):
+        return self.item.prod.precio1
+
+    @property
+    def cant(self):
+        return self.item.cant
+
+
+class SaleTransaction(object):
+
+    def __init__(self, sale):
+        self.sale = sale
+
+    @property
+    def type(self):
+        return 'Invoice'
+
+    @property
+    def uid(self):
+        return self.sale.meta.uid
+
+    @property
+    def value(self):
+        return self.sale.meta.total - (self.sale.meta.tax or 0)
+
+    @property
+    def items(self):
+        return imap(SaleItem, self.sale.items)
+
+
+class TransItem(object):
+
+    def __init__(self, item):
+        self.item = item
+
+    @property
+    def uid(self):
+        return self.item.prod.prod_id
+
+    @property
+    def price(self):
+        return int(self.item.prod.base_price_usd * 100)
+
+    @property
+    def cant(self):
+        return self.item.cant
+
+
+class TransItem(object):
+
+    def __init__(self, trans):
+        self.trans = trans
+
+    def uid(self):
+        return self.trans.meta.uid
+
+    def value(self):
+        return int(self.trans.meta.value * 100)
+
+    def type(self):
+        return 'Transfer'
+
+    def items(self):
+        return imap(TransItem, self.trans.items)
+
+
 def get_type(prod_id):
     return prod_id
 
@@ -17,37 +93,28 @@ class DailyReport(object):
     def __init__(self, date, raw_inv):
         self._raw_inv = raw_inv
         self.date = date
-        self.by_client = defaultdict(Decimal)
-        self.by_client_count = defaultdict(int)
         self.by_type = defaultdict(Decimal)
         self.by_type_count = defaultdict(int)
         self.by_prod = defaultdict(Decimal)
         self.by_prod_count = defaultdict(int)
         self.total_value = 0
-        self.total_tax = 0
         self.total_count = 0
 
     def process(self):
-        self.by_client = defaultdict(int)
-        self.by_client_count = defaultdict(int)
         self.by_type = defaultdict(int)
         self.by_type_count = defaultdict(int)
         self.by_prod = defaultdict(int)
         self.by_prod_count = defaultdict(int)
         self.total_value = 0
-        self.total_tax = 0
         self.total_count = 0
         for inv in self._raw_inv:
-            self.by_client[inv.meta.client.codigo] += inv.meta.total
-            self.by_client_count[inv.meta.client.codigo] += 1
             for i in inv.items:
-                val = i.cant * i.prod.precio1 / 100
-                self.by_type[get_type(i.prod.prod_id)] += val
-                self.by_type_count[get_type(i.prod.prod_id)] += 1
-                self.by_prod[i.prod.prod_id] += val
-                self.by_prod_count[i.prod.prod_id] += 1
-            self.total_value += inv.meta.total
-            self.total_tax += inv.meta.tax or 0 
+                val = i.cant * i.price / 100
+                self.by_type[get_type(i.uid)] += val
+                self.by_type_count[get_type(i.uid)] += 1
+                self.by_prod[i.uid] += val
+                self.by_prod_count[i.uid] += 1
+            self.total_value += inv.value
             self.total_count += 1
 
 
@@ -90,10 +157,8 @@ if __name__ == '__main__':
             j = json_loads(line)
             return Invoice.deserialize(j)
         raw = imap(decode, f.xreadlines())
-        report = DailyReport(None, raw, None)
+        report = DailyReport(None, imap(SaleTransaction, raw))
         report.process()
-        for x, y in sorted(report.by_client.items(), key=itemgetter(1)):
-            print x,y
         for x, y in sorted(report.by_prod_count.items(), key=itemgetter(1)):
-            print x,y
+            print x, y
 

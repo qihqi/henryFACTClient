@@ -8,7 +8,7 @@ class NItemGroup(Base):
     '''What will replace NProducto'''
     __tablename__ = 'item_groups'
     uid = Column(Integer, primary_key=True, autoincrement=True)
-    prod_id = Column(String(20), index=True)
+    prod_id = Column(String(20), index=True, unique=True)
     name = Column(String(100))
     desc = Column(String(200))
     base_unit = Column(String(20))
