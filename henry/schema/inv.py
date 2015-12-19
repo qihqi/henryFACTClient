@@ -12,7 +12,7 @@ class NNota(Base):
 
     # this pair should be unique
     codigo = Column(String(20))
-    almacen_id = Column()
+    almacen_id = Column(Integer)
     almacen_name = Column(String(20))
     almacen_ruc = Column(String(20))
 

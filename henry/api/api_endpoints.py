@@ -6,7 +6,7 @@ from bottle import Bottle, response, request, abort
 from henry.base.auth import get_user
 from henry.bottlehelper import get_property_or_fail
 from henry.schema.meta import NComment
-from henry.schema.prod import NContenido
+from henry.product.schema import NContenido
 from henry.coreconfig import (dbcontext, invapi,
                               auth_decorator, sessionmanager,
                               actionlogged)

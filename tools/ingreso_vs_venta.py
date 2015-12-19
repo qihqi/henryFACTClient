@@ -1,10 +1,11 @@
 import sys
 from datetime import date
-from henry.config import sessionmanager, prodapi
-from henry.schema.legacy import NOrdenDespacho, NItemDespacho, NIngreso, NIngresoItem, NTransform
 from collections import defaultdict
 from decimal import Decimal
-from henry.schema.prod import NContenido
+
+from henry.config import sessionmanager, prodapi
+from henry.schema.legacy import NOrdenDespacho, NItemDespacho, NIngreso, NIngresoItem, NTransform
+from henry.product.schema import NContenido
 
 child_price_map = {}
 parent_to_child_map = {}

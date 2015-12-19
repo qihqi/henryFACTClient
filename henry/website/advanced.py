@@ -1,19 +1,18 @@
 from collections import defaultdict
 import datetime
+
 from bottle import Bottle, request, abort, redirect
 from sqlalchemy import desc
 
 from henry.schema.meta import ObjType, NComment
-from henry.schema.prod import NProducto, NContenido, NPriceList
+from henry.product.schema import NProducto, NContenido, NPriceList
 from henry.schema.inv import NNota
 from henry.coreconfig import (dbcontext, auth_decorator, priceapi, storeapi,
                               sessionmanager, invapi, actionlogged)
 from henry.config import transactionapi, jinja_env, bodegaapi, prodapi, imgserver, todoapi
-
 from henry.dao.document import Item
 from henry.dao.order import PaymentFormat
 from henry.dao.productos import Bodega
-
 from henry.website.common import (
     parse_start_end_date_with_default, parse_start_end_date)
 from henry.website.reports import bodega_reports

@@ -68,6 +68,20 @@ class NContenido(Base):
     inactivo = Column(Boolean)
 
 
+class NInventory(Base):
+    __tablename__ = 'inventory'
+    uid = Column(Integer, primary_key=True, autoincrement=True)
+    inv_id = Column(Integer)
+    item_id = Column(Integer)
+    quantity = Column(Numeric(12, 3))
+
+
+class NPriceListLabel(Base):
+    __tablename__ = 'price_list_labels'
+    uid = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(30))
+
+
 class NPriceList(Base):
     __tablename__ = 'lista_de_precios'
     pid = Column(Integer, primary_key=True, autoincrement=True)

@@ -3,10 +3,9 @@ from decimal import Decimal
 
 from henry.base.dbapi import dbmix
 from henry.schema.inventory import NInventoryRevision, NInventoryRevisionItem
-from henry.schema.prod import (NBodega, NProducto, NContenido, NCategory,
+from henry.product.schema import (NBodega, NProducto, NContenido, NCategory,
                                NPriceList, NItemGroup, NItem)
 from .coredao import Transaction
-
 
 Bodega = dbmix(NBodega)
 Product = dbmix(NProducto)

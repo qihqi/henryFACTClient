@@ -1,13 +1,11 @@
 from collections import defaultdict
 from datetime import date, datetime, time
+
 from henry.coreconfig import sessionmanager, invapi, clientapi
 from henry.config import prodapi
-from henry.schema.prod import NProducto
-from henry.schema.inv import NNota
-from henry.schema.user import NCliente
+from henry.product.schema import NProducto
 from henry.schema.legacy import NOrdenDespacho, NItemDespacho
 from henry.dao.document import Item, Status
-from henry.dao.coredao import  Client
 from henry.dao.productos import Product
 from henry.dao.order import Invoice, InvMetadata, PaymentFormat
 

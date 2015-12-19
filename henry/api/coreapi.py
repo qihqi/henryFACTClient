@@ -1,4 +1,5 @@
 from decimal import Decimal
+
 from bottle import Bottle, response, request, abort
 
 from henry.constants import FORWARD_INV
@@ -6,16 +7,13 @@ from henry.bottlehelper import get_property_or_fail
 from henry.base.serialization import SerializableMixin
 from henry.base.auth import create_user_dict, get_user_info, authenticate
 from henry.base.serialization import json_dumps, json_loads
-
 from henry.coreconfig import (dbcontext, clientapi, invapi,
                               auth_decorator, pedidoapi, sessionmanager,
                               actionlogged, priceapi, usuarioapi, storeapi)
-
 from henry.schema.inv import NNota
-from henry.schema.prod import NPriceList
+from henry.product.schema import NPriceList
 from henry.dao.coredao import Client
 from henry.dao.order import Invoice
-
 
 api = Bottle()
 

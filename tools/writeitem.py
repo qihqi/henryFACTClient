@@ -1,8 +1,10 @@
 import sys
 from decimal import Decimal
+
 from henry.coreconfig import sessionmanager
 from henry.config import prodapi
-from henry.schema.prod import NItemGroup
+from henry.product.schema import NItemGroup
+
 
 def decode(line):
     try:
