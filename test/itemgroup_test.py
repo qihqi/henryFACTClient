@@ -27,6 +27,19 @@ class ItemApiTest(unittest.TestCase):
         cls.itemapi = DBApi(cls.sessionmanager, ProdItem)
         cls.itemgroupapi = DBApi(cls.sessionmanager, ProdItemGroup)
 
+        # make bodega and almacen
+        bodegas = [
+            Bodega(id=1, nombre='Menorista'),
+            Bodega(id=2, nombre='Mayorista'),
+            ]
+        stores = [
+            Store(almacen_id=1, nombre="1", bodega_id=1),
+            Store(almacen_id=2, nombre="2", bodega_id=2)]
+        with cls.sessionmanager:
+            map(cls.bodegaapi.create, bodegas)
+            map(cls.storeapi.create, stores)
+
+
     def test_create_item(self):
         content = {
             "prod": {
@@ -63,9 +76,12 @@ class ItemApiTest(unittest.TestCase):
         with self.sessionmanager:
             create_full_item_from_dict(
                 self.itemgroupapi, self.itemapi, self.priceapi, self.storeapi, self.bodegaapi,
+                self.inventoryapi,
                 content)
-            self.sessionmanager.commit()
-            print json_dumps(self.priceapi.search())
+            self.sessionmanager.session.commit()
+            print 'price', json_dumps(self.priceapi.search())
+            print 'item', json_dumps(self.itemapi.search())
+            print 'itemgroup', json_dumps(self.itemgroupapi.search())
 
 
 if __name__ == '__main__':

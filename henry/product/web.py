@@ -5,7 +5,10 @@ from henry.website.common import convert_to_cent
 
 from .dao import Product, ProdItem, ProdItemGroup, PriceList, PriceListLabel, Inventory
 
-def create_full_item_from_dict(itemgroupapi, itemapi, priceapi, storeapi, bodegaapi, content):
+def create_full_item_from_dict(
+        itemgroupapi, itemapi, priceapi,
+        storeapi, bodegaapi, inventoryapi,
+        content):
     '''
         input format:
         {
@@ -179,6 +182,7 @@ def make_wsgi_api(sessionmanager, dbcontext, auth_decorator,
             priceapi=priceapi,
             storeapi=storeapi,
             bodegaapi=bodegaapi,
+            inventoryapi=inventoryapi,
             content=content
         )
         return {'status': 'success'}
