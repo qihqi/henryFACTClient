@@ -87,6 +87,11 @@ class DBApi(object):
     def create(self, obj):
         dbobj = obj.db_instance()
         self.sm.session.add(dbobj)
+        self.sm.session.flush()
+        pkey = self.objclass.pkey.name
+        pkeyval = getattr(dbobj, pkey)
+        setattr(obj, pkey, pkeyval)
+        return pkeyval
 
     def get(self, pkey):
         db_instance = self.sm.session.query(self.objclass.db_class).filter(

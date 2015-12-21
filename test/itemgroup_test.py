@@ -48,21 +48,49 @@ class ItemApiTest(unittest.TestCase):
                 'desc': '',
                 'base_unit': 'unidad',
             },
-            "items": [{
-                'unit': 'unidad',
-                'multiplier': 1,
-            }],
-            "prices": [
+            "items": [
                 {
                     'unit': 'unidad',
-                    'almacen_id': 1,
-                    'display_name': 'nombre display',
-                    'price1': 100,
-                    'price2': 100,
-                    'cant': 0
+                    'multiplier': 1,
+                    'prices': {
+                        "1": {
+                            'display_name': 'nombre display',
+                            'price1': 100,
+                            'price2': 100,
+                            'cant': 0
+                        },
+                        "2": {
+                            'display_name': 'nombre display',
+                            'price1': 100,
+                            'price2': 100,
+                            'cant': 0
+                        }
+                    },
                 },
                 {
-                    'unit': 'unidad',
+                    'unit': 'paquete',
+                    'multiplier': 100,
+                    'prices': {
+                        "1": {
+                            'display_name': 'nombre display',
+                            'price1': 100,
+                            'price2': 100,
+                            'cant': 0
+                        },
+                        "2": {
+                            'display_name': 'nombre display',
+                            'price1': 100,
+                            'price2': 100,
+                            'cant': 0
+                        }
+                    }
+                },
+
+            ],
+
+            "prices": [
+                {
+                    'unit': 'paquete',
                     'almacen_id': 2,
                     'display_name': 'nombre display almacen 2',
                     'price1': 100,
@@ -79,9 +107,19 @@ class ItemApiTest(unittest.TestCase):
                 self.inventoryapi,
                 content)
             self.sessionmanager.session.commit()
-            print 'price', json_dumps(self.priceapi.search())
-            print 'item', json_dumps(self.itemapi.search())
-            print 'itemgroup', json_dumps(self.itemgroupapi.search())
+
+            print json_dumps(self.priceapi.search())
+            self.assertEquals(4, len(self.priceapi.search()))
+            self.assertEquals(1, len(self.itemgroupapi.search()))
+            self.assertEquals(2, len(self.itemapi.search()))
+            self.assertEquals(4, len(self.inventoryapi.search()))
+
+            self.assertEquals(1, len(self.priceapi.search(upi=1)))
+
+            all_items = self.itemapi.search()
+            ids = set(x.itemgroupid for x in all_items)
+            self.assertEquals(1, len(ids))
+
 
 
 if __name__ == '__main__':

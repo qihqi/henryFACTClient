@@ -1,9 +1,15 @@
 import json
 from bottle import Bottle, request, redirect
 from sqlalchemy.exc import IntegrityError
-from henry.website.common import convert_to_cent
 
 from .dao import Product, ProdItem, ProdItemGroup, PriceList, PriceListLabel, Inventory
+
+
+def convert_to_cent(dec):
+    if not isinstance(dec, Decimal):
+        dec = Decimal(dec)
+    return int(dec * 100)
+
 
 def create_full_item_from_dict(
         itemgroupapi, itemapi, priceapi,
@@ -13,9 +19,14 @@ def create_full_item_from_dict(
         input format:
         {
             "prod" : {prod_id, name, desc, base_unit}< - information on item group
-            "items": [{multiplier}, {unit}<- information on items requires multiplier be distinct
-            "prices": [{unit, almacen_id, display_name, price1, price2, cant}]
-            "new_unit": []
+            "items": [multiplier, unit
+                "prices": {
+                   "display_name":
+                   "price1":
+                   "price2":
+                   "cant":
+                }, ...
+                ]<- information on items requires multiplier be distinct
         }
         must be called within dbcontext
     '''
@@ -26,7 +37,11 @@ def create_full_item_from_dict(
 
     items = {}
     inventories = {}
+    allstores = {x.almacen_id: x for x in storeapi.search()}
+
     for item in content['items']:
+        prices = item['prices']
+        del item['prices']
         i = ProdItem()
         i.merge_from(item)
         i.itemgroupid = itemgroupid
@@ -41,28 +56,28 @@ def create_full_item_from_dict(
         items[i.unit] = i
 
         # create bodega
+        invs = {}
         for bod in bodegaapi.search():
             inv = Inventory()
             inv.item_id = item_id
             inv.bodega_id = bod.id
             inv.cant = 0
             inv_id = inventoryapi.create(inv)
-            inventories[(item_id, bod.id)] = inv_id
+            invs[bod.id] = inv_id
 
-    allstores = {x.almacen_id: x for x in storeapi.search()}
-    for p in content['prices']:
-        price = PriceList()
-        price.nombre = p['display_name']
-        price.precio1 = p['price1']
-        price.precio2 = p['price2']
-        price.cant_mayorista = p['cant']
-        item = items[p['unit']]
-        price.prod_id = item.prod_id
-        price.unidad = item.unit
-        price.almacen_id = p['almacen_id']
-        bodid = allstores[price.almacen_id].bodega_id
-        price.upi = inventories[(item.uid, bodid)]
-        priceapi.create(price)
+        # create prices
+        for alm_id, p in prices.items():
+            price = PriceList()
+            price.nombre = p['display_name']
+            price.precio1 = p['price1']
+            price.precio2 = p['price2']
+            price.cant_mayorista = p['cant']
+            price.prod_id = i.prod_id
+            price.unidad = i.unit
+            price.almacen_id = int(alm_id)
+            bodid = allstores[price.almacen_id].bodega_id
+            price.upi = invs[bodid]
+            priceapi.create(price)
 
 
 def make_wsgi_app(dbcontext, auth_decorator,
@@ -186,5 +201,9 @@ def make_wsgi_api(sessionmanager, dbcontext, auth_decorator,
             content=content
         )
         return {'status': 'success'}
+
+    @app.get('/static/<rest:path>')
+    def static(rest):
+        return static_file(rest, root='./static/')
 
     return app
