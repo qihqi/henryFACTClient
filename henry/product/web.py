@@ -123,7 +123,7 @@ def make_wsgi_api(sessionmanager, dbcontext, auth_decorator,
 
     app = Bottle()
 
-    @app.post('/app/api/item_full')
+    @app.post('/prodapi/item_full')
     @dbcontext
     @auth_decorator
     def create_item_full():

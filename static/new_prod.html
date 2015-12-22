@@ -93,7 +93,7 @@
         console.log(JSON.stringify(result));
         var self = this;
         $.ajax({
-          url: '/app/api/item_full',
+          url: '/prodapi/item_full',
           data: JSON.stringify(result),
           method: 'POST',
           success: function(msg) {

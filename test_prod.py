@@ -1,6 +1,7 @@
+from beaker.middleware import SessionMiddleware
 from henry.base.dbapi import DBApi
 from henry.product.dao import ProdItemGroup, Inventory, ProdItem, Product, ProdCount
-from henry.product.web import make_wsgi_app, make_wsgi_api
+from henry.product.web import make_wsgi_api
 
 from henry.coreconfig import dbcontext, auth_decorator, storeapi, priceapi, sessionmanager
 from henry.config import bodegaapi, itemgroupapi, BEAKER_SESSION_OPTS
@@ -18,7 +19,7 @@ application = x = make_wsgi_api(
     priceapi=priceapi, bodegaapi=bodegaapi, itemapi=itemapi,
     itemgroupapi=itemgroupapi, inventoryapi=inventoryapi,
     contenidoapi=contenidoapi)
-application = SessionMiddleware(app, BEAKER_SESSION_OPTS)
+application = SessionMiddleware(application, BEAKER_SESSION_OPTS)
 
 if __name__ == '__main__':
     import bottle
