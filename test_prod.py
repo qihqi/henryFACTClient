@@ -23,4 +23,7 @@ application = SessionMiddleware(application, BEAKER_SESSION_OPTS)
 
 if __name__ == '__main__':
     import bottle
+    @x.get('/static/<rest:path>')
+    def static(rest):
+        return bottle.static_file(rest, root='./static/')
     bottle.run(x)
