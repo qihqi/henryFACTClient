@@ -28,6 +28,8 @@ def mult_thousand(prod):
 @dbcontext
 @actionlogged
 def searchprice(almacen_id):
+    if almacen_id == 3:
+        almacen_id = 1
     prefijo = get_property_or_fail(request.query, 'prefijo')
     print prefijo
     result = list(priceapi.search(**{
@@ -43,6 +45,8 @@ def searchprice(almacen_id):
 @dbcontext
 @actionlogged
 def get_price_by_id(almacen_id, prod_id):
+    if almacen_id == 3:
+        almacen_id = 1
     prod = list(priceapi.search(prod_id=prod_id, almacen_id=almacen_id))
     if not prod:
         abort(404)
@@ -59,6 +63,8 @@ def get_price_by_id(almacen_id, prod_id):
 @auth_decorator
 @actionlogged
 def update_price(alm_id, pid):
+    if alm_id == 3:
+        alm_id = 1
     content = json_loads(request.body.read())
     if not content:
         abort(400)
