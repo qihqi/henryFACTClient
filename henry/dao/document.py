@@ -155,7 +155,7 @@ class DocumentApi:
             self.db_class.timestamp <= end)
         if status is not None:
             query = query.filter_by(status=status)
-        if other_filters is not None:
+        if other_filters:
             query = query.filter_by(**other_filters)
         for r in query:
             meta = self.metadata_cls.from_db_instance(r)

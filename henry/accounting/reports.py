@@ -1,14 +1,19 @@
+import datetime
+import os
 from collections import defaultdict
 from datetime import timedelta
 from operator import attrgetter
 from decimal import Decimal
+
+from henry.accounting.acct_schema import NPayment, NCheck, NSpent
+from henry.base.serialization import SerializableMixin
 from henry.config import prodapi, transapi
 from henry.schema.inv import NNota
 from henry.schema.user import NCliente
 from henry.base.dbapi import decode_str
 
 from henry.coreconfig import storeapi, invapi
-from henry.dao.order import InvMetadata
+from henry.dao.order import InvMetadata, PaymentFormat
 from henry.dao.document import Status
 
 
@@ -40,6 +45,13 @@ def split_records(source, classifier):
     for s in source:
         result[classifier(s)].append(s)
     return result
+
+
+def split_records_binary(source, pred):
+    result = defaultdict(list)
+    for s in source:
+        result[bool(pred(s))].append(s)
+    return result[True], result[False]
 
 
 def group_by_records(source, classifier, valuegetter):
@@ -118,3 +130,56 @@ def bodega_reports(bodega_id, start, end):
     addtrans(alltrans, 'EGRESS')
     records.sort(key=attrgetter('date'), reverse=True)
     return records
+
+
+class DailyReport(SerializableMixin):
+
+    def __init__(self, cash, other_by_client,
+                 retension, spent, deleted_invoices, payments, checks, deleted, other_cash):
+        self.cash = cash
+        self.other_by_client = other_by_client
+        self.retension = retension
+        self.spent = spent
+        self.deleted_invoices = deleted_invoices
+        self.payments = payments
+        self.checks = checks
+        self.deleted = deleted
+        self.other_cash = other_cash
+
+
+def generate_daily_report(dbapi, day):
+    all_sale = list(filter(attrgetter('almacen_id'),
+                           get_notas_with_clients(dbapi.db_session, day, day)))
+
+    deleted, other = split_records_binary(all_sale, lambda x: x.status == Status.DELETED)
+    cashed, noncash = split_records_binary(other, lambda x: x.payment_format == PaymentFormat.CASH)
+    sale_by_store = group_by_records(cashed, attrgetter('almacen_name'), attrgetter('total'))
+
+    ids = [c.uid for c in all_sale]
+    cashids = {c.uid for c in cashed}
+    noncash = split_records(noncash, lambda x: x.client.codigo)
+    query = dbapi.db_session.query(NPayment).filter(NPayment.note_id.in_(ids))
+
+    # only retension for cash invoices need to be accounted separately.
+    by_retension = split_records(query, lambda x: x.type == 'retension' and x.note_id in cashids)
+    other_cash = sum((x.value for x in by_retension[False] if x.type == PaymentFormat.CASH))
+    total_cash = sum(sale_by_store.values()) + other_cash
+    payments = split_records(by_retension[False], attrgetter('client_id'))
+    retension = by_retension[True]
+    check_ids = [x.uid for x in by_retension[False] if x.type == PaymentFormat.CHECK]
+    checks = dbapi.db_session.query(NCheck).filter(NCheck.payment_id.in_(check_ids))
+    all_spent = list(dbapi.db_session.query(NSpent).filter(
+            NSpent.inputdate >= day, NSpent.inputdate < day + datetime.timedelta(days=1)))
+
+    return DailyReport(
+        cash=sale_by_store,
+        other_by_client=noncash,
+        retension=retension,
+        spent=all_spent,
+        deleted_invoices=deleted,
+        payments=payments,
+        checks=checks,
+        deleted=deleted,
+        other_cash=other_cash,
+    )
+

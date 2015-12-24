@@ -23,4 +23,9 @@ app = make_wsgi_app(dbcontext, imgserver,
 api = make_wsgi_api(dbapi=dbapi, dbcontext=dbcontext, paymentapi=paymentapi,
                     auth_decorator=auth_decorator, invapi=invapi)
 
-bottle.run(api)
+if __name__ == '__main__':
+    import bottle
+    @api.get('/static/<rest:path>')
+    def static(rest):
+        return bottle.static_file(rest, root='./static/')
+    bottle.run(app)

@@ -1,11 +1,12 @@
 module.exports = {
-  entry: [
-    './client/index.jsx'
-  ],
+  entry: {
+    prod: './client/index.jsx',
+    accounting: './client/accounting_index.jsx'
+  },
   output: {
     path: __dirname + '/static',
     publicPath: '/static',
-    filename: 'bundle.js'
+    filename: '[name]-bundle.js'
   },
   devServer: {
     contentBase: './dist'

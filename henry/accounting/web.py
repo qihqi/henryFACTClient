@@ -16,7 +16,7 @@ from henry.dao.document import Status
 from henry.dao.order import PaymentFormat
 
 from .acct_schema import ObjType, NComment
-from .reports import get_notas_with_clients, split_records, group_by_records
+from .reports import get_notas_with_clients, split_records, group_by_records, generate_daily_report
 from .acct_schema import NPayment, NCheck, NSpent, NAccountStat
 from .dao import Todo, Check, Deposit, Payment, Bank, DepositAccount, AccountStat, Spent
 
@@ -34,7 +34,6 @@ def extract_nota_and_client(dbapi, form, redirect_url):
     return None, None
 
 
-
 def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi):
     w = Bottle()
 
@@ -45,7 +44,8 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi):
         """
         start_date, end_date = parse_start_end_date(request.query)
         if not end_date:
-            end_date = datetime.datetime.now()
+            end_date = datetime.date.today()
+        end_date = end_date + datetime.timedelta(hours=23)
 
         alm_id = request.query.get('almacen_id', None)
         alm_ruc = request.query.get('almacen_ruc', None)
@@ -55,6 +55,7 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi):
             filters['almacen_id'] = alm_id
         if alm_ruc:
             filters['almacen_ruc'] = alm_ruc
+        print start_date, end_date
         items = invapi.search_metadata_by_date_range(start_date, end_date, other_filters=filters)
         items = list(items)
         total = sum(x.total for x in items)
@@ -87,6 +88,7 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi):
     return w
 
 
+
 def make_wsgi_app(dbcontext, imgserver,
                   dbapi, paymentapi, jinja_env, auth_decorator, imagefiles):
     w = Bottle()
@@ -107,50 +109,24 @@ def make_wsgi_app(dbcontext, imgserver,
             date = parse_iso(date).date()
         else:
             date = datetime.date.today()
-
-        # I don't care those without almacen id for now
-        all_sale = list(filter(attrgetter('almacen_id'),
-                               get_notas_with_clients(dbapi.db_session, date, date)))
-        split_by_status = split_records(all_sale, lambda x: x.status == Status.DELETED)
-        deleted = split_by_status[True]
-        other = split_by_status[False]
-        split_by_cash = split_records(other, lambda x: x.payment_format == PaymentFormat.CASH)
-        cashed = split_by_cash[True]
-        noncash = split_by_cash[False]
-        sale_by_store = group_by_records(cashed, attrgetter('almacen_name'), attrgetter('total'))
-
-        ids = [c.uid for c in all_sale]
-        cashids = {c.uid for c in cashed}
-        noncash = split_records(noncash, lambda x: x.client.codigo)
-        query = dbapi.db_session.query(NPayment).filter(NPayment.note_id.in_(ids))
-
-        # only retension for cash invoices need to be accounted separately.
-        by_retension = split_records(query, lambda x: x.type == 'retension' and x.note_id in cashids)
-        other_cash = sum((x.value for x in by_retension[False] if x.type == PaymentFormat.CASH))
-        total_cash = sum(sale_by_store.values()) + other_cash
-        payments = split_records(by_retension[False], attrgetter('client_id'))
-        retension = by_retension[True]
-        check_ids = [x.uid for x in by_retension[False] if x.type == PaymentFormat.CHECK]
-        checks = dbapi.db_session.query(NCheck).filter(NCheck.payment_id.in_(check_ids))
-        checkimgs = {check.payment_id: os.path.split(check.imgcheck)[1] for check in checks if check.imgcheck}
-
-        all_spent = list(dbapi.db_session.query(NSpent).filter(
-            NSpent.inputdate >= date, NSpent.inputdate < date + datetime.timedelta(days=1)))
-        total_spent = sum((x.paid_from_cashier for x in all_spent))
-
+        report = generate_daily_report(dbapi, date)
+        total_spent = sum((x.paid_from_cashier for x in report.spent))
+        checkimgs = {check.payment_id: os.path.split(check.imgcheck)[1]
+                     for check in report.checks if check.imgcheck}
         existing = dbapi.get(date, AccountStat)
         all_img = list(imgserver.getimg(objtype='entrega_cuenta', objid=date.isoformat()))
         temp = jinja_env.get_template('invoice/crear_entregar_cuenta_form.html')
+        total_cash = sum(report.cash.values()) + report.other_cash
         return temp.render(
-            cash=sale_by_store, others=noncash,
+            cash=report.cash, others=report.other_by_client,
             total_cash=total_cash,
-            deleted=deleted,
+            deleted=report.deleted,
             date=date.isoformat(),
-            pagos=payments,
-            all_spent=all_spent,
+            pagos=report.payments,
+            all_spent=report.spent,
             total_spent=total_spent,
-            retension=retension,
-            other_cash=other_cash,
+            retension=report.retension,
+            other_cash=report.other_cash,
             imgs=all_img,
             checkimgs=checkimgs,
             existing=existing)
