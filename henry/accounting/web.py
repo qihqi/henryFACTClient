@@ -8,6 +8,7 @@ from bottle import request, redirect, static_file, Bottle
 
 from henry.base.auth import get_user
 from henry.base.common import parse_iso, parse_start_end_date, parse_start_end_date_with_default
+from henry.base.serialization import json_dumps
 
 from henry.product.dao import Store
 from henry.schema.inv import NNota
@@ -17,7 +18,7 @@ from henry.dao.order import PaymentFormat
 from .acct_schema import ObjType, NComment
 from .reports import get_notas_with_clients, split_records, group_by_records
 from .acct_schema import NPayment, NCheck, NSpent, NAccountStat
-from .dao import Todo, Check, Deposit, Payment, Bank, DepositAccount, AccountStat
+from .dao import Todo, Check, Deposit, Payment, Bank, DepositAccount, AccountStat, Spent
 
 
 def extract_nota_and_client(dbapi, form, redirect_url):
@@ -33,7 +34,8 @@ def extract_nota_and_client(dbapi, form, redirect_url):
     return None, None
 
 
-def make_wsgi_api(invapi, dbcontext, auth_decorator):
+
+def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi):
     w = Bottle()
 
     @w.get('/app/api/sales')
@@ -67,6 +69,20 @@ def make_wsgi_api(invapi, dbcontext, auth_decorator):
             subgroups = group_by_records(items, group_func, attrgetter('total'))
             result['groups'] = subgroups
         return result
+
+    @w.get('/app/api/payment')
+    @dbcontext
+    def get_all_payments():
+        day = parse_iso(request.query.get('date'))
+        result = list(paymentapi.list_payments(day))
+        return json_dumps(result)
+
+    @w.get('/app/api/gasto')
+    @dbcontext
+    def get_all_gastos():
+        day = parse_iso(request.query.get('date'))
+        result = dbapi.search(Spent, inputdate=day)
+        return json_dumps(result)
 
     return w
 

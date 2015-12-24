@@ -6,7 +6,7 @@ from henry.base.serialization import SerializableMixin
 from henry.dao.order import PaymentFormat
 
 from .acct_schema import (NBank, NDepositAccount, NPayment, NCheck, NDeposit, NImage,
-                          NComment, NTodo, NAccountStat)
+                          NComment, NTodo, NAccountStat, NSpent)
 
 Todo = dbmix(NTodo)
 Comment = dbmix(NComment)
@@ -14,6 +14,7 @@ Image = dbmix(NImage)
 Bank = dbmix(NBank)
 DepositAccount = dbmix(NDepositAccount)
 AccountStat = dbmix(NAccountStat)
+Spent = dbmix(NSpent)
 
 
 class Payment(SerializableMixin):
@@ -135,6 +136,10 @@ class PaymentApi:
 
     def get_check(self, uid):
         return self._get_doc(uid, NCheck, Check)
+
+    def list_payments(self, day):
+        return map(Payment.deserialize,
+                   self.sm.session.query(NPayment).filter_by(date=day))
 
     def list_checks(self, paymentdate=None, checkdate=None):
         query = self.sm.session.query(NCheck).join(NPayment)
