@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from bottle import abort
 
+from henry.base.common import parse_iso
 from henry.config import itemgroupapi, prodapi
 from henry.dao.inventory import TransMetadata, TransType, TransItem
 from henry.dao.productos import ProdItemGroup
@@ -18,26 +19,6 @@ def get_base_price(prod_id):
     price = price[0]
     mult = price.multiplicador or 1
     return Decimal(price.precio1) / 100 / mult
-
-def parse_iso(date_string):
-    return datetime.datetime.strptime(date_string, '%Y-%m-%d')
-
-
-def parse_start_end_date(forms, start_name='start', end_name='end'):
-    start = forms.get(start_name, None)
-    end = forms.get(end_name, None)
-    try:
-        if start:
-            start = parse_iso(start)
-        else:
-            start = None
-        if end:
-            end = parse_iso(end)
-        else:
-            end = None
-    except:
-        abort(400, 'Fecha en formato equivocada')
-    return start, end
 
 
 def items_from_form(form):
@@ -95,20 +76,3 @@ def transmetadata_from_form(form):
     return meta
 
 
-def convert_to_cent(dec):
-    if not isinstance(dec, Decimal):
-        dec = Decimal(dec)
-    return int(dec * 100)
-
-
-def parse_start_end_date_with_default(form, start, end):
-    newstart, newend = parse_start_end_date(form)
-    if newend is None:
-        newend = end
-    if newstart is None:
-        newstart = start
-    if isinstance(newstart, datetime.datetime):
-        newstart = newstart.date()
-    if isinstance(newend, datetime.datetime):
-        newend = newend.date()
-    return newstart, newend

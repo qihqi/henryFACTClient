@@ -5,7 +5,7 @@ from henry.coreconfig import invapi, clientapi
 from henry.coreconfig import sessionmanager
 from henry.dao.document import Status
 from henry.dao.order import PaymentFormat
-from henry.schema.accounting import NPayment
+from henry.accounting.acct_schema import NPayment
 from henry.schema.inv import NNota
 
 all_compra = defaultdict(list)

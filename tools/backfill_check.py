@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from henry.config import sessionmanager, paymentapi
-from henry.dao.payment import *
+from henry.accounting.dao import *
 from henry.schema.account import NBank, NDepositAccount, NCheckOld, NCheck
 
 oldcon = 'mysql+mysqldb://henry:no jodas@192.168.0.22/contabilidad'

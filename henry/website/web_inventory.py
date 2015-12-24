@@ -12,7 +12,8 @@ from henry.config import (jinja_env, prodapi,
 from henry.dao.inventory import TransType, TransMetadata, Transferencia
 from henry.dao.productos import Bodega
 from henry.website.common import (
-    items_from_form, transmetadata_from_form, parse_start_end_date)
+    items_from_form, transmetadata_from_form)
+from henry.base.common import parse_start_end_date
 from henry.schema.inventory import NInventoryRevision
 from henry.schema.user import NUsuario
 

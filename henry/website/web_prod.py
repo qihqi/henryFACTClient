@@ -8,7 +8,7 @@ from henry.coreconfig import (dbcontext, auth_decorator,
                               storeapi, priceapi)
 from henry.config import jinja_env, prodapi, imagefiles
 from henry.dao.productos import Product
-from henry.website.common import convert_to_cent
+from henry.base.common import convert_to_cent
 
 __author__ = 'han'
 

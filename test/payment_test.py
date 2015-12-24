@@ -6,8 +6,7 @@ from sqlalchemy.orm import sessionmaker
 
 from henry.schema.base import Base
 from henry.base.fileservice import FileService
-from henry.base.serialization import parse_iso_date
-from henry.dao.payment import PaymentApi, Check
+from henry.accounting.dao import PaymentApi, Check
 from henry.dao import (DocumentApi, Invoice,
                        TransactionApi)
 from henry.base.session_manager import SessionManager

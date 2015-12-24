@@ -3,7 +3,7 @@ import datetime
 import bottle
 from henry.base.serialization import json_dumps
 from henry.analytics.report import ExportManager
-from henry.website.common import parse_start_end_date
+from henry.base.common import parse_start_end_date
 
 app = Bottle()
 BASEDIR = '/var/data/exports'

@@ -1,26 +1,21 @@
 import datetime
 from decimal import Decimal
-from operator import attrgetter
-import os
 
 from bottle import request, abort, redirect, response, Bottle
 
 from henry.base.auth import get_user
-from henry.dao.comments import Todo
-
-from henry.schema.meta import NComment, ObjType
-from henry.schema.accounting import NAccountStat, NPayment, NSpent, NCheck
+from henry.accounting.acct_schema import NComment
 from henry.schema.inv import NNota
 from henry.schema.user import NUsuario
 from henry.base.serialization import json_loads
 from henry.coreconfig import (dbcontext, auth_decorator, storeapi,
                               sessionmanager, actionlogged, invapi, pedidoapi)
-from henry.config import jinja_env, imgserver, todoapi
-from henry.dao.order import PaymentFormat, Invoice
+from henry.config import jinja_env
+from henry.dao.order import Invoice
 from henry.dao.document import Status
-from henry.website.reports import (get_notas_with_clients, split_records,
-                                   group_by_records, payment_report)
-from henry.website.common import parse_start_end_date, parse_iso
+from henry.accounting.reports import (get_notas_with_clients, split_records,
+                                   payment_report)
+from henry.base.common import parse_start_end_date
 
 webinvoice = w = Bottle()
 
@@ -187,133 +182,6 @@ def ver_factura():
     if db_instance is None:
         return get_nota_form('Factura no existe')
     redirect('/app/nota/{}'.format(db_instance.id))
-
-
-@w.get('/app/entregar_cuenta_form')
-@dbcontext
-@auth_decorator
-def entrega_de_cuenta():
-    temp = jinja_env.get_template('invoice/entregar_cuenta_form.html')
-    return temp.render()
-
-
-@w.get('/app/crear_entrega_de_cuenta')
-@dbcontext
-@auth_decorator
-def crear_entrega_de_cuenta():
-    date = request.query.get('fecha')
-    if date:
-        date = parse_iso(date).date()
-    else:
-        date = datetime.date.today()
-
-    # I don't care those without almacen id for now
-    all_sale = list(filter(attrgetter('almacen_id'),
-                           get_notas_with_clients(sessionmanager.session, date, date)))
-    split_by_status = split_records(all_sale, lambda x: x.status == Status.DELETED)
-    deleted = split_by_status[True]
-    other = split_by_status[False]
-    split_by_cash = split_records(other, lambda x: x.payment_format == PaymentFormat.CASH)
-    cashed = split_by_cash[True]
-    noncash = split_by_cash[False]
-    sale_by_store = group_by_records(cashed, attrgetter('almacen_name'), attrgetter('total'))
-
-    ids = [c.uid for c in all_sale]
-    cashids = {c.uid for c in cashed}
-    noncash = split_records(noncash, lambda x: x.client.codigo)
-    query = sessionmanager.session.query(NPayment).filter(NPayment.note_id.in_(ids))
-
-    # only retension for cash invoices need to be accounted separately.
-    by_retension = split_records(query, lambda x: x.type == 'retension' and x.note_id in cashids)
-    other_cash = sum((x.value for x in by_retension[False] if x.type == PaymentFormat.CASH))
-    total_cash = sum(sale_by_store.values()) + other_cash
-    payments = split_records(by_retension[False], attrgetter('client_id'))
-    retension = by_retension[True]
-    check_ids = [x.uid for x in by_retension[False] if x.type == PaymentFormat.CHECK]
-    checks = sessionmanager.session.query(NCheck).filter(NCheck.payment_id.in_(check_ids))
-    checkimgs = {check.payment_id: os.path.split(check.imgcheck)[1] for check in checks if check.imgcheck}
-
-    all_spent = list(sessionmanager.session.query(NSpent).filter(
-        NSpent.inputdate >= date, NSpent.inputdate < date + datetime.timedelta(days=1)))
-    total_spent = sum((x.paid_from_cashier for x in all_spent))
-    existing = sessionmanager.session.query(NAccountStat).filter_by(date=date).first()
-    all_img = list(imgserver.getimg(objtype='entrega_cuenta', objid=date.isoformat()))
-    temp = jinja_env.get_template('invoice/crear_entregar_cuenta_form.html')
-    return temp.render(
-        cash=sale_by_store, others=noncash,
-        total_cash=total_cash,
-        deleted=deleted,
-        date=date.isoformat(),
-        pagos=payments,
-        all_spent=all_spent,
-        total_spent=total_spent,
-        retension=retension,
-        other_cash=other_cash,
-        imgs=all_img,
-        checkimgs=checkimgs,
-        existing=existing)
-
-
-@w.post('/app/crear_entrega_de_cuenta')
-@dbcontext
-@auth_decorator
-def post_crear_entrega_de_cuenta():
-    cash = request.forms.get('cash', 0)
-    gastos = request.forms.get('gastos', 0)
-    deposito = request.forms.get('deposito', 0)
-    turned_cash = request.forms.get('valor', 0)
-    diff = request.forms.get('diff', 0)
-    date = request.forms.get('date')
-
-    cash = int(float(cash) * 100)
-    gastos = int(float(gastos) * 100)
-    deposito = int(float(deposito) * 100)
-    turned_cash = int(float(turned_cash) * 100)
-    date = parse_iso(date).date()
-    diff = int(float(diff) * 100)
-
-    userid = get_user(request)['username']
-    if request.forms.get('submit') == 'Crear':
-        stat = NAccountStat(
-            date=date,
-            total_spend=gastos,
-            turned_cash=turned_cash,
-            deposit=deposito,
-            created_by=userid
-        )
-        sessionmanager.session.add(stat)
-        sessionmanager.session.flush()
-    else:
-        sessionmanager.session.query(NAccountStat).filter_by(date=date).update(
-            {'revised_by': userid, 'turned_cash': turned_cash,
-             'deposit': deposito, 'diff': diff})
-        now = datetime.datetime.now()
-        todo1 = Todo(objtype=ObjType.ACCOUNT, objid=date, status='PENDING',
-                     msg='Papeleta de deposito de {}: ${}'.format(date, Decimal(deposito) / 100),
-                     creation_date=now, due_date=now)
-        todo2 = Todo(objtype=ObjType.ACCOUNT, objid=date, status='PENDING',
-                     msg='Papeleta de deposito de {}: ${}'.format(date, Decimal(turned_cash) / 100),
-                     creation_date=now, due_date=now)
-        todoapi.create(todo1)
-        todoapi.create(todo2)
-
-    redirect('/app/crear_entrega_de_cuenta?fecha={}'.format(date.isoformat()))
-
-
-@w.get('/app/entrega_de_cuenta_list')
-@dbcontext
-@auth_decorator
-def ver_entrega_de_cuenta_list():
-    start, end = parse_start_end_date(request.query)
-    if end is None:
-        end = datetime.date.today()
-    if start is None:
-        start = datetime.date.today() - datetime.timedelta(days=7)
-
-    accts = sessionmanager.session.query(NAccountStat).filter(
-        NAccountStat.date >= start, NAccountStat.date <= end)
-    temp = jinja_env.get_template('invoice/entrega_de_cuenta_list.html')
-    return temp.render(accts=accts, start=start, end=end)
 
 
 @w.get('/app/nota/<uid>')

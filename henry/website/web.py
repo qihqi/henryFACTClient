@@ -4,7 +4,7 @@ import datetime
 from henry import constants
 from henry.dao.document import Status
 from henry.dao.order import PaymentFormat
-from henry.schema.accounting import NPayment
+from henry.accounting.acct_schema import NPayment
 from henry.schema.user import NUsuario
 from henry.coreconfig import (dbcontext, storeapi, auth_decorator,
                               clientapi, sessionmanager, actionlogged, invapi)

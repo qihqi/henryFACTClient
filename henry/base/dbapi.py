@@ -83,48 +83,93 @@ class DBApi(object):
     def __init__(self, sessionmanager, objclass):
         self.sm = sessionmanager
         self.objclass = objclass
+        self.api = DBApiGeneric(sessionmanager)
+
+    def create(self, obj):
+        return self.api.create(obj)
+
+    def get(self, pkey):
+        return self.api.get(pkey, self.objclass)
+
+    def update(self, pkey, content_dict):
+        obj = self.objclass()
+        setattr(obj, self.objclass.pkey.name, pkey)
+        return self.api.update(obj, content_dict)
+
+    def delete(self, pkey):
+        obj = self.objclass()
+        setattr(obj, self.objclass.pkey.name, pkey)
+        return self.api.delete(obj)
+
+    def getone(self, **kwargs):
+        return self.api.getone(self.objclass, **kwargs)
+
+    def search(self, **kwargs):
+        return self.api.search(self.objclass, **kwargs)
+
+
+class DBApiGeneric(object):
+
+    def __init__(self, sessionmanager):
+        self.sm = sessionmanager
+
+    @property
+    def session(self):
+        return self.sm
+
+    @property
+    def db_session(self):
+        return self.sm.session
 
     def create(self, obj):
         dbobj = obj.db_instance()
         self.sm.session.add(dbobj)
         self.sm.session.flush()
-        pkey = self.objclass.pkey.name
+        pkey = obj.pkey.name
         pkeyval = getattr(dbobj, pkey)
         setattr(obj, pkey, pkeyval)
         return pkeyval
 
-    def get(self, pkey):
-        db_instance = self.sm.session.query(self.objclass.db_class).filter(
-            self.objclass.pkey == pkey).first()
+    def get(self, pkey, objclass):
+        db_instance = self.sm.session.query(objclass.db_class).filter(
+            objclass.pkey == pkey).first()
         if db_instance is None:
             return None
-        return self.objclass.from_db_instance(db_instance)
+        return objclass.from_db_instance(db_instance)
 
-    def update(self, pkey, content_dict):
-        count = self.sm.session.query(self.objclass.db_class).filter(
-            self.objclass.pkey == pkey).update(
+    def update(self, obj, content_dict):
+        pkey = getattr(obj, obj.pkey.name)
+        count = self.sm.session.query(obj.db_class).filter(
+            obj.pkey == pkey).update(
             content_dict)
+        obj.merge_from(content_dict)
         return count
 
-    def delete(self, pkey):
-        count = self.sm.session.query(self.objclass.db_class).filter(
-            self.objclass.primary_key == pkey).delete()
+    def delete(self, obj):
+        pkey = getattr(obj, obj.pkey.name)
+        count = self.sm.session.query(obj.db_class).filter(
+            obj.pkey == pkey).delete()
         return count
 
-    def getone(self, **kwargs):
-        result = self.search(**kwargs)
+    def getone(self, objclass, **kwargs):
+        result = self.search(objclass, **kwargs)
         if not result:
             return None
         return result[0]
 
-    def search(self, **kwargs):
-        query = self.sm.session.query(self.objclass.db_class)
+    def search(self, objclass, **kwargs):
+        query = self.sm.session.query(objclass.db_class)
         for key, value in kwargs.items():
             mode = None
             if '-' in key:
                 key, mode = key.split('-')
-            f = self.objclass._columns[key] == value
+            col = objclass._columns[key]
+            f = col == value
             if mode == 'prefix':
-                f = self.objclass._columns[key].startswith(value)
+                f = col.startswith(value)
+            if mode == 'lte':
+                f = col <= value
+            if mode == 'gte':
+                f = col <= value
             query = query.filter(f)
-        return map(self.objclass.from_db_instance, iter(query))
+        return map(objclass.from_db_instance, iter(query))

@@ -1,8 +1,19 @@
+import os
+import uuid
 from sqlalchemy import desc
-from henry.schema.accounting import (NBank, NDepositAccount, NPayment,
-                                     NCheck, NDeposit)
+from henry.base.dbapi import dbmix
 from henry.base.serialization import SerializableMixin
-from .order import PaymentFormat
+from henry.dao.order import PaymentFormat
+
+from .acct_schema import (NBank, NDepositAccount, NPayment, NCheck, NDeposit, NImage,
+                          NComment, NTodo, NAccountStat)
+
+Todo = dbmix(NTodo)
+Comment = dbmix(NComment)
+Image = dbmix(NImage)
+Bank = dbmix(NBank)
+DepositAccount = dbmix(NDepositAccount)
+AccountStat = dbmix(NAccountStat)
 
 
 class Payment(SerializableMixin):
@@ -81,7 +92,6 @@ def _extract_payment(payment):
 
 
 class PaymentApi:
-
     def __init__(self, sessionmanager):
         self.sm = sessionmanager
 
@@ -154,3 +164,32 @@ class PaymentApi:
 
     def get_all_accounts(self):
         return self.sm.session.query(NDepositAccount)
+
+
+class ImageServer:
+    def __init__(self, imgbasepath, imgapi, fileapi, imagewriter):
+        self.imgbasepath = imgbasepath
+        self.imgapi = imgapi
+        self.fileapi = fileapi
+        self.write_image = imagewriter
+
+    def getimg(self, objtype, objid):
+        imgs = self.imgapi.search(objtype=objtype, objid=objid)
+
+        def addpath(img):
+            _, imgfile = os.path.split(img.path)
+            img.imgurl = os.path.join(self.imgbasepath, imgfile)
+            return img
+
+        return map(addpath, imgs)
+
+    def saveimg(self, objtype, objid, data):
+        _, ext = os.path.splitext(data.raw_filename)
+        filename = uuid.uuid1().hex + ext
+        filename = self.fileapi.make_fullpath(filename)
+        self.write_image(data.file, (1024, 768), filename)
+        img = Image(
+            objtype=objtype, objid=objid,
+            path=filename)
+        self.imgapi.create(img)
+        return img
