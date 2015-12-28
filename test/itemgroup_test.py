@@ -2,7 +2,7 @@ import unittest
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from henry.base.dbapi import DBApi
+from henry.base.dbapi import DBApiGeneric
 from henry.base.serialization import json_dumps
 from henry.base.session_manager import SessionManager
 
@@ -20,12 +20,7 @@ class ItemApiTest(unittest.TestCase):
         Base.metadata.create_all(engine)
         cls.sessionmanager = SessionManager(sessionfactory)
 
-        cls.storeapi = DBApi(cls.sessionmanager, Store)
-        cls.bodegaapi = DBApi(cls.sessionmanager, Bodega)
-        cls.inventoryapi = DBApi(cls.sessionmanager, Inventory)
-        cls.priceapi = DBApi(cls.sessionmanager, PriceList)
-        cls.itemapi = DBApi(cls.sessionmanager, ProdItem)
-        cls.itemgroupapi = DBApi(cls.sessionmanager, ProdItemGroup)
+        cls.dbapi = DBApiGeneric(cls.sessionmanager)
 
         # make bodega and almacen
         bodegas = [
@@ -36,9 +31,8 @@ class ItemApiTest(unittest.TestCase):
             Store(almacen_id=1, nombre="1", bodega_id=1),
             Store(almacen_id=2, nombre="2", bodega_id=2)]
         with cls.sessionmanager:
-            map(cls.bodegaapi.create, bodegas)
-            map(cls.storeapi.create, stores)
-
+            map(cls.dbapi.create, bodegas)
+            map(cls.dbapi.create, stores)
 
     def test_create_item(self):
         content = {
@@ -88,35 +82,22 @@ class ItemApiTest(unittest.TestCase):
 
             ],
 
-            "prices": [
-                {
-                    'unit': 'paquete',
-                    'almacen_id': 2,
-                    'display_name': 'nombre display almacen 2',
-                    'price1': 100,
-                    'price2': 100,
-                    'cant': 0
-                },
-            ],
             "new_unit": []
         }
 
         with self.sessionmanager:
-            create_full_item_from_dict(
-                self.itemgroupapi, self.itemapi, self.priceapi, self.storeapi, self.bodegaapi,
-                self.inventoryapi,
-                content)
+            create_full_item_from_dict(self.dbapi, content)
             self.sessionmanager.session.commit()
 
-            print json_dumps(self.priceapi.search())
-            self.assertEquals(4, len(self.priceapi.search()))
-            self.assertEquals(1, len(self.itemgroupapi.search()))
-            self.assertEquals(2, len(self.itemapi.search()))
-            self.assertEquals(4, len(self.inventoryapi.search()))
+            print json_dumps(self.dbapi.search(PriceList))
+            self.assertEquals(4, len(self.dbapi.search(PriceList)))
+            self.assertEquals(1, len(self.dbapi.search(ProdItemGroup)))
+            self.assertEquals(2, len(self.dbapi.search(ProdItem)))
+            self.assertEquals(4, len(self.dbapi.search(Inventory)))
 
-            self.assertEquals(1, len(self.priceapi.search(upi=1)))
+            self.assertEquals(2, len(self.dbapi.search(PriceList, upi=1)))
 
-            all_items = self.itemapi.search()
+            all_items = self.dbapi.search(ProdItem)
             ids = set(x.itemgroupid for x in all_items)
             self.assertEquals(1, len(ids))
 

@@ -8,7 +8,7 @@ from henry.base.dbapi import DBApi
 from henry.constants import (
     INGRESO_PATH, BEAKER_DIR,
     EXTERNAL_URL, EXTERNAL_USER, EXTERNAL_PASS,
-    IMAGE_PATH, EXTERNAL_AUTH_URL)
+    IMAGE_PATH, EXTERNAL_AUTH_URL, TEMPLATE_LOCATION)
 
 from henry.accounting.dao import Image, Todo
 
@@ -17,6 +17,7 @@ from henry.dao.productos import (
 from henry.dao.document import DocumentApi
 from henry.dao.inventory import Transferencia
 from henry.dao.order import PaymentFormat
+from henry.environments import make_jinja_env
 from henry.misc import id_type, fix_id, abs_string, value_from_cents, get_total
 from henry.externalapi import ExternalApi
 from henry.coreconfig import (sessionmanager, transactionapi, priceapi,
@@ -47,37 +48,8 @@ externaltransapi = ExternalApi(EXTERNAL_URL, 'ingreso',
 imgserver = None
 todoapi = DBApi(sm, Todo)
 
-def my_finalize(x):
-    return '' if x is None else x
 
-
-template_paths = ['./templates']
-jinja_env = Environment(loader=FileSystemLoader(template_paths),
-                        finalize=my_finalize)
-
-
-def fix_path(x):
-    return os.path.split(x)[1]
-
-
-def display_date(x):
-    if isinstance(x, datetime.datetime):
-        return x.date().isoformat()
-    return x.isoformat()
-
-
-jinja_env.globals.update({
-    'id_type': id_type,
-    'fix_id': fix_id,
-    'abs': abs_string,
-    'value_from_cents': value_from_cents,
-    'get_total': get_total,
-    'today': datetime.date.today,
-    'PaymentFormat': PaymentFormat,
-    'fix_path': fix_path,
-    'display_date': display_date,
-})
-
+jinja_env = make_jinja_env(TEMPLATE_LOCATION)
 
 BEAKER_SESSION_OPTS = {
     'session.type': 'file',

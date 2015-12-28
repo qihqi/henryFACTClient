@@ -7,7 +7,8 @@ from sqlalchemy.exc import IntegrityError
 from henry.base.dbapi import dbmix
 from henry.base.serialization import SerializableMixin, json_dumps, json_loads
 from henry.product.schema import NPriceList, NContenido, NStore, NProducto
-from henry.schema.user import NCliente, NUsuario
+from henry.users.schema import NCliente
+from henry.users.schema import NUsuario, NCliente
 
 
 class Client(dbmix(NCliente)):

@@ -172,14 +172,14 @@ class PaymentApi:
 
 
 class ImageServer:
-    def __init__(self, imgbasepath, imgapi, fileapi, imagewriter):
+    def __init__(self, imgbasepath, dbapi, fileapi, imagewriter):
         self.imgbasepath = imgbasepath
-        self.imgapi = imgapi
+        self.dbapi = dbapi
         self.fileapi = fileapi
         self.write_image = imagewriter
 
     def getimg(self, objtype, objid):
-        imgs = self.imgapi.search(objtype=objtype, objid=objid)
+        imgs = self.dbapi.search(Image, objtype=objtype, objid=objid)
 
         def addpath(img):
             _, imgfile = os.path.split(img.path)
@@ -196,5 +196,5 @@ class ImageServer:
         img = Image(
             objtype=objtype, objid=objid,
             path=filename)
-        self.imgapi.create(img)
+        self.dbapi.create(img)
         return img

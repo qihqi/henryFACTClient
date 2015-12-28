@@ -25,7 +25,7 @@ class ProductApiTest(unittest.TestCase):
         invapi = DocumentApi(cls.sessionmanager, filemanager, transaction, Invoice)
         inv = Invoice.deserialize({
             'meta': {
-                'client': {
+                'users': {
                    'codigo': 'NA'
                 },
                 'total': 123,

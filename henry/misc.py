@@ -69,7 +69,7 @@ def validate_uid_and_ruc(uid):
 
 def value_from_cents(cents):
     if not cents:
-        return '0.00'
+        return Decimal(0)
     return Decimal(cents) / 100
 
 

@@ -58,7 +58,7 @@ class EndToEndTest(unittest.TestCase):
 
         url = self.url_base + '/cliente'
         client = None
-        with Timing('Search client'):
+        with Timing('Search users'):
             clients = requests.get(url, params={'prefijo': 'N'}).json()
             client = clients[0]
 
@@ -75,7 +75,7 @@ class EndToEndTest(unittest.TestCase):
         }
 
         content['meta'] = {
-                'client': client,
+                'users': client,
                 'total': 123,
                 'subtotal': sum( (x['precio1'] * 10 for x in (p1, p2, p3))),
                 'tax' : 123,

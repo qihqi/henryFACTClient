@@ -5,9 +5,8 @@ from bottle import run, static_file, Bottle
 
 from henry.config import BEAKER_SESSION_OPTS
 from henry.constants import INVOICE_MODE, FORWARD_INV
-from henry.website import webmain
 
-app = webmain
+app = Bottle()
 
 
 @app.get('/static/<rest:path>')
@@ -18,10 +17,12 @@ def static(rest):
 def main():
     global app
     from beaker.middleware import SessionMiddleware
-    from henry.api.coreapi import api
+    import coreapi
+    import website_wsgi
     from henry.api.api_endpoints import api as napi
-    app.merge(api)
+    app.merge(coreapi.api)
     app.merge(napi)
+    app.merge(website_wsgi.app)
     app = SessionMiddleware(app, BEAKER_SESSION_OPTS)
     sys.path.append(os.path.dirname(os.path.realpath(__file__)))
     from henry.schema.base import Base

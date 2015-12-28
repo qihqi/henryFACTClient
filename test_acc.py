@@ -19,7 +19,7 @@ def save_image(imgfile, size, filename):
 
 imgserver = ImageServer('/app/img', DBApi(sm, Image), imagefiles, save_image)
 app = make_wsgi_app(dbcontext, imgserver,
-                    dbapi, paymentapi, jinja_env, auth_decorator, imagefiles)
+                    dbapi, paymentapi, jinja_env, auth_decorator, imagefiles, invapi)
 api = make_wsgi_api(dbapi=dbapi, dbcontext=dbcontext, paymentapi=paymentapi,
                     auth_decorator=auth_decorator, invapi=invapi)
 
@@ -28,4 +28,5 @@ if __name__ == '__main__':
     @api.get('/static/<rest:path>')
     def static(rest):
         return bottle.static_file(rest, root='./static/')
-    bottle.run(app)
+    api.merge(app)
+    bottle.run(api)

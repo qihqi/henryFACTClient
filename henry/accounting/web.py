@@ -1,23 +1,27 @@
+from collections import defaultdict
 import datetime
 import os
 from decimal import Decimal
 from operator import attrgetter
 import uuid
 
-from bottle import request, redirect, static_file, Bottle
+from bottle import request, redirect, static_file, Bottle, response
+from sqlalchemy import func
 
+from henry import constants
 from henry.base.auth import get_user
 from henry.base.common import parse_iso, parse_start_end_date, parse_start_end_date_with_default
 from henry.base.serialization import json_dumps
-
+from henry.base.dbapi_rest import bind_dbapi_rest
+from henry.dao.document import Status
+from henry.misc import fix_id
 from henry.product.dao import Store
 from henry.schema.inv import NNota
-from henry.dao.document import Status
 from henry.dao.order import PaymentFormat
 
 from .acct_schema import ObjType, NComment
-from .reports import get_notas_with_clients, split_records, group_by_records, generate_daily_report
-from .acct_schema import NPayment, NCheck, NSpent, NAccountStat
+from .reports import group_by_records, generate_daily_report, AccountTransaction, split_records, split_records_binary
+from .acct_schema import NCheck, NSpent, NAccountStat
 from .dao import Todo, Check, Deposit, Payment, Bank, DepositAccount, AccountStat, Spent
 
 
@@ -85,12 +89,47 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi):
         result = dbapi.search(Spent, inputdate=day)
         return json_dumps(result)
 
+    def nota_to_trans(nota):
+        return AccountTransaction(
+            value=nota[0],
+            desc='Venta {}'.format(dbapi.get(nota[1], Store).nombre),
+            tipo='venta')
+
+    def gasto_to_trans(gasto):
+        return AccountTransaction(
+            value=gasto.paid_from_cashier,
+            desc=gasto.desc,
+            type='gasto')
+
+    def pagos_to_trans(pago):
+        return AccountTransaction(
+            value=pago.value,
+            desc='PAGO {}'.format(pago.type),
+            type='pago')
+
+    @w.get('/app/api/account_transaction/<date>')
+    @dbcontext
+    def get_account_transactions(date):
+        day = parse_iso(date)
+        delta = datetime.timedelta(hours=23)
+        sales = []
+        notas = dbapi.db_session.query(
+            NNota.almacen_id, func.sum(NNota.total)).filter(
+            NNota.timestamp >= day).filter(
+            NNota.timestamp <= day + delta).group_by(NNota.almacen_id)
+        sales = map(nota_to_trans, filter(lambda x: x[0], notas))
+        gastos = map(gasto_to_trans, dbapi.search(Spent, inputdate=day))
+        pagos = map(pagos_to_trans, paymentapi.list_payments(day))
+        return json_dumps(sales)
+
+    # account stat
+    bind_dbapi_rest('/app/api/account_stat', dbapi, AccountStat, w)
+
     return w
 
 
-
 def make_wsgi_app(dbcontext, imgserver,
-                  dbapi, paymentapi, jinja_env, auth_decorator, imagefiles):
+                  dbapi, paymentapi, jinja_env, auth_decorator, imagefiles, invapi):
     w = Bottle()
 
     @w.get('/app/entregar_cuenta_form')
@@ -162,8 +201,8 @@ def make_wsgi_app(dbcontext, imgserver,
             dbapi.db_session.flush()
         else:
             dbapi.update(AccountStat(date=date),
-                {'revised_by': userid, 'turned_cash': turned_cash,
-                 'deposit': deposito, 'diff': diff})
+                         {'revised_by': userid, 'turned_cash': turned_cash,
+                          'deposit': deposito, 'diff': diff})
             now = datetime.datetime.now()
             todo1 = Todo(objtype=ObjType.ACCOUNT, objid=date, status='PENDING',
                          msg='Papeleta de deposito de {}: ${}'.format(date, Decimal(deposito) / 100),
@@ -289,6 +328,7 @@ def make_wsgi_app(dbcontext, imgserver,
         if save_check_image.image is None:
             try:
                 from PIL import Image
+
                 save_check_image.image = Image
             except ImportError:
                 return 'Image module not installed'
@@ -325,7 +365,6 @@ def make_wsgi_app(dbcontext, imgserver,
         return temp.render(cuentas=dbapi.search(DepositAccount),
                            stores=dbapi.search(Store),
                            msg=msg)
-
 
     @w.get('/app/guardar_cheque')
     @dbcontext
@@ -517,5 +556,83 @@ def make_wsgi_app(dbcontext, imgserver,
 
         temp = jinja_env.get_template('invoice/ver_gastos.html')
         return temp.render(start=start, end=end, all_spent=all_spent)
+
+    class CustomerSell(object):
+        def __init__(self):
+            self.subtotal = 0
+            self.iva = 0
+            self.count = 0
+            self.total = 0
+
+    def group_by_customer(inv):
+        result = defaultdict(CustomerSell)
+        for i in inv:
+            if i.client.codigo is None:
+                i.client.codigo = 'NA'
+            cliente_id = fix_id(i.client.codigo)
+            if not i.discount:
+                i.discount = 0
+            result[cliente_id].subtotal += (i.subtotal - i.discount)
+            result[cliente_id].iva += i.tax
+            result[cliente_id].total += i.total
+            result[cliente_id].count += 1
+        return result
+
+    @w.get('/app/accounting_form')
+    @dbcontext
+    def get_sells_xml_form():
+        temp = jinja_env.get_template('accounting/ats_form.html')
+        stores = filter(lambda x: x.ruc, dbapi.search(Store))
+        return temp.render(stores=stores, title='ATS')
+
+    class Meta(object):
+        pass
+
+    @w.get('/app/accounting.xml')
+    @dbcontext
+    def get_sells_xml():
+        start_date, end_date = parse_start_end_date(request.query)
+        end_date = end_date + datetime.timedelta(days=1) - datetime.timedelta(seconds=1)
+        form_type = request.query.get('form_type')
+
+        ruc = request.query.get('alm')
+        invs = invapi.search_metadata_by_date_range(
+            start_date, end_date, other_filters={'almacen_ruc': ruc})
+
+        deleted, sold = split_records_binary(invs, lambda x: x.status == Status.DELETED)
+        grouped = group_by_customer(sold)
+
+        meta = Meta()
+        meta.date = start_date
+        meta.total = reduce(lambda acc, x: acc + x.subtotal, grouped.values(), 0)
+        meta.almacen_ruc = ruc
+        meta.almacen_name = [x.nombre for x in dbapi.search(Store) if x.ruc == ruc][0]
+        temp = jinja_env.get_template('accounting/resumen_agrupado.html')
+        if form_type == 'ats':
+            temp = jinja_env.get_template('accounting/ats.xml')
+            response.set_header('Content-disposition', 'attachment')
+            response.set_header('Content-type', 'application/xml')
+        return temp.render(vendidos=grouped, eliminados=deleted, meta=meta)
+
+    @w.get('/app/img/<rest:path>')
+    @dbcontext
+    @auth_decorator
+    def img(rest):
+        if constants.ENV == 'test':
+            return static_file(rest, root=constants.IMAGE_PATH)
+        else:
+            response.set_header('X-Accel-Redirect', '/image/{}'.format(rest))
+            response.set_header('Content-Type', '')
+
+    @w.post('/app/attachimg')
+    @dbcontext
+    @auth_decorator
+    def post_img():
+        imgdata = request.files.get('img')
+        objtype = request.forms.get('objtype')
+        objid = request.forms.get('objid')
+        redirect_url = request.forms.get('redirect_url')
+        imgserver.saveimg(objtype, objid, imgdata)
+        redirect(redirect_url)
 
     return w

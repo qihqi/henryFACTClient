@@ -30,7 +30,7 @@ class PaymentFormat:
 
 class InvMetadata(SerializableMixin, DbMixin):
     _db_class = NNota
-    _excluded_vars = ('client',)
+    _excluded_vars = ('users',)
     _db_attr = {
         'uid': 'id',
         'codigo': 'codigo',
@@ -53,7 +53,7 @@ class InvMetadata(SerializableMixin, DbMixin):
         'retension': 'retension',
     }
 
-    _name = tuple(_db_attr.keys()) + ('client',)
+    _name = tuple(_db_attr.keys()) + ('users',)
 
     def __init__(
             self,
@@ -103,8 +103,8 @@ class InvMetadata(SerializableMixin, DbMixin):
         x = cls().merge_from(the_dict)
         if not isinstance(x.timestamp, datetime.datetime):
             x.timestamp = parse_iso_date(x.timestamp)
-        if 'client' in the_dict:
-            client = Client.deserialize(the_dict['client'])
+        if 'users' in the_dict:
+            client = Client.deserialize(the_dict['users'])
             x.client = client
         else:
             x.client = None

@@ -182,7 +182,7 @@ HUGE_REQUEST_NOTA = '''
     "meta": {
         "almacen_id": 1,
         "bodega_id": 1,
-        "client": {
+        "users": {
             "apellidos": "GOMEZ AGUIRRE",
             "ciudad": "QUITO HAGA Y VENDA BISUTERIA",
             "codigo": "1703215549001",

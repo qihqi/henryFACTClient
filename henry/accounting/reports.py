@@ -9,7 +9,7 @@ from henry.accounting.acct_schema import NPayment, NCheck, NSpent
 from henry.base.serialization import SerializableMixin
 from henry.config import prodapi, transapi
 from henry.schema.inv import NNota
-from henry.schema.user import NCliente
+from henry.users.schema import NCliente
 from henry.base.dbapi import decode_str
 
 from henry.coreconfig import storeapi, invapi
@@ -133,7 +133,6 @@ def bodega_reports(bodega_id, start, end):
 
 
 class DailyReport(SerializableMixin):
-
     def __init__(self, cash, other_by_client,
                  retension, spent, deleted_invoices, payments, checks, deleted, other_cash):
         self.cash = cash
@@ -169,7 +168,7 @@ def generate_daily_report(dbapi, day):
     check_ids = [x.uid for x in by_retension[False] if x.type == PaymentFormat.CHECK]
     checks = dbapi.db_session.query(NCheck).filter(NCheck.payment_id.in_(check_ids))
     all_spent = list(dbapi.db_session.query(NSpent).filter(
-            NSpent.inputdate >= day, NSpent.inputdate < day + datetime.timedelta(days=1)))
+        NSpent.inputdate >= day, NSpent.inputdate < day + datetime.timedelta(days=1)))
 
     return DailyReport(
         cash=sale_by_store,
@@ -183,3 +182,11 @@ def generate_daily_report(dbapi, day):
         other_cash=other_cash,
     )
 
+
+class AccountTransaction(SerializableMixin):
+    _name = ('desc', 'type', 'value')
+
+    def __init__(self, desc, value, tipo):
+        self.desc = desc
+        self.type = tipo
+        self.value = value

@@ -117,7 +117,7 @@ def get_invoice_by_date():
         request.query, start_name='start_date', end_name='end_date')
     status = request.query.get('status')
     other_filters = {}
-    for x in ('client', 'almacen_id'):
+    for x in ('users', 'almacen_id'):
         t = request.query.get(x)
         if t:
             other_filters[x] = t
