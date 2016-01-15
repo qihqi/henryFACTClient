@@ -167,14 +167,6 @@ def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles):
             prods=prods, stores=dbapi.search(Store), prefix=prefix,
             almacen_name=dbapi.get(almacen_id, Store).nombre)
 
-    @w.get('/app/ver_producto_form')
-    @auth_decorator
-    def ver_producto_form():
-        return jinja_env.get_template('ver_item.html').render(
-            title='Ver Producto',
-            baseurl='/app/producto',
-            apiurl='/api/producto')
-
     @w.get('/app/barcode_form')
     @dbcontext
     @auth_decorator
@@ -214,3 +206,4 @@ def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles):
 
         temp = jinja_env.get_template('prod/barcode.html')
         return temp.render(url=url, row=row, column=column, prodname=prod.nombre, price=price)
+    return w

@@ -4,6 +4,7 @@ from henry.accounting.dao import ImageServer, PaymentApi
 from henry.users.web import make_wsgi_app as userwsgi
 from henry.accounting.web import make_wsgi_app as accwsgi
 from henry.accounting.web import make_wsgi_api as accapi
+from henry.product.web import make_wsgi_app as prodapp
 from henry.website.web_inventory import make_inv_wsgi
 from henry.website.web_invoice import make_invoice_wsgi
 from henry.website.web import webmain as app
@@ -25,11 +26,14 @@ invoiceapp = make_invoice_wsgi(dbcontext, auth_decorator, storeapi, sessionmanag
                                invapi, pedidoapi)
 invapp = make_inv_wsgi(jinja_env, dbcontext, actionlogged, auth_decorator,
                        sessionmanager, prodapi, transapi, revisionapi, bodegaapi)
+papp = prodapp(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles)
+
 
 app.merge(api)
 app.merge(userapp)
 app.merge(invoiceapp)
 app.merge(invapp)
+app.merge(papp)
 
 if USE_ACCOUNTING_APP:
     from PIL import Image as PilImage
