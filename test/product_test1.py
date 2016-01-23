@@ -54,16 +54,7 @@ class ProductApiTest(unittest.TestCase):
 
         with cls.sessionmanager:
             for p in cls.productos:
-                codigo, nombre, p1, p2, thres = p
-                p = Product()
-                p.codigo = codigo
-                p.nombre = nombre
-                p.categoria = 1
-                cls.prod_api.create_product(
-                    p, {
-                        1: (int(p1), int(p2), thres),
-                        2: (int(p1), int(p2), thres)
-                    })
+                pass
 
     def test_get_producto(self):
         with self.sessionmanager:

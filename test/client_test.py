@@ -15,7 +15,7 @@ from henry.misc import validate_uid_and_ruc
 class ClientTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        engine = create_engine('sqlite:///:memory:', echo=True)
+        engine = create_engine('sqlite:///:memory:', echo=False)
         sessionfactory = sessionmaker(bind=engine)
         session = sessionfactory()
         Base.metadata.create_all(engine)
