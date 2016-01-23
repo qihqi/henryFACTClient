@@ -286,7 +286,7 @@ def make_wsgi_app(dbcontext, imgserver,
     @dbcontext
     @auth_decorator
     def ver_cheque(cid):
-        check = dbapi.get(cid, Check)
+        check = paymentapi.get_check(cid)
         if check.imgcheck:
             _, check.imgcheck = os.path.split(check.imgcheck)
         if check.imgdeposit:
@@ -353,7 +353,7 @@ def make_wsgi_app(dbcontext, imgserver,
     @dbcontext
     @auth_decorator
     def check_image_get(cid):
-        check = dbapi.get(cid, Check)
+        check = paymentapi.get(cid)
         return static_file(check.imgcheck, root='.')
 
     @w.get('/app/guardar_deposito')
@@ -393,7 +393,7 @@ def make_wsgi_app(dbcontext, imgserver,
         check = parse_payment_from_request(
             request.forms, Check, '/app/guardar_cheque')
         check.checkdate = parse_iso(check.checkdate)
-        dbapi.create(check)
+        paymentapi.save_check(check)
         redirect('/app/guardar_cheque?msg=Cheque+Guardado')
 
     @w.get('/app/ver_cheques_guardados')
