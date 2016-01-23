@@ -5,10 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from henry.schema.base import Base
-from henry.base.fileservice import FileService
 from henry.accounting.dao import PaymentApi, Check
-from henry.dao import (DocumentApi, Invoice,
-                       TransactionApi)
 from henry.base.session_manager import SessionManager
 
 
@@ -20,26 +17,7 @@ class ProductApiTest(unittest.TestCase):
         Base.metadata.create_all(engine)
         cls.sessionmanager = SessionManager(sessionfactory)
         cls.paymentapi = PaymentApi(cls.sessionmanager)
-        filemanager = FileService('/tmp')
-        transaction = TransactionApi(cls.sessionmanager, filemanager)
-        invapi = DocumentApi(cls.sessionmanager, filemanager, transaction, Invoice)
-        inv = Invoice.deserialize({
-            'meta': {
-                'users': {
-                   'codigo': 'NA'
-                },
-                'total': 123,
-                'subtotal': 123,
-                'tax' : '1',
-                'user_id': 'yu',
-                'codigo': str('123'),
-                'almacen_id': 1,
-            },
-            'items': []
-            })
-        with cls.sessionmanager:
-            inv = invapi.save(inv)
-        cls.uid = inv.meta.uid  # id to refer for payment
+        cls.uid = 1 # inv.meta.uid  # id to refer for payment
 
 
     def test_save_and_get(self):

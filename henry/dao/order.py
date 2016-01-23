@@ -103,8 +103,8 @@ class InvMetadata(SerializableMixin, DbMixin):
         x = cls().merge_from(the_dict)
         if not isinstance(x.timestamp, datetime.datetime):
             x.timestamp = parse_iso_date(x.timestamp)
-        if 'users' in the_dict:
-            client = Client.deserialize(the_dict['users'])
+        if 'client' in the_dict:
+            client = Client.deserialize(the_dict['client'])
             x.client = client
         else:
             x.client = None

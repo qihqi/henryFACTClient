@@ -4,15 +4,17 @@ from decimal import Decimal
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from henry.base.dbapi import DBApiGeneric
+from henry.dao.coredao import TransactionApi, Transaction, Client
+from henry.dao.document import DocumentApi, Status, Item
+from henry.dao.inventory import Transferencia, TransMetadata, TransType
+from henry.dao.order import Invoice, InvMetadata
+from henry.product.dao import Product
+from henry.product.schema import NBodega
+from henry.product.schema import NStore
 
 from henry.schema.base import Base
-from henry.schema.core import NStore
-from henry.schema.inventory import NBodega
 from henry.base.fileservice import FileService
-from henry.dao.productos import ProductApiDB, Product
-from henry.dao import (DocumentApi, TransMetadata, Transferencia, Invoice,
-                       InvMetadata, TransactionApi, Transaction, TransType, Item, Status)
-from henry.dao.client import Client
 from henry.base.session_manager import SessionManager
 
 
@@ -27,7 +29,7 @@ class ProductApiTest(unittest.TestCase):
         filemanager = FileService('/tmp')
         cls.transaction_api = TransactionApi('/tmp/transactions')
 
-        cls.prod_api = ProductApiDB(cls.sessionmanager, cls.transaction_api)
+        cls.prod_api = DBApiGeneric(cls.sessionmanager)
         cls.trans_api = DocumentApi(cls.sessionmanager, filemanager, cls.prod_api, Transferencia)
         cls.inv_api = DocumentApi(cls.sessionmanager, filemanager, cls.prod_api, Invoice)
 

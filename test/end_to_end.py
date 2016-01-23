@@ -75,14 +75,14 @@ class EndToEndTest(unittest.TestCase):
         }
 
         content['meta'] = {
-                'users': client,
-                'total': 123,
-                'subtotal': sum( (x['precio1'] * 10 for x in (p1, p2, p3))),
-                'tax' : 123,
-                'user': 'yu',
-                'codigo': str(number),
-                'almacen_id': 1,
-            }
+            'client': client,
+            'total': 123,
+            'subtotal': sum((x['precio1'] * 10 for x in (p1, p2, p3))),
+            'tax': 123,
+            'user': 'yu',
+            'codigo': str(number),
+            'almacen_id': 1,
+        }
 
         nota_url = self.url_base + '/nota'
         codigo = None

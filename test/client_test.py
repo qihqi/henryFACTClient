@@ -3,10 +3,12 @@ import datetime
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from henry.base.dbapi import DBApiGeneric
 
 from henry.schema.base import Base
-from henry.dao.client import Client, ClientApiDB
 from henry.base.session_manager import SessionManager
+from henry.users.schema import NCliente
+from henry.users.web import Client
 from henry.misc import validate_uid_and_ruc
 
 
@@ -18,25 +20,25 @@ class ClientTest(unittest.TestCase):
         session = sessionfactory()
         Base.metadata.create_all(engine)
         cls.clientes = [
-            Client(codigo='123',
-                   nombres='nombre1 nombre2',
-                   apellidos='apellido1 apellido2',
-                   direccion='direccion',
-                   telefono='12345567',
-                   ciudad='ciudad',
-                   tipo=1,
-                   cliente_desde=datetime.date.today()
-                   )
+            NCliente(codigo='123',
+                     nombres='nombre1 nombre2',
+                     apellidos='apellido1 apellido2',
+                     direccion='direccion',
+                     telefono='12345567',
+                     ciudad='ciudad',
+                     tipo=1,
+                     cliente_desde=datetime.date.today()
+                     )
         ]
         for c in cls.clientes:
             session.add(c)
         session.commit()
         cls.sessionmanager = SessionManager(sessionfactory)
-        cls.clientapi = ClientApiDB(cls.sessionmanager)
+        cls.dbapi = DBApiGeneric(cls.sessionmanager)
 
     def test_get_cliente(self):
         with self.sessionmanager:
-            x = self.clientapi.get('123')
+            x = self.dbapi.get('123', Client)
             self.assertEqual(x.codigo, '123')
 
     def test_create(self):
@@ -49,9 +51,9 @@ class ClientTest(unittest.TestCase):
                    tipo=1,
                    cliente_desde=datetime.date.today())
         with self.sessionmanager:
-            self.clientapi.save(c)
+            self.dbapi.create(c)
         with self.sessionmanager:
-            x = list(self.clientapi.search('a'))
+            x = list(self.dbapi.search(Client, **{'apellidos-prefix': 'a'}))
             for i in x:
                 print i.serialize()
             self.assertEquals(2, len(x))

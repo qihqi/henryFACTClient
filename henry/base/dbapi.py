@@ -31,6 +31,13 @@ def fieldcopy(src, dest, fields):
         except:
             pass
 
+
+# A method that converts a class of SQLAlchemy model into
+# a serializeble object
+# APIs:
+#     .db_instance() returns an object of the given class with the same data
+#     .serialize() returns an dict with same data
+#     Class.from_db_instance, and Class.deserialize do the opposite
 def dbmix(database_class, override_name=()):
     class DataObjectMixin(object):
         db_class = database_class
