@@ -6,7 +6,7 @@ from henry.base.dbapi import DBApiGeneric
 from henry.base.serialization import json_dumps
 from henry.base.session_manager import SessionManager
 
-from henry.product.web import create_full_item_from_dict
+from henry.product.web import create_full_item_from_dict, validate_full_item
 from henry.product.dao import Inventory, PriceList, ProdItemGroup, ProdItem, Bodega, Store
 from henry.schema.base import Base
 
@@ -86,6 +86,8 @@ class ItemApiTest(unittest.TestCase):
         }
 
         with self.sessionmanager:
+            result, _ = validate_full_item(content, self.dbapi)
+            self.assertTrue(result)
             create_full_item_from_dict(self.dbapi, content)
             self.sessionmanager.session.commit()
 
@@ -100,6 +102,9 @@ class ItemApiTest(unittest.TestCase):
             all_items = self.dbapi.search(ProdItem)
             ids = set(x.itemgroupid for x in all_items)
             self.assertEquals(1, len(ids))
+
+            result, _ = validate_full_item(content, self.dbapi)
+            self.assertFalse(result)
 
 
 
