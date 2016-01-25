@@ -38,6 +38,8 @@ def main():
         from henry.api import slave_api
         slave_api.start_server()
         slave_api.start_worker()
+    for r in app.app.routes:
+        print r.method, r.rule
     run(app, host=host, debug=True, port=port)
     return 'http://localhost:8080'
 

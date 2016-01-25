@@ -2,9 +2,14 @@ import React from 'react';
 
 function getPayments(day, callback) {
     $.ajax({
-        url: `/app/api/sales?start=${day}&end=${day}&group_by=almacen_id`,
+        url: `/app/api/account_transaction/${day}`,
         success: callback
     });
+}
+
+function twoDecimalPlace(number) {
+    number = Number(number);
+    return number.toFixed(2);
 }
 
 var ValuesTable = React.createClass({
@@ -25,7 +30,7 @@ var ValuesTable = React.createClass({
 function sumValue(arr) {
     var total = 0;
     for (var x in arr) {
-        total += arr[x].value;
+        total += Number(arr[x].value);
     }
     return total;
 }
@@ -35,10 +40,20 @@ var AccountTable = React.createClass({
         var total_sale = sumValue(this.props.ventas);
         var total_pay = sumValue(this.props.pagos);
         var total_spent = sumValue(this.props.gastos);
+        var total_turned_in = sumValue(this.props.turned_in);
         var ventas = this.props.ventas.map((x) => {
             return <tr>
             <td>{x.desc}</td>
-            <td>{x.value}</td>
+            <td className="value_col">{twoDecimalPlace(x.value)}</td>
+            <td></td>
+            <td></td>
+            </tr>
+        });
+        var turned_in= this.props.turned_in.map((x) => {
+            return <tr>
+            <td>{x.desc}</td>
+            <td></td>
+            <td className="value_col">{twoDecimalPlace(x.value)}</td>
             <td></td>
             <td></td>
             </tr>
@@ -47,7 +62,8 @@ var AccountTable = React.createClass({
             return <tr>
             <td>{x.desc}</td>
             <td></td>
-            <td>{x.value}</td>
+            <td></td>
+            <td className="value_col">{twoDecimalPlace(x.value)}</td>
             <td></td>
             </tr>
         });
@@ -56,7 +72,8 @@ var AccountTable = React.createClass({
             <td>{x.desc}</td>
             <td></td>
             <td></td>
-            <td>{x.value}</td>
+            <td></td>
+            <td className="value_col">{twoDecimalPlace(x.value)}</td>
             </tr>
         });
         return <table>
@@ -64,16 +81,19 @@ var AccountTable = React.createClass({
             <tr>
                 <th></th>
                 <th>Ventas</th>
+                <th>Entrega</th>
                 <th>Pagos</th>
                 <th>Gastos</th>
             </tr>
             <tr>
                 <th>Total</th>
-                <th>{total_sale}</th>
-                <th>{total_pay}</th>
-                <th>{total_spent}</th>
+                <th className='value_col'>{twoDecimalPlace(total_sale)}</th>
+                <th className='value_col'>{twoDecimalPlace(total_turned_in)}</th>
+                <th className='value_col'>{twoDecimalPlace(total_pay)}</th>
+                <th className='value_col'>{twoDecimalPlace(total_spent)}</th>
             </tr>
             {ventas}
+            {turned_in}
             {pagos}
             {gastos}
         </tbody></table>;
@@ -90,14 +110,19 @@ const test = [
 export default React.createClass({
     getInitialState: function() {
         getPayments('2015-12-23', (result) => {
-            this.setState(result);
+            var val = JSON.parse(result);
+            console.log(val); 
+            this.setState(val);
         });
-        return {count: 0, value: 0, groups: {}};
+        return {sales: [], spents: [], payments: [], turned_in: []};
         
     },
     render: function() {
         return <div>
-            <AccountTable ventas={test} pagos={test} gastos={test} />
+            <AccountTable ventas={this.state.sales} 
+                          pagos={this.state.payments} 
+                          gastos={this.state.spents} 
+                          turned_in={this.state.turned_in}/>
         </div>;
     }
 });

@@ -24,6 +24,7 @@ class Payment(SerializableMixin):
         'client_id',
         'value',
         'date',
+        'type',
     )
 
     def __init__(self, **kwargs):

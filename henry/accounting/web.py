@@ -89,38 +89,55 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi):
         result = dbapi.search(Spent, inputdate=day)
         return json_dumps(result)
 
-    def nota_to_trans(nota):
-        return AccountTransaction(
-            value=nota[0],
-            desc='Venta {}'.format(dbapi.get(nota[1], Store).nombre),
-            tipo='venta')
-
     def gasto_to_trans(gasto):
         return AccountTransaction(
-            value=gasto.paid_from_cashier,
+            value=Decimal(gasto.paid_from_cashier)/100,
             desc=gasto.desc,
-            type='gasto')
+            tipo='gasto')
 
     def pagos_to_trans(pago):
         return AccountTransaction(
-            value=pago.value,
+            value=Decimal(pago.value)/100,
             desc='PAGO {}'.format(pago.type),
-            type='pago')
+            tipo='pago')
+
+    def make_acct_trans(value):
+        return AccountTransaction(
+            value=Decimal(value)/100,
+            desc='Deposito/Entregado',
+            tipo='turned_in')
 
     @w.get('/app/api/account_transaction/<date>')
     @dbcontext
     def get_account_transactions(date):
         day = parse_iso(date)
         delta = datetime.timedelta(hours=23)
-        sales = []
         notas = dbapi.db_session.query(
             NNota.almacen_id, func.sum(NNota.total)).filter(
             NNota.timestamp >= day).filter(
-            NNota.timestamp <= day + delta).group_by(NNota.almacen_id)
-        sales = map(nota_to_trans, filter(lambda x: x[0], notas))
+            NNota.timestamp <= day + delta).filter(
+            NNota.status != Status.DELETED).group_by(NNota.almacen_id)
+        all_alms = {x.almacen_id: x for x in dbapi.search(Store)}
+        sales = []
+        for x in notas:
+            sales.append(AccountTransaction(
+                value=Decimal(int(x[1])) / 100,
+                desc='Venta: {}'.format(all_alms[x[0]].nombre),
+                tipo='venta'))
         gastos = map(gasto_to_trans, dbapi.search(Spent, inputdate=day))
         pagos = map(pagos_to_trans, paymentapi.list_payments(day))
-        return json_dumps(sales)
+
+        acc_stat = dbapi.get(day, AccountStat)
+        turned_in = [make_acct_trans(acc_stat.deposit), make_acct_trans(acc_stat.turned_cash)]
+        result = {
+            'sales': sales,
+            'spents': gastos,
+            'payments': pagos,
+            'turned_in': turned_in,
+        }
+        return json_dumps(result)
+
+
 
     # account stat
     bind_dbapi_rest('/app/api/account_stat', dbapi, AccountStat, w)
