@@ -2,4 +2,11 @@ import ViewAccount from './view_account';
 import ReactDOM from 'react-dom';
 import React from 'react';
 
-ReactDOM.render(<ViewAccount />, document.getElementById('content'));
+import {Route, Router, Link, browserHistory} from 'react-router'
+
+var router = <Router history={browserHistory}>
+    <Route path='/' component={ViewAccount} />
+    <Route path='/:date' component={ViewAccount} />
+</Router>
+
+ReactDOM.render(router, document.getElementById('content'));
