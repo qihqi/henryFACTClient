@@ -38,7 +38,7 @@ def extract_nota_and_client(dbapi, form, redirect_url):
     return None, None
 
 
-def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi):
+def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserver):
     w = Bottle()
 
     @w.get('/app/api/sales')
@@ -136,6 +136,22 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi):
             'turned_in': turned_in,
         }
         return json_dumps(result)
+
+    @w.get('/app/api/check')
+    @dbcontext
+    def get_checks():
+        save_date = request.query.get('save_date')
+        deposit_date = request.query.get('deposit_date')
+        if save_date:
+            save_date = (save_date, save_date)
+        if deposit_date:
+            deposit_date = (deposit_date, deposit_date)
+        checks = paymentapi.list_checks(save_date, deposit_date)
+        for x in checks:
+            x.imgdeposit = imgserver.get_url_path(x.imgdeposit)
+            x.imgcheck = imgserver.get_url_path(x.imgcheck)
+            x.value = Decimal(x.value) / 100
+        return json_dumps(checks)
 
 
 

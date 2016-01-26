@@ -48,7 +48,7 @@ if USE_ACCOUNTING_APP:
     paymentapi = PaymentApi(sessionmanager)
     accapp = accwsgi(dbcontext, imgserver,
                      dbapi, paymentapi, jinja_env, auth_decorator, imagefiles, invapi)
-    api = accapi(dbapi=dbapi, dbcontext=dbcontext, paymentapi=paymentapi,
+    api = accapi(dbapi=dbapi, imgserver=imgserver, dbcontext=dbcontext, paymentapi=paymentapi,
                  auth_decorator=auth_decorator, invapi=invapi)
     app.merge(accapp)
     app.merge(api)

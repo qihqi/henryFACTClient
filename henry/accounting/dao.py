@@ -183,11 +183,16 @@ class ImageServer:
         imgs = self.dbapi.search(Image, objtype=objtype, objid=objid)
 
         def addpath(img):
-            _, imgfile = os.path.split(img.path)
-            img.imgurl = os.path.join(self.imgbasepath, imgfile)
+            img.imgurl = self.get_url_path(img.path)
             return img
 
         return map(addpath, imgs)
+
+    def get_url_path(self, filepath):
+        if filepath is None:
+            return None
+        _, filename = os.path.split(filepath)
+        return os.path.join(self.imgbasepath, filename)
 
     def saveimg(self, objtype, objid, data):
         _, ext = os.path.splitext(data.raw_filename)
