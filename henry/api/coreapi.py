@@ -180,8 +180,11 @@ def make_coreapi(dbcontext, clientapi, invapi, auth_decorator, pedidoapi, sessio
                 item.cant = Decimal(item.cant) / 1000
 
             if getattr(item.prod, 'upi', None) is None:
+                alm_id = inv.meta.almacen_id
+                if alm_id == 3:
+                    alm_id = 1
                 newprod = priceapi.search(prod_id=item.prod.prod_id,
-                                          almacen_id=inv.meta.almacen_id)[0]
+                                          almacen_id=alm_id)[0]
                 item.prod.upi = newprod.upi
                 item.prod.multiplicador = newprod.multiplicador
 

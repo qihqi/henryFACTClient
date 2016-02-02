@@ -16,7 +16,7 @@ def main():
     from_static_path = os.path.join(from_dp_path, STATIC)
 
     backup_dir(from_dp_path, deploy_path)
-    backup_dir(from_static_path, static_path)
+#    backup_dir(from_static_path, static_path)
 
     return 0
 
