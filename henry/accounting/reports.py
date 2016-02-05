@@ -4,10 +4,13 @@ from collections import defaultdict
 from datetime import timedelta
 from operator import attrgetter
 from decimal import Decimal
+from sqlalchemy import func
 
 from henry.accounting.acct_schema import NPayment, NCheck, NSpent
+from henry.accounting.dao import Spent, AccountStat
 from henry.base.serialization import SerializableMixin
 from henry.config import prodapi, transapi
+from henry.product.dao import Store
 from henry.schema.inv import NNota
 from henry.users.schema import NCliente
 from henry.base.dbapi import decode_str
@@ -184,9 +187,94 @@ def generate_daily_report(dbapi, day):
 
 
 class AccountTransaction(SerializableMixin):
-    _name = ('desc', 'type', 'value')
+    SALE = 'sales'
+    SPENT = 'spents'
+    CUSTOMER_PAYMENT = 'payments'
+    TURNED_IN = 'turned_in'
 
-    def __init__(self, desc, value, tipo):
+    _name = ('date', 'img', 'desc', 'type', 'value')
+
+    def __init__(self, desc, value, tipo, date=None, img=None):
         self.desc = desc
         self.type = tipo
         self.value = value
+        self.date = date
+        self.img = img
+
+
+def make_acct_trans(value):
+    return AccountTransaction(
+        value=Decimal(value) / 100,
+        desc='Deposito/Entregado',
+        tipo='turned_in')
+
+
+def get_sales_as_transactions(dbapi, start_date, end_date):
+    notas = dbapi.db_session.query(
+        func.DATE(NNota.timestamp), NNota.almacen_id, func.sum(NNota.total)).filter(
+        NNota.timestamp >= start_date).filter(
+        NNota.timestamp <= end_date).filter(
+        NNota.status != Status.DELETED).filter(
+        NNota.payment_format == PaymentFormat.CASH).filter(
+        NNota.almacen_id is not None).group_by(
+        func.DATE(NNota.timestamp), NNota.almacen_id)
+    all_alms = {x.almacen_id: x for x in dbapi.search(Store)}
+    for x in notas:
+        if x[1] is None:
+            continue
+        yield AccountTransaction(
+            date=x[0],
+            value=Decimal(int(x[2])) / 100,
+            desc='Venta {}: {}'.format(x[0], all_alms[x[1]].nombre),
+            tipo='venta')
+
+
+def get_payments_as_transactions(paymentapi, start_date, end_date):
+    for pago in paymentapi.list_payments(start_date, end_date):
+        if pago.type == PaymentFormat.CASH:
+            yield AccountTransaction(
+                date=pago.date,
+                value=Decimal(pago.value) / 100,
+                desc='ABONO a Factura {}'.format(pago.note_id),
+                tipo=AccountTransaction.CUSTOMER_PAYMENT)
+
+
+
+def get_spent_as_transactions(dbapi, start_date, end_date):
+    for gasto in dbapi.search(Spent, **{'inputdate-gte': start_date, 'inputdate-lte': end_date}):
+        if gasto.paid_from_cashier is None:
+            print gasto.serialize()
+            continue
+        yield AccountTransaction(
+            date=gasto.inputdate.date(),
+            value=(-Decimal(gasto.paid_from_cashier) / 100),
+            desc=gasto.desc,
+            tipo='gasto')
+
+
+def get_turned_in_cash(dbapi, start_date, end_date):
+    accts = dbapi.search(AccountStat, **{
+        'date-lte': end_date,
+        'date-gte': start_date})
+    for a in accts:
+        yield AccountTransaction(
+            date=a.date,
+            value=(-Decimal(a.deposit) / 100),
+            desc='Deposito/Brindado {}'.format(a.date.isoformat()),
+            tipo='turned_in')
+        yield AccountTransaction(
+            date=a.date,
+            value=(-Decimal(a.turned_cash) / 100),
+            desc='Deposito/Entregado {}'.format(a.date.isoformat()),
+            tipo='turned_in')
+
+
+def get_transaction_by_type(dbapi, paymentapi, start_date, end_date):
+    delta = datetime.timedelta(hours=23)
+    result = {
+        'sales': list(get_sales_as_transactions(dbapi, start_date, end_date + delta)),
+        'payments': list(get_payments_as_transactions(paymentapi, start_date, end_date)),
+        'spents': list(get_spent_as_transactions(dbapi, start_date, end_date)),
+        'turned_in': list(get_turned_in_cash(dbapi, start_date, end_date)),
+    }
+    return result

@@ -177,6 +177,6 @@ class DBApiGeneric(object):
             if mode == 'lte':
                 f = col <= value
             if mode == 'gte':
-                f = col <= value
+                f = col >= value
             query = query.filter(f)
         return map(objclass.from_db_instance, iter(query))

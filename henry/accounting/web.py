@@ -20,7 +20,8 @@ from henry.schema.inv import NNota
 from henry.dao.order import PaymentFormat
 
 from .acct_schema import ObjType, NComment
-from .reports import group_by_records, generate_daily_report, AccountTransaction, split_records, split_records_binary
+from .reports import group_by_records, generate_daily_report, AccountTransaction, split_records, split_records_binary, \
+    get_transaction_by_type
 from .acct_schema import NCheck, NSpent, NAccountStat
 from .dao import Todo, Check, Deposit, Payment, Bank, DepositAccount, AccountStat, Spent
 
@@ -36,6 +37,8 @@ def extract_nota_and_client(dbapi, form, redirect_url):
                 redirect_url, codigo))
         return nota.id, nota.client_id
     return None, None
+
+
 
 
 def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserver):
@@ -79,7 +82,7 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
     @dbcontext
     def get_all_payments():
         day = parse_iso(request.query.get('date'))
-        result = list(paymentapi.list_payments(day))
+        result = list(paymentapi.list_payments(day, day))
         return json_dumps(result)
 
     @w.get('/app/api/gasto')
@@ -89,53 +92,20 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
         result = dbapi.search(Spent, inputdate=day)
         return json_dumps(result)
 
-    def gasto_to_trans(gasto):
-        return AccountTransaction(
-            value=Decimal(gasto.paid_from_cashier)/100,
-            desc=gasto.desc,
-            tipo='gasto')
-
-    def pagos_to_trans(pago):
-        return AccountTransaction(
-            value=Decimal(pago.value)/100,
-            desc='PAGO {}'.format(pago.type),
-            tipo='pago')
-
-    def make_acct_trans(value):
-        return AccountTransaction(
-            value=Decimal(value)/100,
-            desc='Deposito/Entregado',
-            tipo='turned_in')
-
     @w.get('/app/api/account_transaction/<date>')
     @dbcontext
     def get_account_transactions(date):
         day = parse_iso(date)
-        delta = datetime.timedelta(hours=23)
-        notas = dbapi.db_session.query(
-            NNota.almacen_id, func.sum(NNota.total)).filter(
-            NNota.timestamp >= day).filter(
-            NNota.timestamp <= day + delta).filter(
-            NNota.status != Status.DELETED).group_by(NNota.almacen_id)
-        all_alms = {x.almacen_id: x for x in dbapi.search(Store)}
-        sales = []
-        for x in notas:
-            sales.append(AccountTransaction(
-                value=Decimal(int(x[1])) / 100,
-                desc='Venta: {}'.format(all_alms[x[0]].nombre),
-                tipo='venta'))
-        gastos = map(gasto_to_trans, dbapi.search(Spent, inputdate=day))
-        pagos = map(pagos_to_trans, paymentapi.list_payments(day))
-
-        acc_stat = dbapi.get(day, AccountStat)
-        turned_in = [make_acct_trans(acc_stat.deposit), make_acct_trans(acc_stat.turned_cash)]
-        result = {
-            'sales': sales,
-            'spents': gastos,
-            'payments': pagos,
-            'turned_in': turned_in,
-        }
+        result = get_transaction_by_type(dbapi, paymentapi, day, day)
         return json_dumps(result)
+
+    @w.get('/app/api/account_transaction')
+    @dbcontext
+    def get_account_transactions_mult_days():
+        start, end = parse_start_end_date(request.query)
+        result = get_transaction_by_type(dbapi, paymentapi, start, end)
+        return json_dumps(result)
+
 
     @w.get('/app/api/check')
     @dbcontext

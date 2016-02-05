@@ -9,15 +9,18 @@ __author__ = 'han'
 # json files. One file per day per type.
 # current types are: sale-<date>.json and transfer-<date>.json
 
-DIRECTORY = '/var/data/exports/'
+DIRECTORY = './invold'
 URL = 'http://192.168.0.22'
 
 
 def main():
+    start_date = datetime.date(2015, 7, 3)
+    end_date = datetime.date(2016, 1, 30)
     parse_date = datetime.datetime.strptime
-    dump_date = (parse_date(sys.argv[1], '%Y-%m-%d')
-                 if len(sys.argv) > 1 else datetime.date.today())
-    export(dump_date, DIRECTORY, URL)
+    while start_date <= end_date:
+        export(start_date, DIRECTORY, URL)
+        print 'date', start_date
+        start_date += datetime.timedelta(days=1)
 
 
 if __name__ == '__main__':

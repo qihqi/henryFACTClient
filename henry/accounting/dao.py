@@ -138,9 +138,10 @@ class PaymentApi:
     def get_check(self, uid):
         return self._get_doc(uid, NCheck, Check)
 
-    def list_payments(self, day):
+    def list_payments(self, start, end):
         return map(Payment.deserialize,
-                   self.sm.session.query(NPayment).filter_by(date=day))
+                   self.sm.session.query(NPayment).filter(
+                       NPayment.date >= start).filter(NPayment.date <= end))
 
     def list_checks(self, paymentdate=None, checkdate=None):
         query = self.sm.session.query(NCheck).join(NPayment)
