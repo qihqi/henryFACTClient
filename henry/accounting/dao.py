@@ -6,7 +6,7 @@ from henry.base.serialization import SerializableMixin
 from henry.dao.order import PaymentFormat
 
 from .acct_schema import (NBank, NDepositAccount, NPayment, NCheck, NDeposit, NImage,
-                          NComment, NTodo, NAccountStat, NSpent)
+                          NComment, NTodo, NAccountStat, NSpent, NAccountTransaction)
 
 Todo = dbmix(NTodo)
 Comment = dbmix(NComment)
@@ -91,6 +91,7 @@ def _extract_payment(payment):
         value=payment.value,
         date=payment.date,
     )
+
 
 
 class PaymentApi:
@@ -205,3 +206,11 @@ class ImageServer:
             path=filename)
         self.dbapi.create(img)
         return img
+
+
+class AccountTransaction(dbmix(NAccountTransaction)):
+    SALE = 'sales'
+    SPENT = 'spents'
+    CUSTOMER_PAYMENT = 'payments'
+    TURNED_IN = 'turned_in'
+

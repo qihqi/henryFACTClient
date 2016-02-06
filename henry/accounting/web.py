@@ -1,12 +1,12 @@
 from collections import defaultdict
-import datetime
-import os
 from decimal import Decimal
 from operator import attrgetter
+import json
+import datetime
+import os
 import uuid
 
 from bottle import request, redirect, static_file, Bottle, response
-from sqlalchemy import func
 
 from henry import constants
 from henry.base.auth import get_user
@@ -14,14 +14,15 @@ from henry.base.common import parse_iso, parse_start_end_date, parse_start_end_d
 from henry.base.serialization import json_dumps
 from henry.base.dbapi_rest import bind_dbapi_rest
 from henry.dao.document import Status
+from henry.dao.order import PaymentFormat
 from henry.misc import fix_id
 from henry.product.dao import Store
 from henry.schema.inv import NNota
-from henry.dao.order import PaymentFormat
 
 from .acct_schema import ObjType, NComment
-from .reports import group_by_records, generate_daily_report, AccountTransaction, split_records, split_records_binary, \
+from .reports import group_by_records, generate_daily_report, split_records, split_records_binary, \
     get_transaction_by_type
+from henry.accounting.dao import AccountTransaction
 from .acct_schema import NCheck, NSpent, NAccountStat
 from .dao import Todo, Check, Deposit, Payment, Bank, DepositAccount, AccountStat, Spent
 
@@ -106,7 +107,6 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
         result = get_transaction_by_type(dbapi, paymentapi, start, end)
         return json_dumps(result)
 
-
     @w.get('/app/api/check')
     @dbcontext
     def get_checks():
@@ -123,10 +123,19 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
             x.value = Decimal(x.value) / 100
         return json_dumps(checks)
 
-
+    @w.post('/app/api/acct_transaction')
+    @dbcontext
+    def post_acct_transaction():
+        data = request.body.read()
+        acct = AccountTransaction.deserialize(json.loads(data))
+        acct.input_timestamp = datetime.datetime.now()
+        acct.deleted = False
+        pkey = dbapi.create(acct)
+        return {'uid': pkey}
 
     # account stat
     bind_dbapi_rest('/app/api/account_stat', dbapi, AccountStat, w)
+    bind_dbapi_rest('/app/api/bank_account', dbapi, Bank, w)
 
     return w
 

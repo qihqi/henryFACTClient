@@ -107,7 +107,10 @@ var InputDeposit = React.createClass({
         return <form onSubmit={this.submit}>
             <p>Fecha:<input ref='date' /></p>
             <p>Valor:<input ref='value' /></p>
-            <p>Cuenta: <input ref='account' /></p>
+            <p>Cuenta: <select> 
+                {this.props.account_options.map(
+                    (x)=><option value={x.uid}>{x.name}</option>)}
+            </select></p>
             <p><input type="submit" value="Guardar" /></p>
         </form>
     }
@@ -120,6 +123,17 @@ var TotalSale = React.createClass({
 
 
 export default React.createClass({
+    getBankAccounts: function() {
+        var x = $.ajax({
+            url: '/app/api/bank_account',
+            success: function(r) {
+                this.setState({'bank': r.result});
+            }.bind(this),
+            failure: function(r) {
+                alert('err');
+            }
+        });
+    },
     getAccountInfo: function(start_date, end_date) {
         $.ajax({
             url: `/app/api/account_transaction?start=${start_date}&end=${end_date}`,
@@ -157,7 +171,8 @@ export default React.createClass({
         today = today.toISOString().split('T')[0];
         yesterday = yesterday.toISOString().split('T')[0];
         this.getAccountInfo(yesterday, today);
-        return {'all_events': []};
+        this.getBankAccounts();
+        return {'all_events': [], 'bank': []};
         
     },
     newDates: function() {
@@ -167,22 +182,28 @@ export default React.createClass({
     },
     saveInputDeposit: function(result) {
         var newitem = result;
-        result.type = 'deposit';
-        result.img = '';
-        result.desc = 'DEPOSITO';
-        result.value = -result.value;
+        newitem.type = 'turned_in';
+        newitem.img = '';
+        newitem.desc = 'DEPOSITO/ENTREGA';
+        newitem.value = -newitem.value;
+        $.ajax({
+            url: '/app/api/acct_transaction',
+            method: 'POST',
+            data: JSON.stringify(newitem),
+            success: function(result) {
+                alert(result.pkey);
+            }
+        });
         this.balance = result.value + this.state.balance;
         result.saldo = this.balance;
-        this.setState({'all_events': this.state.all_events.concat(result)});
-    },
-    func: function() {
+        this.setState({'all_events': this.state.all_events.concat(newitem)});
     },
     render: function() {
         return <div className="row">
             <div className="row"> 
                 <button onClick={()=>this.refs.inputDeposit.show()}>Ingresar Deposito</button>
                 <SkyLight hiddenOnOverlayClicked ref="inputDeposit" title="Ingresar Deposito">
-                    <InputDeposit onSubmit={this.saveInputDeposit} />
+                    <InputDeposit onSubmit={this.saveInputDeposit} account_options={this.state.bank}/>
                 </SkyLight>
             </div>
             <div className="row">

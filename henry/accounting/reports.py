@@ -1,20 +1,19 @@
 import datetime
-import os
 from collections import defaultdict
 from datetime import timedelta
 from operator import attrgetter
 from decimal import Decimal
+
 from sqlalchemy import func
 
 from henry.accounting.acct_schema import NPayment, NCheck, NSpent
-from henry.accounting.dao import Spent, AccountStat
+from henry.accounting.dao import Spent, AccountStat, AccountTransaction
 from henry.base.serialization import SerializableMixin
 from henry.config import prodapi, transapi
 from henry.product.dao import Store
 from henry.schema.inv import NNota
 from henry.users.schema import NCliente
 from henry.base.dbapi import decode_str
-
 from henry.coreconfig import storeapi, invapi
 from henry.dao.order import InvMetadata, PaymentFormat
 from henry.dao.document import Status
@@ -186,22 +185,6 @@ def generate_daily_report(dbapi, day):
     )
 
 
-class AccountTransaction(SerializableMixin):
-    SALE = 'sales'
-    SPENT = 'spents'
-    CUSTOMER_PAYMENT = 'payments'
-    TURNED_IN = 'turned_in'
-
-    _name = ('date', 'img', 'desc', 'type', 'value')
-
-    def __init__(self, desc, value, tipo, date=None, img=None):
-        self.desc = desc
-        self.type = tipo
-        self.value = value
-        self.date = date
-        self.img = img
-
-
 def make_acct_trans(value):
     return AccountTransaction(
         value=Decimal(value) / 100,
@@ -252,6 +235,10 @@ def get_spent_as_transactions(dbapi, start_date, end_date):
             tipo='gasto')
 
 
+def get_turned_in_cash2(dbapi, start_date, end_date):
+    return dbapi.search(AccountTransaction, **{'date-gte': start_date, 'date-lte': end_date})
+
+
 def get_turned_in_cash(dbapi, start_date, end_date):
     accts = dbapi.search(AccountStat, **{
         'date-lte': end_date,
@@ -275,6 +262,6 @@ def get_transaction_by_type(dbapi, paymentapi, start_date, end_date):
         'sales': list(get_sales_as_transactions(dbapi, start_date, end_date + delta)),
         'payments': list(get_payments_as_transactions(paymentapi, start_date, end_date)),
         'spents': list(get_spent_as_transactions(dbapi, start_date, end_date)),
-        'turned_in': list(get_turned_in_cash(dbapi, start_date, end_date)),
+        'turned_in': list(get_turned_in_cash2(dbapi, start_date, end_date)),
     }
     return result

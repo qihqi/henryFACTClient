@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Date, Integer, String, ForeignKey, Numeric, DateTime, Index
+from sqlalchemy import Column, Date, Integer, String, ForeignKey, Numeric, DateTime, Index, Boolean
 from sqlalchemy.orm import relationship, backref
 from henry.schema.base import Base
 from henry.schema.inv import NNota
@@ -154,3 +154,17 @@ class NTodo(Base):
     creation_date = Column(DateTime)
 
 Index('ix_todo_2', NImage.objtype, NImage.objid)
+
+
+class NAccountTransaction(Base):
+    __tablename__ = 'account_transaction'
+    uid = Column(Integer, primary_key=True, autoincrement=True)
+    date = Column(Date, index=True)
+    desc = Column(String(100))
+    type = Column(String(20))
+    value = Column(Numeric(15, 4))
+
+    deleted = Column(Boolean)
+    input_timestamp = Column(DateTime)
+    last_modified = Column(DateTime)
+
