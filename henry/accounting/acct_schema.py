@@ -157,12 +157,13 @@ Index('ix_todo_2', NImage.objtype, NImage.objid)
 
 
 class NAccountTransaction(Base):
-    __tablename__ = 'account_transaction'
+    __tablename__ = 'account_transactions'
     uid = Column(Integer, primary_key=True, autoincrement=True)
     date = Column(Date, index=True)
     desc = Column(String(100))
     type = Column(String(20))
     value = Column(Numeric(15, 4))
+    to_bank_account = Column(Integer)
 
     deleted = Column(Boolean)
     input_timestamp = Column(DateTime)

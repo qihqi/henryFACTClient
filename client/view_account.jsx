@@ -13,21 +13,6 @@ function twoDecimalPlace(number) {
     return number.toFixed(2);
 }
 
-var ValuesTable = React.createClass({
-    render: function() {
-        var total = 0;
-        for (var x in this.props.content) {
-            total += this.props.content[x];
-        }
-        return <div>
-            <h3>Total: {total}</h3>
-            <ul>
-                {this.props.keys.map((key) => <li> {key}: {this.props.content[key]} </li>)}
-            </ul>
-        </div>;
-    }
-});
-
 function sumValue(arr) {
     var total = 0;
     for (var x in arr) {
@@ -64,18 +49,27 @@ var CheckList = React.createClass({
 });
 
 var AccountTable = React.createClass({
+    uploadImageForm: function(x) {
+        this.props.showImgForm(x.uid);
+    },
     render: function() {
         var make_row = (x) => {
-            var row = [x.date, x.desc, x.value, '', twoDecimalPlace(x.saldo), x.img];
+            var row = [x.date, x.desc, x.value, '', twoDecimalPlace(x.saldo)];
             if (x.value < 0) {
-                row = [x.date, x.desc, '', x.value, twoDecimalPlace(x.saldo), x.img];
+                row = [x.date, x.desc, '', x.value, twoDecimalPlace(x.saldo)];
             }
-            return <tr>
+            var img =(x.img && x.img.length > 0) ? <img height="100" src={x.img} /> : "";
+            var button = (x.type == 'turned_in') 
+                    ? <button onClick={this.uploadImageForm.bind(this, x)}>Agregar Papeleta</button>
+                    : "";
+            return <tr key={x.uid}>
                 {row.map((x) => {
                     if (typeof(x) === 'number') 
                         return <td className="value_col">{x}</td>
                     return <td>{x}</td>;
                 })}
+                <td>{img}</td>
+                <td className="noprint">{button}</td>
             </tr>;
         };
         return <table className="table">
@@ -87,6 +81,7 @@ var AccountTable = React.createClass({
                 <th>Egreso</th>
                 <th>Saldo</th>
                 <th></th>
+                <th></th>
             </tr>
             {this.props.all_events.map(make_row)}
         </tbody></table>;
@@ -96,20 +91,25 @@ var AccountTable = React.createClass({
 var InputDeposit = React.createClass({
     submit: function(event) {
         event.preventDefault();
+        console.log(Date.parse(this.refs.date.value));
+        if (! (/\d{4}-\d{2}-\d{2}/.test(this.refs.date.value))) {
+            alert('ingrese fecha en formato YYYY-MM-DD');
+            return;
+        }
         var data = {
             date: this.refs.date.value,
             value: Number(this.refs.value.value),
-            account : this.refs.account.value
+            to_bank_account : this.refs.account.value
         };
         this.props.onSubmit(data);
     },
     render: function() {
         return <form onSubmit={this.submit}>
-            <p>Fecha:<input ref='date' /></p>
-            <p>Valor:<input ref='value' /></p>
-            <p>Cuenta: <select> 
+            <p>Fecha:<input ref='date' placeholder="YYYY-MM-DD"/></p>
+            <p>Valor:<input ref='value' placeholder="valor"/></p>
+            <p>Cuenta: <select ref='account'> 
                 {this.props.account_options.map(
-                    (x)=><option value={x.uid}>{x.name}</option>)}
+                    (x)=><option key={x.uid} value={x.uid}>{x.name}</option>)}
             </select></p>
             <p><input type="submit" value="Guardar" /></p>
         </form>
@@ -121,6 +121,40 @@ var TotalSale = React.createClass({
     }
 });
 
+var Papeleta = React.createClass({
+    setUid: function(uid) {
+        this.uid = uid;
+    },
+    submit: function(e) {
+        var fd = new FormData();    
+        var imgFile = this.refs.file.getDOMNode().files[0];
+        
+        fd.append('img', imgFile);
+        fd.append('objtype', 'account_transaction');
+        fd.append('objid', this.uid);
+        console.log(this.uid);
+        fd.append('replace', true);
+        $.ajax({
+            url: '/app/api/attachimg',
+            data: fd,
+            processData: false,
+            contentType: false,
+            type: 'POST',
+            success: (data) => {
+                this.props.onSubmit(this.uid, data.url);
+            }
+        });
+        e.preventDefault()
+    },
+    render: function() {
+        return <form method="post" action="/app/attachimg" 
+                     encType="multipart/form-data" onSubmit={this.submit}>
+            Imagen Deposito:
+            <input ref='file' type="file" name="img"/> <input type="submit" />
+        </form>;
+    }
+
+});
 
 export default React.createClass({
     getBankAccounts: function() {
@@ -138,13 +172,8 @@ export default React.createClass({
         $.ajax({
             url: `/app/api/account_transaction?start=${start_date}&end=${end_date}`,
             success: (result) => {
-                var val = JSON.parse(result);
-
-                var all_events = val.sales.concat(  
-                                 val.payments,  
-                                 val.turned_in,
-                                 val.spents);
-                var sorted = all_events.sort((a, b) => {
+                var val = JSON.parse(result).result;
+                var sorted = val.sort((a, b) => {
                     if (a.date > b.date) return 1;
                     if (a.date < b.date) return -1;
                     if (a.type > b.type) return -1;
@@ -152,12 +181,15 @@ export default React.createClass({
                     return 0;
                 });
                 var start = 0;
+                this.index_by_uid = {};
                 for (var x in sorted) {
                     sorted[x].value = Number(sorted[x].value);
                     start += sorted[x].value;
                     sorted[x].saldo = start;
+                    this.index_by_uid[sorted[x].uid] = x;
                 }
-                this.setState({'all_events': sorted, 'balance': start});
+                this.setState({'all_events': sorted, 'balance': start,
+                               'start_date': start_date, 'end_date': end_date});
             }});
     },
     getInitialState: function() {
@@ -172,8 +204,7 @@ export default React.createClass({
         yesterday = yesterday.toISOString().split('T')[0];
         this.getAccountInfo(yesterday, today);
         this.getBankAccounts();
-        return {'all_events': [], 'bank': []};
-        
+        return {'all_events': [], 'bank': [], 'start_date': '', 'end_date': ''};
     },
     newDates: function() {
         var start_date = this.refs.start_date.value;
@@ -190,28 +221,45 @@ export default React.createClass({
             url: '/app/api/acct_transaction',
             method: 'POST',
             data: JSON.stringify(newitem),
-            success: function(result) {
-                alert(result.pkey);
+            success: (pkey) => {
+                this.balance = result.value + this.state.balance;
+                newitem.saldo = this.balance;
+                newitem.uid = pkey.pkey;
+                this.index_by_uid[newitem.uid] = this.state.all_events.length;
+                this.setState({'all_events': this.state.all_events.concat(newitem)});
             }
         });
-        this.balance = result.value + this.state.balance;
-        result.saldo = this.balance;
-        this.setState({'all_events': this.state.all_events.concat(newitem)});
+    },
+    showImgForm: function(obj) {
+        console.log('showImgForm', obj);
+        this.refs.papeleta.setUid(obj);
+        this.refs.imgForm.show();
+    },
+    submitPapeleta: function(uid, url) {
+        var array = this.state.all_events;
+        var index = this.index_by_uid[uid];
+        array[index].img = url;
+        this.setState({'all_events': array});
+        this.refs.imgForm.hide();
     },
     render: function() {
         return <div className="row">
-            <div className="row"> 
+            <h3>{this.state.start_date} -- {this.state.end_date} </h3>
+            <SkyLight hiddenOnOverlayClicked ref="inputDeposit" title="Ingresar Deposito">
+                <InputDeposit onSubmit={this.saveInputDeposit} account_options={this.state.bank}/>
+            </SkyLight>
+            <SkyLight hiddenOnOverlayClicked ref="imgForm" title="Papeleta">
+                <Papeleta ref="papeleta" onSubmit={this.submitPapeleta}/>
+            </SkyLight>
+            <div className="row noprint"> 
                 <button onClick={()=>this.refs.inputDeposit.show()}>Ingresar Deposito</button>
-                <SkyLight hiddenOnOverlayClicked ref="inputDeposit" title="Ingresar Deposito">
-                    <InputDeposit onSubmit={this.saveInputDeposit} account_options={this.state.bank}/>
-                </SkyLight>
             </div>
-            <div className="row">
+            <div className="row noprint">
                 Desde:<input ref='start_date' /> Hasta: <input ref='end_date' /> 
                 <button onClick={this.newDates}>Cargar</button>
             </div>
             <div className="row">
-            <AccountTable all_events={this.state.all_events} />
+            <AccountTable all_events={this.state.all_events} showImgForm={this.showImgForm}/>
             </div>
         </div>;
     }

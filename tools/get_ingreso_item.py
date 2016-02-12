@@ -1,7 +1,8 @@
 from decimal import Decimal
 import csv
 import datetime
-from henry.config import sessionmanager
+
+from henry.coreconfig import sessionmanager
 from henry.schema.legacy import NIngreso, NIngresoItem
 from sqlalchemy.sql import func
 
@@ -47,8 +48,8 @@ def main():
         ing = session.query(NIngreso, NIngresoItem).filter(
             NIngreso.id == NIngresoItem.ref_id).filter( 
             NIngresoItem.producto_id.in_(dato_dict.keys())).filter(
-            NIngreso.fecha >= datetime.date(2012, 6, 1)).filter(
-            NIngreso.fecha <= datetime.date(2013, 6, 30))
+            NIngreso.fecha >= datetime.date(2013, 1, 1)).filter(
+            NIngreso.fecha <= datetime.date(2014, 12, 31))
 
         by_date_item = {}
         for i,item in ing:
@@ -58,12 +59,17 @@ def main():
                 x = 1 
             else:
                 disp, precio, x = v
-            by_date_item[(i.fecha, disp)] = (item.cantidad / Decimal(x), precio)
+            realcant = item.cantidad / Decimal(x)
+            if realcant < 1:
+                realcant = Decimal(1)
+            realcant *= 2
+            realcant = round(realcant)
+            by_date_item[(i.fecha, disp)] = (realcant, precio)
         end = sorted(by_date_item.items(), key=lambda x: x[0][0])
-        with open('/home/han/ventas.csv', 'w') as f:
+        with open('/home/han/ventas2.csv', 'w') as f:
             csvwriter = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             for ((fecha, disp), (cant, precio)) in end:
-                csvwriter.writerow([fecha, disp, '', '', '', cant.quantize(Decimal('0.001')), precio])
+                csvwriter.writerow([fecha, disp, '', '', '', cant, precio])
 
 
 

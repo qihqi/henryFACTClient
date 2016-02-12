@@ -7,7 +7,7 @@ from decimal import Decimal
 from sqlalchemy import func
 
 from henry.accounting.acct_schema import NPayment, NCheck, NSpent
-from henry.accounting.dao import Spent, AccountStat, AccountTransaction
+from henry.accounting.dao import Spent, AccountStat, AccountTransaction, Image
 from henry.base.serialization import SerializableMixin
 from henry.config import prodapi, transapi
 from henry.product.dao import Store
@@ -189,7 +189,7 @@ def make_acct_trans(value):
     return AccountTransaction(
         value=Decimal(value) / 100,
         desc='Deposito/Entregado',
-        tipo='turned_in')
+        type='turned_in')
 
 
 def get_sales_as_transactions(dbapi, start_date, end_date):
@@ -209,7 +209,7 @@ def get_sales_as_transactions(dbapi, start_date, end_date):
             date=x[0],
             value=Decimal(int(x[2])) / 100,
             desc='Venta {}: {}'.format(x[0], all_alms[x[1]].nombre),
-            tipo='venta')
+            type='venta')
 
 
 def get_payments_as_transactions(paymentapi, start_date, end_date):
@@ -219,7 +219,7 @@ def get_payments_as_transactions(paymentapi, start_date, end_date):
                 date=pago.date,
                 value=Decimal(pago.value) / 100,
                 desc='ABONO a Factura {}'.format(pago.note_id),
-                tipo=AccountTransaction.CUSTOMER_PAYMENT)
+                type=AccountTransaction.CUSTOMER_PAYMENT)
 
 
 
@@ -232,11 +232,17 @@ def get_spent_as_transactions(dbapi, start_date, end_date):
             date=gasto.inputdate.date(),
             value=(-Decimal(gasto.paid_from_cashier) / 100),
             desc=gasto.desc,
-            tipo='gasto')
+            type='gasto')
 
 
-def get_turned_in_cash2(dbapi, start_date, end_date):
-    return dbapi.search(AccountTransaction, **{'date-gte': start_date, 'date-lte': end_date})
+def get_turned_in_cash2(dbapi, start_date, end_date, imageserver):
+    all_acct = list(dbapi.search(AccountTransaction, **{'date-gte': start_date, 'date-lte': end_date}))
+    imgs = {x.objid: x for x in dbapi.search(Image, objtype='account_transaction')}
+    for acct in all_acct:
+        key = str(acct.uid)
+        if key in imgs:
+            acct.img = imageserver.get_url_path(imgs[key].path)
+    return all_acct
 
 
 def get_turned_in_cash(dbapi, start_date, end_date):
@@ -248,20 +254,18 @@ def get_turned_in_cash(dbapi, start_date, end_date):
             date=a.date,
             value=(-Decimal(a.deposit) / 100),
             desc='Deposito/Brindado {}'.format(a.date.isoformat()),
-            tipo='turned_in')
+            type='turned_in')
         yield AccountTransaction(
             date=a.date,
             value=(-Decimal(a.turned_cash) / 100),
             desc='Deposito/Entregado {}'.format(a.date.isoformat()),
-            tipo='turned_in')
+            type='turned_in')
 
 
-def get_transaction_by_type(dbapi, paymentapi, start_date, end_date):
+def get_transaction_by_type(dbapi, paymentapi, imageserver, start_date, end_date):
     delta = datetime.timedelta(hours=23)
-    result = {
-        'sales': list(get_sales_as_transactions(dbapi, start_date, end_date + delta)),
-        'payments': list(get_payments_as_transactions(paymentapi, start_date, end_date)),
-        'spents': list(get_spent_as_transactions(dbapi, start_date, end_date)),
-        'turned_in': list(get_turned_in_cash2(dbapi, start_date, end_date)),
-    }
+    result = list(get_sales_as_transactions(dbapi, start_date, end_date + delta))
+    result.extend(get_payments_as_transactions(paymentapi, start_date, end_date))
+    result.extend(get_spent_as_transactions(dbapi, start_date, end_date))
+    result.extend(get_turned_in_cash2(dbapi, start_date, end_date, imageserver))
     return result

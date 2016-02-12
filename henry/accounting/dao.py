@@ -196,7 +196,7 @@ class ImageServer:
         _, filename = os.path.split(filepath)
         return os.path.join(self.imgbasepath, filename)
 
-    def saveimg(self, objtype, objid, data):
+    def saveimg(self, objtype, objid, data, replace=False):
         _, ext = os.path.splitext(data.raw_filename)
         filename = uuid.uuid1().hex + ext
         filename = self.fileapi.make_fullpath(filename)
@@ -204,7 +204,14 @@ class ImageServer:
         img = Image(
             objtype=objtype, objid=objid,
             path=filename)
-        self.dbapi.create(img)
+        if replace:
+            count = self.dbapi.db_session.query(NImage).filter_by(
+                objtype=objtype, objid=objid).update(
+                {'path': filename})
+            if count == 0:
+                self.dbapi.create(img)
+        else:
+            self.dbapi.create(img)
         return img
 
 
@@ -213,4 +220,10 @@ class AccountTransaction(dbmix(NAccountTransaction)):
     SPENT = 'spents'
     CUSTOMER_PAYMENT = 'payments'
     TURNED_IN = 'turned_in'
+
+    def serialize(self):
+        result = super(AccountTransaction, self).serialize()
+        if hasattr(self, 'img'):
+            result['img'] = self.img
+        return result
 

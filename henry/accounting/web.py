@@ -40,8 +40,6 @@ def extract_nota_and_client(dbapi, form, redirect_url):
     return None, None
 
 
-
-
 def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserver):
     w = Bottle()
 
@@ -98,14 +96,14 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
     def get_account_transactions(date):
         day = parse_iso(date)
         result = get_transaction_by_type(dbapi, paymentapi, day, day)
-        return json_dumps(result)
+        return json_dumps({'result': result})
 
     @w.get('/app/api/account_transaction')
     @dbcontext
     def get_account_transactions_mult_days():
         start, end = parse_start_end_date(request.query)
-        result = get_transaction_by_type(dbapi, paymentapi, start, end)
-        return json_dumps(result)
+        result = get_transaction_by_type(dbapi, paymentapi, imgserver, start, end)
+        return json_dumps({'result': result})
 
     @w.get('/app/api/check')
     @dbcontext
@@ -131,11 +129,11 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
         acct.input_timestamp = datetime.datetime.now()
         acct.deleted = False
         pkey = dbapi.create(acct)
-        return {'uid': pkey}
+        return {'pkey': pkey}
 
     # account stat
     bind_dbapi_rest('/app/api/account_stat', dbapi, AccountStat, w)
-    bind_dbapi_rest('/app/api/bank_account', dbapi, Bank, w)
+    bind_dbapi_rest('/app/api/bank_account', dbapi, DepositAccount, w)
 
     return w
 
@@ -636,15 +634,27 @@ def make_wsgi_app(dbcontext, imgserver,
             response.set_header('X-Accel-Redirect', '/image/{}'.format(rest))
             response.set_header('Content-Type', '')
 
+    def save_img_from_request(therequest):
+        imgdata = therequest.files.get('img')
+        objtype = therequest.forms.get('objtype')
+        objid = therequest.forms.get('objid')
+        do_replace = therequest.forms.get('replace')
+        return imgserver.saveimg(objtype, objid, imgdata, do_replace)
+
     @w.post('/app/attachimg')
     @dbcontext
     @auth_decorator
     def post_img():
-        imgdata = request.files.get('img')
-        objtype = request.forms.get('objtype')
-        objid = request.forms.get('objid')
         redirect_url = request.forms.get('redirect_url')
-        imgserver.saveimg(objtype, objid, imgdata)
+        save_img_from_request(request)
         redirect(redirect_url)
+
+    @w.post('/app/api/attachimg')
+    @dbcontext
+    @auth_decorator
+    def post_img():
+        img = save_img_from_request(request)
+        url = imgserver.get_url_path(img.path)
+        return {'url': url}
 
     return w
