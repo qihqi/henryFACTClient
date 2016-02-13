@@ -131,6 +131,14 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
         pkey = dbapi.create(acct)
         return {'pkey': pkey}
 
+    @w.put('/app/api/acct_transaction/<uid>')
+    @dbcontext
+    def put_acct_transaction(uid):
+        data = json.loads(request.body.read())
+        acct = AccountTransaction(uid=uid)
+        count = dbapi.update(acct, data)
+        return {'updated': count}
+
     # account stat
     bind_dbapi_rest('/app/api/account_stat', dbapi, AccountStat, w)
     bind_dbapi_rest('/app/api/bank_account', dbapi, DepositAccount, w)

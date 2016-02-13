@@ -1,5 +1,6 @@
 import React from 'react';
 import SkyLight from 'react-skylight';
+import LinkedStateMixin from 'react-addons-linked-state-mixin';
 
 function getPayments(day, callback) {
     $.ajax({
@@ -52,6 +53,9 @@ var AccountTable = React.createClass({
     uploadImageForm: function(x) {
         this.props.showImgForm(x.uid);
     },
+    showEditForm: function(x, _) {
+        this.props.showEditForm(x);
+    },
     render: function() {
         var make_row = (x) => {
             var row = [x.date, x.desc, x.value, '', twoDecimalPlace(x.saldo)];
@@ -60,7 +64,10 @@ var AccountTable = React.createClass({
             }
             var img =(x.img && x.img.length > 0) ? <img height="100" src={x.img} /> : "";
             var button = (x.type == 'turned_in') 
-                    ? <button onClick={this.uploadImageForm.bind(this, x)}>Agregar Papeleta</button>
+                    ? <div> 
+                        <p><button onClick={this.uploadImageForm.bind(this, x)}>Agregar Papeleta</button></p>
+                        <p><button onClick={this.showEditForm.bind(this, x)}>Editar</button></p>
+                      </div>
                     : "";
             var key = x.uid ? x.uid : x.desc;
             return <tr key={key}>
@@ -90,6 +97,10 @@ var AccountTable = React.createClass({
 });
 
 var InputDeposit = React.createClass({
+    mixins: [LinkedStateMixin],
+    getInitialState: function() {
+        return {'date': '', 'to_bank_account': -1, 'value': ''};
+    },
     submit: function(event) {
         event.preventDefault();
         console.log(Date.parse(this.refs.date.value));
@@ -102,17 +113,20 @@ var InputDeposit = React.createClass({
             value: Number(this.refs.value.value),
             to_bank_account : this.refs.account.value
         };
+        if ('uid' in this.state) {
+            data.uid = this.state.uid;
+        }
         this.props.onSubmit(data);
     },
     render: function() {
         return <form onSubmit={this.submit}>
-            <p>Fecha:<input ref='date' placeholder="YYYY-MM-DD"/></p>
-            <p>Valor:<input ref='value' placeholder="valor"/></p>
-            <p>Cuenta: <select ref='account'> 
+            <p>Fecha:<input valueLink={this.linkState('date')} ref='date' placeholder="YYYY-MM-DD"/></p>
+            <p>Valor:<input ref='value'  valueLink={this.linkState('value')} placeholder="valor"/></p>
+            <p>Cuenta: <select ref='account' valueLink={this.linkState('to_bank_account')}> 
                 {this.props.account_options.map(
                     (x)=><option key={x.uid} value={x.uid}>{x.name}</option>)}
             </select></p>
-            <p><input type="submit" value="Guardar" /></p>
+            <p><input type="submit" value="Guardar"/></p>
         </form>
     }
 });
@@ -231,6 +245,27 @@ export default React.createClass({
             }
         });
     },
+    editInputDeposit: function(result) {
+        var newitem = Object.assign(result);
+        newitem.value = -Number(newitem.value);
+        var uid = newitem.uid;
+        delete newitem['uid'];
+        $.ajax({
+            url: '/app/api/acct_transaction/' + uid,
+            method: 'PUT',
+            data: JSON.stringify(newitem),
+            success: (result) => {
+                if (result.updated == 1) {
+                    var index = this.index_by_uid[uid];
+                    console.log(this.index_by_uid, index);
+                    var array = this.state.all_events;
+                    array[index] = Object.assign(array[index], newitem);
+                    this.setState({'all_events': array});
+                    this.refs.editInputDeposit.hide();
+                }
+            }
+        });
+    },
     showImgForm: function(obj) {
         console.log('showImgForm', obj);
         this.refs.papeleta.setUid(obj);
@@ -243,6 +278,12 @@ export default React.createClass({
         this.setState({'all_events': array});
         this.refs.imgForm.hide();
     },
+    showEditForm: function(current_object) {
+        var newobj = Object.assign({}, current_object);
+        newobj.value = -newobj.value;
+        this.refs.editDepositForm.setState(newobj);
+        this.refs.editDeposit.show();
+    },
     render: function() {
         return <div className="row">
             <h3>{this.state.start_date} -- {this.state.end_date} </h3>
@@ -252,6 +293,9 @@ export default React.createClass({
             <SkyLight hiddenOnOverlayClicked ref="imgForm" title="Papeleta">
                 <Papeleta ref="papeleta" onSubmit={this.submitPapeleta}/>
             </SkyLight>
+            <SkyLight hiddenOnOverlayClicked ref="editDeposit" title="Editar Deposito">
+                <InputDeposit ref="editDepositForm" onSubmit={this.editInputDeposit} account_options={this.state.bank}/>
+            </SkyLight>
             <div className="row noprint"> 
                 <button onClick={()=>this.refs.inputDeposit.show()}>Ingresar Deposito</button>
             </div>
@@ -260,7 +304,9 @@ export default React.createClass({
                 <button onClick={this.newDates}>Cargar</button>
             </div>
             <div className="row">
-            <AccountTable all_events={this.state.all_events} showImgForm={this.showImgForm}/>
+            <AccountTable all_events={this.state.all_events} 
+                showImgForm={this.showImgForm}
+                showEditForm={this.showEditForm} />
             </div>
         </div>;
     }
