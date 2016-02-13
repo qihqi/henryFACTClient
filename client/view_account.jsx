@@ -62,7 +62,8 @@ var AccountTable = React.createClass({
             var button = (x.type == 'turned_in') 
                     ? <button onClick={this.uploadImageForm.bind(this, x)}>Agregar Papeleta</button>
                     : "";
-            return <tr key={x.uid}>
+            var key = x.uid ? x.uid : x.desc;
+            return <tr key={key}>
                 {row.map((x) => {
                     if (typeof(x) === 'number') 
                         return <td className="value_col">{x}</td>

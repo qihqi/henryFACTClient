@@ -206,6 +206,7 @@ def get_sales_as_transactions(dbapi, start_date, end_date):
         if x[1] is None:
             continue
         yield AccountTransaction(
+            uid='sale{}.{}'.format(x[0].isoformat(), x[1]),
             date=x[0],
             value=Decimal(int(x[2])) / 100,
             desc='Venta {}: {}'.format(x[0], all_alms[x[1]].nombre),
@@ -216,6 +217,7 @@ def get_payments_as_transactions(paymentapi, start_date, end_date):
     for pago in paymentapi.list_payments(start_date, end_date):
         if pago.type == PaymentFormat.CASH:
             yield AccountTransaction(
+                uid='abono'+str(pago.uid),
                 date=pago.date,
                 value=Decimal(pago.value) / 100,
                 desc='ABONO a Factura {}'.format(pago.note_id),
@@ -229,6 +231,7 @@ def get_spent_as_transactions(dbapi, start_date, end_date):
             print gasto.serialize()
             continue
         yield AccountTransaction(
+            uid='gasto'+str(gasto.uid),
             date=gasto.inputdate.date(),
             value=(-Decimal(gasto.paid_from_cashier) / 100),
             desc=gasto.desc,
