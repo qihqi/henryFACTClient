@@ -14,17 +14,15 @@ from henry.base.common import parse_iso, parse_start_end_date, parse_start_end_d
 from henry.base.serialization import json_dumps
 from henry.base.dbapi_rest import bind_dbapi_rest
 from henry.dao.document import Status
-from henry.dao.order import PaymentFormat
+from henry.dao.order import PaymentFormat, InvMetadata
 from henry.misc import fix_id
 from henry.product.dao import Store
 from henry.schema.inv import NNota
-
 from .acct_schema import ObjType, NComment
-from .reports import group_by_records, generate_daily_report, split_records, split_records_binary, \
-    get_transaction_by_type
-from henry.accounting.dao import AccountTransaction
+from .reports import (group_by_records, generate_daily_report, split_records_binary, get_transactions)
 from .acct_schema import NCheck, NSpent, NAccountStat
-from .dao import Todo, Check, Deposit, Payment, Bank, DepositAccount, AccountStat, Spent
+from .dao import (Todo, Check, Deposit, Payment, Bank,
+                  DepositAccount, AccountStat, Spent, AccountTransaction)
 
 
 def extract_nota_and_client(dbapi, form, redirect_url):
@@ -80,9 +78,9 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
     @w.get('/app/api/payment')
     @dbcontext
     def get_all_payments():
-        day = parse_iso(request.query.get('date'))
-        result = list(paymentapi.list_payments(day, day))
-        return json_dumps(result)
+        start, end = parse_start_end_date(request.query)
+        result = list(paymentapi.list_payments(start, end))
+        return json_dumps({'result': result})
 
     @w.get('/app/api/gasto')
     @dbcontext
@@ -102,8 +100,8 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
     @dbcontext
     def get_account_transactions_mult_days():
         start, end = parse_start_end_date(request.query)
-        result = get_transaction_by_type(dbapi, paymentapi, imgserver, start, end)
-        return json_dumps({'result': result})
+        result = get_transactions(dbapi, paymentapi, invapi, imgserver, start, end)
+        return json_dumps(result)
 
     @w.get('/app/api/check')
     @dbcontext
@@ -138,6 +136,42 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
         acct = AccountTransaction(uid=uid)
         count = dbapi.update(acct, data)
         return {'updated': count}
+
+    @w.get('/app/api/noncash_sales_with_payments')
+    @dbcontext
+    @auth_decorator
+    def ver_ventas_no_efectivos():
+        start, end = parse_start_end_date(request.query)
+        end += datetime.timedelta(hours=23)
+        sales = dbapi.db_session.query(NNota).filter(
+            NNota.timestamp >= start).filter(NNota.timestamp <= end).filter(
+            NNota.payment_format != PaymentFormat.CASH)
+
+        sales = map(InvMetadata.from_db_instance, sales)
+        payments = list(paymentapi.list_payments(start, end))
+
+        result = {}
+        for x in sales:
+            if x.client.codigo not in result:
+                result[x.client.codigo] = {}
+                result[x.client.codigo]['sales'] = []
+                result[x.client.codigo]['payments'] = []
+            result[x.client.codigo]['sales'].append(x)
+
+        unused_payments = []
+        for x in payments:
+            if x.client_id in result:
+                result[x.client_id]['payments'].append(x)
+            else:
+                unused_payments.append(x)
+
+        result['unused_payments'] = unused_payments
+        return json_dumps({
+            'unused_payments': unused_payments,
+            'sales': result.items()
+        })
+
+
 
     # account stat
     bind_dbapi_rest('/app/api/account_stat', dbapi, AccountStat, w)
@@ -232,6 +266,8 @@ def make_wsgi_app(dbcontext, imgserver,
             dbapi.create(todo2)
 
         redirect('/app/crear_entrega_de_cuenta?fecha={}'.format(date.isoformat()))
+
+
 
     @w.get('/app/entrega_de_cuenta_list')
     @dbcontext

@@ -1,0 +1,20 @@
+<html>
+<body>
+{% for nota, payments in others %}
+<h4> {{nota.id}}: Compra: {{ value_from_cents(nota.total)}}
+    Pago: {{ value_from_cents(payments|sum(attribute='value')) }}
+</h4>
+
+<table>
+    {% for i in payments %}
+    <tr>
+        <td>Pago: </td>
+        <td> {{ i.note_id}} </td>
+        <td> {{ i.date}} </td>
+        <td> {{ i.type}} </td>
+        <td> {{ value_from_cents(i.value)}} </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endfor %}
+</body></html>

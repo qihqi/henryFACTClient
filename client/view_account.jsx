@@ -14,6 +14,14 @@ function twoDecimalPlace(number) {
     return number.toFixed(2);
 }
 
+function sum(arr) {
+    var total = 0;
+    for (var x in arr) {
+        total += Number(arr[x]);
+    }
+    return total;
+}
+
 function sumValue(arr) {
     var total = 0;
     for (var x in arr) {
@@ -171,6 +179,41 @@ var Papeleta = React.createClass({
 
 });
 
+
+var CreditTable = React.createClass({
+    render: function() {
+        var makeInv = function(x) {
+            return <tr>
+                <td>{x.timestamp.substring(0, 10)}</td>
+                <td>{x.client.apellidos + ' ' + x.client.nombres}</td>
+                <td>{twoDecimalPlace(x.total)}</td>
+            </tr>;
+        };
+        var makePay= function(x) {
+            return <tr className="row">
+                <td>{x.date}</td>
+                <td>{x.desc}</td>
+                <td>{twoDecimalPlace(x.value)}</td>
+                <td>
+                    {x.img&&x.img.length ? <img src={s.img} height="100" /> : "" }
+                </td>
+            </tr>;
+        };
+        return <div>
+            <div className="col-md-12">Creditos
+                <table className="table"><tbody>
+                    {this.props.credit.map(makeInv)}
+                </tbody></table>
+            </div>
+            <div className="col-md-12">Pagos de Creditos
+                <table className="table"><tbody>
+                    {this.props.payment_credit.map(makePay)}
+                </tbody></table>
+            </div>
+        </div>;
+    }
+});
+
 export default React.createClass({
     getBankAccounts: function() {
         var x = $.ajax({
@@ -187,7 +230,8 @@ export default React.createClass({
         $.ajax({
             url: `/app/api/account_transaction?start=${start_date}&end=${end_date}`,
             success: (result) => {
-                var val = JSON.parse(result).result;
+                var all = JSON.parse(result);
+                var val = all.result;
                 var sorted = val.sort((a, b) => {
                     if (a.date > b.date) return 1;
                     if (a.date < b.date) return -1;
@@ -203,8 +247,12 @@ export default React.createClass({
                     sorted[x].saldo = start;
                     this.index_by_uid[sorted[x].uid] = x;
                 }
-                this.setState({'all_events': sorted, 'balance': start,
-                               'start_date': start_date, 'end_date': end_date});
+                this.balance = start;
+                this.setState({'all_events': sorted, 
+                               'start_date': start_date, 
+                               'end_date': end_date,
+                               'credit': all.credit,
+                               'payment_credit': all.payment_credit});
             }});
     },
     getInitialState: function() {
@@ -219,7 +267,8 @@ export default React.createClass({
         yesterday = yesterday.toISOString().split('T')[0];
         this.getAccountInfo(yesterday, today);
         this.getBankAccounts();
-        return {'all_events': [], 'bank': [], 'start_date': '', 'end_date': ''};
+        return {'all_events': [], 'bank': [], 'start_date': '', 
+                'end_date': '', 'credit': [], 'payment_credit': []};
     },
     newDates: function() {
         var start_date = this.refs.start_date.value;
@@ -237,7 +286,7 @@ export default React.createClass({
             method: 'POST',
             data: JSON.stringify(newitem),
             success: (pkey) => {
-                this.balance = result.value + this.state.balance;
+                this.balance = result.value + this.balance;
                 newitem.saldo = this.balance;
                 newitem.uid = pkey.pkey;
                 this.index_by_uid[newitem.uid] = this.state.all_events.length;
@@ -260,8 +309,18 @@ export default React.createClass({
                     console.log(this.index_by_uid, index);
                     var array = this.state.all_events;
                     array[index] = Object.assign(array[index], newitem);
+
+                    var start = 0;
+                    this.index_by_uid = {};
+                    for (var x in array) {
+                        array[x].value = Number(array[x].value);
+                        start += array[x].value;
+                        array[x].saldo = start;
+                        this.index_by_uid[array[x].uid] = x;
+                    }
+
                     this.setState({'all_events': array});
-                    this.refs.editInputDeposit.hide();
+                    this.refs.editDeposit.hide();
                 }
             }
         });
@@ -307,6 +366,9 @@ export default React.createClass({
             <AccountTable all_events={this.state.all_events} 
                 showImgForm={this.showImgForm}
                 showEditForm={this.showEditForm} />
+            </div>
+            <div className="row">
+                <CreditTable credit={this.state.credit} payment_credit={this.state.payment_credit} />
             </div>
         </div>;
     }

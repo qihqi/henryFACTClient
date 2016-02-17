@@ -17,6 +17,7 @@ from henry.base.dbapi import decode_str
 from henry.coreconfig import storeapi, invapi
 from henry.dao.order import InvMetadata, PaymentFormat
 from henry.dao.document import Status
+from henry.users.web import Client
 
 
 def get_notas_with_clients(session, end_date, start_date,
@@ -198,7 +199,6 @@ def get_sales_as_transactions(dbapi, start_date, end_date):
         NNota.timestamp >= start_date).filter(
         NNota.timestamp <= end_date).filter(
         NNota.status != Status.DELETED).filter(
-        NNota.payment_format == PaymentFormat.CASH).filter(
         NNota.almacen_id is not None).group_by(
         func.DATE(NNota.timestamp), NNota.almacen_id)
     all_alms = {x.almacen_id: x for x in dbapi.search(Store)}
@@ -222,6 +222,24 @@ def get_payments_as_transactions(paymentapi, start_date, end_date):
                 value=Decimal(pago.value) / 100,
                 desc='ABONO a Factura {}'.format(pago.note_id),
                 type=AccountTransaction.CUSTOMER_PAYMENT)
+
+def get_payments_as_transactions2(dbapi, start_date, end_date):
+    payments = []
+    payments_credit = []
+    for pago, pformat in dbapi.db_session.query(NPayment, NNota.payment_format).join(
+            NNota, NPayment.note_id == NNota.id).filter(
+            NPayment.date >= start_date, NPayment.date <= end_date):
+        acct = AccountTransaction(
+            uid='pago '+str(pago.uid),
+            date=pago.date,
+            value=-Decimal(pago.value) / 100,
+            desc='{} para Factura {}'.format(pago.type, pago.note_id),
+            type=AccountTransaction.CUSTOMER_PAYMENT)
+        if pformat == PaymentFormat.CREDIT:
+            payments_credit.append(acct)
+        else:
+            payments.append(acct)
+    return payments, payments_credit
 
 
 
@@ -265,10 +283,19 @@ def get_turned_in_cash(dbapi, start_date, end_date):
             type='turned_in')
 
 
-def get_transaction_by_type(dbapi, paymentapi, imageserver, start_date, end_date):
+def get_transactions(dbapi, paymentapi, invapi, imageserver, start_date, end_date):
     delta = datetime.timedelta(hours=23)
-    result = list(get_sales_as_transactions(dbapi, start_date, end_date + delta))
-    result.extend(get_payments_as_transactions(paymentapi, start_date, end_date))
-    result.extend(get_spent_as_transactions(dbapi, start_date, end_date))
-    result.extend(get_turned_in_cash2(dbapi, start_date, end_date, imageserver))
-    return result
+    sales = list(get_sales_as_transactions(dbapi, start_date, end_date + delta))
+    spent = list(get_spent_as_transactions(dbapi, start_date, end_date))
+    turned_in = list(get_turned_in_cash2(dbapi, start_date, end_date, imageserver))
+    payments, payments_credit = get_payments_as_transactions2(dbapi, start_date, end_date)
+    sales_credit = list(invapi.search_metadata_by_date_range(
+        start_date, end_date + delta, Status.COMITTED,
+        {'payment_format': PaymentFormat.CREDIT}))
+    for x in sales_credit:
+        x.client = dbapi.get(x.client.codigo, Client)
+    return {
+        'result': sales + spent + turned_in + payments,
+        'credit': sales_credit,
+        'payment_credit': payments_credit,
+    }

@@ -53,7 +53,7 @@ class InvMetadata(SerializableMixin, DbMixin):
         'retension': 'retension',
     }
 
-    _name = tuple(_db_attr.keys()) + ('users',)
+    _name = tuple(_db_attr.keys()) + ('users', 'client')
 
     def __init__(
             self,
