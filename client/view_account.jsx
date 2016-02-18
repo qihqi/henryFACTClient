@@ -257,12 +257,11 @@ export default React.createClass({
     },
     getInitialState: function() {
         var today = new Date();
-        today.setDate(today.getDate() - 1);
         if ('params' in this.props && 'date' in this.props.params) {
             today = new Date(this.props.params.date);
         }
         var yesterday = new Date(today);
-        yesterday.setDate(today.getDate() - 7);
+        yesterday.setDate(today.getDate() - 1);
         today = today.toISOString().split('T')[0];
         yesterday = yesterday.toISOString().split('T')[0];
         this.getAccountInfo(yesterday, today);
@@ -346,7 +345,7 @@ export default React.createClass({
     render: function() {
         return <div className="row">
             <h3>{this.state.start_date} -- {this.state.end_date} </h3>
-            <SkyLight hiddenOnOverlayClicked ref="inputDeposit" title="Ingresar Deposito">
+            <SkyLight hiddenOnOverlayClicked ref="inputDeposit" title="Ingresar Deposito de Efectivo">
                 <InputDeposit onSubmit={this.saveInputDeposit} account_options={this.state.bank}/>
             </SkyLight>
             <SkyLight hiddenOnOverlayClicked ref="imgForm" title="Papeleta">
@@ -356,7 +355,7 @@ export default React.createClass({
                 <InputDeposit ref="editDepositForm" onSubmit={this.editInputDeposit} account_options={this.state.bank}/>
             </SkyLight>
             <div className="row noprint"> 
-                <button onClick={()=>this.refs.inputDeposit.show()}>Ingresar Deposito</button>
+                <button onClick={()=>this.refs.inputDeposit.show()}>Ingresar Deposito de Efectivo</button>
             </div>
             <div className="row noprint">
                 Desde:<input ref='start_date' /> Hasta: <input ref='end_date' /> 
