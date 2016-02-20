@@ -2,7 +2,8 @@ module.exports = {
   entry: {
     prod: './client/index.jsx',
     accounting: './client/accounting_index.jsx',
-    transfer: './client/prod_components.jsx'
+    transfer: './client/prod_components.jsx',
+    importation: './client/importation_index.jsx'
   },
   output: {
     path: __dirname + '/static',

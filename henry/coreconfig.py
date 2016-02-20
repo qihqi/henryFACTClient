@@ -1,4 +1,5 @@
 import sys
+from bottle import install
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
@@ -9,7 +10,7 @@ from henry.base.session_manager import SessionManager, DBContext
 from henry.constants import (CONN_STRING, INVOICE_PATH, ENV,
                              LOGIN_URL, TRANSACTION_PATH, PEDIDO_PATH,
                              ACTION_LOG_PATH,
-                             BEAKER_DIR)
+                             BEAKER_DIR, FORWARD_INV, ZEROMQ_PORT)
 from henry.dao.document import DocumentApi, PedidoApi
 from henry.invoice.dao import Invoice
 from henry.dao.actionlog import ActionLogApi, ActionLogApiDecor
@@ -29,8 +30,10 @@ transactionapi = InventoryApi(FileService(TRANSACTION_PATH))
 
 invapi = DocumentApi(sessionmanager, FileService(INVOICE_PATH),
                      transactionapi, object_cls=Invoice)
+
+workerqueue = None
 actionlogapi = ActionLogApi(ACTION_LOG_PATH)
-actionlogged = ActionLogApiDecor(actionlogapi)
+actionlogged = ActionLogApiDecor(actionlogapi, workerqueue)
 pedidoapi = PedidoApi(sessionmanager, filemanager=FileService(PEDIDO_PATH))
 
 # for testing, make auth_decorator do nothing

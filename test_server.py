@@ -1,10 +1,8 @@
 import sys
 import os
 
-from bottle import run, static_file, Bottle
-
+from bottle import run, static_file, Bottle, install
 from henry.config import BEAKER_SESSION_OPTS
-from henry.constants import INVOICE_MODE, FORWARD_INV
 
 app = Bottle()
 

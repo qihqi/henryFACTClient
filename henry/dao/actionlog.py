@@ -52,8 +52,9 @@ class ActionLogApi:
 
 class ActionLogApiDecor:
 
-    def __init__(self, api):
+    def __init__(self, api, workerqueue):
         self.api = api
+        self.workerqueue = workerqueue
 
     def __call__(self, func):
         def wrapped(*args, **argv):

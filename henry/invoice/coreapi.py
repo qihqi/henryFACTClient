@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from bottle import Bottle, request, abort
 import datetime
+from henry.background_sync.worker import WorkObject
 
 from henry.base.serialization import SerializableMixin, json_loads, json_dumps
 from henry.base.session_manager import DBContext
@@ -115,7 +116,8 @@ def create_prod_if_not_exist(dbapi, inv):
         create_items_chain(dbapi, i.prod)
 
 
-def make_nota_api(url_prefix, dbapi, actionlogged, invapi, auth_decorator, pedidoapi):
+def make_nota_api(url_prefix, dbapi, actionlogged,
+                  invapi, auth_decorator, pedidoapi, workerqueue):
     api = Bottle()
     dbcontext = DBContext(dbapi.session)
     # ########## NOTA ############################
@@ -148,6 +150,16 @@ def make_nota_api(url_prefix, dbapi, actionlogged, invapi, auth_decorator, pedid
             user = User(username=inv.meta.user)
             dbapi.update(user, {'last_factura': int(inv.meta.codigo) + 1})
         dbapi.db_session.commit()
+
+        print 'workerqueue', workerqueue
+        if workerqueue is not None:
+            obj = WorkObject()
+            obj.content = inv.meta
+            obj.action = WorkObject.CREATE
+            obj.objtype = WorkObject.INV
+            obj.objid = inv.meta.uid
+            print 'here', obj
+            workerqueue(work=json_dumps(obj))
 
         return {'codigo': inv.meta.uid}
 
