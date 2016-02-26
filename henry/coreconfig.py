@@ -11,7 +11,7 @@ from henry.constants import (CONN_STRING, INVOICE_PATH, ENV,
                              BEAKER_DIR)
 from henry.dao.coredao import PriceList, Client, User, Store, TransactionApi
 from henry.dao.document import DocumentApi, PedidoApi
-from henry.dao.order import Invoice
+from henry.invoice.dao import Invoice
 
 from henry.dao.actionlog import ActionLogApi, ActionLogApiDecor
 import sys

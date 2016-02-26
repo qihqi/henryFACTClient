@@ -6,7 +6,8 @@ from decimal import Decimal
 import datetime
 import subprocess
 
-from henry.dao.order import InvMetadata, Invoice
+from henry.dao.order import Invoice
+from henry.invoice.dao import InvMetadata, Invoice
 from henry.dao.document import Status, Item
 from henry.dao.coredao import Client
 from henry.base.serialization import json_dumps

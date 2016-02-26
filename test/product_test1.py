@@ -8,7 +8,8 @@ from henry.base.dbapi import DBApiGeneric
 from henry.dao.coredao import TransactionApi, Transaction, Client
 from henry.dao.document import DocumentApi, Status, Item
 from henry.dao.inventory import Transferencia, TransMetadata, TransType
-from henry.dao.order import Invoice, InvMetadata
+from henry.dao.order import Invoice
+from henry.invoice.dao import InvMetadata, Invoice
 from henry.product.dao import Product
 from henry.product.schema import NBodega
 from henry.product.schema import NStore

@@ -3,7 +3,7 @@ import uuid
 from sqlalchemy import desc
 from henry.base.dbapi import dbmix
 from henry.base.serialization import SerializableMixin
-from henry.dao.order import PaymentFormat
+from henry.invoice.dao import PaymentFormat
 
 from .acct_schema import (NBank, NDepositAccount, NPayment, NCheck, NDeposit, NImage,
                           NComment, NTodo, NAccountStat, NSpent, NAccountTransaction)

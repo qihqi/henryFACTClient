@@ -4,7 +4,7 @@ from itertools import imap
 from operator import itemgetter
 import os
 from henry.base.serialization import json_loads
-from henry.dao.order import Invoice
+from henry.invoice.dao import Invoice
 from .exporting import dump_content
 
 

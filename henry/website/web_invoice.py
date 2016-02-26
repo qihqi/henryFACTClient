@@ -5,11 +5,11 @@ from bottle import request, abort, redirect, response, Bottle
 
 from henry.base.auth import get_user
 from henry.accounting.acct_schema import NComment
-from henry.schema.inv import NNota
+from henry.invoice.coreschema import NNota
 from henry.users.schema import NUsuario
 from henry.base.serialization import json_loads
 from henry.config import jinja_env
-from henry.dao.order import Invoice
+from henry.invoice.dao import Invoice
 from henry.dao.document import Status
 from henry.accounting.reports import (get_notas_with_clients, split_records,
                                       payment_report)
