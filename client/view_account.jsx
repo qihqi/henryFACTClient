@@ -78,7 +78,7 @@ var AccountTable = React.createClass({
                       </div>
                     : "";
             var key = x.uid ? x.uid : x.desc;
-            return <tr key={key}>
+            return <tr key={key} className={x.type}>
                 {row.map((x) => {
                     if (typeof(x) === 'number') 
                         return <td className="value_col">{x}</td>
@@ -107,7 +107,7 @@ var AccountTable = React.createClass({
 var InputDeposit = React.createClass({
     mixins: [LinkedStateMixin],
     getInitialState: function() {
-        return {'date': '', 'to_bank_account': -1, 'value': ''};
+        return {'date': '', 'to_bank_account': -1, 'value': '', 'msg': '',};
     },
     submit: function(event) {
         event.preventDefault();
@@ -128,6 +128,7 @@ var InputDeposit = React.createClass({
     },
     render: function() {
         return <form onSubmit={this.submit}>
+            <h4>{this.state.msg}</h4>
             <p>Fecha:<input valueLink={this.linkState('date')} ref='date' placeholder="YYYY-MM-DD"/></p>
             <p>Valor:<input ref='value'  valueLink={this.linkState('value')} placeholder="valor"/></p>
             <p>Cuenta: <select ref='account' valueLink={this.linkState('to_bank_account')}> 
@@ -290,6 +291,11 @@ export default React.createClass({
                 newitem.uid = pkey.pkey;
                 this.index_by_uid[newitem.uid] = this.state.all_events.length;
                 this.setState({'all_events': this.state.all_events.concat(newitem)});
+                console.log('seting state on input deposit');
+                this.refs.inputDepositDialog.setState({
+                    'date': '', 'to_bank_account': -1, 'value': '', 
+                    'msg': 'Deposito Guardado'
+                });
             }
         });
     },
@@ -346,7 +352,7 @@ export default React.createClass({
         return <div className="row">
             <h3>{this.state.start_date} -- {this.state.end_date} </h3>
             <SkyLight hiddenOnOverlayClicked ref="inputDeposit" title="Ingresar Deposito de Efectivo">
-                <InputDeposit onSubmit={this.saveInputDeposit} account_options={this.state.bank}/>
+                <InputDeposit ref="inputDepositDialog" onSubmit={this.saveInputDeposit} account_options={this.state.bank}/>
             </SkyLight>
             <SkyLight hiddenOnOverlayClicked ref="imgForm" title="Papeleta">
                 <Papeleta ref="papeleta" onSubmit={this.submitPapeleta}/>

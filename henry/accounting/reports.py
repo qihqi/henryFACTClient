@@ -7,7 +7,7 @@ from decimal import Decimal
 from sqlalchemy import func
 
 from henry.accounting.acct_schema import NPayment, NCheck, NSpent
-from henry.accounting.dao import Spent, AccountStat, AccountTransaction, Image
+from henry.accounting.dao import Spent, AccountStat, AccountTransaction, Image, Payment
 from henry.base.serialization import SerializableMixin
 from henry.config import prodapi, transapi
 from henry.product.dao import Store
@@ -229,12 +229,18 @@ def get_payments_as_transactions2(dbapi, start_date, end_date):
     for pago, pformat in dbapi.db_session.query(NPayment, NNota.payment_format).join(
             NNota, NPayment.note_id == NNota.id).filter(
             NPayment.date >= start_date, NPayment.date <= end_date):
+        thetype = AccountTransaction.CUSTOMER_PAYMENT
+        if pago.type == PaymentFormat.DEPOSIT:
+            thetype = AccountTransaction.CUSTOMER_PAYMENT_DEPOSIT
+        if pago.type == PaymentFormat.CHECK:
+            thetype = AccountTransaction.CUSTOMER_PAYMENT_CHECK
         acct = AccountTransaction(
             uid='pago '+str(pago.uid),
             date=pago.date,
             value=-Decimal(pago.value) / 100,
             desc='{} para Factura {}'.format(pago.type, pago.note_id),
-            type=AccountTransaction.CUSTOMER_PAYMENT)
+            type=thetype)
+        print thetype, pago.type
         if pformat == PaymentFormat.CREDIT:
             payments_credit.append(acct)
         else:

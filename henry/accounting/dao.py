@@ -219,6 +219,8 @@ class AccountTransaction(dbmix(NAccountTransaction)):
     SALE = 'sales'
     SPENT = 'spents'
     CUSTOMER_PAYMENT = 'payments'
+    CUSTOMER_PAYMENT_CHECK = 'payment_check'
+    CUSTOMER_PAYMENT_DEPOSIT = 'payment_deposit'
     TURNED_IN = 'turned_in'
 
     def serialize(self):
