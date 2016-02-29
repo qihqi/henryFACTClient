@@ -88,7 +88,11 @@ var AccountTable = React.createClass({
                 <td className="noprint">{button}</td>
             </tr>;
         };
-        return <table className="table">
+        var numCheck = this.props.all_events.filter((x) => x == 'payment_check').length;
+        var numDeposit = this.props.all_events.filter((x) => x == 'payment_deposit').length;
+        return <div>
+            <div className="row"><h5>Numero de Cheques: {numCheck} Numero de Depositos {numDeposit} </h5></div>
+            <table className="table">
             <tbody>
             <tr>
                 <th>Fecha</th>
@@ -100,7 +104,7 @@ var AccountTable = React.createClass({
                 <th></th>
             </tr>
             {this.props.all_events.map(make_row)}
-        </tbody></table>;
+        </tbody></table></div>;
     }
 });
 
