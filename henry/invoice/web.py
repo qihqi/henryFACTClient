@@ -41,6 +41,7 @@ def fix_inv_by_options(dbapi, inv, options):
             alm_id = inv.meta.almacen_id
             if alm_id != 2:
                 alm_id = 1
+            print item.prod.prod_id, alm_id
             newprod = dbapi.search(PriceList, prod_id=item.prod.prod_id,
                                    almacen_id=alm_id)[0]
             item.prod.upi = newprod.upi
