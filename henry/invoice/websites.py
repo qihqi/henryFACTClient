@@ -1,24 +1,21 @@
 import datetime
-from decimal import Decimal
-from bottle import request, abort, redirect, response, Bottle
+
+from bottle import request, abort, redirect, Bottle
 
 from henry.base.auth import get_user
 from henry.base.common import parse_start_end_date
-from henry.base.serialization import json_loads
 from henry.base.session_manager import DBContext
-from henry.config import jinja_env
 
-from henry.accounting.acct_schema import NComment
+from henry.product.dao import Store
+from henry.accounting.dao import Comment
 
 from .coreschema import NNota
-from .dao import Invoice
-from henry.product.dao import Store
-from .web import get_inv_db_instance
+from .coreapi import get_inv_db_instance
 
 __author__ = 'han'
 
 
-def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi):
+def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, jinja_env):
     w = Bottle()
     dbcontext = DBContext(dbapi.session)
 
@@ -67,14 +64,14 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi):
         if db_instance is None:
             return eliminar_factura_form('Factura no existe')
 
-        comment = NComment(
+        comment = Comment(
             user_id=user['username'],
             timestamp=datetime.datetime.now(),
             comment=ref,
             objtype='notas',
             objid=str(db_instance.id),
         )
-        dbapi.db_session.add(comment)
+        dbapi.create(comment)
         doc = invapi.get_doc_from_file(db_instance.items_location)
         doc.meta.status = db_instance.status
 
@@ -111,35 +108,9 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi):
     def get_nota(uid):
         doc = invapi.get_doc(uid)
         if doc:
-            comments = list(dbapi.db_session.query(NComment).filter_by(
-                objtype='notas', objid=doc.meta.uid))
+            comments = dbapi.search(Comment, objtype='notas', objid=doc.meta.uid)
             temp = jinja_env.get_template('invoice/nota.html')
             return temp.render(inv=doc, comments=comments)
         return 'Documento con codigo {} no existe'.format(uid)
-
-    @w.get('/app/nota_de_pedido')
-    @dbcontext
-    @auth_decorator
-    def get_notas_de_pedido_form():
-        session = request.environ.get('beaker.session')
-        if session is None or 'login_info' not in session:
-            response.status = 401
-            response.set_header('www-authenticate', 'Basic realm="Henry"')
-            return ''
-        temp = jinja_env.get_template('invoice/crear_pedido.html')
-        return temp.render()
-
-    @w.get('/app/pedido/<uid>')
-    @dbcontext
-    @auth_decorator
-    def get_notas_de_pedido(uid):
-        pedido = pedidoapi.get_doc(uid)
-        pedido = Invoice.deserialize(json_loads(pedido))
-        pedido.meta.uid = uid
-        for i in pedido.items:
-            i.cant = Decimal(i.cant) / 1000
-        willprint = request.query.get('print')
-        temp = jinja_env.get_template('invoice/ver_pedido.html')
-        return temp.render(pedido=pedido, willprint=willprint)
 
     return w

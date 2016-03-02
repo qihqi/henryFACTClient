@@ -2,79 +2,14 @@
 This has handlers for pages regarding users and client
 """
 import datetime
-from bottle import Bottle, request, redirect, abort
-from henry.base.auth import get_user_info, authenticate, create_user_dict
 
-from henry.base.dbapi import dbmix
+from bottle import Bottle, request, redirect
+
 from henry.base.dbapi_rest import bind_dbapi_rest
-from henry.base.serialization import json_dumps
-from henry.base.session_manager import DBContext
 from henry.dao.exceptions import ItemAlreadyExists
 from henry.product.dao import Store
+from henry.users.dao import User, Client
 
-from .schema import NUsuario, NCliente
-
-User = dbmix(NUsuario)
-
-
-class Client(dbmix(NCliente)):
-
-    @property
-    def fullname(self):
-        nombres = self.nombres
-        if not nombres:
-            nombres = ''
-        apellidos = self.apellidos
-        if not apellidos:
-            apellidos = ''
-        return apellidos + ' ' + nombres
-
-
-def make_client_coreapi(url_prefix, dbapi, actionlogged):
-
-    api = Bottle()
-    dbcontext = DBContext(dbapi.session)
-
-    @api.get(url_prefix + '/cliente/<codigo>')
-    @dbcontext
-    @actionlogged
-    def get_cliente(codigo):
-        client = dbapi.get(codigo, Client)
-        if client is None:
-            abort(404, 'cliente no encontrado')
-        return json_dumps(client.serialize())
-
-    @api.get(url_prefix + '/cliente')
-    @dbcontext
-    @actionlogged
-    def search_client():
-        prefijo = request.query.prefijo
-        if prefijo:
-            return json_dumps(list(
-                dbapi.search(Client, **{'apellidos-prefix': prefijo})))
-        abort(400)
-
-    @api.post(url_prefix + '/authenticate')
-    def post_authenticate():
-        beaker = request.environ.get('beaker.session')
-        login_info = beaker.get('login_info')
-        if login_info is not None:  # user is already logged in
-            return login_info
-
-        username = request.forms.get('username')
-        password = request.forms.get('password')
-        with dbapi.session as session:
-            info = get_user_info(session, username)
-            if info is None:
-                return {'status': False, 'message': 'Usuario no encontrado'}
-            if authenticate(password, info):
-                data = create_user_dict(info)
-                beaker['login_info'] = data
-                beaker.save()
-                return data
-            return {'status': False, 'message': 'Clave equivocada'}
-
-    return api
 
 def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, actionlogged):
     w = Bottle()

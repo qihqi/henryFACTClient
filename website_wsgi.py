@@ -1,6 +1,6 @@
 from beaker.middleware import SessionMiddleware
-from henry.accounting.dao import ImageServer, PaymentApi
 
+from henry.accounting.dao import ImageServer, PaymentApi
 from henry.users.web import make_wsgi_app as userwsgi
 from henry.accounting.web import make_wsgi_app as accwsgi
 from henry.accounting.web import make_wsgi_api as accapi
@@ -8,23 +8,19 @@ from henry.product.web import make_wsgi_app as prodapp
 from henry.product.web import make_wsgi_api as prod_api_app
 from henry.inventory.web import make_inv_wsgi
 from henry.invoice.websites import make_invoice_wsgi
-
 from henry.base.dbapi import DBApiGeneric
-
 from henry.constants import USE_ACCOUNTING_APP
 from henry.config import (BEAKER_SESSION_OPTS, jinja_env, prodapi, transapi,
                           revisionapi, bodegaapi, imagefiles, paymentapi)
-
 from henry.coreconfig import (dbcontext, auth_decorator, sessionmanager,
-                              actionlogged, storeapi, invapi, pedidoapi)
-
+                              actionlogged, invapi, pedidoapi)
 from henry.api.api_endpoints import api
-from henry.website.web import webmain as app
+from henry.web import webmain as app
 
 dbapi = DBApiGeneric(sessionmanager)
 
 userapp = userwsgi(dbcontext, auth_decorator, jinja_env, dbapi, actionlogged)
-invoiceapp = make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi)
+invoiceapp = make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, jinja_env)
 invapp = make_inv_wsgi(jinja_env, dbcontext, actionlogged, auth_decorator,
                        sessionmanager, prodapi, transapi, revisionapi, bodegaapi)
 papp = prodapp(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles)

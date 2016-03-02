@@ -1,15 +1,14 @@
 from henry.dao.actionlog import ActionLog
-from henry.schema.inventory import NProdTag
-from henry.dao.document import Invoice
-from henry.config import prodapi
 from henry.config import sessionmanager
 
 import os
 import sys
 import json
-from collections import defaultdict
 import requests
 from datetime import date, timedelta
+from henry.invoice.dao import Invoice
+from henry.product.schema import NProdTag
+
 
 def process(content, ip_to_prod):
     for line in content: 

@@ -5,10 +5,12 @@ import datetime
 
 from henry.base.serialization import SerializableMixin, json_loads, json_dumps
 from henry.base.session_manager import DBContext
-from henry.invoice.coreschema import NNota
-from henry.invoice.dao import Invoice
+
 from henry.product.dao import Store, PriceList
-from henry.users.web import Client, User
+from henry.users.dao import User, Client
+
+from .coreschema import NNota
+from .dao import Invoice
 
 __author__ = 'han'
 

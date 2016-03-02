@@ -3,25 +3,120 @@ import os
 from decimal import Decimal
 
 import barcode
-from bottle import Bottle, request, redirect, abort
 
-from .dao import (Product, ProdItem, ProdItemGroup, PriceList,
-                  Inventory, ProdCount, Store, Bodega)
+from bottle import Bottle, request, redirect
+
 from henry.base.dbapi_rest import bind_dbapi_rest
-from henry.base.serialization import json_dumps
-from henry.base.session_manager import DBContext
-from henry.bottlehelper import get_property_or_fail
+from henry.product.dao import ProdItemGroup, Product, Store, Bodega, ProdCount, ProdItem, Inventory, PriceList
 
 
-def mult_thousand(prod):
-    if prod.cant_mayorista:
-        prod.cant_mayorista *= 1000
+def validate_full_item(content, dbapi):
+    prod_id = content['prod']['prod_id']
+    if dbapi.get(prod_id, Product) is not None:
+        return False, 'Codigo ya existe'
+    if len([x for x in content['items'] if int(x['multiplier']) == 1]) != 1:
+        return False, 'Debe haber un unidad con multiplicador 1'
+    all_mult = set()
+    for i in content['items']:
+        if i['multiplier'] in all_mult:
+            return False, 'Todos las unidades debe tener multiplicador distintos'
+        all_mult.add(i['multiplier'])
+    return True, ''
 
 
-def convert_to_cent(dec):
-    if not isinstance(dec, Decimal):
-        dec = Decimal(dec)
-    return int(dec * 100)
+def make_wsgi_api(prefix, sessionmanager, dbcontext, auth_decorator, dbapi):
+    app = Bottle()
+
+    @app.post(prefix + '/item_full')
+    @dbcontext
+    @auth_decorator
+    def create_item_full():
+        """
+            input format:
+            {
+                "prod" : {prod_id, name, desc, base_unit}< - information on item group
+                "items": [{multiplier}, {unit}<- information on items requires multiplier be distinct
+                "prices": [{unit, almacen_id, display_name, price1, price2, cant}]
+                "new_unit": []
+            }
+        """
+
+        content = request.body.read()
+        content = json.loads(content)
+        valid, message = validate_full_item(content, dbapi)
+        if not valid:
+            return {'status': 'failure', 'msg': message}
+        create_full_item_from_dict(dbapi, content)
+        sessionmanager.session.commit()
+        return {'status': 'success'}
+
+    bind_dbapi_rest(prefix + '/pricelist', dbapi, PriceList, app)
+    bind_dbapi_rest(prefix + '/itemgroup', dbapi, ProdItemGroup, app)
+    bind_dbapi_rest(prefix + '/item', dbapi, ProdItem, app)
+    return app
+
+# used as part of coreapi
+
+
+def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles):
+    w = Bottle()
+
+    @w.get('/app/ver_lista_precio')
+    @dbcontext
+    @auth_decorator
+    def ver_lista_precio():
+        almacen_id = int(request.query.get('almacen_id', 1))
+        prefix = request.query.get('prefix', None)
+        if prefix:
+            prods = dbapi.search(PriceList, **{'nombre-prefix': prefix,
+                                               'almacen_id': almacen_id})
+        else:
+            prods = []
+        temp = jinja_env.get_template('prod/ver_lista_precio.html')
+        return temp.render(
+            prods=prods, stores=dbapi.search(Store), prefix=prefix,
+            almacen_name=dbapi.get(almacen_id, Store).nombre)
+
+    @w.get('/app/barcode_form')
+    @dbcontext
+    @auth_decorator
+    def barcode_form():
+        msg = request.query.msg
+        temp = jinja_env.get_template('prod/barcode_form.html')
+        return temp.render(alms=dbapi.search(Store), msg=msg)
+
+    @w.get('/app/barcode')
+    @dbcontext
+    @auth_decorator
+    def get_barcode():
+        prod_id = request.query.get('prod_id')
+        almacen_id = request.query.get('almacen_id')
+        quantity = int(request.query.get('quantity', 1))
+
+        prod = dbapi.getone(PriceList, prod_id=prod_id, almacen_id=almacen_id)
+
+        if quantity > 1000:
+            redirect('/app/barcode_form?msg=cantidad+muy+grande')
+
+        if not prod:
+            redirect('/app/barcode_form?msg=producto+no+existe')
+
+        encoded_string = '{:03d}{:09d}'.format(quantity, prod.pid)
+        bar = barcode.EAN13(encoded_string)
+        filename = bar.ean + '.svg'
+        path = imagefiles.make_fullpath(filename)
+        if not os.path.exists(path):
+            with open(path, 'w') as barcode_file:
+                bar.write(barcode_file)
+        url = '/app/img/{}'.format(filename)
+
+        column = 5
+        row = 9
+        price = int(prod.precio1 * quantity * Decimal('1.12') + Decimal('0.5'))
+
+        temp = jinja_env.get_template('prod/barcode.html')
+        return temp.render(url=url, row=row, column=column, prodname=prod.nombre, price=price)
+    return w
 
 
 def create_full_item_from_dict(dbapi, content):
@@ -109,170 +204,3 @@ def create_full_item_from_dict(dbapi, content):
             price.upi = conts[bodid]
             price.multiplicador = i.multiplier
             dbapi.create(price)
-
-
-def validate_full_item(content, dbapi):
-    prod_id = content['prod']['prod_id']
-    if dbapi.get(prod_id, Product) is not None:
-        return False, 'Codigo ya existe'
-    if len([x for x in content['items'] if int(x['multiplier']) == 1]) != 1:
-        return False, 'Debe haber un unidad con multiplicador 1'
-    all_mult = set()
-    for i in content['items']:
-        if i['multiplier'] in all_mult:
-            return False, 'Todos las unidades debe tener multiplicador distintos'
-        all_mult.add(i['multiplier'])
-    return True, ''
-
-
-def make_wsgi_api(prefix, sessionmanager, dbcontext, auth_decorator, dbapi):
-    app = Bottle()
-
-    @app.post(prefix + '/item_full')
-    @dbcontext
-    @auth_decorator
-    def create_item_full():
-        """
-            input format:
-            {
-                "prod" : {prod_id, name, desc, base_unit}< - information on item group
-                "items": [{multiplier}, {unit}<- information on items requires multiplier be distinct
-                "prices": [{unit, almacen_id, display_name, price1, price2, cant}]
-                "new_unit": []
-            }
-        """
-
-        content = request.body.read()
-        content = json.loads(content)
-        valid, message = validate_full_item(content, dbapi)
-        if not valid:
-            return {'status': 'failure', 'msg': message}
-        create_full_item_from_dict(dbapi, content)
-        sessionmanager.session.commit()
-        return {'status': 'success'}
-
-    bind_dbapi_rest(prefix + '/pricelist', dbapi, PriceList, app)
-    bind_dbapi_rest(prefix + '/itemgroup', dbapi, ProdItemGroup, app)
-    bind_dbapi_rest(prefix + '/item', dbapi, ProdItem, app)
-    return app
-
-
-# used as part of coreapi
-def make_search_pricelist_api(api_url_prefix, actionlogged, dbapi):
-    api = Bottle()
-    dbcontext = DBContext(dbapi.session)
-
-    @api.get('{}/alm/<almacen_id>/producto'.format(api_url_prefix))
-    @dbcontext
-    @actionlogged
-    def searchprice(almacen_id):
-        alm = dbapi.get(almacen_id, Store)
-        prefijo = get_property_or_fail(request.query, 'prefijo')
-        result = list(dbapi.search(PriceList, **{
-            'nombre-prefix': prefijo,
-            'almacen_id': alm.bodega_id}))
-
-        # FIXME remove this hack when client side is ready
-        use_thousandth = request.query.get('use_thousandth', 1)
-        if int(use_thousandth):
-            map(mult_thousand, result)
-        return json_dumps(result)
-
-    @api.get('{}/alm/<almacen_id>/producto/<prod_id:path>'.format(api_url_prefix))
-    @dbcontext
-    @actionlogged
-    def get_price_by_id(almacen_id, prod_id):
-        if int(almacen_id) == 3:
-            almacen_id = 1
-        prod = dbapi.getone(PriceList, prod_id=prod_id, almacen_id=almacen_id)
-        if prod is None:
-            abort(404)
-        use_thousandth = request.query.get('use_thousandth', '1')
-        if int(use_thousandth):
-            mult_thousand(prod)
-        return json_dumps(prod.serialize())
-
-    @api.get(api_url_prefix + '/barcode/<bcode>')
-    @dbcontext
-    def get_barcoded_item(bcode):
-        bcode = str(int(bcode))
-        pos = 0
-        for i, x in enumerate(bcode):
-            if x == '0':
-                pos = i
-                break
-        cant = int(bcode[:pos])
-        pid = int(bcode[pos:-1])
-        price = dbapi.get(pid, PriceList)
-        if price is None:
-            price = dbapi.get(bcode[pos:], PriceList)
-            if price is None:
-                abort(404)
-        result = {}
-        mult_thousand(price)
-        result['prod'] = price
-        result['cant'] = cant
-        return json_dumps(result)
-
-    return api  ## END BLOCK
-
-
-def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles):
-    w = Bottle()
-
-    @w.get('/app/ver_lista_precio')
-    @dbcontext
-    @auth_decorator
-    def ver_lista_precio():
-        almacen_id = int(request.query.get('almacen_id', 1))
-        prefix = request.query.get('prefix', None)
-        if prefix:
-            prods = dbapi.search(PriceList, **{'nombre-prefix': prefix,
-                                               'almacen_id': almacen_id})
-        else:
-            prods = []
-        temp = jinja_env.get_template('prod/ver_lista_precio.html')
-        return temp.render(
-            prods=prods, stores=dbapi.search(Store), prefix=prefix,
-            almacen_name=dbapi.get(almacen_id, Store).nombre)
-
-    @w.get('/app/barcode_form')
-    @dbcontext
-    @auth_decorator
-    def barcode_form():
-        msg = request.query.msg
-        temp = jinja_env.get_template('prod/barcode_form.html')
-        return temp.render(alms=dbapi.search(Store), msg=msg)
-
-    @w.get('/app/barcode')
-    @dbcontext
-    @auth_decorator
-    def get_barcode():
-        prod_id = request.query.get('prod_id')
-        almacen_id = request.query.get('almacen_id')
-        quantity = int(request.query.get('quantity', 1))
-
-        prod = dbapi.getone(PriceList, prod_id=prod_id, almacen_id=almacen_id)
-
-        if quantity > 1000:
-            redirect('/app/barcode_form?msg=cantidad+muy+grande')
-
-        if not prod:
-            redirect('/app/barcode_form?msg=producto+no+existe')
-
-        encoded_string = '{:03d}{:09d}'.format(quantity, prod.pid)
-        bar = barcode.EAN13(encoded_string)
-        filename = bar.ean + '.svg'
-        path = imagefiles.make_fullpath(filename)
-        if not os.path.exists(path):
-            with open(path, 'w') as barcode_file:
-                bar.write(barcode_file)
-        url = '/app/img/{}'.format(filename)
-
-        column = 5
-        row = 9
-        price = int(prod.precio1 * quantity * Decimal('1.12') + Decimal('0.5'))
-
-        temp = jinja_env.get_template('prod/barcode.html')
-        return temp.render(url=url, row=row, column=column, prodname=prod.nombre, price=price)
-    return w

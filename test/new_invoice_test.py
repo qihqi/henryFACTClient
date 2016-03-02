@@ -3,7 +3,7 @@ import sys
 from henry.base.fileservice import FileService
 from henry.dao.document import DocumentApi, PedidoApi
 from henry.invoice.dao import Invoice
-from henry.invoice.web import make_nota_api
+from henry.invoice.coreapi import make_nota_api
 from henry.product.dao import PriceList, Store
 from test.testutils import make_test_dbapi, FakeTransaction
 from webtest import TestApp

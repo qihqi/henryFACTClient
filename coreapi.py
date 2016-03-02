@@ -1,9 +1,9 @@
 from beaker.middleware import SessionMiddleware
 
 from henry.base.dbapi import DBApiGeneric
-from henry.invoice.web import make_nota_api
-from henry.product.web import make_search_pricelist_api
-from henry.users.web import make_client_coreapi
+from henry.invoice.coreapi import make_nota_api
+from henry.product.coreapi import make_search_pricelist_api
+from henry.users.coreapi import make_client_coreapi
 from henry.coreconfig import (BEAKER_SESSION_OPTS, invapi, auth_decorator, pedidoapi,
                               sessionmanager, actionlogged)
 

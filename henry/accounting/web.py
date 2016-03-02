@@ -19,7 +19,7 @@ from henry.misc import fix_id
 from henry.product.dao import Store
 from henry.invoice.coreschema import NNota
 from .acct_schema import ObjType, NComment
-from henry.users.web import User
+from henry.users.dao import User
 from .reports import (group_by_records, generate_daily_report, split_records_binary, get_transactions, payment_report,
                       get_notas_with_clients, split_records)
 from .acct_schema import NCheck, NSpent, NAccountStat

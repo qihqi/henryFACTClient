@@ -9,7 +9,7 @@ from henry.invoice.coreschema import NPedidoTemporal
 from henry.coreconfig import (pedidoapi, sessionmanager,
                               dbcontext, auth_decorator, actionlogged)
 from henry.externalapi import ExternalApi
-from henry.invoice.web import InvoiceOptions
+from henry.invoice.coreapi import InvoiceOptions
 
 api = Bottle()
 

@@ -8,7 +8,7 @@ from henry.base.dbapi import DBApiGeneric
 from henry.schema.base import Base
 from henry.base.session_manager import SessionManager
 from henry.users.schema import NCliente
-from henry.users.web import Client
+from henry.users.dao import Client
 from henry.misc import validate_uid_and_ruc
 
 

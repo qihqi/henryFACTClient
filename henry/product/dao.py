@@ -1,5 +1,5 @@
 from decimal import Decimal
-from ..base.dbapi import dbmix
+from henry.base.dbapi import dbmix
 
 from .schema import (NBodega, NProducto, NContenido, NCategory, NInventory, NPriceListLabel,
                      NPriceList, NItemGroup, NItem, NStore)

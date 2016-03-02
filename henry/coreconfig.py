@@ -26,7 +26,6 @@ dbcontext = DBContext(sessionmanager)
 
 transactionapi = TransactionApi(sessionmanager, FileService(TRANSACTION_PATH))
 pedidoapi = PedidoApi(sessionmanager, FileService(PEDIDO_PATH))
-clientapi = DBApi(sessionmanager, Client)
 priceapi = DBApi(sessionmanager, PriceList)
 usuarioapi = DBApi(sessionmanager, User)
 storeapi = DBApi(sessionmanager, Store)

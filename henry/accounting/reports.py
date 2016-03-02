@@ -17,7 +17,7 @@ from henry.base.dbapi import decode_str
 from henry.coreconfig import storeapi, invapi
 from henry.invoice.dao import PaymentFormat, InvMetadata
 from henry.dao.document import Status
-from henry.users.web import Client
+from henry.users.dao import Client
 
 
 def get_notas_with_clients(session, end_date, start_date,
