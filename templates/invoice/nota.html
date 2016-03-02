@@ -7,6 +7,7 @@
             }
             .cant {
                 text-align: right;
+                width: 10px;
             }
             .codigo {
                 text-align: left;
@@ -53,11 +54,11 @@
             </tr>
             {% for i in inv.items %}
             <tr>
-                <td width=100>{{i.prod.codigo}}</td>
+                <td>{{i.prod.prod_id}}</td>
                 <td>{{i.prod.nombre}}</td>
-                <td width=100 class="cant">{{ i.cant }}</td>
-                <td width=100 class="cant">{{ value_from_cents(i.prod.precio1) }}</td>
-                <td width=100 class="cant">{{ value_from_cents(i.prod.precio1 * i.cant) }}</td>
+                <td class="cant">{{ i.cant }}</td>
+                <td class="cant">{{ value_from_cents(i.prod.precio1) }}</td>
+                <td class="cant">{{ value_from_cents(i.prod.precio1 * i.cant) }}</td>
             </tr>
             {%endfor %}
             <tr> <td></td></tr>

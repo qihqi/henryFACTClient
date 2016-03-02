@@ -1,20 +1,14 @@
-import traceback
 import datetime
-
-from bottle import request, Bottle, abort, redirect
+import traceback
+from bottle import Bottle, request, abort, redirect
 from henry.base.auth import get_user
-
-from henry.config import BODEGAS_EXTERNAS
-
-from henry.dao.inventory import TransType, TransMetadata, Transferencia
-from henry.dao.productos import Bodega
-
-from henry.website.common import (
-    items_from_form, transmetadata_from_form)
 from henry.base.common import parse_start_end_date
+from henry.config import BODEGAS_EXTERNAS
+from henry.dao.inventory import TransType, Transferencia, TransMetadata
+from henry.dao.productos import Bodega
 from henry.schema.inventory import NInventoryRevision
 from henry.users.schema import NUsuario
-
+from henry.website.common import transmetadata_from_form, items_from_form
 
 
 def make_inv_wsgi(jinja_env, dbcontext, actionlogged, auth_decorator,

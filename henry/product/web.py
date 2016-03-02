@@ -1,11 +1,12 @@
 import json
 import os
-import barcode
-from bottle import Bottle, request, redirect, abort
 from decimal import Decimal
 
+import barcode
+from bottle import Bottle, request, redirect, abort
+
 from .dao import (Product, ProdItem, ProdItemGroup, PriceList,
-                  PriceListLabel, Inventory, ProdCount, Store, Bodega)
+                  Inventory, ProdCount, Store, Bodega)
 from henry.base.dbapi_rest import bind_dbapi_rest
 from henry.base.serialization import json_dumps
 from henry.base.session_manager import DBContext
@@ -131,7 +132,7 @@ def make_wsgi_api(prefix, sessionmanager, dbcontext, auth_decorator, dbapi):
     @dbcontext
     @auth_decorator
     def create_item_full():
-        '''
+        """
             input format:
             {
                 "prod" : {prod_id, name, desc, base_unit}< - information on item group
@@ -139,7 +140,7 @@ def make_wsgi_api(prefix, sessionmanager, dbcontext, auth_decorator, dbapi):
                 "prices": [{unit, almacen_id, display_name, price1, price2, cant}]
                 "new_unit": []
             }
-        '''
+        """
 
         content = request.body.read()
         content = json.loads(content)

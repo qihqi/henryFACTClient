@@ -5,6 +5,7 @@ import datetime
 
 from henry.base.serialization import SerializableMixin, json_loads, json_dumps
 from henry.base.session_manager import DBContext
+from henry.invoice.coreschema import NNota
 from henry.invoice.dao import Invoice
 from henry.product.dao import Store, PriceList
 from henry.users.web import Client, User
@@ -189,3 +190,8 @@ def make_nota_api(url_prefix, dbapi, actionlogged, invapi, auth_decorator, pedid
 
     return api
 
+
+def get_inv_db_instance(session, almacen_id, codigo):
+    return session.query(
+        NNota.id, NNota.status, NNota.items_location).filter_by(
+        almacen_id=almacen_id, codigo=codigo).first()

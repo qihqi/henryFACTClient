@@ -1,4 +1,3 @@
-from henry.dao import Item
 from henry.accounting.reports import *
 from henry.config import *
 

@@ -5,7 +5,7 @@ from henry.schema.base import Base
 
 
 class NItemGroup(Base):
-    '''What will replace NProducto'''
+    """What will replace NProducto"""
     __tablename__ = 'item_groups'
     uid = Column(Integer, primary_key=True, autoincrement=True)
     prod_id = Column(String(20), index=True, unique=True)

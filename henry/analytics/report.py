@@ -66,24 +66,6 @@ class TransItem(object):
         return self.item.cant
 
 
-class TransItem(object):
-
-    def __init__(self, trans):
-        self.trans = trans
-
-    def uid(self):
-        return self.trans.meta.uid
-
-    def value(self):
-        return int(self.trans.meta.value * 100)
-
-    def type(self):
-        return 'Transfer'
-
-    def items(self):
-        return imap(TransItem, self.trans.items)
-
-
 def get_type(prod_id):
     return prod_id
 

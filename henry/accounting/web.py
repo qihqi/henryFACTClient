@@ -6,7 +6,7 @@ import datetime
 import os
 import uuid
 
-from bottle import request, redirect, static_file, Bottle, response
+from bottle import request, redirect, static_file, Bottle, response, abort
 
 from henry import constants
 from henry.base.auth import get_user
@@ -19,7 +19,9 @@ from henry.misc import fix_id
 from henry.product.dao import Store
 from henry.invoice.coreschema import NNota
 from .acct_schema import ObjType, NComment
-from .reports import (group_by_records, generate_daily_report, split_records_binary, get_transactions)
+from henry.users.web import User
+from .reports import (group_by_records, generate_daily_report, split_records_binary, get_transactions, payment_report,
+                      get_notas_with_clients, split_records)
 from .acct_schema import NCheck, NSpent, NAccountStat
 from .dao import (Todo, Check, Deposit, Payment, Bank,
                   DepositAccount, AccountStat, Spent, AccountTransaction)
@@ -175,6 +177,71 @@ def make_wsgi_app(dbcontext, imgserver,
                   dbapi, paymentapi, jinja_env, auth_decorator, imagefiles, invapi):
     w = Bottle()
 
+    @w.get('/app/resumen_form')
+    @dbcontext
+    @auth_decorator
+    def resume_form():
+        temp = jinja_env.get_template('invoice/resumen_form.html')
+        stores = dbapi.search(Store)
+        users = dbapi.search(User)
+        return temp.render(almacenes=stores, users=users)
+
+    @w.get('/app/resumen')
+    @dbcontext
+    @auth_decorator
+    def get_resumen():
+        user = request.query.get('user')
+        store = request.query.get('almacen_id')
+        start, end = parse_start_end_date(request.query)
+
+        if user is None or store is None:
+            abort(400, 'Escoje usuario y almacen')
+        if start is None or end is None:
+            abort(400, 'Hay que ingresar las fechas')
+
+        store = int(store)
+        report = payment_report(dbapi.db_session, end, start, store)
+
+        temp = jinja_env.get_template('invoice/resumen_nuevo.html')
+        return temp.render(
+            start=start,
+            end=end,
+            user=user,
+            store=dbapi.search(Store),
+            report=report)
+
+    @w.get('/app/resumen_viejo')
+    @dbcontext
+    @auth_decorator
+    def get_resumen_viejo():
+        user = request.query.get('user')
+        store = request.query.get('almacen_id')
+        start, end = parse_start_end_date(request.query)
+
+        if user is None or store is None:
+            abort(400, 'Escoje usuario y almacen')
+        if start is None or end is None:
+            abort(400, 'Hay que ingresar las fechas')
+
+        store = int(store)
+        result = get_notas_with_clients(dbapi.session, end, start, store)
+
+        by_status = split_records(result, lambda x: x.status)
+        deleted = by_status[Status.DELETED]
+        committed = by_status[Status.COMITTED]
+        ventas = split_records(committed, lambda x: x.payment_format)
+
+        gtotal = sum((x.total for x in committed))
+        temp = jinja_env.get_template('invoice/resumen.html')
+        return temp.render(
+            start=start,
+            end=end,
+            user=user,
+            store=dbapi.search(Store),
+            ventas=ventas,
+            gtotal=gtotal,
+            eliminados=deleted)
+
     @w.get('/app/entregar_cuenta_form')
     @dbcontext
     @auth_decorator
@@ -257,8 +324,6 @@ def make_wsgi_app(dbcontext, imgserver,
             dbapi.create(todo2)
 
         redirect('/app/crear_entrega_de_cuenta?fecha={}'.format(date.isoformat()))
-
-
 
     @w.get('/app/entrega_de_cuenta_list')
     @dbcontext
