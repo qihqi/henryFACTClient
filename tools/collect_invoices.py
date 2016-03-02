@@ -9,7 +9,8 @@ from henry.product.schema import NProducto
 from henry.schema.legacy import NOrdenDespacho, NItemDespacho
 from henry.dao.document import Item, Status
 from henry.dao.productos import Product
-from henry.dao.order import Invoice, InvMetadata, PaymentFormat
+from henry.dao.order import Invoice, InvMetadata
+from henry.invoice.dao import PaymentFormat, InvMetadata, Invoice
 
 
 # old OrdenDespacho

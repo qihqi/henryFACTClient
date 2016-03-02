@@ -10,11 +10,19 @@ ProdCount = dbmix(NContenido)
 Category = dbmix(NCategory)
 PriceListLabel = dbmix(NPriceListLabel)
 Store = dbmix(NStore)
-PriceList = dbmix(NPriceList)
 
 def convert_decimal(x, default=None):
     return default if x is None else Decimal(x)
 
+price_override_name = (('prod_id', 'codigo'), ('cant_mayorista', 'threshold'))
+class PriceList(dbmix(NPriceList, price_override_name)):
+
+    @classmethod
+    def deserialize(cls, dict_input):
+        prod = super(cls, PriceList).deserialize(dict_input)
+        if prod.multiplicador:
+            prod.multiplicador = Decimal(prod.multiplicador)
+        return prod
 
 class ProdItem(dbmix(NItem)):
     def merge_from(self, the_dict):

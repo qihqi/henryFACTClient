@@ -1,6 +1,7 @@
-from sqlalchemy import (Column, Integer, DateTime, String,
-                        Boolean, Index)
+from sqlalchemy import Column, Integer, DateTime, String, Boolean, Index
 from henry.schema.base import Base
+
+__author__ = 'han'
 
 
 class NNota(Base):
@@ -36,7 +37,6 @@ class NNota(Base):
     items_location = Column(String(200))
 
 Index('ix_notas_2', NNota.almacen_id, NNota.codigo)
-
 
 class NPedidoTemporal(Base):
     __tablename__ = 'pedidos_temporales'

@@ -6,12 +6,12 @@ from sqlalchemy import desc
 
 from henry.accounting.acct_schema import ObjType, NComment
 from henry.product.schema import NProducto, NContenido, NPriceList
-from henry.schema.inv import NNota
+from henry.invoice.coreschema import NNota
 from henry.coreconfig import (dbcontext, auth_decorator, priceapi, storeapi,
                               sessionmanager, invapi, actionlogged)
 from henry.config import transactionapi, jinja_env, bodegaapi, prodapi, imgserver, todoapi
 from henry.dao.document import Item
-from henry.dao.order import PaymentFormat
+from henry.invoice.dao import PaymentFormat
 from henry.dao.productos import Bodega
 from henry.base.common import parse_start_end_date, parse_start_end_date_with_default
 from henry.accounting.reports import bodega_reports

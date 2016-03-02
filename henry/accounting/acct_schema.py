@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Date, Integer, String, ForeignKey, Numeric, DateTime, Index, Boolean
 from sqlalchemy.orm import relationship, backref
 from henry.schema.base import Base
-from henry.schema.inv import NNota
+from henry.invoice.coreschema import NNota
 
 
 class NAccountStat(Base):

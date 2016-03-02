@@ -16,7 +16,7 @@ from henry.dao.productos import (
     RevisionApi, ProdCount, Product, Bodega, Category, ProdApi, ProdItemGroup)
 from henry.dao.document import DocumentApi
 from henry.dao.inventory import Transferencia
-from henry.dao.order import PaymentFormat
+from henry.invoice.dao import PaymentFormat
 from henry.environments import make_jinja_env
 from henry.misc import id_type, fix_id, abs_string, value_from_cents, get_total
 from henry.externalapi import ExternalApi

@@ -1,7 +1,7 @@
 import datetime
 import os
 from jinja2 import Environment, FileSystemLoader
-from henry.dao.order import PaymentFormat
+from henry.invoice.dao import PaymentFormat
 from henry.misc import id_type, fix_id, abs_string, value_from_cents, get_total
 
 

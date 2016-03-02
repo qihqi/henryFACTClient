@@ -4,9 +4,9 @@ import datetime
 from henry.coreconfig import invapi, clientapi
 from henry.coreconfig import sessionmanager
 from henry.dao.document import Status
-from henry.dao.order import PaymentFormat
+from henry.invoice.dao import PaymentFormat
 from henry.accounting.acct_schema import NPayment
-from henry.schema.inv import NNota
+from henry.invoice.coreschema import NNota
 
 all_compra = defaultdict(list)
 all_pago = defaultdict(list)

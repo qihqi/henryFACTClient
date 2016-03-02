@@ -11,11 +11,11 @@ from henry.accounting.dao import Spent, AccountStat, AccountTransaction, Image, 
 from henry.base.serialization import SerializableMixin
 from henry.config import prodapi, transapi
 from henry.product.dao import Store
-from henry.schema.inv import NNota
+from henry.invoice.coreschema import NNota
 from henry.users.schema import NCliente
 from henry.base.dbapi import decode_str
 from henry.coreconfig import storeapi, invapi
-from henry.dao.order import InvMetadata, PaymentFormat
+from henry.invoice.dao import PaymentFormat, InvMetadata
 from henry.dao.document import Status
 from henry.users.web import Client
 

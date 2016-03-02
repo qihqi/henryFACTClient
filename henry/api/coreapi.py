@@ -7,11 +7,11 @@ from henry.base.auth import create_user_dict, get_user_info, authenticate
 from henry.base.serialization import json_dumps, json_loads
 
 from henry.dao.coredao import Client
-from henry.dao.order import Invoice
+from henry.invoice.dao import Invoice
 from henry.product.schema import NPriceList
 
 from henry.constants import FORWARD_INV
-from henry.schema.inv import NNota
+from henry.invoice.coreschema import NNota
 
 
 def make_coreapi(dbcontext, clientapi, invapi, auth_decorator, pedidoapi, sessionmanager,

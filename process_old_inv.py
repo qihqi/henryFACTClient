@@ -8,7 +8,7 @@ from henry.coreconfig import sessionmanager
 from henry.dao.document import Status, Item
 from henry.dao.inventory import Transferencia
 
-from henry.dao.order import Invoice
+from henry.invoice.dao import Invoice
 from henry.product.schema import NPriceList
 
 DIR = './invold'

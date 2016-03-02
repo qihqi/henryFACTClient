@@ -14,10 +14,10 @@ from henry.base.common import parse_iso, parse_start_end_date, parse_start_end_d
 from henry.base.serialization import json_dumps
 from henry.base.dbapi_rest import bind_dbapi_rest
 from henry.dao.document import Status
-from henry.dao.order import PaymentFormat, InvMetadata
+from henry.invoice.dao import PaymentFormat, InvMetadata
 from henry.misc import fix_id
 from henry.product.dao import Store
-from henry.schema.inv import NNota
+from henry.invoice.coreschema import NNota
 from .acct_schema import ObjType, NComment
 from .reports import (group_by_records, generate_daily_report, split_records_binary, get_transactions)
 from .acct_schema import NCheck, NSpent, NAccountStat
@@ -88,13 +88,6 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
         day = parse_iso(request.query.get('date'))
         result = dbapi.search(Spent, inputdate=day)
         return json_dumps(result)
-
-    @w.get('/app/api/account_transaction/<date>')
-    @dbcontext
-    def get_account_transactions(date):
-        day = parse_iso(date)
-        result = get_transaction_by_type(dbapi, paymentapi, day, day)
-        return json_dumps({'result': result})
 
     @w.get('/app/api/account_transaction')
     @dbcontext
@@ -170,8 +163,6 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
             'unused_payments': unused_payments,
             'sales': result.items()
         })
-
-
 
     # account stat
     bind_dbapi_rest('/app/api/account_stat', dbapi, AccountStat, w)
