@@ -16,6 +16,7 @@ from henry.coreconfig import (dbcontext, auth_decorator, sessionmanager,
                               actionlogged, invapi, pedidoapi)
 from henry.api.api_endpoints import api
 from henry.web import webmain as app
+from henry.advanced import webadv
 
 dbapi = DBApiGeneric(sessionmanager)
 

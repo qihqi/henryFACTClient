@@ -3,8 +3,9 @@ import datetime
 
 from bottle import Bottle, request, abort, redirect
 from sqlalchemy import desc
-
+from coreapi import dbapi
 from henry.accounting.acct_schema import ObjType, NComment
+from henry.product.dao import ProdItemGroup, ProdItem, PriceList
 from henry.product.schema import NProducto, NContenido, NPriceList
 from henry.invoice.coreschema import NNota
 from henry.coreconfig import (dbcontext, auth_decorator, priceapi, storeapi,
@@ -28,6 +29,39 @@ def index():
     <a href="/app/ver_transacciones">Transacciones</a>
     <a href="/app/ver_ventas">Ventas</a>
     '''
+
+
+class Prod(object):
+    def __init__(self):
+        self.prod = None
+        self.items = []
+        self.pricelist = []
+
+@w.get('/app/adv/items')
+@dbcontext
+def show_items():
+    all_itemgroups = dbapi.search(ProdItemGroup)
+    items = dbapi.search(ProdItem)
+    pricelist = dbapi.search(PriceList)
+
+    by_id = defaultdict(Prod)
+
+    def get_id(x):
+        if x[-1] == '+':
+            return x[:-1].upper()
+        return x.upper()
+
+    for x in all_itemgroups:
+        by_id[get_id(x.prod_id)].prod = x
+    for x in items:
+        by_id[get_id(x.prod_id)].items.append(x)
+    for x in pricelist:
+        by_id[get_id(x.prod_id)].pricelist.append(x)
+
+    temp = jinja_env.get_template('items.html')
+    return temp.render(all=by_id)
+
+
 
 
 @w.get('/app/pricelist')

@@ -6,7 +6,7 @@ import datetime
 from henry.base.serialization import SerializableMixin, json_loads, json_dumps
 from henry.base.session_manager import DBContext
 
-from henry.product.dao import Store, PriceList
+from henry.product.dao import Store, PriceList, create_items_chain
 from henry.users.dao import User, Client
 
 from .coreschema import NNota
@@ -30,6 +30,11 @@ class InvoiceOptions(SerializableMixin):
 def fix_inv_by_options(dbapi, inv, options):
     inv.items = filter(lambda x: x.cant >= 0, inv.items)
     inv.meta.paid = True
+
+    if options.revisar_producto:  # create producto if not exist
+        print 'here'
+        create_prod_if_not_exist(dbapi, inv)
+
     for item in inv.items:
         if options.usar_decimal:
             item.cant = Decimal(item.cant)
@@ -100,8 +105,14 @@ def parse_invoice_and_options(content_dict):
     return inv, options
 
 
-def create_prod_if_not_exist(inv):
-    pass
+
+def create_prod_if_not_exist(dbapi, inv):
+    for i in inv.items:
+        alm_id = inv.meta.almacen_id
+        if int(alm_id) == 3:
+            alm_id = 1
+        i.prod.almacen_id = alm_id
+        create_items_chain(dbapi, i.prod)
 
 
 def make_nota_api(url_prefix, dbapi, actionlogged, invapi, auth_decorator, pedidoapi):
@@ -129,9 +140,6 @@ def make_nota_api(url_prefix, dbapi, actionlogged, invapi, auth_decorator, pedid
             client = inv.meta.client
             if not dbapi.get(Client, client.codigo):
                 dbapi.save(client)
-
-        if options.revisar_producto:  # create producto if not exist
-            create_prod_if_not_exist(inv)
 
         inv = invapi.save(inv)
 

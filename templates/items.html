@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+
+    {% for x in all.values() %}
+    {% if not x.prod %}
+    <p>ItemGroup: {{ x.prod.prod_id }}</p>
+    <p>Items:
+        {% for y in x.items %}
+            {{ y.prod_id }} {{y.unit }}
+        {% endfor %}</p>
+    <p>Prices:
+        {% for y in x.pricelist %}
+            {{ y.prod_id }} {{y.almacen_id}}
+        {% endfor %}</p>
+    {% endif %}
+    {% endfor %}
+
+
+
+</body>
+</html>
