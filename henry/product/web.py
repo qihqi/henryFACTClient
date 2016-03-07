@@ -7,6 +7,7 @@ import barcode
 from bottle import Bottle, request, redirect
 
 from henry.base.dbapi_rest import bind_dbapi_rest
+from henry.base.serialization import json_dumps
 from henry.product.dao import ProdItemGroup, Product, Store, Bodega, ProdCount, ProdItem, Inventory, PriceList
 
 
@@ -23,6 +24,30 @@ def validate_full_item(content, dbapi):
         all_mult.add(i['multiplier'])
     return True, ''
 
+
+def make_full_items(itemgroup, items, prices_by_prod_id):
+    """
+    {
+        "prod" : {prod_id, name, desc, base_unit}< - information on item group
+        "items": [multiplier, unit
+                  "prices": {
+                    "display_name":
+                    "price1":
+                    "price2":
+                    "cant":
+    }, ...
+    ]<- information on items requires multiplier be distinct
+    }
+    """
+
+    result = {'prod': itemgroup.serialize(), 'items': []}
+    for x in items:
+        new_item = x.serialize()
+        new_item['prices'] = []
+        for pl in prices_by_prod_id[new_item.prod_id]:
+            new_item['prices'].append(pl)
+        result['items'].append(new_item)
+    return result
 
 def make_wsgi_api(prefix, sessionmanager, dbcontext, auth_decorator, dbapi):
     app = Bottle()
@@ -49,6 +74,16 @@ def make_wsgi_api(prefix, sessionmanager, dbcontext, auth_decorator, dbapi):
         create_full_item_from_dict(dbapi, content)
         sessionmanager.session.commit()
         return {'status': 'success'}
+
+    @app.get(prefix + '/item_full/<item_id>')
+    @dbcontext
+    def get_item_full(item_id):
+        itemgroup = dbapi.get(item_id, ProdItemGroup)
+        items = dbapi.search(ProdItem, itemgroupid=itemgroup.uid)
+        prices_by_item = {}
+        for x in items:
+            prices_by_item[x.prod_id] = dbapi.search(PriceList, prod_id=x.prod_id)
+        return json_dumps(make_full_items(itemgroup, items, prices_by_item))
 
     bind_dbapi_rest(prefix + '/pricelist', dbapi, PriceList, app)
     bind_dbapi_rest(prefix + '/itemgroup', dbapi, ProdItemGroup, app)

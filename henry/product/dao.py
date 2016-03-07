@@ -46,7 +46,7 @@ class ProdItemGroup(dbmix(NItemGroup)):
 
 def get_real_prod_id(uid):
     if uid[-1] in ('+', '-'):
-        return uid[-1]
+        return uid[:-1]
     return uid
 
 

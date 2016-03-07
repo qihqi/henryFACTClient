@@ -37,6 +37,7 @@ app.merge(invoiceapp)
 app.merge(invapp)
 app.merge(papp)
 app.merge(create_prod_api)
+app.merge(webadv)
 
 if USE_ACCOUNTING_APP:
     from PIL import Image as PilImage
