@@ -5,9 +5,11 @@ from henry.users.web import make_wsgi_app as userwsgi
 from henry.accounting.web import make_wsgi_app as accwsgi
 from henry.accounting.web import make_wsgi_api as accapi
 from henry.product.web import make_wsgi_app as prodapp
+from henry.product.web import make_wsgi_api as prod_api_app
 from henry.website.web_inventory import make_inv_wsgi
 from henry.website.web_invoice import make_invoice_wsgi
 from henry.website.web import webmain as app
+from henry.website.advanced import webadv
 
 from henry.base.dbapi import DBApiGeneric
 
@@ -28,12 +30,18 @@ invapp = make_inv_wsgi(jinja_env, dbcontext, actionlogged, auth_decorator,
                        sessionmanager, prodapi, transapi, revisionapi, bodegaapi)
 papp = prodapp(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles)
 
+create_prod_api = prod_api_app(
+    '/app/api',
+    sessionmanager=sessionmanager,
+    auth_decorator=auth_decorator, dbcontext=dbcontext, dbapi=dbapi)
 
 app.merge(api)
 app.merge(userapp)
 app.merge(invoiceapp)
 app.merge(invapp)
 app.merge(papp)
+app.merge(webadv)
+app.merge(create_prod_api)
 
 if USE_ACCOUNTING_APP:
     from PIL import Image as PilImage

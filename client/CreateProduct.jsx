@@ -81,7 +81,7 @@ var ProdForm = React.createClass({
         console.log(JSON.stringify(result));
         var self = this;
         $.ajax({
-            url: '/prodapi/item_full',
+            url: '/app/api/item_full',
             data: JSON.stringify(result),
             method: 'POST',
             success: function(msg) {

@@ -127,7 +127,7 @@ def validate_full_item(content, dbapi):
 def make_wsgi_api(prefix, sessionmanager, dbcontext, auth_decorator, dbapi):
     app = Bottle()
 
-    @app.post('/{}/item_full'.format(prefix))
+    @app.post(prefix + '/item_full')
     @dbcontext
     @auth_decorator
     def create_item_full():
@@ -150,9 +150,9 @@ def make_wsgi_api(prefix, sessionmanager, dbcontext, auth_decorator, dbapi):
         sessionmanager.session.commit()
         return {'status': 'success'}
 
-    bind_dbapi_rest('/app/api/pricelist', dbapi, PriceList, app)
-    bind_dbapi_rest('/app/api/itemgroup', dbapi, ProdItemGroup, app)
-    bind_dbapi_rest('/app/api/item', dbapi, ProdItem, app)
+    bind_dbapi_rest(prefix + '/pricelist', dbapi, PriceList, app)
+    bind_dbapi_rest(prefix + '/itemgroup', dbapi, ProdItemGroup, app)
+    bind_dbapi_rest(prefix + '/item', dbapi, ProdItem, app)
     return app
 
 
