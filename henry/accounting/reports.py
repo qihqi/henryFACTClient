@@ -199,6 +199,7 @@ def get_sales_as_transactions(dbapi, start_date, end_date):
         NNota.timestamp >= start_date).filter(
         NNota.timestamp <= end_date).filter(
         NNota.status != Status.DELETED).filter(
+        NNota.payment_format != PaymentFormat.CREDIT).filter(
         NNota.almacen_id is not None).group_by(
         func.DATE(NNota.timestamp), NNota.almacen_id)
     all_alms = {x.almacen_id: x for x in dbapi.search(Store)}
@@ -213,22 +214,14 @@ def get_sales_as_transactions(dbapi, start_date, end_date):
             type='venta')
 
 
-def get_payments_as_transactions(paymentapi, start_date, end_date):
-    for pago in paymentapi.list_payments(start_date, end_date):
-        if pago.type == PaymentFormat.CASH:
-            yield AccountTransaction(
-                uid='abono'+str(pago.uid),
-                date=pago.date,
-                value=Decimal(pago.value) / 100,
-                desc='ABONO a Factura {}'.format(pago.note_id),
-                type=AccountTransaction.CUSTOMER_PAYMENT)
-
-def get_payments_as_transactions2(dbapi, start_date, end_date):
+def get_payments_as_transactions(dbapi, start_date, end_date):
     payments = []
     payments_credit = []
     for pago, pformat in dbapi.db_session.query(NPayment, NNota.payment_format).join(
             NNota, NPayment.note_id == NNota.id).filter(
             NPayment.date >= start_date, NPayment.date <= end_date):
+        if pago.type == PaymentFormat.CASH:
+            continue  # cash payment is already accounted for
         thetype = AccountTransaction.CUSTOMER_PAYMENT
         if pago.type == PaymentFormat.DEPOSIT:
             thetype = AccountTransaction.CUSTOMER_PAYMENT_DEPOSIT
@@ -240,7 +233,6 @@ def get_payments_as_transactions2(dbapi, start_date, end_date):
             value=-Decimal(pago.value) / 100,
             desc='{} para Factura {}'.format(pago.type, pago.note_id),
             type=thetype)
-        print thetype, pago.type
         if pformat == PaymentFormat.CREDIT:
             payments_credit.append(acct)
         else:
@@ -248,11 +240,10 @@ def get_payments_as_transactions2(dbapi, start_date, end_date):
     return payments, payments_credit
 
 
-
 def get_spent_as_transactions(dbapi, start_date, end_date):
     for gasto in dbapi.search(Spent, **{'inputdate-gte': start_date, 'inputdate-lte': end_date}):
         if gasto.paid_from_cashier is None:
-            print gasto.serialize()
+            print 'ERROR', gasto.serialize()
             continue
         yield AccountTransaction(
             uid='gasto'+str(gasto.uid),
@@ -262,7 +253,7 @@ def get_spent_as_transactions(dbapi, start_date, end_date):
             type='gasto')
 
 
-def get_turned_in_cash2(dbapi, start_date, end_date, imageserver):
+def get_turned_in_cash(dbapi, start_date, end_date, imageserver):
     all_acct = list(dbapi.search(AccountTransaction, **{'date-gte': start_date, 'date-lte': end_date}))
     imgs = {x.objid: x for x in dbapi.search(Image, objtype='account_transaction')}
     for acct in all_acct:
@@ -272,29 +263,12 @@ def get_turned_in_cash2(dbapi, start_date, end_date, imageserver):
     return all_acct
 
 
-def get_turned_in_cash(dbapi, start_date, end_date):
-    accts = dbapi.search(AccountStat, **{
-        'date-lte': end_date,
-        'date-gte': start_date})
-    for a in accts:
-        yield AccountTransaction(
-            date=a.date,
-            value=(-Decimal(a.deposit) / 100),
-            desc='Deposito/Brindado {}'.format(a.date.isoformat()),
-            type='turned_in')
-        yield AccountTransaction(
-            date=a.date,
-            value=(-Decimal(a.turned_cash) / 100),
-            desc='Deposito/Entregado {}'.format(a.date.isoformat()),
-            type='turned_in')
-
-
 def get_transactions(dbapi, paymentapi, invapi, imageserver, start_date, end_date):
     delta = datetime.timedelta(hours=23)
     sales = list(get_sales_as_transactions(dbapi, start_date, end_date + delta))
     spent = list(get_spent_as_transactions(dbapi, start_date, end_date))
-    turned_in = list(get_turned_in_cash2(dbapi, start_date, end_date, imageserver))
-    payments, payments_credit = get_payments_as_transactions2(dbapi, start_date, end_date)
+    turned_in = list(get_turned_in_cash(dbapi, start_date, end_date, imageserver))
+    payments, payments_credit = get_payments_as_transactions(dbapi, start_date, end_date)
     sales_credit = list(invapi.search_metadata_by_date_range(
         start_date, end_date + delta, Status.COMITTED,
         {'payment_format': PaymentFormat.CREDIT}))

@@ -191,7 +191,7 @@ var CreditTable = React.createClass({
             return <tr>
                 <td>{x.timestamp.substring(0, 10)}</td>
                 <td>{x.client.apellidos + ' ' + x.client.nombres}</td>
-                <td>{twoDecimalPlace(x.total)}</td>
+                <td>{twoDecimalPlace(x.total/100)}</td>
             </tr>;
         };
         var makePay= function(x) {
