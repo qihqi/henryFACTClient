@@ -5,9 +5,8 @@
     $(document).ready(function() {
         $('.guardar').click(function() {
             var num = $(this).attr('num');
-            var codigo = $(this).attr('codigo');
-            var alm = $(this).attr('alm');
-            var url = '/api/alm/' + alm + '/producto/' + encodeURIComponent(codigo);
+            var uid = $(this).attr('uid');
+            var url = '/app/api/pricelist/' + uid;
 
             var precio1 = $('#' + num + '-precio1');
             var precio2 = $('#' + num + '-precio2');
@@ -65,12 +64,13 @@
         </tr>
         {% for p in prods %}
         <tr id="{{p.codigo}}">
+            <td><input type="hidden" id="{{loop.index}}-uid" value="{{p.pid}}" disabled/></td>
             <td><input class="small" id="{{loop.index}}-codigo" value="{{p.prod_id}}" disabled/></td>
             <td><input class="big" id="{{loop.index}}-nombre" value="{{p.nombre}}" /></td>
             <td><input class="small" id="{{loop.index}}-precio1" value="{{value_from_cents(p.precio1)}}" /></td>
             <td><input class="small" id="{{loop.index}}-precio2" value="{{value_from_cents(p.precio2)}}" /></td>
             <td><input class="small" id="{{loop.index}}-threshold" value="{{p.cant_mayorista}}" /></td>
-            <td><button num="{{loop.index}}" alm="{{p.almacen_id}}" codigo="{{p.prod_id}}" class="guardar">Guardar</button></td>
+            <td><button num="{{loop.index}}" uid="{{p.pid}}" class="guardar">Guardar</button></td>
         </tr>
         {% endfor %}
     </table>
