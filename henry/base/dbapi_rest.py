@@ -19,7 +19,7 @@ class RestApi(object):
             obj = self.clazz()
             setattr(obj, self.clazz.pkey.name, pkey)
             count = self.dbapi.update(obj, content_dict=content_dict)
-            return {'modified': count}
+            return json_dumps({'modified': count})
 
     def post(self):
         content_dict = json.loads(bottle.request.body.read())
@@ -27,20 +27,20 @@ class RestApi(object):
             obj = self.clazz()
             obj.merge_from(content_dict)
             pkey = self.dbapi.create(obj)
-            return {'key': pkey}
+            return json_dumps({'key': pkey})
 
     def delete(self, pkey):
         with self.dbapi.session:
             obj = self.clazz()
             setattr(obj, self.clazz.pkey.name, pkey)
             count = self.dbapi.delete(obj)
-            return {'deleted': count}
+            return json_dumps({'deleted': count})
 
     def search(self):
         with self.dbapi.session:
             args = bottle.request.query
             content = self.dbapi.search(self.clazz, **args)
-            return {'result': [c.serialize() for c in content]}
+            return json_dumps({'result': [c.serialize() for c in content]})
 
 
 def bind_dbapi_rest(url, dbapi, clazz, app):

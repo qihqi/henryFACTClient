@@ -1,6 +1,6 @@
-import CreateProduct from './CreateProduct';
+import {ProdApp} from './CreateProduct';
 import ReactDOM from 'react-dom';
 import React from 'react';
 
-ReactDOM.render(<CreateProduct />, document.getElementById('content'));
+ReactDOM.render(<ProdApp />, document.getElementById('content'));
 

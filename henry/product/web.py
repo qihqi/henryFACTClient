@@ -44,7 +44,7 @@ def make_full_items(itemgroup, items, prices_by_prod_id):
     for x in items:
         new_item = x.serialize()
         new_item['prices'] = []
-        for pl in prices_by_prod_id[new_item.prod_id]:
+        for pl in prices_by_prod_id[x.prod_id]:
             new_item['prices'].append(pl)
         result['items'].append(new_item)
     return result
@@ -85,12 +85,36 @@ def make_wsgi_api(prefix, sessionmanager, dbcontext, auth_decorator, dbapi):
             prices_by_item[x.prod_id] = dbapi.search(PriceList, prod_id=x.prod_id)
         return json_dumps(make_full_items(itemgroup, items, prices_by_item))
 
+    @app.post(prefix + '/item_with_price')
+    @dbcontext
+    def save_item_with_price():
+        # TODO: VALIDATION
+        item_with_price = json.loads(request.body.read())
+        item = ProdItem.deserialize(item_with_price)
+        prod_id = item_with_price['prod_id']
+        if int(item_with_price['multiplier']) > 1:
+            prod_id += '+'
+        item.prod_id = prod_id
+        uid = dbapi.create(item)
+        for aid, x in item_with_price['price'].items():
+            p = PriceList()
+            p.almacen_id = aid
+            p.prod_id = prod_id
+            p.precio1 = int(Decimal(x['price1']) * 100)
+            p.precio2 = int(Decimal(x['price2']) * 100)
+            p.nombre = x['display_name']
+            p.cant_mayorista = x['cant']
+            p.unidad = item.unit
+            p.multiplicador = item.multiplier
+            dbapi.create(p)
+        dbapi.db_session.commit()
+        return {'status': 'success', 'uid': uid}
+
+
     bind_dbapi_rest(prefix + '/pricelist', dbapi, PriceList, app)
     bind_dbapi_rest(prefix + '/itemgroup', dbapi, ProdItemGroup, app)
     bind_dbapi_rest(prefix + '/item', dbapi, ProdItem, app)
     return app
-
-# used as part of coreapi
 
 
 def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles):

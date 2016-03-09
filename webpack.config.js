@@ -1,7 +1,8 @@
 module.exports = {
   entry: {
     prod: './client/index.jsx',
-    accounting: './client/accounting_index.jsx'
+    accounting: './client/accounting_index.jsx',
+    viewprod : './client/view_prod_index.jsx'
   },
   output: {
     path: __dirname + '/static',

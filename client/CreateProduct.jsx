@@ -1,6 +1,8 @@
 import React from 'react';
 
-function makeOption(options, name, onchange) {
+export var UNITS = ['', 'YARDA', 'METRO', 'ROLLO', 'PAQ.PEQUENO', 'PAQ.GRANDE', 'UNIDAD', 'TIRA'];
+
+export function makeOption(options, name, onchange) {
     return <select name={name} onChange={onchange}>
     {options.map((x)=>{
        return <option defaultValue={x}>{x}</option>;
@@ -8,7 +10,7 @@ function makeOption(options, name, onchange) {
     </select>;
 }
 
-var PriceForm = React.createClass({
+export var PriceForm = React.createClass({
     change: function(event) {
         if (event.target.name !== 'display_name') {
             if (isNaN(event.target.value)) {
@@ -18,9 +20,9 @@ var PriceForm = React.createClass({
         }
         var result = {
             itemid: this.props.itemid,
-    priceid: this.props.priceid,
-    key: event.target.name,
-    value: event.target.value
+            priceid: this.props.priceid,
+            key: event.target.name,
+            value: event.target.value
         };
         this.props.setPrice(result);
     },
@@ -34,7 +36,7 @@ var PriceForm = React.createClass({
     }
 });
 
-var ProdForm = React.createClass({
+var CreateProdForm = React.createClass({
     getInitialState: function() {
         this.items = [{
             unit: '',
@@ -135,13 +137,13 @@ var ProdForm = React.createClass({
     }
 });
 
-export default React.createClass({
+export var ProdApp = React.createClass({
     getInitialState() {
         return {
         'units': ['', 'YARDA', 'METRO', 'ROLLO', 'PAQ.PEQUENO', 'PAQ.GRANDE', 'UNIDAD', 'TIRA'],
         pricelist: [{name: 'menorista', id: 1}, {name: 'mayorista', id: 2}]};
     },
     render: function() {
-        return <ProdForm units={this.state.units} pricelist={this.state.pricelist}/>;
+        return <CreateProdForm units={this.state.units} pricelist={this.state.pricelist}/>;
     },
 });
