@@ -1,10 +1,11 @@
 import datetime
 import traceback
 
-from bottle import Bottle, request, abort, redirect
+from bottle import Bottle, request, abort, redirect, json_loads
 
 from henry.base.auth import get_user
 from henry.base.common import parse_start_end_date
+from henry.base.serialization import json_dumps
 from henry.base.session_manager import DBContext
 from henry.common import transmetadata_from_form, items_from_form
 
@@ -14,6 +15,64 @@ from henry.users.schema import NUsuario
 from .dao import TransType, Transferencia, TransMetadata
 from henry.product.schema import NInventoryRevision
 
+
+def make_inv_api(dbapi, transapi, auth_decorator, actionlogged):
+    api = Bottle()
+    dbcontext = DBContext(dbapi.session)
+
+    @api.post('/app/api/ingreso')
+    @dbcontext
+    @auth_decorator
+    @actionlogged
+    def crear_ingreso():
+        json_content = request.body.read()
+        json_dict = json_loads(json_content)
+        ingreso = Transferencia.deserialize(json_dict)
+        ingreso = transapi.save(ingreso)
+        return {'codigo': ingreso.meta.uid}
+
+    @api.put('/app/api/ingreso/<ingreso_id>')
+    @dbcontext
+    @auth_decorator
+    @actionlogged
+    def postear_ingreso(ingreso_id):
+        trans = transapi.get_doc(ingreso_id)
+        transapi.commit(trans)
+        return {'status': trans.meta.status}
+
+    @api.delete('/app/api/ingreso/<ingreso_id>')
+    @dbcontext
+    @actionlogged
+    def delete_ingreso(ingreso_id):
+        trans = transapi.get_doc(ingreso_id)
+        transapi.delete(trans)
+        return {'status': trans.meta.status}
+
+    @api.get('/app/api/ingreso/<ingreso_id>')
+    @dbcontext
+    @actionlogged
+    def get_ingreso(ingreso_id):
+        ing = transapi.get_doc(ingreso_id)
+        if ing is None:
+            abort(404, 'Ingreso No encontrada')
+            return
+        return json_dumps(ing.serialize())
+
+    @api.get('/app/api/ingreso')
+    @dbcontext
+    @actionlogged
+    def get_trans_by_date():
+        start, end = parse_start_end_date(
+            request.query, start_name='start_date', end_name='end_date')
+        status = request.query.get('status')
+        other_filters = {}
+        for x in ('origin', 'dest'):
+            t = request.query.get(x)
+            if t:
+                other_filters[x] = t
+        result = transapi.search_metadata_by_date_range(
+            start, end, status, other_filters)
+        return json_dumps(list(result))
 
 
 def make_inv_wsgi(dbapi, jinja_env, actionlogged, auth_decorator, transapi,
@@ -128,7 +187,7 @@ def make_inv_wsgi(dbapi, jinja_env, actionlogged, auth_decorator, transapi,
         items = []
         for y in meta.items:
             item = dbapi.getone(ProdCount,
-                prod_id=y.prod_id, bodega_id=meta.bodega_id)
+                                prod_id=y.prod_id, bodega_id=meta.bodega_id)
             name = dbapi.getone(Product, codigo=y.prod_id).nombre
             item.nombre = name
             if y.inv_cant:

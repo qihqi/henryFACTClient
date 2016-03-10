@@ -1,14 +1,11 @@
 import datetime
 
-from bottle import Bottle, response, request, abort
+from bottle import Bottle, request, abort
 
 from henry.base.auth import get_user
-from henry.bottlehelper import get_property_or_fail
 from henry.accounting.acct_schema import NComment
 from henry.inventory.dao import Transferencia
-from henry.product.schema import NContenido
-from henry.coreconfig import (dbcontext, invapi,
-                              auth_decorator, sessionmanager,
+from henry.coreconfig import (dbcontext, auth_decorator, sessionmanager,
                               actionlogged)
 from henry.config import revisionapi, transapi, todoapi
 from henry.base.serialization import json_dumps, json_loads
@@ -32,23 +29,6 @@ def post_comment():
     sessionmanager.session.add(c)
     sessionmanager.session.commit()
     return {'comment': c.uid}
-
-
-@api.get('/app/api/nota')
-@dbcontext
-@actionlogged
-def get_invoice_by_date():
-    start, end = parse_start_end_date(
-        request.query, start_name='start_date', end_name='end_date')
-    status = request.query.get('status')
-    other_filters = {}
-    for x in ('users', 'almacen_id'):
-        t = request.query.get(x)
-        if t:
-            other_filters[x] = t
-    result = invapi.search_metadata_by_date_range(
-        start, end, status, other_filters)
-    return json_dumps(list(result))
 
 
 # ################# INGRESO ###########################3
