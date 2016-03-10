@@ -5,91 +5,16 @@ from bottle import Bottle, response, request, abort
 from henry.base.auth import get_user
 from henry.bottlehelper import get_property_or_fail
 from henry.accounting.acct_schema import NComment
+from henry.inventory.dao import Transferencia
 from henry.product.schema import NContenido
 from henry.coreconfig import (dbcontext, invapi,
                               auth_decorator, sessionmanager,
                               actionlogged)
-from henry.config import prodapi, revisionapi, transapi, todoapi
+from henry.config import revisionapi, transapi, todoapi
 from henry.base.serialization import json_dumps, json_loads
-from henry.dao.inventory import Transferencia
 from henry.base.common import parse_start_end_date
 
 api = Bottle()
-
-
-# ######### PRODUCT ########################
-@api.get('/app/api/producto/<prod_id:path>')
-@dbcontext
-@actionlogged
-def get_prod(prod_id):
-    options = request.query.options
-    if options == 'all':
-        result = prodapi.get_producto_full(prod_id)
-        result_dict = result.serialize()
-        result_dict['precios'] = [
-            (x.almacen_id, x.almacen_name, x.precio1, x.precio2, x.threshold)
-            for x in result.precios]
-        return json_dumps(result_dict)
-
-    prod = prodapi.prod.get(prod_id)
-    if prod is None:
-        response.status = 404
-    return json_dumps(prod)
-
-
-@api.get('/app/api/bod/<bodega_id>/producto/<prod_id:path>')
-@dbcontext
-@actionlogged
-def get_prod_cant(bodega_id, prod_id):
-    prod = list(prodapi.count.search(prod_id=prod_id, bodega_id=bodega_id))
-    if not prod:
-        response.status = 404
-    prod = prod[0]
-    prod_dict = prod.serialize()
-    prod_dict['nombre'] = prodapi.prod.getone(codigo=prod_id).nombre
-    return json_dumps(prod_dict)
-
-
-@api.get('/app/api/bod/<bodega_id>/producto')
-@dbcontext
-@actionlogged
-def search_prod_cant(bodega_id):
-    prefix = get_property_or_fail(request.query, 'prefijo')
-    prod = list(prodapi.get_cant_prefix(prefix, bodega_id))
-    return json_dumps(prod)
-
-
-@api.put('/app/api/bod/<bodega_id>/producto/<prod_id:path>')
-@dbcontext
-@actionlogged
-def toggle_inactive(bodega_id, prod_id):
-    inactive = json_loads(request.body.read())['inactivo']
-    sessionmanager.session.query(NContenido).filter_by(
-        bodega_id=bodega_id, prod_id=prod_id).update(
-        {NContenido.inactivo: inactive})
-    sessionmanager.session.commit()
-    return {'inactivo': inactive}
-
-
-@api.get('/app/api/producto')
-@dbcontext
-@actionlogged
-def search_prod():
-    prefijo = request.query.prefijo
-    if prefijo:
-        return json_dumps(list(
-            prodapi.prod.search(**{'nombre-prefix': prefijo})))
-    response.status = 400
-    return None
-
-
-@api.put('/app/api/producto/<pid>')
-@dbcontext
-@auth_decorator
-@actionlogged
-def crear_producto(pid):
-    content = json_loads(request.body.read())
-    prodapi.update_prod(pid, content)
 
 
 @api.post('/app/api/comment')

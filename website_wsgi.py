@@ -10,20 +10,19 @@ from henry.inventory.web import make_inv_wsgi
 from henry.invoice.websites import make_invoice_wsgi
 from henry.base.dbapi import DBApiGeneric
 from henry.constants import USE_ACCOUNTING_APP
-from henry.config import (BEAKER_SESSION_OPTS, jinja_env, prodapi, transapi,
-                          revisionapi, bodegaapi, imagefiles, paymentapi)
+from henry.config import (BEAKER_SESSION_OPTS, jinja_env, transapi,
+                          revisionapi, imagefiles, paymentapi, BODEGAS_EXTERNAS)
 from henry.coreconfig import (dbcontext, auth_decorator, sessionmanager,
                               actionlogged, invapi, pedidoapi)
-from henry.api.api_endpoints import api
 from henry.web import webmain as app
-from henry.advanced import webadv
+from henry.api.api_endpoints import api
 
 dbapi = DBApiGeneric(sessionmanager)
 
 userapp = userwsgi(dbcontext, auth_decorator, jinja_env, dbapi, actionlogged)
 invoiceapp = make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, jinja_env)
-invapp = make_inv_wsgi(jinja_env, dbcontext, actionlogged, auth_decorator,
-                       sessionmanager, prodapi, transapi, revisionapi, bodegaapi)
+invapp = make_inv_wsgi(dbapi, jinja_env, actionlogged, auth_decorator, transapi,
+                       revisionapi, BODEGAS_EXTERNAS)
 papp = prodapp(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles)
 
 create_prod_api = prod_api_app(
@@ -37,7 +36,6 @@ app.merge(invoiceapp)
 app.merge(invapp)
 app.merge(papp)
 app.merge(create_prod_api)
-app.merge(webadv)
 
 if USE_ACCOUNTING_APP:
     from PIL import Image as PilImage

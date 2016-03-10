@@ -2,12 +2,12 @@ from collections import defaultdict
 import datetime
 import os
 import json
-import matplotlib.pyplot as plt
 from decimal import Decimal
-from henry.coreconfig import sessionmanager
-from henry.dao.document import Status, Item
-from henry.dao.inventory import Transferencia
 
+import matplotlib.pyplot as plt
+from henry.coreconfig import sessionmanager
+from henry.dao.document import Status
+from henry.inventory.dao import Transferencia
 from henry.invoice.dao import Invoice
 from henry.product.schema import NPriceList
 

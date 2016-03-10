@@ -3,14 +3,12 @@ import os
 import uuid
 from decimal import Decimal
 
-from henry.base.serialization import parse_iso_date
-from henry.base.serialization import SerializableMixin, DbMixin
-from henry.dao.productos import ProdItemGroup
-from henry.schema.inventory import NTransferencia
+from henry.base.serialization import SerializableMixin, DbMixin, parse_iso_date
+from henry.dao.document import MetaItemSet, Item
+from henry.dao.transaction import Transaction
+from henry.product.dao import PriceList, ProdItemGroup
 
-from .document import MetaItemSet, Item
-from .coredao import Transaction, PriceList
-
+from .schema import NTransferencia
 
 class TransType:
     INGRESS = 'INGRESO'
@@ -127,4 +125,5 @@ class Transferencia(MetaItemSet):
         x.meta = cls._metadata_cls.deserialize(the_dict['meta'])
         x.items = map(TransItem.deserialize, the_dict['items'])
         return x
+
 

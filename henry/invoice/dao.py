@@ -2,9 +2,11 @@ import datetime
 import os
 import uuid
 from henry.base.serialization import SerializableMixin, DbMixin, parse_iso_date
-from henry.dao.coredao import Client, Transaction
 from henry.dao.document import MetaItemSet
-from henry.invoice.coreschema import NNota
+from henry.dao.transaction import Transaction
+from henry.users.dao import Client
+
+from .coreschema import NNota
 
 __author__ = 'han'
 

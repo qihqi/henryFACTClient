@@ -1,5 +1,5 @@
 from sqlalchemy import (Column, Integer, String,
-                        ForeignKey, Boolean, Numeric, Index)
+                        ForeignKey, Boolean, Numeric, Index, DateTime)
 from sqlalchemy.orm import relationship, backref
 from henry.schema.base import Base
 
@@ -105,3 +105,21 @@ class NProdTag(Base):
     tag = Column(String(30), index=True)
     prod_id = Column(String(20), index=True)
 
+
+class NInventoryRevision(Base):
+    __tablename__ = 'revisiones_de_inventario'
+    uid = Column(Integer, primary_key=True, autoincrement=True)
+    bodega_id = Column(Integer)
+    timestamp = Column(DateTime, index=True)
+    created_by = Column(String(20))
+    status = Column(String(10))
+    items = relationship('NInventoryRevisionItem', backref=backref('revision'))
+
+
+class NInventoryRevisionItem(Base):
+    __tablename__ = 'items_de_revisiones'
+    uid = Column(Integer, primary_key=True, autoincrement=True)
+    revision_id = Column(Integer, ForeignKey(NInventoryRevision.uid))
+    prod_id = Column(String(20), index=True)
+    inv_cant = Column(Numeric(20, 3))
+    real_cant = Column(Numeric(20, 3))

@@ -4,16 +4,14 @@ from decimal import Decimal
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
 from henry.base.dbapi import DBApiGeneric
-from henry.dao.coredao import TransactionApi, Transaction, Client
+from henry.dao.transaction import TransactionApi, Transaction, Client
 from henry.dao.document import DocumentApi, Status, Item
-from henry.dao.inventory import Transferencia, TransMetadata, TransType
-from henry.dao.order import Invoice
+from henry.inventory.dao import Transferencia, TransMetadata, TransType
 from henry.invoice.dao import InvMetadata, Invoice
-from henry.product.dao import Product
 from henry.product.schema import NBodega
 from henry.product.schema import NStore
-
 from henry.schema.base import Base
 from henry.base.fileservice import FileService
 from henry.base.session_manager import SessionManager

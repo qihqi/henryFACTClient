@@ -8,14 +8,12 @@ from henry.accounting.acct_schema import ObjType, NComment
 from henry.product.dao import ProdItemGroup, ProdItem, PriceList
 from henry.product.schema import NProducto, NContenido, NPriceList
 from henry.invoice.coreschema import NNota
-from henry.coreconfig import (dbcontext, auth_decorator, priceapi, storeapi,
+from henry.coreconfig import (dbcontext, auth_decorator,
                               sessionmanager, invapi, actionlogged)
-from henry.config import transactionapi, jinja_env, bodegaapi, prodapi, imgserver, todoapi
+from henry.config import transactionapi, jinja_env, imgserver, todoapi
 from henry.dao.document import Item
 from henry.invoice.dao import PaymentFormat
-from henry.dao.productos import Bodega
 from henry.base.common import parse_start_end_date, parse_start_end_date_with_default
-from henry.accounting.reports import bodega_reports
 
 webadv = w = Bottle()
 
@@ -74,7 +72,7 @@ def get_price_list():
         prefix = ''
     if almacen_id is None:
         abort(400, 'input almacen_id')
-    prods = priceapi.search(**{'nombre-prefix': prefix,
+    prods = dbapi.search(**{'nombre-prefix': prefix,
                                'almacen_id': almacen_id})
     temp = jinja_env.get_template('buscar_precios.html')
     return temp.render(prods=prods)
@@ -244,24 +242,6 @@ def ver_comentarios():
 
     temp = jinja_env.get_template('ver_comentarios.html')
     return temp.render(comentarios=comments, start=start, end=end)
-
-
-@w.get('/app/bodega_report')
-@dbcontext
-@auth_decorator
-def get_bodega_report():
-    today = datetime.date.today()
-    bodega_id = int(request.query.bodega_id or 1)
-    bodegas = list(prodapi.bodega.search())
-    start, end = parse_start_end_date_with_default(
-        request.query, today - datetime.timedelta(days=7), today)
-    records = bodega_reports(bodega_id, start, end)
-    invalue = sum((r.value for r in records if r.value > 0))
-    outvalue = sum((r.value for r in records if r.value < 0))
-    temp = jinja_env.get_template('bodega_report.html')
-    return temp.render(records=records, start=start, end=end,
-                       bodega_id=bodega_id, bodegas=bodegas, invalue=invalue,
-                       outvalue=outvalue)
 
 
 @w.get('/app/todos')

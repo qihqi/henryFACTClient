@@ -5,38 +5,27 @@ from bottle import Bottle, request, abort, redirect
 
 from henry.base.auth import get_user
 from henry.base.common import parse_start_end_date
-from henry.config import BODEGAS_EXTERNAS
-from henry.dao.inventory import TransType, Transferencia, TransMetadata
-from henry.dao.productos import Bodega
-from henry.schema.inventory import NInventoryRevision
-from henry.users.schema import NUsuario
+from henry.base.session_manager import DBContext
 from henry.common import transmetadata_from_form, items_from_form
 
+from henry.product.dao import Bodega, ProdCount, Product
+from henry.users.schema import NUsuario
 
-def make_inv_wsgi(jinja_env, dbcontext, actionlogged, auth_decorator,
-                  sessionmanager, prodapi, transapi, revisionapi, bodegaapi):
+from .dao import TransType, Transferencia, TransMetadata
+from henry.product.schema import NInventoryRevision
+
+
+
+def make_inv_wsgi(dbapi, jinja_env, actionlogged, auth_decorator, transapi,
+                  revisionapi, external_bodegas):
     w = Bottle()
+    dbcontext = DBContext(dbapi.session)
 
     @w.get('/app/ver_ingreso_form')
     @dbcontext
     @auth_decorator
     def ver_ingreso_form():
         return jinja_env.get_template('inventory/ver_ingreso_form.html').render()
-
-    @w.get('/app/ver_cantidad')
-    @dbcontext
-    @auth_decorator
-    def ver_cantidades():
-        bodega_id = int(request.query.get('bodega_id', 1))
-        prefix = request.query.get('prefix', None)
-        if prefix:
-            all_prod = prodapi.get_cant_prefix(prefix, bodega_id, showall=True)
-        else:
-            all_prod = []
-        temp = jinja_env.get_template('inventory/ver_cantidad.html')
-        return temp.render(
-            prods=all_prod, bodegas=bodegaapi.search(),
-            prefix=prefix, bodega_name=bodegaapi.get(bodega_id).nombre)
 
     @w.get('/app/ingreso/<uid>')
     @dbcontext
@@ -47,9 +36,9 @@ def make_inv_wsgi(jinja_env, dbcontext, actionlogged, auth_decorator,
             return 'Documento con codigo {} no existe'.format(uid)
         temp = jinja_env.get_template('inventory/ingreso.html')
         if trans.meta.origin is not None:
-            trans.meta.origin = bodegaapi.get(trans.meta.origin).nombre
+            trans.meta.origin = dbapi.get(trans.meta.origin, Bodega).nombre
         if trans.meta.dest is not None:
-            trans.meta.dest = bodegaapi.get(trans.meta.dest).nombre
+            trans.meta.dest = dbapi.get(trans.meta.dest, Bodega).nombre
         return temp.render(ingreso=trans)
 
     @w.get('/app/crear_ingreso')
@@ -57,9 +46,9 @@ def make_inv_wsgi(jinja_env, dbcontext, actionlogged, auth_decorator,
     @auth_decorator
     def crear_ingreso():
         temp = jinja_env.get_template('inventory/crear_ingreso.html')
-        bodegas = bodegaapi.search()
+        bodegas = dbapi.search(Bodega)
         bodegas_externas = [Bodega(id=i, nombre=n[0])
-                            for i, n in enumerate(BODEGAS_EXTERNAS)]
+                            for i, n in enumerate(external_bodegas)]
         return temp.render(bodegas=bodegas, externas=bodegas_externas,
                            types=TransType.names)
 
@@ -73,14 +62,14 @@ def make_inv_wsgi(jinja_env, dbcontext, actionlogged, auth_decorator,
     @actionlogged
     def post_crear_ingreso():
         meta = transmetadata_from_form(request.forms)
-        items = items_from_form(request.forms)
+        items = items_from_form(dbapi, request.forms)
         meta.value = sum((x.cant * (x.prod.base_price_usd or 0) for x in items))
         try:
             transferencia = Transferencia(meta, items)
             if meta.trans_type == TransType.EXTERNAL:
                 newmeta = TransMetadata().merge_from(meta)
                 external_bodega_index = int(request.forms['externa'])
-                _, api, dest_id = BODEGAS_EXTERNAS[external_bodega_index]
+                _, api, dest_id = external_bodegas[external_bodega_index]
                 newmeta.dest = dest_id
                 newmeta.origin = None
                 newmeta.trans_type = TransType.INGRESS
@@ -108,7 +97,7 @@ def make_inv_wsgi(jinja_env, dbcontext, actionlogged, auth_decorator,
             start = end - datetime.timedelta(days=7)
         trans_list = transapi.search_metadata_by_date_range(start, end)
         temp = jinja_env.get_template('inventory/ingresos_list.html')
-        bodega = {b.id: b.nombre for b in bodegaapi.search()}
+        bodega = {b.id: b.nombre for b in dbapi.search(Bodega)}
         print start, end
         return temp.render(trans=trans_list, start=start, end=end, bodega=bodega)
 
@@ -117,7 +106,7 @@ def make_inv_wsgi(jinja_env, dbcontext, actionlogged, auth_decorator,
     @auth_decorator
     def revisar_inv_form():
         temp = jinja_env.get_template('inventory/crear_revision.html')
-        return temp.render(bodegas=bodegaapi.search())
+        return temp.render(bodegas=dbapi.search(Bodega))
 
     @w.post('/app/revisar_inventario')
     @dbcontext
@@ -135,12 +124,12 @@ def make_inv_wsgi(jinja_env, dbcontext, actionlogged, auth_decorator,
     @auth_decorator
     def get_revision(rid):
         meta = revisionapi.get(rid)
-        bodega_name = bodegaapi.get(meta.bodega_id).nombre
+        bodega_name = dbapi.get(meta.bodega_id, Bodega).nombre
         items = []
         for y in meta.items:
-            item = prodapi.count.getone(
+            item = dbapi.getone(ProdCount,
                 prod_id=y.prod_id, bodega_id=meta.bodega_id)
-            name = prodapi.prod.getone(codigo=y.prod_id).nombre
+            name = dbapi.getone(Product, codigo=y.prod_id).nombre
             item.nombre = name
             if y.inv_cant:
                 item.cantidad = y.inv_cant
@@ -171,7 +160,7 @@ def make_inv_wsgi(jinja_env, dbcontext, actionlogged, auth_decorator,
         if start is None:
             start = end - datetime.timedelta(days=7)
 
-        revisions = sessionmanager.session.query(NInventoryRevision).filter(
+        revisions = dbapi.db_session.query(NInventoryRevision).filter(
             NInventoryRevision.timestamp <= end,
             NInventoryRevision.timestamp >= start)
 
@@ -184,7 +173,7 @@ def make_inv_wsgi(jinja_env, dbcontext, actionlogged, auth_decorator,
     def revisiones_main():
         user = get_user(request)
         if 'level' not in user:
-            userdb = sessionmanager.session.query(
+            userdb = dbapi.db_session.query(
                 NUsuario).filter(NUsuario.username == user['username']).first()
             user['level'] = userdb.level
             beaker = request.environ['beaker.session']

@@ -1,4 +1,4 @@
-from henry.schema.inventory import NContenido
+from henry.inventory.schema import NContenido
 from henry.schema.legacy import NTransform
 from henry.config import sessionmanager
 

@@ -19,9 +19,7 @@ def main():
     from beaker.middleware import SessionMiddleware
     import coreapi
     import website_wsgi
-    from henry.api.api_endpoints import api as napi
     app.merge(coreapi.api)
-    app.merge(napi)
     app.merge(website_wsgi.app)
     app = SessionMiddleware(app, BEAKER_SESSION_OPTS)
     sys.path.append(os.path.dirname(os.path.realpath(__file__)))

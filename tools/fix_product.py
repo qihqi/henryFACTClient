@@ -1,6 +1,6 @@
 from henry.config import sessionmanager
 from henry.schema.core import NPriceList
-from henry.schema.inventory import NContenido
+from henry.inventory.schema import NContenido
 from henry.schema.legacy import NTransform
 
 

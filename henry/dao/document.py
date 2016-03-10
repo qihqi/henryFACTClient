@@ -8,7 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from henry.base.serialization import SerializableMixin
 from henry.base.serialization import json_loads
 from henry.invoice.coreschema import NPedidoTemporal
-from .coredao import PriceList
+from henry.product.dao import PriceList
 
 
 class Status:

@@ -9,8 +9,8 @@ from henry.constants import (CONN_STRING, INVOICE_PATH, ENV,
                              LOGIN_URL, TRANSACTION_PATH, PEDIDO_PATH,
                              ACTION_LOG_PATH,
                              BEAKER_DIR)
-from henry.dao.coredao import PriceList, Client, User, Store, TransactionApi
 from henry.dao.document import DocumentApi, PedidoApi
+from henry.dao.transaction import TransactionApi
 from henry.invoice.dao import Invoice
 
 from henry.dao.actionlog import ActionLogApi, ActionLogApiDecor
@@ -25,15 +25,12 @@ sessionmanager = SessionManager(sessionfactory)
 dbcontext = DBContext(sessionmanager)
 
 transactionapi = TransactionApi(sessionmanager, FileService(TRANSACTION_PATH))
-pedidoapi = PedidoApi(sessionmanager, FileService(PEDIDO_PATH))
-priceapi = DBApi(sessionmanager, PriceList)
-usuarioapi = DBApi(sessionmanager, User)
-storeapi = DBApi(sessionmanager, Store)
 
 invapi = DocumentApi(sessionmanager, FileService(INVOICE_PATH),
                      transactionapi, object_cls=Invoice)
 actionlogapi = ActionLogApi(ACTION_LOG_PATH)
 actionlogged = ActionLogApiDecor(actionlogapi)
+pedidoapi = PedidoApi(sessionmanager, filemanager=FileService(PEDIDO_PATH))
 
 # for testing, make auth_decorator do nothing
 auth_decorator = lambda x: x

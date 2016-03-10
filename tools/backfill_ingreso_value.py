@@ -1,8 +1,9 @@
 import requests
+
 from henry.config import itemgroupapi
 from henry.coreconfig import sessionmanager
-from henry.dao.inventory import Transferencia
-from henry.schema.inventory import NTransferencia
+from henry.inventory.dao import Transferencia
+from henry.inventory.schema import NTransferencia
 
 __author__ = 'han'
 

@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker
 
 from henry.config import sessionfactory
 from henry.constants import CONN_STRING
-from henry.schema.inventory import NProducto
+from henry.inventory.schema import NProducto
 from henry.schema.legacy import NTransform
 
 poli_session = sessionmaker(

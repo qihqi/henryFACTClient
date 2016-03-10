@@ -9,18 +9,18 @@ from sqlalchemy import func
 from henry.accounting.acct_schema import NPayment, NCheck, NSpent
 from henry.accounting.dao import Spent, AccountStat, AccountTransaction, Image, Payment
 from henry.base.serialization import SerializableMixin
-from henry.config import prodapi, transapi
+from henry.config import transapi
 from henry.product.dao import Store
 from henry.invoice.coreschema import NNota
 from henry.users.schema import NCliente
 from henry.base.dbapi import decode_str
-from henry.coreconfig import storeapi, invapi
+from henry.coreconfig import invapi
 from henry.invoice.dao import PaymentFormat, InvMetadata
 from henry.dao.document import Status
 from henry.users.dao import Client
 
 
-def get_notas_with_clients(session, end_date, start_date,
+def get_notas_with_clients(dbapi, end_date, start_date,
                            store=None, user_id=None):
     end_date = end_date + timedelta(days=1) - timedelta(seconds=1)
 
@@ -29,11 +29,11 @@ def get_notas_with_clients(session, end_date, start_date,
         m.client.nombres = decode_str(db_raw.nombres)
         m.client.apellidos = decode_str(db_raw.apellidos)
         if not m.almacen_name:
-            alm = storeapi.get(m.almacen_id)
+            alm = dbapi.get(m.almacen_id, Store)
             m.almacen_name = alm.nombre
         return m
 
-    result = session.query(NNota, NCliente.nombres, NCliente.apellidos).filter(
+    result = dbapi.db_session.query(NNota, NCliente.nombres, NCliente.apellidos).filter(
         NNota.timestamp >= start_date).filter(
         NNota.timestamp <= end_date).filter(NCliente.codigo == NNota.client_id)
     if store is not None:
@@ -71,14 +71,14 @@ class Report(object):
         self.deleted = None
 
 
-def payment_report(session, start, end, store_id=None, user_id=None):
+def payment_report(dbapi, start, end, store_id=None, user_id=None):
     """
     A report of sales given dates grouped by payment format.
     Each payment format can be printed as a single total or a list of invoices
     :return:
     """
     all_sale = list(get_notas_with_clients(
-        session, start, end, store_id, user_id))
+        dbapi, start, end, store_id, user_id))
     report = Report()
 
     by_status = split_records(all_sale, attrgetter('status'))
@@ -104,35 +104,6 @@ class InvRecord(object):
         self.value = value
         self.status = status
         self.comment = comment
-
-
-def bodega_reports(bodega_id, start, end):
-    alms = prodapi.store.search(bodega_id=bodega_id)
-    alms = set((x.almacen_id for x in alms))
-    sale = invapi.search_metadata_by_date_range(start, end)
-    sale = filter(lambda x: x.almacen_id in alms and x.status != Status.DELETED, sale)
-
-    sale_by_date = group_by_records(
-        source=sale,
-        classifier=lambda x: x.timestamp.date(),
-        valuegetter=lambda x: Decimal(x.subtotal - (x.discount if x.discount else 0)) / (-100)
-    )
-
-    records = []
-    records.extend((InvRecord(d, 'SALE', i, None) for d, i in sale_by_date.items()))
-
-    def addtrans(trans, thetype):
-        in_, out = (lambda x: x.dest == bodega_id), (lambda x: x.origin == bodega_id)
-        thefilter, m = ((in_, 1) if thetype == 'INGRESS' else (out, -1))
-        filtered = filter(thefilter, trans)
-        records.extend((InvRecord(i.timestamp.date(), thetype, m * i.value, i.status, i.uid)
-                        for i in filtered))
-
-    alltrans = list(transapi.search_metadata_by_date_range(start, end))
-    addtrans(alltrans, 'INGRESS')
-    addtrans(alltrans, 'EGRESS')
-    records.sort(key=attrgetter('date'), reverse=True)
-    return records
 
 
 class DailyReport(SerializableMixin):

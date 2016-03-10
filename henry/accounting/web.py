@@ -200,7 +200,7 @@ def make_wsgi_app(dbcontext, imgserver,
             abort(400, 'Hay que ingresar las fechas')
 
         store = int(store)
-        report = payment_report(dbapi.db_session, end, start, store)
+        report = payment_report(dbapi, end, start, store)
 
         temp = jinja_env.get_template('invoice/resumen_nuevo.html')
         return temp.render(

@@ -8,7 +8,7 @@ import subprocess
 
 from henry.invoice.dao import InvMetadata, Invoice
 from henry.dao.document import Status, Item
-from henry.dao.coredao import Client
+from henry.dao.transaction import Client
 from henry.base.serialization import json_dumps
 from henry.coreconfig import priceapi, sessionmanager
 from henry.product.dao import PriceList
