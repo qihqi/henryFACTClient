@@ -223,8 +223,10 @@ export default React.createClass({
     getBankAccounts: function() {
         var x = $.ajax({
             url: '/app/api/bank_account',
+            dataType: 'text/plain',
             success: function(r) {
-                this.setState({'bank': r.result});
+                var result = JSON.parse(r);
+                this.setState({'bank': result.result});
             }.bind(this),
             failure: function(r) {
                 alert('err');
@@ -271,8 +273,10 @@ export default React.createClass({
         yesterday = yesterday.toISOString().split('T')[0];
         this.getAccountInfo(yesterday, today);
         this.getBankAccounts();
-        return {'all_events': [], 'bank': [], 'start_date': '', 
-                'end_date': '', 'credit': [], 'payment_credit': []};
+        console.log('here');
+        return {'all_events': [], 'start_date': '', 
+                'end_date': '', 'credit': [], 'payment_credit': [],
+                'bank': []};
     },
     newDates: function() {
         var start_date = this.refs.start_date.value;
