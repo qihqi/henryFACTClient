@@ -1,9 +1,10 @@
+import sys
+
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
 from henry.base.fileservice import FileService
 from henry.base.auth import AuthDecorator
-from henry.base.dbapi import DBApi
 from henry.base.session_manager import SessionManager, DBContext
 from henry.constants import (CONN_STRING, INVOICE_PATH, ENV,
                              LOGIN_URL, TRANSACTION_PATH, PEDIDO_PATH,
@@ -12,9 +13,8 @@ from henry.constants import (CONN_STRING, INVOICE_PATH, ENV,
 from henry.dao.document import DocumentApi, PedidoApi
 from henry.dao.transaction import TransactionApi
 from henry.invoice.dao import Invoice
-
 from henry.dao.actionlog import ActionLogApi, ActionLogApiDecor
-import sys
+
 reload(sys)
 sys.setdefaultencoding('utf8')
 

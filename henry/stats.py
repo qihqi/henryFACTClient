@@ -1,5 +1,6 @@
 from henry.accounting.reports import *
 from henry.config import *
+from henry.dao.document import Item
 
 session = sessionmanager.__enter__()
 

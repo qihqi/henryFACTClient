@@ -1,21 +1,22 @@
-from bottle import request, redirect, Bottle, static_file, response
+from bottle import Bottle
 
-from henry import constants
 from henry.coreconfig import (dbcontext, auth_decorator)
-from henry.config import jinja_env, imgserver
-from henry.constants import IMAGE_PATH
+
+from henry.config import jinja_env
 
 webmain = w = Bottle()
+
+
 @w.get('/app')
 @dbcontext
 @auth_decorator
 def index():
     return jinja_env.get_template('base.html').render()
 
-#@w.get('/app/client_stat/<uid>')
-#@dbcontext
-#@auth_decorator
-#def get_client_stat(uid):
+# @w.get('/app/client_stat/<uid>')
+# @dbcontext
+# @auth_decorator
+# def get_client_stat(uid):
 #    start_date = datetime.date(2015, 7, 27)
 #    end_date = datetime.datetime.now()
 #    status = Status.COMITTED

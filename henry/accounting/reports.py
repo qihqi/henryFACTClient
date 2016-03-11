@@ -7,14 +7,12 @@ from decimal import Decimal
 from sqlalchemy import func
 
 from henry.accounting.acct_schema import NPayment, NCheck, NSpent
-from henry.accounting.dao import Spent, AccountStat, AccountTransaction, Image, Payment
+from henry.accounting.dao import Spent, AccountTransaction, Image
 from henry.base.serialization import SerializableMixin
-from henry.config import transapi
 from henry.product.dao import Store
 from henry.invoice.coreschema import NNota
 from henry.users.schema import NCliente
 from henry.base.dbapi import decode_str
-from henry.coreconfig import invapi
 from henry.invoice.dao import PaymentFormat, InvMetadata
 from henry.dao.document import Status
 from henry.users.dao import Client

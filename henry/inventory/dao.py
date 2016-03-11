@@ -10,6 +10,7 @@ from henry.product.dao import PriceList, ProdItemGroup
 
 from .schema import NTransferencia
 
+
 class TransType:
     INGRESS = 'INGRESO'
     TRANSFER = 'TRANSFER'
@@ -63,7 +64,6 @@ class TransMetadata(SerializableMixin, DbMixin):
 
 
 class TransItem(Item):
-
     @classmethod
     def deserialize(cls, the_dict):
         if 'name' in the_dict['prod'] and 'prod_id' in the_dict['prod']:
@@ -118,12 +118,9 @@ class Transferencia(MetaItemSet):
                 self.meta.timestamp.date().isoformat(), uuid.uuid1().hex)
         return self._path
 
-
     @classmethod
     def deserialize(cls, the_dict):
         x = cls()
         x.meta = cls._metadata_cls.deserialize(the_dict['meta'])
         x.items = map(TransItem.deserialize, the_dict['items'])
         return x
-
-

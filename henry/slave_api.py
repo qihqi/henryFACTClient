@@ -1,8 +1,10 @@
-import zmq
 from multiprocessing import Process
-from bottle import Bottle, request, json_loads
-from henry.base.serialization import json_dumps
 
+import zmq
+
+from bottle import Bottle, json_loads
+
+from henry.base.serialization import json_dumps
 from henry.dao.document import Status
 from henry.invoice.dao import InvMetadata, Invoice
 from henry.invoice.coreschema import NPedidoTemporal

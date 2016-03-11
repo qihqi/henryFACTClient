@@ -1,7 +1,7 @@
-import os
 import requests
 import zmq
-from henry.base.serialization import json_loads, SerializableMixin
+
+from henry.base.serialization import SerializableMixin
 from henry.externalapi import ExternalApi
 
 __author__ = 'han'

@@ -36,7 +36,7 @@ class ProdItem(dbmix(NItem)):
 
 class Inventory(dbmix(NInventory)):
     def merge_from(self, the_dict):
-        self = super(Inventory, self).merge_from(the_dict)
+        super(Inventory, self).merge_from(the_dict)
         self.quantity = convert_decimal(self.quantity, 0)
         return self
 
