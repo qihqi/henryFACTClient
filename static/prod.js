@@ -22,13 +22,29 @@ function popup(){
     return false;
 }
 function getProdAjaxCall(codigo, bodega_id, callback) {
-    var url = '/app/api/producto/' + codigo;
-    getRequest(url, callback);
+    var url = '/app/api/itemgroup?prod_id=' + codigo;
+    getRequest(url, function(status, result) {
+        if (status && result.result) {
+            var prod = {
+                codigo: result.result[0].prod_id,
+                nombre: result.result[0].name
+            };
+            callback(true, prod);
+        } else {
+            callback(false, result);
+        }
+    });
 }
 
 function searchProdAjax(prefix, bodega_id, callback) {
-    var url = '/app/api/producto?prefijo=' + prefix;
-    getRequest(url, callback);
+    var url = '/app/api/itemgroup?name-prefix=' + prefix;
+    getRequest(url, function(status, result) {
+        if (status) {
+            callback(status, result.result);
+        }else {
+            callback(status, result);
+        }
+    });
 }
 
 function getIngreso(codigo, callback) {

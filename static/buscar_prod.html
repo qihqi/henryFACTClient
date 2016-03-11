@@ -27,7 +27,8 @@
                         var a = result;    
                         $("#dest").html("");
                         for ( var i = 0; i < a.length; i++) {
-                            $("#dest").append(makeClickable(a[i]));
+                            var x = {nombre: a[i].name, codigo: a[i].prod_id};
+                            $("#dest").append(makeClickable(x));
                         }
                     }
                 });
