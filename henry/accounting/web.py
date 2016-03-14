@@ -7,6 +7,7 @@ import os
 import uuid
 
 from bottle import request, redirect, static_file, Bottle, response, abort
+from sqlalchemy import func
 
 from henry import constants
 from henry.base.auth import get_user
@@ -21,7 +22,7 @@ from henry.invoice.coreschema import NNota
 from .acct_schema import ObjType, NComment
 from henry.users.dao import User
 from .reports import (group_by_records, generate_daily_report, split_records_binary, get_transactions, payment_report,
-                      get_notas_with_clients, split_records)
+                      get_notas_with_clients, split_records, get_turned_in_cash)
 from .acct_schema import NCheck, NSpent, NAccountStat
 from .dao import (Todo, Check, Deposit, Payment, Bank,
                   DepositAccount, AccountStat, Spent, AccountTransaction)
@@ -46,36 +47,20 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
     @w.get('/app/api/sales')
     @dbcontext
     def get_sales():
-        """ start=<start>&end=<end>&almacen_id=<>&almacen_ruc=<>&group_by=''
+        """ start=<start>&end=<end>
         """
         start_date, end_date = parse_start_end_date(request.query)
         if not end_date:
             end_date = datetime.date.today()
         end_date = end_date + datetime.timedelta(hours=23)
-
-        alm_id = request.query.get('almacen_id', None)
-        alm_ruc = request.query.get('almacen_ruc', None)
-        group_by = request.query.get('group_by', None)
-        filters = {}
-        if alm_id:
-            filters['almacen_id'] = alm_id
-        if alm_ruc:
-            filters['almacen_ruc'] = alm_ruc
-        print start_date, end_date
-        items = invapi.search_metadata_by_date_range(start_date, end_date, other_filters=filters)
-        items = list(items)
-        total = sum(x.total for x in items)
-        iva = sum(x.tax or 0 for x in items)
-        count = len(items)
-        result = {'total': total, 'iva': iva, 'count': count}
-        if group_by:
-            if group_by == 'day':
-                group_func = lambda x: x.timestamp.date().isoformat()
-            else:
-                group_func = attrgetter(group_by)
-            subgroups = group_by_records(items, group_func, attrgetter('total'))
-            result['groups'] = subgroups
-        return result
+        query = dbapi.db_session.query(
+            NNota.almacen_id, func.sum(NNota.total)).filter(
+            NNota.timestamp >= start_date).filter(
+            NNota.timestamp <= end_date).group_by(NNota.almacen_id)
+        result = []
+        for aid, total in query:
+            result.append((aid, Decimal(total) / 100))
+        return json_dumps({'result': result})
 
     @w.get('/app/api/payment')
     @dbcontext
@@ -102,17 +87,19 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
     @dbcontext
     def get_checks():
         save_date = request.query.get('save_date')
+        save_date_end = request.query.get('save_date_end')
         deposit_date = request.query.get('deposit_date')
+        deposit_date_end = request.query.get('deposit_date_end')
         if save_date:
-            save_date = (save_date, save_date)
+            save_date = (save_date, save_date_end)
         if deposit_date:
-            deposit_date = (deposit_date, deposit_date)
+            deposit_date = (deposit_date, deposit_date_end)
         checks = paymentapi.list_checks(save_date, deposit_date)
         for x in checks:
             x.imgdeposit = imgserver.get_url_path(x.imgdeposit)
             x.imgcheck = imgserver.get_url_path(x.imgcheck)
             x.value = Decimal(x.value) / 100
-        return json_dumps(checks)
+        return json_dumps({'result': checks})
 
     @w.post('/app/api/acct_transaction')
     @dbcontext
@@ -166,9 +153,28 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
             'sales': result.items()
         })
 
+    @w.get('/app/api/account_deposit_with_img')
+    @dbcontext
+    @auth_decorator
+    def get_account_deposit_with_img():
+        today = datetime.datetime.today()
+        thisyear = today - datetime.timedelta(days=365)
+        turned_in = sorted(get_turned_in_cash(dbapi, thisyear, today, imgserver),
+                           key=lambda x: x.date, reverse=True)
+        result = defaultdict(list)
+        for x in turned_in:
+            if getattr(x, 'img', None):
+                if len(result['with_deposit']) < 10:
+                    result['with_deposit'].append(x)
+            else:
+                result['without_deposit'].append(x)
+        return json_dumps(result)
+
+
     # account stat
     bind_dbapi_rest('/app/api/account_stat', dbapi, AccountStat, w)
     bind_dbapi_rest('/app/api/bank_account', dbapi, DepositAccount, w)
+    bind_dbapi_rest('/app/api/account_deposit', dbapi, AccountTransaction, w)
 
     return w
 

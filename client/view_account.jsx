@@ -9,7 +9,7 @@ function getPayments(day, callback) {
     });
 }
 
-function twoDecimalPlace(number) {
+export function twoDecimalPlace(number) {
     number = Number(number);
     return number.toFixed(2);
 }
@@ -30,32 +30,6 @@ function sumValue(arr) {
     return total;
 }
 
-var ViewCheck = React.createClass({
-    render: function() {
-       return <div className="row">
-            <div className="col-md-6">
-                <img height="100" alt="CHEQUE" src={this.props.imgcheck} />
-            </div>
-
-            <div className="col-md-3">
-                <ul>
-                    <li>{twoDecimalPlace(this.props.value)}</li>
-                    <li>{this.props.holder}</li>
-                    <li>{this.props.bank}</li>
-                </ul>
-            </div>
-            <div className="col-md-3">
-                <img height="100" alt="Papeleta de deposito" src={this.props.imgdeposit} />
-            </div>
-        </div>;
-    }
-});
-
-var CheckList = React.createClass({
-    render: function() {
-        return this.props.checks.map( (x) => <ViewCheck key={x.uid} {...x} />);
-    }
-});
 
 var AccountTable = React.createClass({
     uploadImageForm: function(x) {
