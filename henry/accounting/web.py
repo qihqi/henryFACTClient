@@ -56,7 +56,8 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
         query = dbapi.db_session.query(
             NNota.almacen_id, func.sum(NNota.total)).filter(
             NNota.timestamp >= start_date).filter(
-            NNota.timestamp <= end_date).group_by(NNota.almacen_id)
+            NNota.timestamp <= end_date).filter(
+            NNota.status != Status.DELETED).group_by(NNota.almacen_id)
         result = []
         for aid, total in query:
             result.append((aid, Decimal(total) / 100))

@@ -120,7 +120,7 @@ class DailyReport(SerializableMixin):
 
 def generate_daily_report(dbapi, day):
     all_sale = list(filter(attrgetter('almacen_id'),
-                           get_notas_with_clients(dbapi.db_session, day, day)))
+                           get_notas_with_clients(dbapi, day, day)))
 
     deleted, other = split_records_binary(all_sale, lambda x: x.status == Status.DELETED)
     cashed, noncash = split_records_binary(other, lambda x: x.payment_format == PaymentFormat.CASH)

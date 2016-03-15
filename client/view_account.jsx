@@ -197,7 +197,6 @@ export default React.createClass({
     getBankAccounts: function() {
         var x = $.ajax({
             url: '/app/api/bank_account',
-            dataType: 'text/plain',
             success: function(r) {
                 var result = JSON.parse(r);
                 this.setState({'bank': result.result});

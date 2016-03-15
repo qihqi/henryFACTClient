@@ -19,8 +19,8 @@ var ProdLoader = React.createClass({
     handleCodigo: function(event) {
         if (event.key == 'Enter') {
             $.ajax({
-                // url: '/app/api/itemgroup?prod_id='+encodeURIComponent(this.refs.codigo.value),
-                url: '/static/product_test',
+                url: '/app/api/itemgroup?prod_id='+encodeURIComponent(this.refs.codigo.value),
+                // url: '/static/product_test',
                 success: (x) => {
                     var result = JSON.parse(x).result;
                     if (result.length > 0) {
