@@ -17,20 +17,20 @@ class NAccountStat(Base):
 
 class NBank(Base):
     __tablename__ = 'cheque_banco'
-    uid = Column('id', Integer, primary_key=True, autoincrement=True)
+    id = Column('id', Integer, primary_key=True, autoincrement=True)
     name = Column('nombre', String(100))
 
 
 class NDepositAccount(Base):
     __tablename__ = 'cheque_cuenta'
-    uid = Column('id', Integer, primary_key=True, autoincrement=True)
+    id = Column('id', Integer, primary_key=True, autoincrement=True)
     name = Column('nombre', String(100))
 
 
 class NCheckOld(Base):
     __tablename__ = 'cheque_cheque'
     uid = Column('id', Integer, primary_key=True, autoincrement=True)
-    bank_id = Column('banco_id', Integer, ForeignKey(NBank.uid))
+    bank_id = Column('banco_id', Integer, ForeignKey(NBank.id))
     bank = relationship(NBank)
     cuenta = Column(String(100))
 
@@ -43,7 +43,7 @@ class NCheckOld(Base):
     input_date = Column('fecha_ingreso', Date)
     por_compra = Column(String(100))
     deposit_account_id = Column('depositado_en_id',
-                                Integer, ForeignKey(NDepositAccount.uid))
+                                Integer, ForeignKey(NDepositAccount.id))
     deposit_account = relationship(NDepositAccount)
 
 

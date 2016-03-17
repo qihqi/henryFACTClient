@@ -11,8 +11,8 @@ from .acct_schema import (NBank, NDepositAccount, NPayment, NCheck, NDeposit, NI
 Todo = dbmix(NTodo)
 Comment = dbmix(NComment)
 Image = dbmix(NImage)
-Bank = dbmix(NBank)
-DepositAccount = dbmix(NDepositAccount)
+Bank = dbmix(NBank, override_name=(('id', 'uid'), ))
+DepositAccount = dbmix(NDepositAccount, override_name=(('id', 'uid'), ))
 AccountStat = dbmix(NAccountStat)
 Spent = dbmix(NSpent)
 
