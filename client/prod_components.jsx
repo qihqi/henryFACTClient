@@ -1,6 +1,7 @@
 import React from 'react';
 import LinkedStateMixin from 'react-addons-linked-state-mixin';
 import ReactDOM from 'react-dom';
+import twoDecimalPlace from './view_account';
 
 export function makeOption(options, name, onchange) {
     return <select name={name} onChange={onchange}>
@@ -10,26 +11,50 @@ export function makeOption(options, name, onchange) {
     </select>;
 }
 
+var ItemLoader = React.createClass({
+    handle: function(event) {
+        var codigo = encodeURIComponent(this.refs.codigo.value);
+        if (event.key == 'Enter') {
+            $.ajax({
+                url: this.props.url + codigo,
+                success: (x) => {
+                    var result = JSON.parse(x);
+                    this.props.handleItem(codigo, result);
+                }
+            });
+        }
+    },
+    render: function() {
+        return <span>
+    <input placeholder="Codigo" ref='codigo' onKeyPress={this.handle} /></span> ;
+    }
+});
+
+var ClientLoader = React.createClass({
+    getInitialState: function() {
+        return {apellidos: '', nombre: ''};
+    },
+    handleCodigo: function(codigo, content) {
+        this.setState(content);
+        this.props.loadClient(content);
+    },
+    render: function() {
+        return <div className="row">
+            <ItemLoader url='/api/cliente/' handleItem={this.handleCodigo} />
+            {this.state.apellidos + ' ' + this.state.nombre}
+        </div>
+    }
+});
+
 
 var ProdLoader = React.createClass({
     mixins: [LinkedStateMixin],
     getInitialState: function() {
-        return {prod_id: null, cant: null, name: '', price: '', subtotal: ''};
+        return {prod: {}, cant: ''};
     },
-    handleCodigo: function(event) {
-        if (event.key == 'Enter') {
-            $.ajax({
-                url: '/app/api/itemgroup?prod_id='+encodeURIComponent(this.refs.codigo.value),
-                // url: '/static/product_test',
-                success: (x) => {
-                    var result = JSON.parse(x).result;
-                    if (result.length > 0) {
-                        this.setState({name: result[0].name});
-                        this.refs.cant.getDOMNode().focus();
-                    }
-                }
-            });
-        }
+    handleCodigo: function(codigo, content) {
+        this.setState({prod: content});
+            
     },
     handleCant: function(event) {
         if (event.key == 'Enter') {
@@ -39,12 +64,14 @@ var ProdLoader = React.createClass({
         }
     },
     render: function() {
+        var price = twoDecimalPlace(this.state.prod.precio1/100);
+        var subtotal = Number(this.state.cant) * price;
         return <div className="row">
-            <input placeholder="Codigo" ref='codigo' valueLink={this.linkState('prod_id')} onKeyPress={this.handleCodigo}/>
+            <ItemLoader url='/api/alm/1/producto/' handleItem={this.handleCodigo} />
             <input placeholder="Cantidad" ref='cant' valueLink={this.linkState('cant')} onKeyPress={this.handleCant}/>
-            {this.state.name}
-            {this.state.price}
-            {this.state.subtotal}
+            <span>{this.state.prod.nombre}</span>
+            <span>{price}</span>
+            <span>{subtotal}</span>
         </div>
     }
 });
@@ -91,28 +118,43 @@ var App = React.createClass({
     addOption: function(op) {
         this.state.meta[op.target.name] = op.target.value;
     },
+    loadClient: function(client) {
+        console.log(client);
+    },
     render: function() {
         return <div className="container">
             <div className="row">
-              Desde: {makeOption([{val:1, name:'almacen'}, {val:2, name:'bodega'}], 'origin', this.addOption.bind(this))}
-              Hasta: {makeOption(['almacen', 'bodega'], 'dest', this.addOption.bind(this))}
+                Cliente: <ClientLoader loadedClient={this.loadClient}/>
             </div>
             <div className="row">
-                <ProdLoader addItem={this.addItem} />
+                Cargar Producto: <ProdLoader addItem={this.addItem} />
             </div>
             <div className="row">
-            <table className="table"><tbody>
+            <table className="table">
+            <thead>
+                <tr>
+                    <th>Codigo</th>
+                    <th>Cantidad</th>
+                    <th>Nombre</th>
+                    <th>Precio</th>
+                    <th>Subtotal</th>
+                    <th></th>
+                </tr>
+            </thead> 
+            <tbody>
                 {this.state.items.map((c, index) => {
                     return <tr>
                         <td>{c.prod.prod_id}</td>
                         <td>{c.cant}</td>
                         <td>{c.prod.name}</td>
+                        <td></td>
+                        <td></td>
                         <td><button onClick={this.removeItem.bind(this, index)}>Borrar</button></td>
                     </tr>;
                 })}
-            </tbody></table>;
+            </tbody></table>
             </div>
-        </div>
+        </div>;
     }
 });
 
