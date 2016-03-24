@@ -186,9 +186,11 @@ def get_sales_as_transactions(dbapi, start_date, end_date):
 def get_payments_as_transactions(dbapi, start_date, end_date):
     payments = []
     payments_credit = []
-    for pago, pformat in dbapi.db_session.query(NPayment, NNota.payment_format).join(
+    for pago, pformat, timestamp in dbapi.db_session.query(
+            NPayment, NNota.payment_format,
+            NNota.timestamp).join(
             NNota, NPayment.note_id == NNota.id).filter(
-            NPayment.date >= start_date, NPayment.date <= end_date):
+            NNota.timestamp >= start_date, NNota.timestamp <= end_date):
         if pago.type == PaymentFormat.CASH:
             continue  # cash payment is already accounted for
         thetype = AccountTransaction.CUSTOMER_PAYMENT
@@ -198,9 +200,10 @@ def get_payments_as_transactions(dbapi, start_date, end_date):
             thetype = AccountTransaction.CUSTOMER_PAYMENT_CHECK
         acct = AccountTransaction(
             uid='pago '+str(pago.uid),
-            date=pago.date,
+            date=timestamp.date(),
             value=-Decimal(pago.value) / 100,
-            desc='{} para Factura {}'.format(pago.type, pago.note_id),
+            desc='{} para Factura {} ({})'.format(
+                pago.type, pago.note_id, pago.date.isoformat()),
             type=thetype)
         if pformat == PaymentFormat.CREDIT:
             payments_credit.append(acct)
@@ -237,7 +240,7 @@ def get_transactions(dbapi, paymentapi, invapi, imageserver, start_date, end_dat
     sales = list(get_sales_as_transactions(dbapi, start_date, end_date + delta))
     spent = list(get_spent_as_transactions(dbapi, start_date, end_date))
     turned_in = list(get_turned_in_cash(dbapi, start_date, end_date, imageserver))
-    payments, payments_credit = get_payments_as_transactions(dbapi, start_date, end_date)
+    payments, payments_credit = get_payments_as_transactions(dbapi, start_date, end_date + delta)
     sales_credit = list(invapi.search_metadata_by_date_range(
         start_date, end_date + delta, Status.COMITTED,
         {'payment_format': PaymentFormat.CREDIT}))

@@ -287,6 +287,12 @@ def make_wsgi_app(dbcontext, imgserver,
             checkimgs=checkimgs,
             existing=existing)
 
+    def get_cents_with_default(number, default=0):
+        try:
+            return int(float(number) * 100)
+        except ValueError:
+            return default
+
     @w.post('/app/crear_entrega_de_cuenta')
     @dbcontext
     @auth_decorator
@@ -298,12 +304,12 @@ def make_wsgi_app(dbcontext, imgserver,
         diff = request.forms.get('diff', 0)
         date = request.forms.get('date')
 
-        cash = int(float(cash) * 100)
-        gastos = int(float(gastos) * 100)
-        deposito = int(float(deposito) * 100)
-        turned_cash = int(float(turned_cash) * 100)
+        cash = get_cents_with_default(cash)
+        gastos = get_cents_with_default(gastos)
+        deposito = get_cents_with_default(deposito)
+        turned_cash = get_cents_with_default(turned_cash)
+        diff = get_cents_with_default(diff)
         date = parse_iso(date).date()
-        diff = int(float(diff) * 100)
 
         userid = get_user(request)['username']
         if request.forms.get('submit') == 'Crear':
