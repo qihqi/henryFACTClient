@@ -5,13 +5,15 @@ import sys
 from decimal import Decimal
 import datetime
 import subprocess
+from coreapi import dbapi
+from henry.invoice.coreapi import InvoiceOptions
 
 from henry.invoice.dao import InvMetadata, Invoice
 from henry.dao.document import Status, Item
-from henry.dao.transaction import Client
 from henry.base.serialization import json_dumps
-from henry.coreconfig import priceapi, sessionmanager
+from henry.coreconfig import sessionmanager
 from henry.product.dao import PriceList
+from henry.users.dao import Client
 
 START = datetime.date(2015, 12, 01)
 END = datetime.date(2015, 12, 29)
@@ -101,7 +103,7 @@ def group_by(items):
 
 
 def getallitems():
-    return priceapi.search(almacen_id=2)
+    return dbapi.search(PriceList, almacen_id=2)
 
 
 def randitems(items, size):

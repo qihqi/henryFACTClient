@@ -19,7 +19,7 @@ from henry.invoice.dao import PaymentFormat, InvMetadata
 from henry.misc import fix_id
 from henry.product.dao import Store
 from henry.invoice.coreschema import NNota
-from .acct_schema import ObjType, NComment
+from .acct_schema import ObjType, NComment, NPayment
 from henry.users.dao import User
 from .reports import (group_by_records, generate_daily_report, split_records_binary, get_transactions, payment_report,
                       get_notas_with_clients, split_records, get_turned_in_cash)
@@ -176,6 +176,40 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
     bind_dbapi_rest('/app/api/account_stat', dbapi, AccountStat, w)
     bind_dbapi_rest('/app/api/bank_account', dbapi, DepositAccount, w)
     bind_dbapi_rest('/app/api/account_deposit', dbapi, AccountTransaction, w)
+
+    bind_dbapi_rest('/app/api/spent', dbapi, Spent, w, skips_method=('DELETE', ))
+
+    @w.get('/app/api/pago/<uid>')
+    @dbcontext
+    def get_pago_with_id(uid):
+        elm = dbapi.db_session.query(NPayment).filter_by(uid=uid).first()
+        if elm is None:
+            response.status = 404
+            return ''
+        return json_dumps(Payment().merge_from(elm).serialize())
+
+    @w.delete('/app/api/pago/<uid>')
+    @dbcontext
+    def mark_pago_deleted(uid):
+        success = dbapi.db_session.query(NPayment).filter_by(uid=uid).update({'deleted': True})
+        dbapi.db_session.commit()
+        return {'success': success > 0}
+
+    @w.put('/app/api/pago/<uid>')
+    @dbcontext
+    def modify_payment(uid):
+        data = json.loads(request.body.read())
+        success = dbapi.db_session.query(NPayment).filter_by(uid=uid).update(data)
+        dbapi.db_session.commit()
+        return {'success': success > 0}
+
+    @w.delete('/app/api/spent/<uid>')
+    @dbcontext
+    def mark_pago_deleted(uid):
+        spent = Spent(uid=uid)
+        sucess = dbapi.update(spent, {'deleted': True})
+        dbapi.db_session.commit()
+        return {'success': sucess > 0}
 
     return w
 

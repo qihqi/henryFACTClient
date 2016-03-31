@@ -43,12 +43,16 @@ class RestApi(object):
             return json_dumps({'result': [c.serialize() for c in content]})
 
 
-def bind_dbapi_rest(url, dbapi, clazz, app):
+def bind_dbapi_rest(url, dbapi, clazz, app, skips_method=()):
     restapi = RestApi(dbapi, clazz)
     url_with_id = url + '/<pkey>'
-    app.get(url_with_id)(restapi.get)
-    app.put(url_with_id)(restapi.put)
-    app.delete(url_with_id)(restapi.delete)
-    app.post(url)(restapi.post)
-    app.get(url)(restapi.search)
+    if 'GET' not in skips_method:
+        app.get(url_with_id)(restapi.get)
+        app.get(url)(restapi.search)
+    if 'PUT' not in skips_method:
+        app.put(url_with_id)(restapi.put)
+    if 'DELETE' not in skips_method:
+        app.delete(url_with_id)(restapi.delete)
+    if 'POST' not in skips_method:
+        app.post(url)(restapi.post)
     return app

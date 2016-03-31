@@ -11,8 +11,8 @@ from .acct_schema import (NBank, NDepositAccount, NPayment, NCheck, NDeposit, NI
 Todo = dbmix(NTodo)
 Comment = dbmix(NComment)
 Image = dbmix(NImage)
-Bank = dbmix(NBank, override_name=(('id', 'uid'), ))
-DepositAccount = dbmix(NDepositAccount, override_name=(('id', 'uid'), ))
+Bank = dbmix(NBank)
+DepositAccount = dbmix(NDepositAccount)
 AccountStat = dbmix(NAccountStat)
 Spent = dbmix(NSpent)
 
@@ -25,6 +25,7 @@ class Payment(SerializableMixin):
         'value',
         'date',
         'type',
+        'deleted',
     )
 
     def __init__(self, **kwargs):
@@ -90,6 +91,7 @@ def _extract_payment(payment):
         client_id=payment.client_id,
         value=payment.value,
         date=payment.date,
+        deleted=False,
     )
 
 
@@ -142,7 +144,8 @@ class PaymentApi:
     def list_payments(self, start, end):
         return map(Payment.deserialize,
                    self.sm.session.query(NPayment).filter(
-                       NPayment.date >= start).filter(NPayment.date <= end))
+                       NPayment.date >= start).filter(NPayment.date <= end,
+                                                      NPayment.deleted != True))
 
     def list_checks(self, paymentdate=None, checkdate=None):
         query = self.sm.session.query(NCheck).join(NPayment)
@@ -160,18 +163,6 @@ class PaymentApi:
 
     def get_deposit(self, uid):
         return self._get_doc(uid, NDeposit, Deposit)
-
-    def create_bank(self, name):
-        self.sm.session.add(NBank(name=name))
-
-    def get_all_banks(self):
-        return self.sm.session.query(NBank)
-
-    def create_account(self, name):
-        self.sm.session.add(NDepositAccount(name=name))
-
-    def get_all_accounts(self):
-        return self.sm.session.query(NDepositAccount)
 
 
 class ImageServer:

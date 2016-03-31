@@ -14,8 +14,8 @@ URL = 'http://192.168.0.22'
 
 
 def main():
-    start_date = datetime.date(2015, 7, 3)
-    end_date = datetime.date(2016, 1, 30)
+    start_date = datetime.date(2015, 1, 31)
+    end_date = datetime.date(2016, 3, 23)
     parse_date = datetime.datetime.strptime
     while start_date <= end_date:
         export(start_date, DIRECTORY, URL)

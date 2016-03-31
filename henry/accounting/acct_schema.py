@@ -55,6 +55,8 @@ class NPayment(Base):
     value = Column('valor', Integer)
     type = Column('tipo', String(10))
     date = Column('fecha', Date)
+    # mark a payment deleted
+    deleted = Column(Boolean)
 
     nota = relationship('NNota', backref=backref('payments'))
 
@@ -110,6 +112,9 @@ class NSpent(Base):
     retension = Column(Integer)
     spent_type = Column(String(10))
     imgreceipt = Column(String(100))
+
+    # mark a payment deleted
+    deleted = Column(Boolean)
 
 
 class ObjType:

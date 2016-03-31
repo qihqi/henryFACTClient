@@ -190,7 +190,8 @@ def get_payments_as_transactions(dbapi, start_date, end_date):
             NPayment, NNota.payment_format,
             NNota.timestamp).join(
             NNota, NPayment.note_id == NNota.id).filter(
-            NNota.timestamp >= start_date, NNota.timestamp <= end_date):
+            NNota.timestamp >= start_date, NNota.timestamp <= end_date,
+            NPayment.deleted != True):
         if pago.type == PaymentFormat.CASH:
             continue  # cash payment is already accounted for
         thetype = AccountTransaction.CUSTOMER_PAYMENT
@@ -199,7 +200,7 @@ def get_payments_as_transactions(dbapi, start_date, end_date):
         if pago.type == PaymentFormat.CHECK:
             thetype = AccountTransaction.CUSTOMER_PAYMENT_CHECK
         acct = AccountTransaction(
-            uid='pago '+str(pago.uid),
+            uid='pago-'+str(pago.uid),
             date=timestamp.date(),
             value=-Decimal(pago.value) / 100,
             desc='{} para Factura {} ({})'.format(
@@ -213,9 +214,12 @@ def get_payments_as_transactions(dbapi, start_date, end_date):
 
 
 def get_spent_as_transactions(dbapi, start_date, end_date):
-    for gasto in dbapi.search(Spent, **{'inputdate-gte': start_date, 'inputdate-lte': end_date}):
+    for gasto in dbapi.search(Spent, **{'inputdate-gte': start_date,
+                                        'inputdate-lte': end_date}):
         if gasto.paid_from_cashier is None:
             print 'ERROR', gasto.serialize()
+            continue
+        if gasto.deleted:
             continue
         yield AccountTransaction(
             uid='gasto'+str(gasto.uid),

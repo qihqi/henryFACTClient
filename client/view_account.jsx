@@ -38,6 +38,12 @@ var AccountTable = React.createClass({
     showEditForm: function(x, _) {
         this.props.showEditForm(x);
     },
+    showDeletePaymentForm: function(x, _) {
+        this.props.showDeletePaymentForm(x);
+    },
+    showDeleteSpentForm: function(x, _) {
+        this.props.showDeleteSpentForm(x);
+    },
     render: function() {
         var make_row = (x) => {
             var row = [x.date, x.desc, x.value, '', twoDecimalPlace(x.saldo)];
@@ -45,12 +51,26 @@ var AccountTable = React.createClass({
                 row = [x.date, x.desc, '', x.value, twoDecimalPlace(x.saldo)];
             }
             var img =(x.img && x.img.length > 0) ? <img height="100" src={x.img} /> : "";
-            var button = (x.type == 'turned_in') 
-                    ? <div> 
+            var button = '';
+            if (x.type == 'turned_in') {
+                button = 
+                    <div> 
                         <p><button onClick={this.uploadImageForm.bind(this, x)}>Agregar Papeleta</button></p>
                         <p><button onClick={this.showEditForm.bind(this, x)}>Editar</button></p>
-                      </div>
-                    : "";
+                    </div>;
+            }
+            if (x.type.startsWith('payment')) {
+                button = 
+                    <div> 
+                        <p><button onClick={this.showDeletePaymentForm.bind(this, x)}>Borrar</button></p>
+                    </div>;
+            }
+            if (x.type == 'gasto') {
+                button = 
+                    <div> 
+                        <p><button onClick={this.showDeleteSpentForm.bind(this, x)}>Borrar</button></p>
+                    </div>;
+            }
             var key = x.uid ? x.uid : x.desc;
             return <tr key={key} className={x.type}>
                 {row.map((x) => {
@@ -193,6 +213,39 @@ var CreditTable = React.createClass({
     }
 });
 
+var DeleteElement = React.createClass({
+    getInitialState: function() {
+        return {type:'', uid: '', content: {}};
+    },
+    deleteElement: function() {
+        $.ajax({
+            method: 'DELETE',
+            url: this.state.url + this.state.uid,
+            success: (result) => {
+                if (result.success) {
+                    console.log(result);
+                    this.props.deletedCallback(this.state.content);
+                }
+            }
+        });
+    },
+    render: function() {
+        var key_and_values = [];
+        for (var x in this.state.content) {
+            if (this.state.content[x]) {
+                key_and_values.push([x, this.state.content[x]]);
+            }
+        }
+        return <div>
+            Seguro que desea eliminar {this.state.type} numero {this.state.uid}?
+            <ul>
+                {key_and_values.map((x) => <li>{x[0]}: {x[1]} </li>)}
+            </ul>
+            <button onClick={this.deleteElement}>Aceptar</button>
+        </div>;
+    }
+});
+
 export default React.createClass({
     getBankAccounts: function() {
         var x = $.ajax({
@@ -206,29 +259,32 @@ export default React.createClass({
             }
         });
     },
+    setAllEventsToState: function(allEvents) {
+        var sorted = allEvents.sort((a, b) => {
+            if (a.date > b.date) return 1;
+            if (a.date < b.date) return -1;
+            if (a.type > b.type) return -1;
+            if (a.type < b.type) return 1;
+            return 0;
+        });
+        var start = 0;
+        this.index_by_uid = {};
+        for (var x in sorted) {
+            sorted[x].value = Number(sorted[x].value);
+            start += sorted[x].value;
+            sorted[x].saldo = start;
+            this.index_by_uid[sorted[x].uid] = x;
+        }
+        this.balance = start;
+        this.setState({'all_events': sorted});
+    },
     getAccountInfo: function(start_date, end_date) {
         $.ajax({
             url: `/app/api/account_transaction?start=${start_date}&end=${end_date}`,
             success: (result) => {
                 var all = JSON.parse(result);
-                var val = all.result;
-                var sorted = val.sort((a, b) => {
-                    if (a.date > b.date) return 1;
-                    if (a.date < b.date) return -1;
-                    if (a.type > b.type) return -1;
-                    if (a.type < b.type) return 1;
-                    return 0;
-                });
-                var start = 0;
-                this.index_by_uid = {};
-                for (var x in sorted) {
-                    sorted[x].value = Number(sorted[x].value);
-                    start += sorted[x].value;
-                    sorted[x].saldo = start;
-                    this.index_by_uid[sorted[x].uid] = x;
-                }
-                this.balance = start;
-                this.setState({'all_events': sorted, 
+                this.setAllEventsToState(all.result);
+                this.setState({
                                'start_date': start_date, 
                                'end_date': end_date,
                                'credit': all.credit,
@@ -304,7 +360,6 @@ export default React.createClass({
                         array[x].saldo = start;
                         this.index_by_uid[array[x].uid] = x;
                     }
-
                     this.setState({'all_events': array});
                     this.refs.editDeposit.hide();
                 }
@@ -329,17 +384,56 @@ export default React.createClass({
         this.refs.editDepositForm.setState(newobj);
         this.refs.editDeposit.show();
     },
+    _showDeleteItemDialog: function(item, dialog, url) {
+        var uid = item.uid.replace( /^\D+/g, '');
+        dialog.setState({
+            url: url,
+            uid: uid,
+            content: item});
+    },
+    showDeletePayment: function(payment) {
+        this._showDeleteItemDialog(payment, 
+            this.refs.deletePaymentForm, '/app/api/pago/')
+        this.refs.deletePayment.show();
+    },
+    showDeleteSpent: function(item) {
+        this._showDeleteItemDialog(item, 
+            this.refs.deleteSpentForm, '/app/api/spent/')
+        this.refs.deleteSpent.show();
+    },
+    deleteEventCallback: function(content) {
+        var newevents = [];
+        for (var i in this.state.all_events) {
+            var x = this.state.all_events[i];
+            if (x.uid != content.uid) {
+                newevents.push(this.state.all_events[i]);
+            }
+        }
+        this.setAllEventsToState(newevents);
+        this.refs.deletePayment.hide();
+        this.refs.deleteSpent.hide();
+    },
     render: function() {
         return <div className="row">
             <h3>{this.state.start_date} -- {this.state.end_date} </h3>
             <SkyLight hiddenOnOverlayClicked ref="inputDeposit" title="Ingresar Deposito de Efectivo">
-                <InputDeposit ref="inputDepositDialog" onSubmit={this.saveInputDeposit} account_options={this.state.bank}/>
+                <InputDeposit ref="inputDepositDialog" onSubmit={this.saveInputDeposit} 
+                    account_options={this.state.bank}/>
             </SkyLight>
             <SkyLight hiddenOnOverlayClicked ref="imgForm" title="Papeleta">
                 <Papeleta ref="papeleta" onSubmit={this.submitPapeleta}/>
             </SkyLight>
             <SkyLight hiddenOnOverlayClicked ref="editDeposit" title="Editar Deposito">
-                <InputDeposit ref="editDepositForm" onSubmit={this.editInputDeposit} account_options={this.state.bank}/>
+                <InputDeposit ref="editDepositForm" onSubmit={this.editInputDeposit} 
+                    account_options={this.state.bank}/>
+            </SkyLight>
+            <SkyLight hiddenOnOverlayClicked ref="deletePayment" title="Eliminar Pago">
+                <DeleteElement ref="deletePaymentForm"
+                               deletedCallback={this.deleteEventCallback} />
+            </SkyLight>
+            <SkyLight hiddenOnOverlayClicked ref="deleteSpent" title="Eliminar Gasto">
+                <DeleteElement ref="deleteSpentForm" 
+                               deletedCallback={this.deleteEventCallback} />
             </SkyLight>
             <div className="row noprint"> 
                 <button onClick={()=>this.refs.inputDeposit.show()}>Ingresar Deposito de Efectivo</button>
@@ -351,7 +445,9 @@ export default React.createClass({
             <div className="row">
             <AccountTable all_events={this.state.all_events} 
                 showImgForm={this.showImgForm}
-                showEditForm={this.showEditForm} />
+                showEditForm={this.showEditForm} 
+                showDeletePaymentForm={this.showDeletePayment} 
+                showDeleteSpentForm={this.showDeleteSpent}/>
             </div>
             <div className="row">
                 <CreditTable credit={this.state.credit} payment_credit={this.state.payment_credit} />
