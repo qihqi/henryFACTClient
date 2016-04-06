@@ -565,7 +565,7 @@ def make_wsgi_app(dbcontext, imgserver,
         temp = jinja_env.get_template('invoice/list_cheque.html')
         return temp.render(start=start, end=end, checks=result,
                            title='Cheques Guardados',
-                           accounts=paymentapi.get_all_accounts(),
+                           accounts=dbapi.search(DepositAccount),
                            thisurl=request.url)
 
     @w.get('/app/ver_cheques_para_depositar')
