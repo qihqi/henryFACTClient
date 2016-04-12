@@ -14,6 +14,7 @@ from henry.dao.document import DocumentApi, PedidoApi
 from henry.dao.transaction import TransactionApi
 from henry.invoice.dao import Invoice
 from henry.dao.actionlog import ActionLogApi, ActionLogApiDecor
+from henry.product.dao import InventoryApi
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -24,7 +25,8 @@ sessionmanager = SessionManager(sessionfactory)
 # this is a decorator
 dbcontext = DBContext(sessionmanager)
 
-transactionapi = TransactionApi(sessionmanager, FileService(TRANSACTION_PATH))
+# transactionapi = TransactionApi(sessionmanager, FileService(TRANSACTION_PATH))
+transactionapi = InventoryApi(FileService(TRANSACTION_PATH))
 
 invapi = DocumentApi(sessionmanager, FileService(INVOICE_PATH),
                      transactionapi, object_cls=Invoice)

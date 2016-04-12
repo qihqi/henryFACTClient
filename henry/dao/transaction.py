@@ -3,6 +3,7 @@ import os
 from decimal import Decimal
 
 from sqlalchemy.exc import IntegrityError
+from henry.base.common import parse_iso
 
 from henry.base.serialization import SerializableMixin, json_dumps, json_loads
 from henry.product.schema import NContenido, NProducto
@@ -34,6 +35,7 @@ class Transaction(SerializableMixin):
     def deserialize(cls, dict_input):
         result = super(cls, Transaction).deserialize(dict_input)
         result.delta = Decimal(result.delta)
+        result.fecha = datetime.datetime.strptime(result.fecha, "%Y-%m-%dT%H:%M:%S")
         return result
 
 

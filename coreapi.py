@@ -9,9 +9,12 @@ from henry.coreconfig import (BEAKER_SESSION_OPTS, invapi, auth_decorator, pedid
 
 dbapi = DBApiGeneric(sessionmanager)
 # GET pricelist
-queryprod = make_search_pricelist_api('/api', auth_decorator, dbapi)
+queryprod = make_search_pricelist_api('/api', actionlogged=actionlogged, dbapi=dbapi)
 # POST/PUT invoice
-invoice = make_nota_api('/api', dbapi, actionlogged, invapi, auth_decorator, pedidoapi)
+invoice = make_nota_api(
+    '/api',
+    dbapi=dbapi, actionlogged=actionlogged, invapi=invapi, auth_decorator=auth_decorator,
+    pedidoapi=pedidoapi)
 # GET CLIENT + AUTH
 clientapis = make_client_coreapi('/api', dbapi, actionlogged)
 clientapis.merge(queryprod)

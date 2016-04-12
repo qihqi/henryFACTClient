@@ -4,11 +4,12 @@ import os
 from decimal import Decimal
 
 from sqlalchemy.exc import SQLAlchemyError
+from henry.base.dbapi import DBApiGeneric
 
 from henry.base.serialization import SerializableMixin
 from henry.base.serialization import json_loads
 from henry.invoice.coreschema import NPedidoTemporal
-from henry.product.dao import PriceList
+from henry.product.dao import PriceList, InvMovementType
 
 
 class Status:
@@ -57,6 +58,7 @@ class MetaItemSet(SerializableMixin):
 class DocumentApi:
     def __init__(self, sessionmanager, filemanager, transaction, object_cls):
         self.db_session = sessionmanager
+        self.dbapi = DBApiGeneric(sessionmanager)
         self.filemanager = filemanager
         self.transaction = transaction
 
@@ -130,12 +132,14 @@ class DocumentApi:
     def _set_status_and_update_prod_count(
             self, doc, new_status, inverse_transaction):
         session = self.db_session.session
+        now = datetime.datetime.now()
         try:
-            items = list(doc.items_to_transaction())
+            items = list(doc.items_to_transaction(self.dbapi))
             for i in items:
-                i.ref = '{}: {}'.format(new_status, i.ref)
                 if inverse_transaction:
+                    i.type = InvMovementType.delete_type(i.type)
                     i.inverse()
+                i.timestamp = now
             self.transaction.bulk_save(items)
             session.query(self.db_class).filter_by(
                 id=doc.meta.uid).update({'status': new_status})

@@ -1,6 +1,7 @@
 import datetime
 import decimal
 import json
+from operator import itemgetter
 import re
 
 # encoding of the database
@@ -23,9 +24,11 @@ def json_dumps(content):
         encoding=DB_ENCODING)
 
 
-def parse_iso_date(datestring):
-    return datetime.datetime(*map(int, re.split('[^\d]', datestring)[:-1]))
+def parse_iso_datetime(datestring):
+    return datetime.datetime(*map(int, re.split('[^\d]', datestring)))
 
+def parse_iso_date(datestring):
+    return datetime.date(*map(int, datestring.split('-')))
 
 def json_loads(content):
     return json.loads(content, encoding=DB_ENCODING)
@@ -81,6 +84,48 @@ class DbMixin(object):
         return y
 
 
+def extract_obj_fields(obj, names):
+    return {
+        name: getattr(obj, name) for name in names if getattr(obj, name, None) is not None
+        }
+
+
+class TypedSerializableMixin(object):
+    _fields = ()
+    _natural_fields = (int, float, str, unicode)
+
+    def __init__(self, **kwargs):
+        for x, const in self._fields:
+            val = kwargs.get(x, None)
+            if val is not None:
+                setattr(self, x, val)
+
+    def merge_from_obj(self, obj):
+        for x, const in self._fields:
+            val = getattr(obj, x)
+            if val is not None:
+                setattr(self, x, val)
+        return self
+
+    def merge_from_dict(self, thedict):
+        for x, const in self._fields:
+            val = thedict.get(x, None)
+            if val is not None:
+                if (const not in self._natural_fields or
+                        not isinstance(x, const)):
+                    val = const(val)
+            if val is not None or not hasattr(self, x):
+                setattr(self, x, val)
+        return self
+
+    def serialize(self):
+        return extract_obj_fields(self, map(itemgetter(0), self._fields))
+
+    @classmethod
+    def deserialize(cls, thedict):
+        return cls().merge_from_dict(thedict)
+
+
 class SerializableMixin(object):
     _name = ()
 
@@ -106,7 +151,7 @@ class SerializableMixin(object):
     def _serialize_helper(obj, names):
         return {
             name: getattr(obj, name) for name in names if getattr(obj, name, None) is not None
-            }
+        }
 
     def to_json(self):
         return json_dumps(self.serialize())

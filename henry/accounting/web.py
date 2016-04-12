@@ -25,7 +25,7 @@ from .reports import (group_by_records, generate_daily_report, split_records_bin
                       get_notas_with_clients, split_records, get_turned_in_cash)
 from .acct_schema import NCheck, NSpent, NAccountStat
 from .dao import (Todo, Check, Deposit, Payment, Bank,
-                  DepositAccount, AccountStat, Spent, AccountTransaction)
+                  DepositAccount, AccountStat, Spent, AccountTransaction, Comment)
 
 
 def extract_nota_and_client(dbapi, form, redirect_url):
@@ -210,6 +210,21 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
         sucess = dbapi.update(spent, {'deleted': True})
         dbapi.db_session.commit()
         return {'success': sucess > 0}
+
+    @w.post('/app/api/comment')
+    @dbcontext
+    @auth_decorator
+    def post_comment():
+        comment = json.loads(request.body.read())
+        c = Comment()
+        c.objid = comment['objid']
+        c.objtype = comment['objtype']
+        c.user_id = get_user(request)['username']
+        c.timestamp = datetime.datetime.now()
+        c.comment = comment['comment']
+        dbapi.create(c)
+        dbapi.db_session.commit()
+        return {'comment': c.uid}
 
     return w
 
@@ -803,5 +818,6 @@ def make_wsgi_app(dbcontext, imgserver,
         img = save_img_from_request(request)
         url = imgserver.get_url_path(img.path)
         return {'url': url}
+
 
     return w

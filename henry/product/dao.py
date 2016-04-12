@@ -1,6 +1,12 @@
+from collections import defaultdict
 from decimal import Decimal
 import datetime
+import functools
+import json
+import os
 from henry.base.dbapi import dbmix
+from henry.base.serialization import json_dumps, parse_iso_datetime, parse_iso_date, \
+    TypedSerializableMixin
 from henry.dao.transaction import Transaction
 from henry.product.schema import NInventoryRevision, NInventoryRevisionItem
 
@@ -153,3 +159,173 @@ class RevisionApi:
         revision.status = 'AJUSTADO'
         return revision
 
+def quantity_tuple(quantities):
+    # quantities should be a list of tuples of bodega_id: quantity
+    # with type (int, Decimal)
+    # the starting type is (int, str), need to convert str to decimal
+    return map(lambda x: (x[0], Decimal(x[1])), quantities)
+
+
+#  saves the item stock count at a given time
+class InventorySnapshot(TypedSerializableMixin):
+    """
+    quantity is a list of tuples (bodega_id, quantity)
+    """
+    _fields = (
+        ('creation_time', parse_iso_datetime),
+        ('itemgroup_id', int),
+        ('prod_id', unicode),
+        ('quantity', quantity_tuple),
+        ('upto_date', parse_iso_date),
+        ('last_upto_date', parse_iso_date),
+        ('last_quantity', quantity_tuple))
+
+
+class InvMovementType:
+    SALE = 'sale'
+    TRANSFER = 'transfer'
+    INGRESS = 'ingress'
+    EGRESS = 'egress'
+    DELETE_SALE = 'delete_sale'
+    DELETE_TRANFER = 'delete_tranfer'
+    DELETE_INGRESS = 'delete_ingress'
+    DELETE_EGRESS = 'delete_egress'
+    INITIAL = 'initial_stock'
+
+    @classmethod
+    def delete_type(cls, type_):
+        return 'delete_' + type_
+
+#  tracks every movement of inventory
+class InventoryMovement(TypedSerializableMixin):
+    """
+        should have following attributes:
+        from_inv_id: (int) id of from bodega
+        to_inv_id: (int) id of to bodega
+        quantity: (Decimal) positive quantity
+        itemgroup: (ProdItemGroup) item in movement
+        timestamp: (datetime) time of execution
+        type: (str) one of InvMovementType
+    """
+    _fields = (
+        ('from_inv_id', int),
+        ('to_inv_id', int),
+        ('quantity', Decimal),
+        ('itemgroup_id', int),
+        ('prod_id', unicode),
+        ('timestamp', parse_iso_datetime),
+        ('type', str),
+        ('reference_id', str),
+    )
+
+    def inverse(self):
+        self.from_inv_id, self.to_inv_id = self.to_inv_id, self.from_inv_id
+        return self
+
+class InventoryApi:
+
+    SNAPSHOT_FILE_NAME = '__snapshot'
+
+    def __init__(self, fileservice):
+        self.fileservice = fileservice
+
+    @classmethod
+    def _year_month(cls, date):
+        return '{:04d}-{:02d}'.format(date.year, date.month)
+
+    @classmethod
+    def _make_filename(cls, igid, date):
+        # PROD_ID/yyyy-mm
+        return os.path.join(str(igid), cls._year_month(date))
+
+    def save(self, inv_movement):
+        path = InventoryApi._make_filename(
+            inv_movement.itemgroup_id, inv_movement.timestamp.date())
+        self.fileservice.append_file(path, json_dumps(inv_movement))
+
+    def bulk_save(self, trans):
+        for t in trans:
+            self.save(t)
+
+    def get_past_records(self, igid):
+        snapshotname = os.path.join(str(igid), self.SNAPSHOT_FILE_NAME)
+        snapshot_path = self.fileservice.make_fullpath(snapshotname)
+        if os.path.exists(snapshot_path):
+            records = self.fileservice.get_file(snapshotname)
+            return map(InventorySnapshot.deserialize, json.loads(records))
+        return []
+
+    def list_transactions(self, igid, start_date, end_date):
+        # start date can be None, but end_date cannot
+        if not isinstance(end_date, datetime.date):
+            raise ValueError('end_date must be a valid date object')
+        if not isinstance(start_date, datetime.date) and start_date is not None:
+            raise ValueError('start_date must be a valid date object')
+        root = self.fileservice.make_fullpath(str(igid))
+        last_month = InventoryApi._year_month(end_date)
+        all_fname = [f for f in os.listdir(root) if f <= last_month]
+        if all_fname:
+            if start_date is None:
+                smallest = min(all_fname)
+                year, month = map(int, smallest.split('-'))
+                start_date = datetime.date(year, month, 1)
+            all_fname = [f for f in all_fname if
+                         f >= InventoryApi._year_month(start_date)]
+            all_fname = map(functools.partial(os.path.join, str(igid)), all_fname)
+            for x in self.fileservice.get_file_lines(all_fname):
+                item = InventoryMovement.deserialize(json.loads(x))
+                if start_date <= item.timestamp.date() <= end_date:
+                    yield item
+
+    def get_changes(self, igid, start_date, end_date):
+        deltas = defaultdict(Decimal)
+        for x in self.list_transactions(igid, start_date, end_date):
+            if x.from_inv_id is not None:
+                deltas[x.from_inv_id] -= x.quantity
+            if x.to_inv_id is not None:
+                deltas[x.to_inv_id] += x.quantity
+        return deltas
+
+    def _write_snapshot(self, igid, records):
+        snapshotname = os.path.join(str(igid), self.SNAPSHOT_FILE_NAME)
+        self.fileservice.put_file(snapshotname, json_dumps(records))
+
+    def take_snapshot_to_date(self, igid, end_date):
+        new_record, records = self._get_new_snapshot_to_date(igid, end_date)
+        records.insert(0, new_record)
+        self._write_snapshot(igid, records[:-1])
+
+    def _get_new_snapshot_to_date(self, igid, end_date):
+        # get last account
+        records = self.get_past_records(igid)
+        start_date = None
+        if records:
+            # starting date is one day after lasttime!
+            start_date = records[0].upto_date + datetime.timedelta(days=1)
+
+        deltas = self.get_changes(igid, start_date, end_date)
+        last_quantities = self._get_last_snapshot_quantities(records)
+
+        new_quantities = {}
+        for inv_id in set(deltas.keys()) | set(last_quantities.keys()):
+            new_quantities[inv_id] = deltas[inv_id] + last_quantities[inv_id]
+
+        new_record = InventorySnapshot()
+        new_record.upto_date = end_date
+        new_record.creation_date = datetime.datetime.now()
+        new_record.quantity = new_quantities.items()
+        new_record.last_quantity = last_quantities.items()
+        new_record.last_upto_date = start_date
+
+        return new_record, records
+
+    def _get_last_snapshot_quantities(self, records):
+        last_quantities = defaultdict(Decimal)
+        if records:
+            for inv_id, quantity in records[0].quantity:
+                last_quantities[inv_id] = quantity
+        return last_quantities
+
+    def get_current_quantity(self, igid):
+        new_record, _ = self._get_new_snapshot_to_date(igid, datetime.date.today())
+        return defaultdict(Decimal, new_record.quantity)

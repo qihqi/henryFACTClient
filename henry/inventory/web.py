@@ -74,6 +74,8 @@ def make_inv_api(dbapi, transapi, auth_decorator, actionlogged):
             start, end, status, other_filters)
         return json_dumps(list(result))
 
+    return api
+
 
 def make_inv_wsgi(dbapi, jinja_env, actionlogged, auth_decorator, transapi,
                   revisionapi, external_bodegas):

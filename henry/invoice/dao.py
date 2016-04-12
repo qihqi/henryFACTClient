@@ -1,9 +1,10 @@
 import datetime
 import os
 import uuid
-from henry.base.serialization import SerializableMixin, DbMixin, parse_iso_date
+from henry.base.serialization import SerializableMixin, DbMixin, parse_iso_datetime
 from henry.dao.document import MetaItemSet
 from henry.dao.transaction import Transaction
+from henry.product.dao import InventoryMovement, ProdItem, InvMovementType, get_real_prod_id
 from henry.users.dao import Client
 
 from .coreschema import NNota
@@ -102,7 +103,7 @@ class InvMetadata(SerializableMixin, DbMixin):
     def deserialize(cls, the_dict):
         x = cls().merge_from(the_dict)
         if x.timestamp and not isinstance(x.timestamp, datetime.datetime):
-            x.timestamp = parse_iso_date(x.timestamp)
+            x.timestamp = parse_iso_datetime(x.timestamp)
         if 'client' in the_dict:
             client = Client.deserialize(the_dict['client'])
             x.client = client
@@ -126,7 +127,7 @@ class InvMetadata(SerializableMixin, DbMixin):
 class Invoice(MetaItemSet):
     _metadata_cls = InvMetadata
 
-    def items_to_transaction(self):
+    def items_to_transaction2(self):
         reason = 'factura: id={} codigo={}'.format(
             self.meta.uid, self.meta.codigo)
         tipo = 'venta'
@@ -138,6 +139,19 @@ class Invoice(MetaItemSet):
             yield Transaction(item.prod.upi, self.meta.bodega_id, pid,
                               -cant, item.prod.nombre,
                               reason, self.meta.timestamp, tipo)
+
+    def items_to_transaction(self, dbapi):
+        for item in self.items:
+            proditem = dbapi.getone(ProdItem, prod_id=item.prod.prod_id)
+            yield InventoryMovement(
+                from_inv_id=self.meta.bodega_id,
+                to_inv_id=-1,
+                quantity=(item.cant * item.prod.multiplicador),
+                prod_id=get_real_prod_id(item.prod.prod_id),
+                itemgroup_id=proditem.itemgroupid,
+                type=InvMovementType.SALE,
+                reference_id=str(self.meta.uid),
+            )
 
     def validate(self):
         if getattr(self.meta, 'codigo', None) is None:

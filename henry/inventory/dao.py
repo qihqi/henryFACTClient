@@ -3,10 +3,10 @@ import os
 import uuid
 from decimal import Decimal
 
-from henry.base.serialization import SerializableMixin, DbMixin, parse_iso_date
+from henry.base.serialization import SerializableMixin, DbMixin, parse_iso_datetime
 from henry.dao.document import MetaItemSet, Item
 from henry.dao.transaction import Transaction
-from henry.product.dao import PriceList, ProdItemGroup
+from henry.product.dao import PriceList, ProdItemGroup, InvMovementType, InventoryMovement
 
 from .schema import NTransferencia
 
@@ -59,7 +59,7 @@ class TransMetadata(SerializableMixin, DbMixin):
     def deserialize(cls, the_dict):
         x = super(cls, TransMetadata).deserialize(the_dict)
         if not isinstance(x.timestamp, datetime.datetime):
-            x.timestamp = parse_iso_date(x.timestamp)
+            x.timestamp = parse_iso_datetime(x.timestamp)
         return x
 
 
@@ -75,28 +75,31 @@ class TransItem(Item):
         return cls(prod, cant)
 
 
+def _convert_type(tipo):
+    if tipo == TransType.INGRESS:
+        return InvMovementType.INGRESS
+    if tipo == TransType.EGRESS:
+        return InvMovementType.EGRESS
+    if tipo == TransType.EXTERNAL:
+        return InvMovementType.EGRESS
+    if tipo == TransType.TRANSFER:
+        return InvMovementType.TRANSFER
+
 class Transferencia(MetaItemSet):
     _metadata_cls = TransMetadata
 
-    def items_to_transaction(self):
-        reason = '{}: codigo={}'.format(self.meta.trans_type, self.meta.uid)
+    def items_to_transaction(self, _dbapi):
         tipo = self.meta.trans_type
         for item in self.items:
-            prod, cant = item.prod, item.cant
-            if self.meta.origin:
-                yield Transaction(
-                    upi=None,
-                    bodega_id=self.meta.origin,
-                    prod_id=prod.prod_id,
-                    delta=-cant, name=prod.name,
-                    ref=reason, fecha=self.meta.timestamp)
-            if self.meta.dest:
-                yield Transaction(
-                    upi=None,
-                    bodega_id=self.meta.dest,
-                    prod_id=prod.prod_id,
-                    delta=cant, name=prod.name,
-                    ref=reason, fecha=self.meta.timestamp, tipo=tipo)
+            yield InventoryMovement(
+                from_inv_id=self.meta.origin or -1,
+                to_inv_id=self.meta.dest or -1,
+                quantity=item.cant,
+                prod_id=item.prod.prod_id,
+                itemgroup_id=item.prod.uid,
+                type=_convert_type(tipo),
+                reference_id=str(self.meta.uid),
+            )
 
     def validate(self):
         if self.meta.trans_type not in (TransType.EXTERNAL, TransType.EGRESS):
@@ -124,3 +127,5 @@ class Transferencia(MetaItemSet):
         x.meta = cls._metadata_cls.deserialize(the_dict['meta'])
         x.items = map(TransItem.deserialize, the_dict['items'])
         return x
+
+

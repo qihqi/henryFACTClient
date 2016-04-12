@@ -219,7 +219,7 @@ def get_spent_as_transactions(dbapi, start_date, end_date):
         if gasto.paid_from_cashier is None:
             print 'ERROR', gasto.serialize()
             continue
-        if gasto.deleted:
+        if gasto.deleted is True:
             continue
         yield AccountTransaction(
             uid='gasto'+str(gasto.uid),
