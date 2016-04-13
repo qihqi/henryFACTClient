@@ -23,7 +23,7 @@ class Timing:
 class EndToEndTest(unittest.TestCase):
 
     def setUp(self):
-#        self.url_base = 'http://192.168.0.23/api'
+       # self.url_base = 'http://192.168.0.23/api'
         self.url_base = 'http://localhost:8080/api'
 
 
@@ -36,7 +36,9 @@ class EndToEndTest(unittest.TestCase):
         with Timing('authenticate'):
             r = requests.post(url, data={'username': 'yu', 'password': 'yu'})
             response = r.json()
+            print response
         cookies = r.cookies
+        print r.cookies
         print response
         number = response['last_factura']
         # search for a product
@@ -97,7 +99,7 @@ class EndToEndTest(unittest.TestCase):
             print r
 
         with Timing('Get FACTura'):
-            r = requests.get(nota_url + '/' + str(codigo))
+            r = requests.get(nota_url + '/' + str(codigo), cookies=cookies)
             fact = r.json()
             self.assertEquals(codigo, fact['meta']['uid'])
             self.assertEquals(1, fact['meta']['almacen_id'])

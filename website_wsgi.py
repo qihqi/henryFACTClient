@@ -30,7 +30,8 @@ advanced = make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, tran
 create_prod_api = prod_api_app(
     '/app/api',
     sessionmanager=sessionmanager,
-    auth_decorator=auth_decorator, dbcontext=dbcontext, dbapi=dbapi)
+    auth_decorator=auth_decorator, dbcontext=dbcontext,
+    dbapi=dbapi, inventoryapi=transactionapi)
 
 app.merge(userapp)
 app.merge(invoiceapp)

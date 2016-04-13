@@ -27,7 +27,6 @@ export var ViewSingleItem = React.createClass({
         console.log(this.state.cant);
         return <div>
             <ViewSingleItemPure {...this.state} />;
-            Cantidades: 
         </div>
     }
 });
@@ -94,12 +93,40 @@ var CreateItem = React.createClass({
     }
 });
 
+var QuantityLoader = React.createClass({
+    loadQuantity: function(uid) {
+        $.ajax({
+            url: '/app/api/prod_quantity/' + uid,
+            success: (x) => {
+                var x = JSON.parse(x);
+                this.setState(x);
+            }
+        });
+    },
+    getInitialState: function() {
+        return {inv: [], quantity: [], itemgroup_id: 0};
+    }, 
+    render: function() {
+        return <ul>
+        { this.state.inv.map( (x) => {
+             if (x.id >= 0 ) {    
+              return <li>{x.nombre}: {Number(this.state.quantity[x.id] || 0)}</li>
+             }
+             return '';
+        })}
+        </ul>;
+    }
+});
+
 
 
 var ViewSingleItemPure = React.createClass({
     showAddUnit: function() {
         this.refs.addUnitOverlay.show();
         this.refs.addUnitForm.setNames();
+    },
+    loadQuantity: function() {
+        this.refs.quantityLoader.loadQuantity(this.props.prod.uid);
     },
     render: function() {
         return <div>
@@ -142,6 +169,12 @@ var ViewSingleItemPure = React.createClass({
                             </tbody></table>
                     </div>;
                 })}
+            </div>
+        </div>
+        <div className="row">
+            <div className="col-md-12">
+                <button onClick={this.loadQuantity}>Ver Cantidades</button>
+                <QuantityLoader ref="quantityLoader" />
             </div>
         </div>
         </div>;

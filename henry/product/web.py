@@ -49,7 +49,7 @@ def make_full_items(itemgroup, items, prices_by_prod_id):
         result['items'].append(new_item)
     return result
 
-def make_wsgi_api(prefix, sessionmanager, dbcontext, auth_decorator, dbapi):
+def make_wsgi_api(prefix, sessionmanager, dbcontext, auth_decorator, dbapi, inventoryapi):
     app = Bottle()
 
     @app.post(prefix + '/item_full')
@@ -109,6 +109,17 @@ def make_wsgi_api(prefix, sessionmanager, dbcontext, auth_decorator, dbapi):
             dbapi.create(p)
         dbapi.db_session.commit()
         return {'status': 'success', 'uid': uid}
+
+    @app.get(prefix + '/prod_quantity/<uid>')
+    @dbcontext
+    def get_prod_quantity(uid):
+        current_record = inventoryapi.get_current_quantity(uid)
+        bodegas = dbapi.search(Bodega)
+        return json_dumps({
+            'inv': bodegas,
+            'itemgroup_id': uid,
+            'quantity': current_record
+        })
 
 
     bind_dbapi_rest(prefix + '/pricelist', dbapi, PriceList, app)
