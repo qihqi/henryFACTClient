@@ -3,7 +3,7 @@ import SkyLight from 'react-skylight';
 import LinkedStateMixin from 'react-addons-linked-state-mixin';
 import {makeOption, PriceForm, UNITS} from './CreateProduct';
 
-var PriceForm2 = React.createClass({
+export var PriceForm2 = React.createClass({
     mixins: [LinkedStateMixin],
     getInitialState: function() {
         return {display_name: '', price1: '', price2: '', cant: ''};
@@ -32,18 +32,30 @@ var PriceForm2 = React.createClass({
 });
 
 export var SearchItemgroup = React.createClass({
-    getInitialState: function() {
-        return {'itemgroups': []};
-    },
-    search: function(event) {
-        var prefix = this.refs.prefix.value;
+    mixins: [LinkedStateMixin],
+    searchProduct: function(prefix) {
         $.ajax({
             url: '/app/api/itemgroup?name-prefix=' + encodeURIComponent(prefix),
             success: (x) => {
                 var result = JSON.parse(x).result;
-                this.setState({'itemgroups': result});
+                this.setState({'itemgroups': result, term: prefix});
+            }, 
+            failure: (x) => {
+                alert('No pudo encontrar producto');
+                this.setState({term: prefix});
             }
         });
+    },
+    getInitialState: function() {
+        if (this.props.params.search_term) {
+            var prefix = this.props.params.search_term;
+            this.searchProduct(prefix);
+        }
+        return {'itemgroups': []};
+    },
+    search: function(event) {
+        window.location = '#/view_prod/' + this.state.term;
+        this.searchProduct(this.state.term);
     },
     viewItem: function(ig) {
     },
@@ -53,28 +65,33 @@ export var SearchItemgroup = React.createClass({
     },
     render: function() {
         return <div className="container">
-            <SkyLight 
-                dialogStyles={{height: "70%"}}
-                hiddenOnOverlayClicked ref="addUnitOverlay" title="Agregar Unidades">
-                <CreateItem ref="addUnitForm"
-                    units={UNITS}
-                    pricelist={[{name: 'menorista', id: 1}, {name: 'mayorista', id: 2}]}
-                    />
-            </SkyLight>
+            <h3>Buscar Producto</h3>
             <div className="row">
-                Nombre: <input ref="prefix" /> <button onClick={this.search}>Buscar</button>
+                Nombre: <input ref="prefix" valueLink={this.linkState('term')}/> 
+                <button onClick={this.search}>Buscar</button>
             </div>
             <div className="row">
+                <div className="row">
+                    <div className="col-md-2 header">
+                        No. Item
+                    </div>
+                    <div className="col-md-2 header">
+                        Codigo
+                    </div>
+                    <div className="col-md-6 header">
+                        Nombre
+                    </div>
+                </div>
                 {this.state.itemgroups.map((x) => {
                     return <div className="row">
+                        <div className="col-md-2">
+                            {x.uid} 
+                        </div>
                         <div className="col-md-2">
                             {x.prod_id} 
                         </div>
                         <div className="col-md-6">
                             <a href={'#/ig/'+x.uid}>{x.name}</a>
-                        </div>
-                        <div className="col-md-3">
-                            <button onClick={this.addUnit.bind(this, x)}>Agregar Unidad</button>
                         </div>
                     </div>;
                 })}
@@ -83,65 +100,3 @@ export var SearchItemgroup = React.createClass({
     }
 });
 
-var CreateItem = React.createClass({
-    getInitialState: function() {
-        this.data = {};
-        this.price = {};
-        return {itemgroup:{}};
-    },
-    onSubmit: function(event) {
-        this.data.itemgroupid = this.state.itemgroup.uid;
-        this.data.prod_id = this.state.itemgroup.prod_id;
-
-        var prices = {};
-        for (var i in this.props.pricelist) {
-            var pid = this.props.pricelist[i].id;
-            var ref = 'price' + pid;
-            var pform = this.refs[ref];
-            prices[pid] = pform.state;
-        }
-        this.data.price = prices;
-        console.log(this.data);
-        var payload = JSON.stringify(this.data);
-        $.ajax({
-            url: '/app/api/item_with_price',
-            data: payload,
-            method: 'POST',
-            success: (x) => {
-                console.log(x);
-            } 
-        });
-    },
-    changeItem: function(event) {
-        this.data[event.target.name] = event.target.value;
-    },
-    setPrice: function(result) {
-        if (typeof this.price[result.priceid] == 'undefined') {
-            this.price[result.priceid] = {};
-        }
-        this.price[result.priceid][result.key] = result.value;
-    },
-    setItemgroup: function(ig) {
-        this.setState({itemgroup: ig});
-        for (var i in this.props.pricelist) {
-            var pid = this.props.pricelist[i].id;
-            var ref = 'price' + pid;
-            this.refs[ref].setState({'display_name': ig.name});
-        }
-    },
-    render: function() {
-        return <div>
-        <h4>{this.state.itemgroup.prod_id} &nbsp; {this.state.itemgroup.name}</h4>
-        <p>Unidad: {makeOption(this.props.units, 'unit', this.changeItem)}
-        Multiplicador: <input name='multiplier' onChange={this.changeItem}/></p>
-        <ul><b>Precios:</b>
-            {this.props.pricelist.map((p, priceid) => {
-                return <li key={''+ p.id}><b>{p.name}</b> &nbsp;&nbsp;
-                    <PriceForm2 ref={'price'+p.id} itemid={0} priceid={p.id} />
-                </li>;
-            })}
-        </ul>
-        <button onClick={this.onSubmit}>Guardar</button>
-        </div>;
-    }
-});

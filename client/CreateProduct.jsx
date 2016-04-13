@@ -144,6 +144,11 @@ export var ProdApp = React.createClass({
         pricelist: [{name: 'menorista', id: 1}, {name: 'mayorista', id: 2}]};
     },
     render: function() {
-        return <CreateProdForm units={this.state.units} pricelist={this.state.pricelist}/>;
+        return <div className="container">
+            <div className="row"><h3>Crear Producto</h3></div>
+            <div className="row">
+                <CreateProdForm units={this.state.units} pricelist={this.state.pricelist} />
+            </div>
+        </div>;
     },
 });

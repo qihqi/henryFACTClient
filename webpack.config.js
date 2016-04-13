@@ -2,7 +2,6 @@ module.exports = {
   entry: {
     prod: './client/index.jsx',
     accounting: './client/accounting_index.jsx',
-    viewprod : './client/view_prod_index.jsx',
     transfer: './client/prod_components.jsx'
   },
   output: {
