@@ -67,3 +67,31 @@ class ActionLogApiDecor:
             request.body.seek(0)  # reset body to the beginning
             return func(*args, **argv)
         return wrapped
+
+
+# Logs changes done to product
+class ChangeType:
+    PRICE_CHANGED = 'price_change'
+    CHECK_DATE_CHANGE = 'check_date'
+    DELETE_INVOICE = 'delete_invoice'
+    CHANGE_INV_TYPE = 'change_inv_type'
+    DELETE_PAYMENT = 'delete_payment'
+    NEW_PAYMENT = 'new_payment'
+
+
+class ChangesLog(SerializableMixin):
+
+    _name = (
+        'type', 'timestamp', 'incoming_id', 'user_id', 'before', 'after')
+
+    def __init__(self, type_, timestamp, incoming_ip, user_id, before, after):
+        self.type = type_
+        self.timestamp = timestamp
+        self.incoming_ip = incoming_ip
+        self.user_id = user_id
+        self.before = before
+        self.after = after
+
+
+
+

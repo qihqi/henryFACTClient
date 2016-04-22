@@ -92,3 +92,14 @@ class NDjangoSession(Base):
     session_key = Column(String(40), primary_key=True)
     session_data = Column(Text)
     expire_date = Column(DateTime)
+
+
+class NTodo(Base):
+    __tablename__ = 'todos'
+    uid = Column(Integer, primary_key=True, autoincrement=True)
+    objtype = Column(String(20))
+    objid = Column(String(20))
+    msg = Column(String(100))
+    status = Column(String(20))
+    due_date = Column(DateTime)
+    creation_date = Column(DateTime)

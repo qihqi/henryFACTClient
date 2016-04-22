@@ -1,8 +1,8 @@
 from collections import defaultdict
 from decimal import Decimal
-from operator import attrgetter
 import json
 import datetime
+from operator import attrgetter
 import os
 import uuid
 
@@ -21,7 +21,7 @@ from henry.product.dao import Store
 from henry.invoice.coreschema import NNota
 from .acct_schema import ObjType, NComment, NPayment
 from henry.users.dao import User
-from .reports import (group_by_records, generate_daily_report, split_records_binary, get_transactions, payment_report,
+from .reports import (generate_daily_report, split_records_binary, get_transactions, payment_report,
                       get_notas_with_clients, split_records, get_turned_in_cash)
 from .acct_schema import NCheck, NSpent, NAccountStat
 from .dao import (Todo, Check, Deposit, Payment, Bank,
@@ -375,15 +375,6 @@ def make_wsgi_app(dbcontext, imgserver,
             dbapi.update(AccountStat(date=date),
                          {'revised_by': userid, 'turned_cash': turned_cash,
                           'deposit': deposito, 'diff': diff})
-            now = datetime.datetime.now()
-            todo1 = Todo(objtype=ObjType.ACCOUNT, objid=date, status='PENDING',
-                         msg='Papeleta de deposito de {}: ${}'.format(date, Decimal(deposito) / 100),
-                         creation_date=now, due_date=now)
-            todo2 = Todo(objtype=ObjType.ACCOUNT, objid=date, status='PENDING',
-                         msg='Papeleta de deposito de {}: ${}'.format(date, Decimal(turned_cash) / 100),
-                         creation_date=now, due_date=now)
-            dbapi.create(todo1)
-            dbapi.create(todo2)
 
         redirect('/app/crear_entrega_de_cuenta?fecha={}'.format(date.isoformat()))
 
@@ -819,5 +810,12 @@ def make_wsgi_app(dbcontext, imgserver,
         url = imgserver.get_url_path(img.path)
         return {'url': url}
 
+    @w.get('/app/api/comment')
+    @dbcontext
+    def view_comments():
+        temp = jinja_env.get_template('comments.html')
+        all_comments = dbapi.search(Comment)
+        all_comments = sorted(all_comments, key=attrgetter('timestamp'), reverse=True)
+        return temp.render(comments=all_comments)
 
     return w

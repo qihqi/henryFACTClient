@@ -5,7 +5,6 @@ from henry.constants import (
     EXTERNAL_URL, EXTERNAL_USER, EXTERNAL_PASS,
     IMAGE_PATH, EXTERNAL_AUTH_URL, TEMPLATE_LOCATION)
 
-from henry.accounting.dao import Todo
 from henry.coreconfig import sessionmanager, transactionapi
 
 from henry.dao.document import DocumentApi
@@ -32,7 +31,6 @@ externaltransapi = ExternalApi(EXTERNAL_URL, 'ingreso',
 
 # imgserver = ImageServer('/app/img', DBApi(sm, Image), imagefiles)
 imgserver = None
-todoapi = DBApi(sm, Todo)
 
 
 jinja_env = make_jinja_env(TEMPLATE_LOCATION)

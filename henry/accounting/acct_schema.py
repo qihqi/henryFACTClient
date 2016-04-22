@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Date, Integer, String, ForeignKey, Numeric, DateTime, Index, Boolean
 from sqlalchemy.orm import relationship, backref
+
 from henry.schema.base import Base
 from henry.invoice.coreschema import NNota
 
@@ -147,18 +148,6 @@ class NImage(Base):
     path = Column(String(100))
 
 Index('ix_image_2', NImage.objtype, NImage.objid)
-
-class NTodo(Base):
-    __tablename__ = 'todos'
-    uid = Column(Integer, primary_key=True, autoincrement=True)
-    objtype = Column(String(20))
-    objid = Column(String(20))
-    msg = Column(String(100))
-    status = Column(String(20))
-    due_date = Column(DateTime)
-    creation_date = Column(DateTime)
-
-Index('ix_todo_2', NImage.objtype, NImage.objid)
 
 
 class NAccountTransaction(Base):

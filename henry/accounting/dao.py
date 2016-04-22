@@ -6,7 +6,8 @@ from henry.base.serialization import SerializableMixin
 from henry.invoice.dao import PaymentFormat
 
 from .acct_schema import (NBank, NDepositAccount, NPayment, NCheck, NDeposit, NImage,
-                          NComment, NTodo, NAccountStat, NSpent, NAccountTransaction)
+                          NComment, NAccountStat, NSpent, NAccountTransaction)
+from henry.schema.legacy import NTodo
 
 Todo = dbmix(NTodo)
 Comment = dbmix(NComment)

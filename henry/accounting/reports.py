@@ -129,7 +129,8 @@ def generate_daily_report(dbapi, day):
     ids = [c.uid for c in all_sale]
     cashids = {c.uid for c in cashed}
     noncash = split_records(noncash, lambda x: x.client.codigo)
-    query = dbapi.db_session.query(NPayment).filter(NPayment.note_id.in_(ids))
+    query = dbapi.db_session.query(NPayment).filter(
+        deleted != False).filter(NPayment.note_id.in_(ids))
 
     # only retension for cash invoices need to be accounted separately.
     by_retension = split_records(query, lambda x: x.type == 'retension' and x.note_id in cashids)

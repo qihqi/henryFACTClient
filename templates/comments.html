@@ -1,0 +1,11 @@
+<table>
+{% for i in comments %}
+    <tr>
+        <td>{{i.objtype}}</td>
+        <td>{{i.objid}}</td>
+        <td>{{i.timestamp}}</td>
+        <td>{{i.user_id}}</td>
+        <td>{{i.comment}}</td>
+    </tr>
+{% endfor %}
+</table>
