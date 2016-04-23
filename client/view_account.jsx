@@ -45,10 +45,31 @@ var AccountTable = React.createClass({
         this.props.showDeleteSpentForm(x);
     },
     render: function() {
+        if (this.props.all_events.length) {
+            var start_date = this.props.all_events[0].date;
+            var diff = 0;
+            for (var i in this.props.all_events) {
+                var thisEvent = this.props.all_events[i];
+                diff += thisEvent.value;
+                if (i == (this.props.all_events.length - 1)) {
+                    thisEvent.day_difference = diff;
+                    break;
+                } 
+                var nextDate = this.props.all_events[Number(i)+1].date;
+                if (nextDate != start_date) {
+                    start_date = nextDate;
+                    nextDate = this.props.all_events[i].day_difference = diff;
+                    diff = 0;
+                }
+            }
+        }
         var make_row = (x) => {
             var row = [x.date, x.desc, x.value, '', twoDecimalPlace(x.saldo)];
             if (x.value < 0) {
                 row = [x.date, x.desc, '', x.value, twoDecimalPlace(x.saldo)];
+            }
+            if ('day_difference' in x) {
+                row[4] = '' + row[4] + ' (' + twoDecimalPlace(x.day_difference) + ')';
             }
             var img =(x.img && x.img.length > 0) ? <img height="100" src={x.img} /> : "";
             var button = '';
@@ -82,8 +103,8 @@ var AccountTable = React.createClass({
                 <td className="noprint">{button}</td>
             </tr>;
         };
-        var numCheck = this.props.all_events.filter((x) => x == 'payment_check').length;
-        var numDeposit = this.props.all_events.filter((x) => x == 'payment_deposit').length;
+        var numCheck = this.props.all_events.filter((x) => x.type == 'payment_check').length;
+        var numDeposit = this.props.all_events.filter((x) => x.type == 'payment_deposit').length;
         return <div>
             <div className="row"><h5>Numero de Cheques: {numCheck} Numero de Depositos {numDeposit} </h5></div>
             <table className="table">
