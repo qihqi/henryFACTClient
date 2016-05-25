@@ -4,6 +4,7 @@ from bottle import request, abort, redirect, Bottle
 
 from henry.base.auth import get_user
 from henry.base.common import parse_start_end_date
+from henry.base.serialization import json_dumps
 from henry.base.session_manager import DBContext
 
 from henry.product.dao import Store
@@ -112,5 +113,23 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
             temp = jinja_env.get_template('invoice/nota.html')
             return temp.render(inv=doc, comments=comments)
         return 'Documento con codigo {} no existe'.format(uid)
+
+    @w.get('/app/api/nota')
+    @dbcontext
+    @actionlogged
+    def get_invoice_by_date():
+        start = request.query.get('start_date')
+        end = request.query.get('end_date')
+        if start is None or end is None:
+            abort(400, 'invalid input')
+        datestrp = datetime.datetime.strptime
+        start_date = datestrp(start, "%Y-%m-%d")
+        end_date = datestrp(end, "%Y-%m-%d")
+        status = request.query.get('status')
+        client = request.query.get('client')
+        other_filters = {'client_id', client} if client else None
+        result = invapi.search_metadata_by_date_range(
+            start_date, end_date, status, other_filters)
+        return json_dumps(list(result))
 
     return w
