@@ -41,7 +41,7 @@ def extract_nota_and_client(dbapi, form, redirect_url):
     return None, None
 
 
-def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserver):
+def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserver, override_transaction_getter=None):
     w = Bottle()
 
     @w.get('/app/api/sales')
@@ -81,7 +81,11 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
     @dbcontext
     def get_account_transactions_mult_days():
         start, end = parse_start_end_date(request.query)
-        result = get_transactions(dbapi, paymentapi, invapi, imgserver, start, end)
+        # FIXME: remove this hack
+        if override_transaction_getter:
+            result = override_transaction_getter(start, end)
+        else:
+            result = get_transactions(dbapi, paymentapi, invapi, imgserver, start, end)
         return json_dumps(result)
 
     @w.get('/app/api/check')

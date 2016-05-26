@@ -1,11 +1,13 @@
 import datetime
 
 from bottle import request, abort, redirect, Bottle
+from henry.background_sync.worker import WorkObject
 
 from henry.base.auth import get_user
 from henry.base.common import parse_start_end_date
 from henry.base.serialization import json_dumps
 from henry.base.session_manager import DBContext
+from henry.dao.document import Status
 
 from henry.product.dao import Store
 from henry.accounting.dao import Comment
@@ -16,7 +18,7 @@ from .coreapi import get_inv_db_instance
 __author__ = 'han'
 
 
-def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, jinja_env):
+def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, jinja_env, workqueue):
     w = Bottle()
     dbcontext = DBContext(dbapi.session)
 
@@ -65,6 +67,10 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
         if db_instance is None:
             return eliminar_factura_form('Factura no existe')
 
+        if db_instance.status == Status.DELETED:
+            # already deleted
+            redirect('/app/nota/{}'.format(db_instance.id))
+
         comment = Comment(
             user_id=user['username'],
             timestamp=datetime.datetime.now(),
@@ -80,7 +86,13 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
             invapi.delete(doc)
         except ValueError:
             abort(400)
-
+        if workqueue is not None:
+            work = WorkObject()
+            work.action = WorkObject.DELETE
+            work.objtype = WorkObject.INV
+            work.objid = db_instance.id
+            work.content = None
+            workqueue(work=json_dumps(work))
         redirect('/app/nota/{}'.format(db_instance.id))
 
     @w.get('/app/ver_factura_form')

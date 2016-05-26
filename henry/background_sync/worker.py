@@ -5,8 +5,9 @@ import requests
 
 from henry.base.serialization import json_dumps, SerializableMixin
 from henry.dao.document import Status
-from henry.importation.dao import Sale
-from henry.invoice.dao import InvMetadata
+from henry.importation.dao import Sale, InvMovementFull, InvMovementMeta, ItemGroupCant
+from henry.inventory.dao import Transferencia, transtype_to_invtype
+from henry.invoice.dao import InvMetadata, Invoice
 
 
 # What actions needs to be forwarded?
@@ -16,14 +17,15 @@ from henry.invoice.dao import InvMetadata
 # create client
 # create product
 # alter product price (changes to pricelist)
+from henry.product.dao import ProdItemGroup, InvMovementType
 
 
 class WorkObject(SerializableMixin):
     CREATE = 'create'
-    POST = 'post'
     DELETE = 'delete'
     INV = 'inv'
     TRANS = 'trans'
+    INV_TRANS = 'inv_trans'
 
     _name = ('objid', 'objtype', 'action', 'content')
 
@@ -38,23 +40,13 @@ class WorkObject(SerializableMixin):
             self.objid, self.objtype, self.action, self.content
         )
 
-
-def invmeta_to_sale(meta):
-    sale = Sale()
-    sale.timestamp = meta.timestamp
-    sale.client_id = meta.client.codigo
-    sale.seller_ruc = meta.almacen_ruc
-    sale.seller_inv_uid = meta.uid
-    sale.invoice_code = meta.codigo
-    sale.pretax_amount_usd = Decimal(meta.subtotal - (meta.discount or 0)) / 100
-    sale.tax_usd = Decimal(meta.tax) / 100
-    sale.status = Status.NEW
-    sale.user_id = meta.user
-    sale.payment_format = meta.payment_format
-    if getattr(meta, 'almacen_id', None):
-        meta.payment_format = 'None'
-    return sale
-
+def doc_to_workobject(inv, action, objtype):
+    obj = WorkObject()
+    obj.content = inv.meta if objtype == WorkObject.INV else inv
+    obj.action = action
+    obj.objtype = objtype
+    obj.objid = inv.meta.uid
+    return obj
 
 class ForwardRequestProcessor:
 
@@ -68,21 +60,74 @@ class ForwardRequestProcessor:
     def forward_request(self, work):
         print 'work', work['work'], type(work['work'])
         work = work['work']
-        des = WorkObject.deserialize(json.loads(work))
-        des.content = InvMetadata.deserialize(des.content)
-        work = des
-        url = urljoin(self.root_url, '/import/client_sale')
-        if work.action == WorkObject.CREATE:
-            data = invmeta_to_sale(work.content)
-            action = 'POST'
+        work = WorkObject.deserialize(json.loads(work))
+        desturl = '/import/client_sale'
+        if work.objtype == WorkObject.INV:
+            if work.action == WorkObject.CREATE:
+                work.content = InvMetadata.deserialize(work.content)
+                data = self.invmeta_to_sale(work.content)
+                action = 'POST'
+            elif work.action == WorkObject.DELETE:
+                data = Sale(seller_inv_uid=work.objid, seller_codename=self.codename)
+                action = 'DELETE'
         else:
-            data = Sale(seller_inv_uid=work.content.uid)
-            action = 'DELETE'
-        data.seller_codename = self.codename
+            with self.dbapi.session:
+                data = self.make_inv_movement(work)
+            action = 'POST'
+            desturl = '/import/inv_movement_set'
+        url = urljoin(self.root_url, desturl)
         r = requests.request(action, url,
                              auth=self.auth,
                              data=json_dumps(data))
+        print 'query', json_dumps(data)
+        print 'STATUS CODE ', r.status_code
         if r.status_code == 200:
             return -2  # OK
         else:
             return -1  # RETRY
+
+    def make_inv_movement(self, work):
+        invmeta = InvMovementMeta()
+        if work.objtype == WorkObject.INV_TRANS:
+            doc = Invoice.deserialize(work.content)
+            invmeta.timestamp = doc.meta.timestamp
+            invmeta.value_usd = Decimal(doc.meta.subtotal - (doc.meta.discount or 0)) / 100
+            invmeta.inventory_docid = doc.meta.uid
+            invmeta.trans_type = InvMovementType.SALE
+            invmeta.origin = doc.meta.bodega_id
+            invmeta.dest = -1
+        else:
+            doc = Transferencia.deserialize(work.content)
+            invmeta.timestamp = doc.meta.timestamp
+            invmeta.value_usd = doc.meta.value
+            invmeta.inventory_docid = doc.meta.uid
+            invmeta.doc_type = doc.doc_type
+            invmeta.origin = doc.meta.origin
+            invmeta.dest = doc.meta.dest
+            invmeta.trans_type = transtype_to_invtype(doc.meta.trans_type)
+        invmeta.inventory_codename = self.codename
+        items = []
+        if work.action == WorkObject.DELETE:
+            invmeta.origin, invmeta.dest = invmeta.dest, invmeta.origin
+            invmeta.trans_type == InvMovementType.delete_type(invmeta.trans_type)
+        for trans in doc.items_to_transaction(self.dbapi):
+            itemgroup = self.dbapi.get(trans.itemgroup_id, ProdItemGroup)
+            items.append(ItemGroupCant(cant=trans.quantity, itemgroup=itemgroup))
+        return InvMovementFull(meta=invmeta, items=items)
+
+    def invmeta_to_sale(self, meta):
+        sale = Sale()
+        sale.timestamp = meta.timestamp
+        sale.client_id = meta.client.codigo
+        sale.seller_ruc = meta.almacen_ruc
+        sale.seller_inv_uid = meta.uid
+        sale.invoice_code = meta.codigo
+        sale.pretax_amount_usd = Decimal(meta.subtotal - (meta.discount or 0)) / 100
+        sale.tax_usd = Decimal(meta.tax) / 100
+        sale.status = Status.NEW
+        sale.user_id = meta.user
+        sale.payment_format = meta.payment_format
+        sale.seller_codename = self.codename
+        if getattr(meta, 'almacen_id', None):
+            meta.payment_format = 'None'
+        return sale

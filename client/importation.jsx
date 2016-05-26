@@ -3,6 +3,8 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
 import SkyLight from 'react-skylight';
 import twoDecimalPlace from './view_account';
 
+const API = '/import';
+
 const PROD_KEYS = [
     "name_es",
     "name_zh",
@@ -245,7 +247,7 @@ var ProdCantPriceInput = React.createClass({
 var ProductSearcher = React.createClass({
     getAllProduct: function(ready) {
         $.ajax({
-            url: '/app/api/universal_prod', 
+            url: API + '/universal_prod', 
             success: (result) => {
                 var result = JSON.parse(result);
                 this.allprod = {};
@@ -344,7 +346,7 @@ export var CreateInvBox = React.createClass({
         $.ajax({
             method: 'POST',
             data: JSON.stringify(this.state.items),
-            url: '/app/api/purchase_full',
+            url: API + '/purchase_full',
             success: function(r) {
                 alert(r.uid);
             }
@@ -355,7 +357,7 @@ export var CreateInvBox = React.createClass({
     },
     loadInv: function() {
         var code = React.findDOMNode(this.refs.code).value;
-        query('/app/api/purchase_full/' + code, function(result) {
+        query(API + '/purchase_full/' + code, function(result) {
             this.setState({'items': result.result});
         }.bind(this));
     },
@@ -396,7 +398,7 @@ export var ShowProd = React.createClass({
     },
     getAllProd: function() {
         $.ajax({
-            url: '/app/api/universal_prod_with_declared',
+            url: API + '/universal_prod_with_declared',
             success: (result) => {
                 result = JSON.parse(result);
                 result.prod.sort((a,b) => {
@@ -466,7 +468,7 @@ export var ShowProd = React.createClass({
         return (<div className="container">
             <div className="row" >
             <SkyLight hiddenOnOverlayClicked ref="editProd" title="Editar Producto">
-                <CreateOrUpdateBox url="/app/api/universal_prod" ref="editbox"
+                <CreateOrUpdateBox url={API + "/universal_prod"} ref="editbox"
                      names={PROD_KEYS} update={true} uid={this.state.current}
                      optionbox={optionbox}
                      callback={this.editedProd} />
@@ -524,7 +526,7 @@ var ProdList = React.createClass({
 export var ShowPurchase = React.createClass({
     getAllPurchase: function() {
         $.ajax({
-            url: '/app/api/purchase',
+            url: API + '/purchase',
             success: (x) => {
                 x = JSON.parse(x);
                 this.setState({list: x.result});
@@ -544,7 +546,7 @@ export var ShowPurchase = React.createClass({
 export var PurchaseContent = React.createClass({
     getItems: function() {
         $.ajax({
-            url: '/app/api/purchase_full/' + this.props.params.uid,
+            url: API + '/purchase_full/' + this.props.params.uid,
             success: (x) => {
                 x = JSON.parse(x);
                 this.setState(x);

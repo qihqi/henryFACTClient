@@ -2,11 +2,13 @@ import unittest
 import datetime
 from decimal import Decimal
 
+from henry.importation.dao import InvMovementManager
 from henry.users.dao import Client
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from henry.base.dbapi import DBApiGeneric
+from henry.dao.transaction import TransactionApi, Transaction
 from henry.dao.document import DocumentApi, Status, Item
 from henry.inventory.dao import Transferencia, TransMetadata, TransType
 from henry.invoice.dao import InvMetadata, Invoice
@@ -28,6 +30,7 @@ class ProductApiTest(unittest.TestCase):
         filemanager = FileService('/tmp')
 
         cls.prod_api = DBApiGeneric(cls.sessionmanager)
+        cls.transaction_api = TransactionApi(cls.prod_api, '/tmp/transactions')
         cls.trans_api = DocumentApi(cls.sessionmanager, filemanager, cls.prod_api, Transferencia)
         cls.inv_api = DocumentApi(cls.sessionmanager, filemanager, cls.prod_api, Invoice)
 

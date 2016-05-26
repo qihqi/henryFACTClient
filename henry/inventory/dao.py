@@ -74,7 +74,7 @@ class TransItem(Item):
         return cls(prod, cant)
 
 
-def _convert_type(tipo):
+def transtype_to_invtype(tipo):
     if tipo == TransType.INGRESS:
         return InvMovementType.INGRESS
     if tipo == TransType.EGRESS:
@@ -96,7 +96,7 @@ class Transferencia(MetaItemSet):
                 quantity=item.cant,
                 prod_id=item.prod.prod_id,
                 itemgroup_id=item.prod.uid,
-                type=_convert_type(tipo),
+                type=transtype_to_invtype(tipo),
                 reference_id=str(self.meta.uid),
             )
 

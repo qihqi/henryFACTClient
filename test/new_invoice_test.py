@@ -25,7 +25,8 @@ class InvoiceTest(unittest.TestCase):
             actionlogged=identity,
             invapi=invapi,
             auth_decorator=identity,
-            pedidoapi=pedidoapi)
+            pedidoapi=pedidoapi,
+            workerqueue=None)
         cls.test_app = TestApp(wsgi)
         cls.dbapi = dbapi
         #insert some pricelist items
