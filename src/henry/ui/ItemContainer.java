@@ -34,7 +34,8 @@ public class ItemContainer extends JPanel
      *
      */
 
-    private static final int DEFAULT_IVA = 12;
+    private static final int DEFAULT_IVA = 14;
+    private int ivaPercentValue;
 
     private int current = 0; // the current selected item
     private ArrayList<ItemPanel> items;
@@ -63,6 +64,7 @@ public class ItemContainer extends JPanel
         @Override
         public void actionPerformed(ActionEvent e) {
            int iva = Integer.parseInt(ivaPorciento.getText());
+           ivaPercentValue = iva;
            documento.getRef().setIvaPorciento(iva);
            documento.notifyListeners();
         }
@@ -88,13 +90,14 @@ public class ItemContainer extends JPanel
     public ItemContainer(ItemPanelFactory itemFactory) {
         super(new BorderLayout());
         this.itemFactory = itemFactory;
+        ivaPercentValue = DEFAULT_IVA;
 
         items = new ArrayList<>();
 
         reverseItem = new HashMap<>();
         documento = new Observable<>();
         documento.setRef(new Documento());
-        documento.getRef().setIvaPorciento(DEFAULT_IVA);
+        documento.getRef().setIvaPorciento(ivaPercentValue);
         documento.addListener(this);
         itemObserver = new TotalController();
         Item firstItem = new Item();
@@ -276,6 +279,7 @@ public class ItemContainer extends JPanel
         content.removeAll();
         content.repaint();
         documento.setRef(new Documento());
+        documento.getRef().setIvaPorciento(ivaPercentValue);
         documento.getRef().addItem(item);
         addItemPanel(item);
         valorBruto.setText("");

@@ -254,7 +254,9 @@ public class ItemPanel extends JPanel implements BaseModel.Listener {
             loadingFailed();
             return;
         }
-        item.setRef(newItem);
+        System.out.println(newItem.getCantidad());
+        item.getRef().setProducto(newItem.getProducto());
+        item.getRef().setCantidad(newItem.getCantidad());
         item.notifyListeners();
         loadNextRowIfComplete();
     }
