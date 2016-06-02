@@ -182,7 +182,7 @@ def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles):
 
         column = 5
         row = 9
-        price = int(prod.precio1 * quantity * Decimal('1.12') + Decimal('0.5'))
+        price = int(prod.precio1 * quantity * Decimal('1.14') + Decimal('0.5'))
 
         temp = jinja_env.get_template('prod/barcode.html')
         return temp.render(url=url, row=row, column=column, prodname=prod.nombre, price=price)
