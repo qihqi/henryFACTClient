@@ -180,6 +180,7 @@ var SelectBox = React.createClass({
     },
     render: function() {
         var display = this.props.itemdisplay;
+        console.log('items', this.props.items);
         var items = this.props.items.map(function(i, index) {
             return <option value={index}>{display(i)}</option>;
         });
@@ -270,11 +271,12 @@ var ProductSearcher = React.createClass({
     }, 
     onProvidorChange: function(prov) {
         var prods = this.allprod[prov] || [];
-        console.log(this.allprod);
+        console.log('prods');
+        console.log(prods);
         this.setState({products: prods});
-        if (prods.length > 0) {
-            this.props.onSelectProduct(prods[0]);
-        }
+//        if (prods.length > 0) {
+//            this.props.onSelectProduct(prods[0]);
+//        }
     },
     render: function() {
         return (<div className="container">
@@ -330,7 +332,10 @@ var ItemList = React.createClass({
 
 export var CreateInvBox = React.createClass({
     getInitialState: function() {
-        return {currentProd: {}, items: []};
+        query(API + '/declaredgood', function(result) {
+            this.setState({declaredgoods: result.result});
+        }.bind(this));
+        return {currentProd: {}, items: [], declaredgoods:[]};
     },
     onSelectProduct: function(prod) {
         console.log("onSelectProducto");
@@ -361,12 +366,32 @@ export var CreateInvBox = React.createClass({
             this.setState({'items': result.result});
         }.bind(this));
     },
+    showCreateProduct: function() {
+        this.refs.createProd.show();
+    },
+    createdProd: function(prod) {
+        console.log(prod);
+        this.refs.createProd.hide();
+    },
     render: function() {
+        var optionbox = {
+            name: 'declaring_id', 
+            items: this.state.declaredgoods, 
+            display: function(){},
+            size: 1
+        };
         return <div className="container">
+            <SkyLight hiddenOnOverlayClicked ref="createProd" title="新建产品">
+                <CreateOrUpdateBox url={API + "/universal_prod"} ref="createProdBox"
+                     names={PROD_KEYS} update={false}
+                     optionbox={optionbox}
+                     callback={this.createdProd} />
+            </SkyLight>
             <h4>{"购货"}</h4>
             <div className="row">
             <div className="col-xs-4 col-md-4">
-                <ProductSearcher onSelectProduct={this.onSelectProduct} />
+                <button onClick={this.showCreateProduct}>{'新建产品'}</button>
+                <ProductSearcher ref="prodSearcher" onSelectProduct={this.onSelectProduct} />
             </div>
             <div className="col-xs-8 col-md-8">
                 <input ref="code" />
