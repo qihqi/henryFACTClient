@@ -6,7 +6,7 @@ from henry.base.serialization import json_dumps
 from henry.coreconfig import sessionmanager, invapi, clientapi
 from henry.config import prodapi
 from henry.product.schema import NProducto
-from henry.schema.legacy import NOrdenDespacho, NItemDespacho
+from henry.schema.legacy import NOrdenDespacho, NItemDespacho, NProducto
 from henry.dao.document import Item, Status
 from henry.invoice.dao import PaymentFormat, InvMetadata, Invoice
 

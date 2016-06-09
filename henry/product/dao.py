@@ -5,17 +5,18 @@ import functools
 import json
 import os
 from henry.base.dbapi import dbmix
-from henry.base.serialization import json_dumps, parse_iso_datetime, parse_iso_date, \
-    TypedSerializableMixin
-from henry.dao.transaction import Transaction
+from henry.base.serialization import (json_dumps, parse_iso_datetime, parse_iso_date,
+    TypedSerializableMixin)
 from henry.product.schema import NInventoryRevision, NInventoryRevisionItem
 
-from .schema import (NBodega, NProducto, NContenido, NCategory, NInventory, NPriceListLabel,
+from .schema import (NBodega, NCategory, NPriceListLabel,
                      NPriceList, NItemGroup, NItem, NStore)
+from henry.schema.legacy import NContenido, NProducto
 
 Bodega = dbmix(NBodega)
 Product = dbmix(NProducto)
 ProdCount = dbmix(NContenido)
+
 Category = dbmix(NCategory)
 PriceListLabel = dbmix(NPriceListLabel)
 Store = dbmix(NStore)
@@ -39,12 +40,6 @@ class ProdItem(dbmix(NItem)):
         self.multiplier = convert_decimal(self.multiplier, 1)
         return self
 
-
-class Inventory(dbmix(NInventory)):
-    def merge_from(self, the_dict):
-        super(Inventory, self).merge_from(the_dict)
-        self.quantity = convert_decimal(self.quantity, 0)
-        return self
 
 class ProdItemGroup(dbmix(NItemGroup)):
     def merge_from(self, the_dict):
@@ -147,15 +142,17 @@ class RevisionApi:
         now = datetime.datetime.now()
         bodega_id = revision.bodega_id
         for item in revision.items:
-            delta = item.real_cant - item.inv_cant
-            transaction = Transaction(
-                upi=None,
-                bodega_id=bodega_id,
-                prod_id=item.prod_id,
-                delta=delta,
-                ref=reason,
-                fecha=now)
-            self.transactionapi.save(transaction)
+            pass
+#           TODO: use inventory api
+#            delta = item.real_cant - item.inv_cant
+#            transaction = Transaction(
+#                upi=None,
+#                bodega_id=bodega_id,
+#                prod_id=item.prod_id,
+#                delta=delta,
+#                ref=reason,
+#                fecha=now)
+#            self.transactionapi.save(transaction)
         revision.status = 'AJUSTADO'
         return revision
 

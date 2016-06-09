@@ -3,7 +3,6 @@ import os
 import uuid
 from henry.base.serialization import SerializableMixin, DbMixin, parse_iso_datetime
 from henry.dao.document import MetaItemSet
-from henry.dao.transaction import Transaction
 from henry.product.dao import InventoryMovement, ProdItem, InvMovementType, get_real_prod_id
 from henry.users.dao import Client
 
@@ -126,19 +125,6 @@ class InvMetadata(SerializableMixin, DbMixin):
 
 class Invoice(MetaItemSet):
     _metadata_cls = InvMetadata
-
-    def items_to_transaction2(self):
-        reason = 'factura: id={} codigo={}'.format(
-            self.meta.uid, self.meta.codigo)
-        tipo = 'venta'
-        for item in self.items:
-            pid = item.prod.prod_id
-            cant = item.cant
-            if item.prod.multiplicador:
-                cant *= item.prod.multiplicador
-            yield Transaction(item.prod.upi, self.meta.bodega_id, pid,
-                              -cant, item.prod.nombre,
-                              reason, self.meta.timestamp, tipo)
 
     def items_to_transaction(self, dbapi):
         for item in self.items:

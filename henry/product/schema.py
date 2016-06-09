@@ -1,7 +1,7 @@
-from sqlalchemy import (Column, Integer, String,
-                        ForeignKey, Boolean, Numeric, Index, DateTime)
-from sqlalchemy.orm import relationship, backref
 from henry.schema.base import Base
+from sqlalchemy import (Column, Integer, String,
+                        ForeignKey, Numeric, Index, DateTime)
+from sqlalchemy.orm import relationship, backref
 
 
 class NItemGroup(Base):
@@ -38,15 +38,6 @@ class NBodega(Base):
     nivel = Column(Integer)
 
 
-class NProducto(Base):
-    __tablename__ = 'productos'
-    codigo = Column(String(20), primary_key=True)
-    codigo_barra = Column(Integer)
-    nombre = Column(String(200))
-    categoria_id = Column(Integer)
-    contenidos = relationship('NContenido', backref=backref('producto'))
-
-
 class NStore(Base):
     __tablename__ = 'almacenes'
     almacen_id = Column('almacen_id', Integer,
@@ -54,26 +45,6 @@ class NStore(Base):
     ruc = Column(String(20))
     nombre = Column(String(20))
     bodega_id = Column(Integer)
-
-
-class NContenido(Base):
-    __tablename__ = 'contenido_de_bodegas'
-    id = Column('id', Integer, primary_key=True, autoincrement=True)
-    bodega_id = Column(Integer)
-    prod_id = Column(String(20), ForeignKey('productos.codigo'))
-    cant = Column(Numeric(23, 3))
-    precio = Column(Numeric(20, 2))
-    precio2 = Column(Numeric(20, 2))
-    cant_mayorista = Column(Integer)
-    inactivo = Column(Boolean)
-
-
-class NInventory(Base):
-    __tablename__ = 'inventory'
-    uid = Column(Integer, primary_key=True, autoincrement=True)
-    inv_id = Column(Integer)
-    item_id = Column(Integer)
-    quantity = Column(Numeric(12, 3))
 
 
 class NPriceListLabel(Base):

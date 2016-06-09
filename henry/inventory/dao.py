@@ -5,7 +5,6 @@ from decimal import Decimal
 
 from henry.base.serialization import SerializableMixin, DbMixin, parse_iso_datetime
 from henry.dao.document import MetaItemSet, Item
-from henry.dao.transaction import Transaction
 from henry.product.dao import PriceList, ProdItemGroup, InvMovementType, InventoryMovement
 
 from .schema import NTransferencia

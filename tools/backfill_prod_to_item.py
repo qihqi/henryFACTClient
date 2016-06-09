@@ -1,7 +1,7 @@
 from collections import defaultdict
 from decimal import Decimal
 from coreapi import dbapi
-from henry.product.dao import Product, PriceList, ProdItemGroup, ProdItem
+from henry.product.dao import PriceList, ProdItemGroup, ProdItem
 
 
 def make_item_plused(pricelist):

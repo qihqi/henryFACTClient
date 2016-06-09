@@ -11,13 +11,9 @@ from henry.dao.document import DocumentApi
 from henry.inventory.dao import Transferencia
 from henry.environments import make_jinja_env
 from henry.externalapi import ExternalApi
-from henry.product.dao import ProdCount, RevisionApi
 
 sm = sessionmanager
-countapi = DBApi(sessionmanager, ProdCount)
 
-
-revisionapi = RevisionApi(sessionmanager, countapi, transactionapi)
 # paymentapi = PaymentApi(sessionmanager)
 paymentapi = None
 imagefiles = FileService(IMAGE_PATH)

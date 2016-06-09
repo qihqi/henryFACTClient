@@ -11,7 +11,6 @@ from henry.constants import (CONN_STRING, INVOICE_PATH, ENV,
                              ACTION_LOG_PATH,
                              BEAKER_DIR)
 from henry.dao.document import DocumentApi, PedidoApi
-from henry.dao.transaction import TransactionApi
 from henry.invoice.dao import Invoice
 from henry.dao.actionlog import ActionLogApi, ActionLogApiDecor
 from henry.product.dao import InventoryApi

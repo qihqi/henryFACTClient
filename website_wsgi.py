@@ -12,7 +12,7 @@ from henry.invoice.websites import make_invoice_wsgi
 from henry.base.dbapi import DBApiGeneric
 from henry.constants import USE_ACCOUNTING_APP
 from henry.config import (BEAKER_SESSION_OPTS, jinja_env, transapi,
-                          revisionapi, imagefiles, paymentapi, BODEGAS_EXTERNAS)
+                          imagefiles, paymentapi, BODEGAS_EXTERNAS)
 from henry.coreconfig import (dbcontext, auth_decorator, sessionmanager,
                               actionlogged, invapi, pedidoapi, transactionapi)
 from henry.web import webmain as app
@@ -22,7 +22,7 @@ dbapi = DBApiGeneric(sessionmanager)
 userapp = userwsgi(dbcontext, auth_decorator, jinja_env, dbapi, actionlogged)
 invoiceapp = make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, jinja_env)
 invapp = make_inv_wsgi(dbapi, jinja_env, actionlogged, auth_decorator, transapi,
-                       revisionapi, BODEGAS_EXTERNAS)
+                       revisionapi=None, external_bodegas=BODEGAS_EXTERNAS)
 invappapi = make_inv_api(dbapi, transapi, auth_decorator, actionlogged)
 papp = prodapp(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles)
 advanced = make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transactionapi)

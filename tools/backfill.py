@@ -1,6 +1,6 @@
 from decimal import Decimal
 from henry.product.schema import NProducto, NContenido, NPriceList
-from henry.schema.legacy import NTransform
+from henry.schema.legacy import NTransform, NContenido, NProducto
 from henry.config import sessionmanager
 
 

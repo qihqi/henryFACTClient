@@ -1,7 +1,9 @@
 from sqlalchemy import (Column, Integer, String, Date, ForeignKey,
                         Numeric, Boolean, Text, DateTime)
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
-from henry.schema.base import Base
+
+Base = declarative_base()
 
 __author__ = 'han'
 
@@ -103,3 +105,24 @@ class NTodo(Base):
     status = Column(String(20))
     due_date = Column(DateTime)
     creation_date = Column(DateTime)
+
+
+class NContenido(Base):
+    __tablename__ = 'contenido_de_bodegas'
+    id = Column('id', Integer, primary_key=True, autoincrement=True)
+    bodega_id = Column(Integer)
+    prod_id = Column(String(20), ForeignKey('productos.codigo'))
+    cant = Column(Numeric(23, 3))
+    precio = Column(Numeric(20, 2))
+    precio2 = Column(Numeric(20, 2))
+    cant_mayorista = Column(Integer)
+    inactivo = Column(Boolean)
+
+
+class NProducto(Base):
+    __tablename__ = 'productos'
+    codigo = Column(String(20), primary_key=True)
+    codigo_barra = Column(Integer)
+    nombre = Column(String(200))
+    categoria_id = Column(Integer)
+    contenidos = relationship('NContenido', backref=backref('producto'))

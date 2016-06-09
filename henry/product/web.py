@@ -1,19 +1,17 @@
 import json
-import os
 from decimal import Decimal
 
 import barcode
-
+import os
 from bottle import Bottle, request, redirect
-
 from henry.base.dbapi_rest import bind_dbapi_rest
 from henry.base.serialization import json_dumps
-from henry.product.dao import ProdItemGroup, Product, Store, Bodega, ProdCount, ProdItem, Inventory, PriceList
+from henry.product.dao import ProdItemGroup, Store, Bodega, ProdItem, PriceList
 
 
 def validate_full_item(content, dbapi):
     prod_id = content['prod']['prod_id']
-    if dbapi.get(prod_id, Product) is not None:
+    if dbapi.getone(ProdItemGroup, prod_id=prod_id) is not None:
         return False, 'Codigo ya existe'
     if len([x for x in content['items'] if int(x['multiplier']) == 1]) != 1:
         return False, 'Debe haber un unidad con multiplicador 1'
@@ -210,27 +208,8 @@ def create_full_item_from_dict(dbapi, content):
 
     itemgroupid = dbapi.create(itemgroup)
 
-    prod = Product()
-    prod.nombre = itemgroup.name
-    prod.codigo = itemgroup.prod_id
-    dbapi.create(prod)
-
     items = {}
-    inventories = {}
     allstores = {x.almacen_id: x for x in dbapi.search(Store)}
-
-    conts = {}
-    for bod in dbapi.search(Bodega):
-        if bod.id == -1:
-            continue
-        contenido = ProdCount()
-        contenido.bodega_id = bod.id
-        contenido.prod_id = itemgroup.prod_id
-        contenido.cant = 0
-        contenido.precio = 0
-        contenido.precio2 = 0
-        cid = dbapi.create(contenido)
-        conts[bod.id] = cid
 
     for item in content['items']:
         prices = item['prices']
@@ -248,18 +227,6 @@ def create_full_item_from_dict(dbapi, content):
         item_id = dbapi.create(i)
         items[i.unit] = i
 
-        # create bodega
-        invs = {}
-        for bod in dbapi.search(Bodega):
-            if bod.id == -1:
-                continue
-            inv = Inventory()
-            inv.item_id = item_id
-            inv.bodega_id = bod.id
-            inv.cant = 0
-            inv_id = dbapi.create(inv)
-            invs[bod.id] = inv
-
         # create prices
         for alm_id, p in prices.items():
             price = PriceList()
@@ -270,7 +237,5 @@ def create_full_item_from_dict(dbapi, content):
             price.prod_id = i.prod_id
             price.unidad = i.unit
             price.almacen_id = int(alm_id)
-            bodid = allstores[price.almacen_id].bodega_id
-            price.upi = conts[bodid]
             price.multiplicador = i.multiplier
             dbapi.create(price)

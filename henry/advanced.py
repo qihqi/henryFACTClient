@@ -6,8 +6,9 @@ from sqlalchemy import desc
 
 from henry.accounting.acct_schema import ObjType, NComment
 from henry.base.session_manager import DBContext
-from henry.product.dao import ProdItemGroup, ProdItem, PriceList, Category, Bodega, Store, Product
-from henry.product.schema import NProducto, NContenido, NPriceList
+from henry.product.dao import ProdItemGroup, ProdItem, PriceList, Category, Bodega, Store
+from henry.product.schema import NPriceList
+from henry.schema.legacy import NContenido, NProducto
 from henry.invoice.coreschema import NNota
 from henry.dao.document import Item
 from henry.invoice.dao import PaymentFormat

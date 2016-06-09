@@ -4,7 +4,7 @@ from collections import defaultdict
 from decimal import Decimal
 
 from henry.config import sessionmanager, prodapi
-from henry.schema.legacy import NOrdenDespacho, NItemDespacho, NIngreso, NIngresoItem, NTransform
+from henry.schema.legacy import NOrdenDespacho, NItemDespacho, NIngreso, NIngresoItem, NTransform, NContenido
 from henry.product.schema import NContenido
 
 child_price_map = {}

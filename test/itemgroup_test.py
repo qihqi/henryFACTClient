@@ -1,15 +1,13 @@
 import unittest
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from henry.base.dbapi import DBApiGeneric
 from henry.base.serialization import json_dumps
 from henry.base.session_manager import SessionManager
-
+from henry.product.dao import PriceList, ProdItemGroup, ProdItem, Bodega, Store
 from henry.product.web import validate_full_item, create_full_item_from_dict
-from henry.product.coreapi import create_full_item_from_dict
-from henry.product.dao import Inventory, PriceList, ProdItemGroup, ProdItem, Bodega, Store
 from henry.schema.base import Base
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 
 class ItemApiTest(unittest.TestCase):
@@ -96,9 +94,6 @@ class ItemApiTest(unittest.TestCase):
             self.assertEquals(4, len(self.dbapi.search(PriceList)))
             self.assertEquals(1, len(self.dbapi.search(ProdItemGroup)))
             self.assertEquals(2, len(self.dbapi.search(ProdItem)))
-            self.assertEquals(4, len(self.dbapi.search(Inventory)))
-
-            self.assertEquals(2, len(self.dbapi.search(PriceList, upi=1)))
 
             all_items = self.dbapi.search(ProdItem)
             ids = set(x.itemgroupid for x in all_items)
