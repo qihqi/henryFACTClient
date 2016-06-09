@@ -11,11 +11,8 @@ from henry.product.schema import NInventoryRevision, NInventoryRevisionItem
 
 from .schema import (NBodega, NCategory, NPriceListLabel,
                      NPriceList, NItemGroup, NItem, NStore)
-from henry.schema.legacy import NContenido, NProducto
 
 Bodega = dbmix(NBodega)
-Product = dbmix(NProducto)
-ProdCount = dbmix(NContenido)
 
 Category = dbmix(NCategory)
 PriceListLabel = dbmix(NPriceListLabel)
