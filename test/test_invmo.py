@@ -14,7 +14,6 @@ from sqlalchemy.orm import sessionmaker
 
 
 class ProductApiTest(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         engine = create_engine('sqlite:///:memory:', echo=False)
@@ -27,11 +26,10 @@ class ProductApiTest(unittest.TestCase):
         cls.inventoryapi = InventoryApi(filemanager)
         cls.invmomanager = InvMovementManager(cls.dbapi, filemanager, cls.inventoryapi)
 
-
     def test_create(self):
         with self.sessionmanager:
             meta = InvMovementMeta()
-            meta.timestamp = datetime.datetime(2011,1,1,1,1)
+            meta.timestamp = datetime.datetime(2011, 1, 1, 1, 1)
             meta.inventory_codename = 'boya'
             meta.inventory_docid = 1
             meta.transtype = 'sale'
@@ -41,6 +39,7 @@ class ProductApiTest(unittest.TestCase):
             inv = InvMovementFull(meta=meta, items=items)
             self.invmomanager.create(inv)
             self.assertEquals(1, self.inventoryapi.get_current_quantity(1)[2])
+
 
 if __name__ == '__main__':
     unittest.main()

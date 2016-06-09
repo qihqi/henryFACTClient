@@ -57,19 +57,15 @@ class ForwardRequestProcessor:
         self.cookies = None
         self.codename = codename
 
-    def forward_request(self, work):
-        print 'work', work['work'], type(work['work'])
-        work = work['work']
-        work = WorkObject.deserialize(json.loads(work))
-        desturl = '/import/client_sale'
+    def exec_work(self, work):
         if work.objtype == WorkObject.INV:
             if work.action == WorkObject.CREATE:
-                work.content = InvMetadata.deserialize(work.content)
                 data = self.invmeta_to_sale(work.content)
                 action = 'POST'
             elif work.action == WorkObject.DELETE:
                 data = Sale(seller_inv_uid=work.objid, seller_codename=self.codename)
                 action = 'DELETE'
+            desturl = '/import/client_sale'
         else:
             with self.dbapi.session:
                 data = self.make_inv_movement(work)
@@ -79,8 +75,22 @@ class ForwardRequestProcessor:
         r = requests.request(action, url,
                              auth=self.auth,
                              data=json_dumps(data))
-        print 'query', json_dumps(data)
-        print 'STATUS CODE ', r.status_code
+        return r
+
+    def forward_request(self, work):
+        print 'work', work['work'], type(work['work'])
+        work = work['work']
+        work = WorkObject.deserialize(json.loads(work))
+        if work.objtype == WorkObject.INV:
+            work.content = InvMetadata.deserialize(work.content)
+        elif work.objtype == WorkObject.INV_TRANS:
+            work.content = Invoice.deserialize(work.content)
+        elif work.objtype == WorkObject.TRANS:
+            work.content = Transferencia.deserialize(work.content)
+        else:
+            print 'ERROR'
+            return -1 # RETRY
+        r = self.exec_work(work)
         if r.status_code == 200:
             return -2  # OK
         else:
@@ -88,8 +98,8 @@ class ForwardRequestProcessor:
 
     def make_inv_movement(self, work):
         invmeta = InvMovementMeta()
+        doc = work.content
         if work.objtype == WorkObject.INV_TRANS:
-            doc = Invoice.deserialize(work.content)
             invmeta.timestamp = doc.meta.timestamp
             invmeta.value_usd = Decimal(doc.meta.subtotal - (doc.meta.discount or 0)) / 100
             invmeta.inventory_docid = doc.meta.uid
@@ -97,7 +107,6 @@ class ForwardRequestProcessor:
             invmeta.origin = doc.meta.bodega_id
             invmeta.dest = -1
         else:
-            doc = Transferencia.deserialize(work.content)
             invmeta.timestamp = doc.meta.timestamp
             invmeta.value_usd = doc.meta.value
             invmeta.inventory_docid = doc.meta.uid
@@ -123,7 +132,7 @@ class ForwardRequestProcessor:
         sale.seller_inv_uid = meta.uid
         sale.invoice_code = meta.codigo
         sale.pretax_amount_usd = Decimal(meta.subtotal - (meta.discount or 0)) / 100
-        sale.tax_usd = Decimal(meta.tax) / 100
+        sale.tax_usd = Decimal(meta.tax or 0) / 100
         sale.status = Status.NEW
         sale.user_id = meta.user
         sale.payment_format = meta.payment_format

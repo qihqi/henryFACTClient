@@ -604,7 +604,8 @@ var PurchaseItemList = React.createClass({
             <tr>
                 <td>x.item.uid</td>
                 <td>x.prod_detail.name_zh</td>
-                <td>x.item.color</td>
+                <td>x.prod_detail.name_es</td>
+                <td>x.prod_detail.selling_id</td>
                 <td>x.item.quantity</td>
                 <td>x.item.price_rmb</td>
                 <td>total</td>
@@ -613,6 +614,7 @@ var PurchaseItemList = React.createClass({
                 return <tr>
                     <td>{x.item.uid}</td>
                     <td>{x.prod_detail.name_zh}</td>
+                    <td>{x.prod_detail.name_es}</td>
                     <td>{x.prod_detail.selling_id}</td>
                     <td>{x.item.quantity}</td>
                     <td>{Math.round(x.item.price_rmb * 1000) / 1000  }</td>
