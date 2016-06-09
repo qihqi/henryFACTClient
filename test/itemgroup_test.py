@@ -3,9 +3,8 @@ import unittest
 from henry.base.dbapi import DBApiGeneric
 from henry.base.serialization import json_dumps
 from henry.base.session_manager import SessionManager
-from henry.product.dao import PriceList, ProdItemGroup, ProdItem, Bodega, Store
 from henry.product.web import validate_full_item, create_full_item_from_dict
-from henry.product.dao import Inventory, PriceList, ProdItemGroup, ProdItem, Bodega, Store
+from henry.product.dao import PriceList, ProdItemGroup, ProdItem, Bodega, Store
 from henry.schema.base import Base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

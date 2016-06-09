@@ -1,5 +1,4 @@
 import unittest
-import sys
 from henry.base.fileservice import FileService
 from henry.dao.document import DocumentApi, PedidoApi
 from henry.invoice.dao import Invoice

@@ -8,7 +8,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from henry.base.dbapi import DBApiGeneric
-from henry.dao.transaction import TransactionApi, Transaction
 from henry.dao.document import DocumentApi, Status, Item
 from henry.inventory.dao import Transferencia, TransMetadata, TransType
 from henry.invoice.dao import InvMetadata, Invoice
