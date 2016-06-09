@@ -135,4 +135,11 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager):
         inv_movement = invmomanager.create(inv_movement)
         return {'created': inv_movement.meta.uid}
 
+    @app.get(prefix + '/inv_movement')
+    @dbcontext
+    def last_inv_movements():
+        today = datetime.date.today()
+        movements = dbapi.search(InvMovementMeta, **{'timestamp-gte': today})
+        return json_dumps({'result': movements})
+
     return app
