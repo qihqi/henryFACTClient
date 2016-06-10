@@ -129,8 +129,10 @@ class Invoice(MetaItemSet):
     def items_to_transaction(self, dbapi):
         for item in self.items:
             proditem = dbapi.getone(ProdItem, prod_id=item.prod.prod_id)
+            # TODO: deprecate use of upi at all
+            inv_id = item.prod.upi or self.meta.bodega_id
             yield InventoryMovement(
-                from_inv_id=self.meta.bodega_id,
+                from_inv_id=inv_id,
                 to_inv_id=-1,
                 quantity=(item.cant * item.prod.multiplicador),
                 prod_id=get_real_prod_id(item.prod.prod_id),
