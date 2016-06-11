@@ -5,7 +5,7 @@ from decimal import Decimal
 from bottle import Bottle, request
 from henry.base.common import parse_start_end_date
 from henry.base.dbapi_rest import bind_dbapi_rest
-from henry.base.serialization import json_dumps
+from henry.base.serialization import json_dumps, parse_iso_date
 from henry.base.session_manager import DBContext
 from henry.dao.document import Status
 from henry.product.dao import ProdItemGroup
@@ -135,11 +135,13 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager):
         inv_movement = invmomanager.create(inv_movement)
         return {'created': inv_movement.meta.uid}
 
-    @app.get(prefix + '/inv_movement')
+    @app.get(prefix + '/inv_movement/<day>')
     @dbcontext
-    def last_inv_movements():
-        today = datetime.date.today()
-        movements = dbapi.search(InvMovementMeta, **{'timestamp-gte': today})
-        return json_dumps({'result': movements})
+    def last_inv_movements(day):
+        today = parse_iso_date(day)
+        tomorrow = today + datetime.timedelta(days=1)
+        print today, tomorrow
+        movements = list(dbapi.search(InvMovementMeta, **{'timestamp-gte': today, 'timestamp-lte':tomorrow}))
+        return json_dumps({'results': movements})
 
     return app

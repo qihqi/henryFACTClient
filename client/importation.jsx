@@ -639,3 +639,39 @@ var PurchaseList = React.createClass({
         </tbody></table>;
     }
 });
+
+var InvMovementList = React.createClass({
+    render: function() {
+        return <table>
+            {this.props.items.map( (x) => {
+                return <tr>
+                    <td>{x.inventory_codename}</td>
+                    <td>{x.inventory_docid}</td>
+                    <td>{x.status}</td>
+                    <td>{x.origin}</td>
+                    <td>{x.dest}</td>
+                    <td>{x.timestamp}</td>
+                </tr>;
+            })}
+        </table>;
+    }
+});
+
+export var InvMovementListFull = React.createClass({
+    fetchData: function() {
+        $.ajax({
+            url: '/import/inv_movement/' + this.props.params.date,
+            success: (result) => {
+                result = JSON.parse(result);
+                this.setState({'items': result.results});
+            }
+        });
+    },
+    getInitialState: function() {
+        this.fetchData();
+        return {'items': []};
+    },
+    render: function() {
+        return <InvMovementList items={this.state.items} />
+    }
+});
