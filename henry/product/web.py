@@ -4,6 +4,7 @@ from decimal import Decimal
 import barcode
 import os
 from bottle import Bottle, request, redirect
+from henry.base.common import parse_start_end_date
 from henry.base.dbapi_rest import bind_dbapi_rest
 from henry.base.serialization import json_dumps
 from henry.product.dao import ProdItemGroup, Store, Bodega, ProdItem, PriceList
@@ -119,6 +120,11 @@ def make_wsgi_api(prefix, sessionmanager, dbcontext, auth_decorator, dbapi, inve
             'quantity': current_record
         })
 
+    @app.get(prefix + '/itemgroup/<uid>/transaction')
+    @dbcontext
+    def get_transactions_of_item_group(uid):
+        start, end = parse_start_end_date(request.query)
+        return json_dumps({'results': list(inventoryapi.list_transactions(uid, start, end))})
 
     bind_dbapi_rest(prefix + '/pricelist', dbapi, PriceList, app)
     bind_dbapi_rest(prefix + '/itemgroup', dbapi, ProdItemGroup, app)
