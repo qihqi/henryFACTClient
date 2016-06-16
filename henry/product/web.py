@@ -124,6 +124,8 @@ def make_wsgi_api(prefix, sessionmanager, dbcontext, auth_decorator, dbapi, inve
     @dbcontext
     def get_transactions_of_item_group(uid):
         start, end = parse_start_end_date(request.query)
+        start = start.date()
+        end = end.date()
         return json_dumps({'results': list(inventoryapi.list_transactions(uid, start, end))})
 
     bind_dbapi_rest(prefix + '/pricelist', dbapi, PriceList, app)

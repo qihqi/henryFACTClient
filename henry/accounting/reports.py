@@ -9,7 +9,7 @@ from sqlalchemy import func
 from henry.accounting.acct_schema import NPayment, NCheck, NSpent
 from henry.accounting.dao import Spent, AccountTransaction, Image
 from henry.base.serialization import SerializableMixin
-from henry.product.dao import Store
+from henry.product.dao import Store, get_real_prod_id
 from henry.invoice.coreschema import NNota
 from henry.users.schema import NCliente
 from henry.base.dbapi import decode_str
@@ -256,3 +256,63 @@ def get_transactions(dbapi, paymentapi, invapi, imageserver, start_date, end_dat
         'credit': sales_credit,
         'payment_credit': payments_credit,
     }
+
+
+class SaleReport(SerializableMixin):
+    _name = ('menor', 'mayor', 'best_sellers', 'menor_inv_count', 'unique_vistors')
+
+    def __init__(self):
+        self.menor = defaultdict(Decimal)
+        self.mayor = defaultdict(Decimal)
+        self.menor_inv_count = defaultdict(int)
+        self.unique_visitors = 0
+        self.best_sellers = []
+
+class ProdSale(SerializableMixin):
+    _name = ('prod', 'cant', 'value')
+    def __init__(self):
+        self.prod_id = None
+        self.prod = None
+        self.cant = 0
+        self.value = 0
+
+
+def get_sale_report(invapi, start, end):
+    invs = invapi.search_metadata_by_date_range(start, end, status=Status.COMITTED)
+    report = SaleReport()
+    prod_sale_map = defaultdict(ProdSale)
+    visitors = set()
+    for inv in invs:
+        datestr = inv.timestamp.date().isoformat()
+        if inv.almacen_id == 2:
+            report.mayor[datestr] += Decimal(inv.subtotal - (inv.discount or 0)) / 100
+        if inv.almacen_id in (1, 3):
+            report.menor[datestr] += Decimal(inv.subtotal - (inv.discount or 0)) / 100
+            report.menor_inv_count[datestr] += 1
+        visitors.add(inv.client.codigo)
+
+        inv_full = invapi.get_doc_from_file(inv.items_location)
+        for item in inv_full.items:
+            cod = get_real_prod_id(item.prod.prod_id)
+            prod_sale_map[cod].prod = item.prod.nombre
+            prod_sale_map[cod].cant += item.cant * (item.prod.multiplicador or 1)
+            prod_sale_map[cod].value += item.cant * Decimal(item.prod.precio2 or item.prod.precio1) / 100
+
+    report.unique_visitors = len(visitors)
+    best_by_cant = sorted(prod_sale_map.items(), key=lambda x: x[1].cant)
+    if len(best_by_cant) > 20:
+        best_by_cant = best_by_cant[-20:]
+    best_by_val = sorted(prod_sale_map.items(), key=lambda x: x[1].value)
+    if len(best_by_val) > 20:
+        best_by_val= best_by_val[-20:]
+
+    report.best_sellers = list(set(best_by_val) | set(best_by_cant))
+    return report
+
+
+
+
+
+
+
+

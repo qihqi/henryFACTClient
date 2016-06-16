@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sale Report</title>
+</head>
+<body>
+    <h2>Ventas</h2>
+    <table>
+        <tr>
+            <th>Fecha 日期</th>
+            <th>Venta por Menor 零售</th>
+            <th>Venta por Mayor 批发</th>
+            <th>No. por Menor 零售发票数</th>
+        </tr>
+        {% for row in report.menor | dictsort %}
+        <tr>
+            <td>row</td>
+            <td>{{report.menor[row]}}</td>
+            <td>{{report.mayor[row]}}</td>
+            <td>{{report.menor_inv_count[row]}}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Mejores vendidos</h2>
+
+    <table>
+        <tr>
+            <th>Codigo </th>
+            <th>Nombre</th>
+            <th>Venta cantidad</th>
+            <th>Venta Valor</th>
+        </tr>
+        {% for cod, prod in report.best_sellers %}
+        <tr>
+            <td>{{cod}}</td>
+            <td>{{prod.prod}}<td>
+            <td>{{prod.cant}}</td>
+            <td>{{prod.value}}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+
+</body>
+</html>

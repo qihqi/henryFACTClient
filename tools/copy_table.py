@@ -6,16 +6,24 @@ from henry.importation.dao import *
 
 source = 'mysql+mysqldb://root:wolverineaccess@localhost/import?charset=utf8'
 dest = 'mysql+mysqldb://root:wolverineaccess@localhost/henry_backup?charset=utf8'
+to_copy = [PurchaseItem]
+
+def copy_table(table, dbsource, dbdest):
+    for obj in dbsource.search(table):
+        try:
+            dbdest.create(obj)
+        except:
+            print 'exception in creating', json_dumps(obj.serialize())
+
 
 def main():
     dbsource = DBApiGeneric(SessionManager(sessionmaker(bind=create_engine(source, echo=False))))
     dbdest = DBApiGeneric(SessionManager(sessionmaker(bind=create_engine(dest, echo=False))))
-    to_copy = PurchaseItem
 
     with dbsource.session:
         with dbdest.session:
-            for obj in dbsource.search(to_copy):
-                dbdest.create(obj)
+            for x in to_copy
+                copy_table(x, dbsource, dbdest)
 
 def main2():
     # delete purchases

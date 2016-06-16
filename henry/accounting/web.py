@@ -22,7 +22,7 @@ from henry.invoice.coreschema import NNota
 from .acct_schema import ObjType, NComment, NPayment
 from henry.users.dao import User
 from .reports import (generate_daily_report, split_records_binary, get_transactions, payment_report,
-                      get_notas_with_clients, split_records, get_turned_in_cash)
+                      get_notas_with_clients, split_records, get_turned_in_cash, get_sale_report)
 from .acct_schema import NCheck, NSpent, NAccountStat
 from .dao import (Todo, Check, Deposit, Payment, Bank,
                   DepositAccount, AccountStat, Spent, AccountTransaction, Comment)
@@ -229,6 +229,13 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
         dbapi.create(c)
         dbapi.db_session.commit()
         return {'comment': c.uid}
+
+    @w.get('/app/api/sale_report_monthly')
+    @dbcontext
+    def sale_report_monthly():
+        start, end = parse_start_end_date(request.query)
+        report = get_sale_report(invapi, start, end)
+        return json_dumps(report)
 
     return w
 
@@ -821,5 +828,13 @@ def make_wsgi_app(dbcontext, imgserver,
         all_comments = dbapi.search(Comment)
         all_comments = sorted(all_comments, key=attrgetter('timestamp'), reverse=True)
         return temp.render(comments=all_comments)
+
+    @w.get('/app/sale_report_monthly')
+    @dbcontext
+    def sale_report_monthly():
+        start, end = parse_start_end_date(request.query)
+        report = get_sale_report(invapi, start, end)
+        temp = jinja_env.get_template('sale_report_monthly.html')
+        return temp.render(report=report)
 
     return w
