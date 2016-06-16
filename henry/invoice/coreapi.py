@@ -47,13 +47,14 @@ def fix_inv_by_options(dbapi, inv, options):
 
         # this is an effort so that the prod coming from
         # invoice is incomplete. So it attempts so complete it with updated data
-        if getattr(item.prod, 'upi', None) is None:
-            alm_id = inv.meta.almacen_id
+        if getattr(item.prod, 'upi', None) is None or getattr(item.prod, 'almacen_id', None) is None:
+            alm_id = item.prod.almacen_id or inv.meta.almacen_id
             if alm_id != 2:
                 alm_id = 1
             print item.prod.prod_id, alm_id
             newprod = dbapi.search(PriceList, prod_id=item.prod.prod_id,
                                    almacen_id=alm_id)[0]
+            item.prod.almacen_id = alm_id
             item.prod.upi = newprod.upi
             item.prod.multiplicador = newprod.multiplicador
 
