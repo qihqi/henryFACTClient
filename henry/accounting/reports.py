@@ -277,7 +277,7 @@ class ProdSale(SerializableMixin):
         self.value = 0
 
 
-def get_sale_report(invapi, start, end):
+def get_sale_report_full(invapi, start, end):
     invs = invapi.search_metadata_by_date_range(start, end, status=Status.COMITTED)
     report = SaleReport()
     prod_sale_map = defaultdict(ProdSale)
@@ -298,18 +298,22 @@ def get_sale_report(invapi, start, end):
             prod_sale_map[cod].cant += item.cant * (item.prod.multiplicador or 1)
             prod_sale_map[cod].value += item.cant * Decimal(item.prod.precio2 or item.prod.precio1) / 100
 
+    report.best_sellers = prod_sale_map.items()
     report.unique_visitors = len(visitors)
-    best_by_cant = sorted(prod_sale_map.items(), key=lambda x: x[1].cant)
+    return report
+
+
+def get_sale_report(invapi, start, end):
+    report = get_sale_report_full(invapi, start, end)
+    best_by_cant = sorted(report.best_sellers.items(), key=lambda x: x[1].cant)
     if len(best_by_cant) > 20:
         best_by_cant = best_by_cant[-20:]
-    best_by_val = sorted(prod_sale_map.items(), key=lambda x: x[1].value)
+    best_by_val = sorted(report.items(), key=lambda x: x[1].value)
     if len(best_by_val) > 20:
         best_by_val= best_by_val[-20:]
 
     report.best_sellers = list(set(best_by_val) | set(best_by_cant))
     return report
-
-
 
 
 
