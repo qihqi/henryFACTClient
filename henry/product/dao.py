@@ -7,16 +7,18 @@ import os
 from henry.base.dbapi import dbmix
 from henry.base.serialization import (json_dumps, parse_iso_datetime, parse_iso_date,
     TypedSerializableMixin)
-from henry.product.schema import NInventoryRevision, NInventoryRevisionItem
-
+from .schema import NInventoryRevision, NInventoryRevisionItem
 from .schema import (NBodega, NCategory, NPriceListLabel,
-                     NPriceList, NItemGroup, NItem, NStore)
+                     NPriceList, NItemGroup, NItem, NStore, NProdTag, NProdTagContent)
 
 Bodega = dbmix(NBodega)
 
 Category = dbmix(NCategory)
 PriceListLabel = dbmix(NPriceListLabel)
 Store = dbmix(NStore)
+
+ProdTag = dbmix(NProdTag)
+ProdTagContent = dbmix(NProdTagContent)
 
 def convert_decimal(x, default=None):
     return default if x is None else Decimal(x)

@@ -7,7 +7,7 @@ from bottle import Bottle, request, redirect
 from henry.base.common import parse_start_end_date
 from henry.base.dbapi_rest import bind_dbapi_rest
 from henry.base.serialization import json_dumps
-from henry.product.dao import ProdItemGroup, Store, Bodega, ProdItem, PriceList
+from henry.product.dao import ProdItemGroup, Store, Bodega, ProdItem, PriceList, ProdTag, ProdTagContent
 
 
 def validate_full_item(content, dbapi):
@@ -134,6 +134,7 @@ def make_wsgi_api(prefix, sessionmanager, dbcontext, auth_decorator, dbapi, inve
     return app
 
 
+
 def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles):
     w = Bottle()
 
@@ -152,6 +153,22 @@ def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles):
         return temp.render(
             prods=prods, stores=dbapi.search(Store), prefix=prefix,
             almacen_name=dbapi.get(almacen_id, Store).nombre)
+
+    @w.get('/app/tags')
+    @dbcontext
+    def get_tags():
+        tags = dbapi.search(ProdTag)
+        temp = jinja_env.get_template('prod/tags.html')
+        return temp.render(tags=tags)
+
+    @w.get('/app/tags/<tag>')
+    @dbcontext
+    def get_tags(tag):
+        tags = dbapi.search(ProdTagContent, tag=tag)
+        for t in tags:
+            t.prod = dbapi.get(t.itemgroup_id, ProdItemGroup)
+        temp = jinja_env.get_template('prod/tags_content.html')
+        return temp.render(tags=tags)
 
     @w.get('/app/barcode_form')
     @dbcontext

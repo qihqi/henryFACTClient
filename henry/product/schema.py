@@ -71,10 +71,17 @@ Index('ix_lista_de_precio_2', NPriceList.almacen_id, NPriceList.prod_id)
 
 
 class NProdTag(Base):
-    __tablename__ = 'tags'
-    uid = Column(Integer, primary_key=True, autoincrement=True)
+    __tablename__ = 'product_tags'
+    tag = Column(String(30), index=True, primary_key=True)
+    description = Column(String(100))
+    created_by = Column(String(20))
+
+
+class NProdTagContent(Base):
+    __tablename__ = 'product_tag_contents'
+    uid = Column(Integer, primary_key=True)
     tag = Column(String(30), index=True)
-    prod_id = Column(String(20), index=True)
+    itemgroup_id = Column(Integer, index=True)
 
 
 class NInventoryRevision(Base):

@@ -37,7 +37,8 @@ def abs_string(string):
 
 def validate_uid_and_ruc(uid):
     if len(uid) == 13:
-        uid = uid[:10]
+        # uid = uid[:10]
+        return True
     if len(uid) != 10:
         return False
     first_digits = int(uid[:2])
