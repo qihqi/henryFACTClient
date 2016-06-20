@@ -834,6 +834,7 @@ def make_wsgi_app(dbcontext, imgserver,
     def sale_report_monthly():
         start, end = parse_start_end_date(request.query)
         report = get_sale_report(invapi, start, end)
+        report.best_sellers = sorted(report.best_sellers, key=lambda x: x[1].value, reverse=True)
         temp = jinja_env.get_template('sale_report_monthly.html')
         return temp.render(report=report)
 

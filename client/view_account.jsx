@@ -152,7 +152,7 @@ var InputDeposit = React.createClass({
             <p>Valor:<input ref='value'  valueLink={this.linkState('value')} placeholder="valor"/></p>
             <p>Cuenta: <select ref='account' valueLink={this.linkState('to_bank_account')}> 
                 {this.props.account_options.map(
-                    (x)=><option key={x.uid} value={x.uid}>{x.name}</option>)}
+                    (x)=><option key={x.id} value={x.id}>{x.name}</option>)}
             </select></p>
             <p><input type="submit" value="Guardar"/></p>
         </form>

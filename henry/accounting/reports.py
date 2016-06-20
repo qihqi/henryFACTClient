@@ -305,10 +305,10 @@ def get_sale_report_full(invapi, start, end):
 
 def get_sale_report(invapi, start, end):
     report = get_sale_report_full(invapi, start, end)
-    best_by_cant = sorted(report.best_sellers.items(), key=lambda x: x[1].cant)
+    best_by_cant = sorted(report.best_sellers, key=lambda x: x[1].cant)
     if len(best_by_cant) > 20:
         best_by_cant = best_by_cant[-20:]
-    best_by_val = sorted(report.items(), key=lambda x: x[1].value)
+    best_by_val = sorted(report.best_sellers, key=lambda x: x[1].value)
     if len(best_by_val) > 20:
         best_by_val= best_by_val[-20:]
 

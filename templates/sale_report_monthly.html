@@ -13,7 +13,7 @@
             <th>Venta por Mayor 批发</th>
             <th>No. por Menor 零售发票数</th>
         </tr>
-        {% for row in report.menor | dictsort %}
+        {% for row, val in report.menor | dictsort %}
         <tr>
             <td>row</td>
             <td>{{report.menor[row]}}</td>
