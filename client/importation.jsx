@@ -642,15 +642,17 @@ var PurchaseList = React.createClass({
 
 var InvMovementList = React.createClass({
     render: function() {
-        return <table>
+        return <table className="table">
             {this.props.items.map( (x) => {
                 return <tr>
                     <td>{x.inventory_codename}</td>
                     <td>{x.inventory_docid}</td>
+                    <td>{x.timestamp}</td>
                     <td>{x.status}</td>
                     <td>{x.origin}</td>
                     <td>{x.dest}</td>
-                    <td>{x.timestamp}</td>
+                    <td>{x.trans_type}</td>
+                    <td>{x.value_usd}</td>
                 </tr>;
             })}
         </table>;
