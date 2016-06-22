@@ -124,3 +124,14 @@ def get_sales_by_date_and_user(dbapi, start_date, end_date):
         yield date, codename, user, (pretax or 0) + (tax or 0)
 
 Inventory = dbmix(NInventory)
+
+
+def get_or_create_inventory_id(dbapi, codename, external_id):
+    if external_id == -1:
+        return -1
+    inv = dbapi.getone(Inventory, entity_codename=codename, external_id=external_id)
+    if not inv:
+        largest_id = dbapi.db_session.query(func.max(NInventory.inventory_id)).first()[0] or 0
+        inv = Inventory(entity_codename=codename, external_id=external_id, inventory_id=largest_id+1)
+        dbapi.create(inv)
+    return inv.inventory_id

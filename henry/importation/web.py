@@ -8,15 +8,15 @@ from henry.base.dbapi_rest import bind_dbapi_rest
 from henry.base.serialization import json_dumps, parse_iso_date
 from henry.base.session_manager import DBContext
 from henry.dao.document import Status
-from henry.product.dao import ProdItemGroup
+from henry.product.dao import ProdItemGroup, InventoryMovement
 
 from .schema import NSale
 from .dao import (Purchase, PurchaseItem, UniversalProd, DeclaredGood,
                   get_purchase_full, Sale, Entity, InvMovementFull,
-                  InvMovementMeta, Inventory, get_sales_by_date_and_user)
+                  InvMovementMeta, Inventory, get_sales_by_date_and_user, get_or_create_inventory_id)
 
 
-def make_import_apis(prefix, auth_decorator, dbapi, invmomanager):
+def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
     app = Bottle()
     dbcontext = DBContext(dbapi.session)
 
@@ -106,17 +106,8 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager):
         raw_inv = request.body.read()
         inv_movement = InvMovementFull.deserialize(json.loads(raw_inv))
         meta = inv_movement.meta
-        # rewrite origin/dest
-        def get_or_create(codename, ext_uid):
-            if ext_uid == -1:
-                return -1
-            inv = dbapi.getone(Inventory, entity_codename=codename, external_id=ext_uid)
-            if not inv:
-                inv = Inventory(entity_codename=codename, external_id=ext_uid)
-                dbapi.create(inv)
-            return inv.uid
-        meta.origin = get_or_create(meta.inventory_codename, meta.origin)
-        meta.dest = get_or_create(meta.inventory_codename, meta.dest)
+        meta.origin = get_or_create_inventory_id(dbapi, meta.inventory_codename, meta.origin)
+        meta.dest = get_or_create_inventory_id(dbapi, meta.inventory_codename, meta.dest)
 
         if dbapi.search(InvMovementMeta,
                         inventory_codename=meta.inventory_codename,
@@ -143,5 +134,30 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager):
         print today, tomorrow
         movements = list(dbapi.search(InvMovementMeta, **{'timestamp-gte': today, 'timestamp-lte':tomorrow}))
         return json_dumps({'results': movements})
+
+    @app.post(prefix + '/raw_inv_movement')
+    @dbcontext
+    def post_raw_inv_movement():
+        raw_data = json.loads(request.body.read())
+        ig = ProdItemGroup.deserialize(raw_data[0])
+        trans = map(InventoryMovement.deserialize, raw_data[1])
+        codename = raw_data[2]
+
+        if dbapi.getone(ProdItemGroup, prod_id=ig.prod_id) is None:
+            if dbapi.get(ig.uid, ProdItemGroup) is not None:
+                #  prod_id does not exist but uid is used so we cannot create
+                #  using the same uid
+                ig.uid = None
+            dbapi.create(ig)
+
+        for i in trans:
+            i.itemgroup_id = ig.uid
+            if dbapi.getone(Inventory, entity_codename=codename, external_id=i.from_inv_id) is None:
+                # create new Inventory if none
+                i.from_inv_id = get_or_create_inventory_id(dbapi, codename, i.from_inv_id)
+                i.to_inv_id = get_or_create_inventory_id(dbapi, codename, i.to_inv_id)
+            inventoryapi.save(i)
+
+
 
     return app

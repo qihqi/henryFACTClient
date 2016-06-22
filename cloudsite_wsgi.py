@@ -16,7 +16,7 @@ dbcontext = DBContext(sessionmanager)
 fileservice = FileService(INV_MOVEMENT_PATH)
 inventoryapi = InventoryApi(FileService(TRANSACTION_PATH))
 invmomanager = InvMovementManager(dbapi, fileservice, inventoryapi)
-api = make_import_apis('/import', auth_decorator, dbapi, invmomanager)
+api = make_import_apis('/import', auth_decorator, dbapi, invmomanager, inventoryapi)
 
 
 if USE_ACCOUNTING_APP:

@@ -62,6 +62,7 @@ class NInventory(Base):
     uid = Column(Integer, primary_key=True, autoincrement=True)
     entity_codename = Column(String(10))
     external_id = Column(Integer)
+    inventory_id = Column(Integer)
     name = Column(String(20))
 
 
