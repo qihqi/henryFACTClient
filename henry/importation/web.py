@@ -9,6 +9,7 @@ from henry.base.serialization import json_dumps, parse_iso_date
 from henry.base.session_manager import DBContext
 from henry.dao.document import Status
 from henry.product.dao import ProdItemGroup, InventoryMovement
+from sqlalchemy import func
 
 from .schema import NSale
 from .dao import (Purchase, PurchaseItem, UniversalProd, DeclaredGood,
@@ -78,6 +79,10 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
     @auth_decorator
     def post_sale():
         content = Sale.deserialize(json.loads(request.body.read()))
+        if list(dbapi.search(
+                Sale, seller_codename=content.seller_codename,
+                seller_inv_uid=content.seller_inv_uid)):
+            return {'status': 'failed', 'reason': 'sale with the id already exists'}
         dbapi.create(content)
         return {'status': 'success'}
 
@@ -109,10 +114,10 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
         meta.origin = get_or_create_inventory_id(dbapi, meta.inventory_codename, meta.origin)
         meta.dest = get_or_create_inventory_id(dbapi, meta.inventory_codename, meta.dest)
 
-        if dbapi.search(InvMovementMeta,
+        if list(dbapi.search(InvMovementMeta,
                         inventory_codename=meta.inventory_codename,
                         inventory_docid=meta.inventory_docid,
-                        trans_type=meta.trans_type):
+                        trans_type=meta.trans_type)):
             #already exists
             return {'created': 0, 'reason': 'already exists'}
         for igcant in inv_movement.items:
@@ -135,7 +140,17 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
         movements = list(dbapi.search(InvMovementMeta, **{'timestamp-gte': today, 'timestamp-lte':tomorrow}))
         return json_dumps({'results': movements})
 
-    @app.post(prefix + '/raw_inv_movement')
+    @app.get(prefix + '/sales_report')
+    @dbcontext
+    def get_sales_report():
+        start, end = parse_start_end_date(request.query)
+        sales_by_date = list(dbapi.db_session.query(
+                func.date(NSale.timestamp), func.sum(NSale.pretax_amount_usd)).filter(
+                NSale.timestamp >= start, NSale.timestamp <= end).group_by(func.date(NSale.timestamp)))
+        return {'result': sales_by_date}
+
+
+    # @app.post(prefix + '/raw_inv_movement')
     @dbcontext
     def post_raw_inv_movement():
         raw_data = json.loads(request.body.read())
@@ -156,6 +171,7 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
                 # create new Inventory if none
                 i.from_inv_id = get_or_create_inventory_id(dbapi, codename, i.from_inv_id)
                 i.to_inv_id = get_or_create_inventory_id(dbapi, codename, i.to_inv_id)
+                i.reference_id = codename + (i.reference_id or '')
             inventoryapi.save(i)
 
 

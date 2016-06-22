@@ -1,6 +1,9 @@
 import json
 from urlparse import urljoin
 from decimal import Decimal
+
+import datetime
+
 import requests
 
 from henry.base.serialization import json_dumps, SerializableMixin
@@ -82,7 +85,10 @@ class ForwardRequestProcessor:
         work = work['work']
         work = WorkObject.deserialize(json.loads(work))
         if work.objtype == WorkObject.INV:
-            work.content = InvMetadata.deserialize(work.content)
+            if work.action == WorkObject.DELETE:
+                work.content = InvMovementMeta(uid=work.objid)
+            else:
+                work.content = InvMetadata.deserialize(work.content)
         elif work.objtype == WorkObject.INV_TRANS:
             work.content = Invoice.deserialize(work.content)
         elif work.objtype == WorkObject.TRANS:
@@ -110,7 +116,6 @@ class ForwardRequestProcessor:
             invmeta.timestamp = doc.meta.timestamp
             invmeta.value_usd = doc.meta.value
             invmeta.inventory_docid = doc.meta.uid
-            invmeta.doc_type = doc.doc_type
             invmeta.origin = doc.meta.origin
             invmeta.dest = doc.meta.dest
             invmeta.trans_type = transtype_to_invtype(doc.meta.trans_type)
@@ -118,7 +123,8 @@ class ForwardRequestProcessor:
         items = []
         if work.action == WorkObject.DELETE:
             invmeta.origin, invmeta.dest = invmeta.dest, invmeta.origin
-            invmeta.trans_type == InvMovementType.delete_type(invmeta.trans_type)
+            invmeta.trans_type = InvMovementType.delete_type(invmeta.trans_type)
+            invmeta.timestamp = datetime.datetime.now()  # record delete time which is different than invoice time
         for trans in doc.items_to_transaction(self.dbapi):
             itemgroup = self.dbapi.get(trans.itemgroup_id, ProdItemGroup)
             items.append(ItemGroupCant(cant=trans.quantity, itemgroup=itemgroup))

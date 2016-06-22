@@ -105,3 +105,5 @@ class NInvMovementMeta(Base):
 
     # unix filepath where the items is stored
     items_location = Column(String(200))
+Index('ix_inv_mov_2', NInvMovementMeta.inventory_codename,
+      NInvMovementMeta.inventory_docid, NInvMovementMeta.trans_type)
