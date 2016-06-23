@@ -39,6 +39,9 @@ def make_inv_api(dbapi, transapi, auth_decorator, actionlogged, forward_transact
         trans = transapi.get_doc(ingreso_id)
         transapi.commit(trans)
         if forward_transaction is not None:
+            if trans.meta.trans_type == TransType.EXTERNAL:
+                trans.meta.dest = 4  # policentro
+                trans.meta.trans_type = TransType.TRANSFER
             obj = doc_to_workobject(trans, action=WorkObject.CREATE, objtype=WorkObject.TRANS)
             forward_transaction(work=json_dumps(obj))
         return {'status': trans.meta.status}

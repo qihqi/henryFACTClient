@@ -174,6 +174,5 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
                 i.reference_id = codename + (i.reference_id or '')
             inventoryapi.save(i)
 
-
-
     return app
+
