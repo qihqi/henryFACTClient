@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from henry.base.dbapi import dbmix
 from henry.base.serialization import SerializableMixin, TypedSerializableMixin, parse_iso_datetime, json_dumps
+from henry.dao.document import Status
 from henry.product.dao import ProdItemGroup, InventoryMovement
 from sqlalchemy import func
 from .schema import (NUniversalProduct, NDeclaredGood, NPurchaseItem,
@@ -135,3 +136,28 @@ def get_or_create_inventory_id(dbapi, codename, external_id):
         inv = Inventory(entity_codename=codename, external_id=external_id, inventory_id=largest_id+1)
         dbapi.create(inv)
     return inv.inventory_id
+
+
+class SaleReportByDate(TypedSerializableMixin):
+    _fields = (
+        ('timestamp', parse_iso_datetime),
+        ('ruc', str),
+        ('sale_pretax_usd', Decimal),
+        ('tax_usd', Decimal),
+        ('count', int)
+    )
+
+def client_sale_report(dbapi, start, end):
+    sales_by_date = list(dbapi.db_session.query(
+            NSale.seller_ruc,
+            func.date(NSale.timestamp), func.sum(NSale.pretax_amount_usd),
+            func.sum(NSale.tax_usd), func.count(NSale.uid)).filter(
+            NSale.timestamp >= start, NSale.timestamp <= end,
+            NSale.status == Status.NEW, NSale.payment_format != 'None').group_by(
+            func.date(NSale.timestamp), NSale.seller_ruc))
+    for ruc, date, sale, tax, count in sales_by_date:
+        yield SaleReportByDate(
+            timestamp=date, ruc=ruc, sale_pretax_usd=sale,
+            tax_usd=tax, count=count
+        )
+

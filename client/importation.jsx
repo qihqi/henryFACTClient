@@ -665,7 +665,7 @@ export var InvMovementListFull = React.createClass({
             url: '/import/inv_movement/' + this.props.params.date,
             success: (result) => {
                 result = JSON.parse(result);
-                this.setState({'items': result.results});
+                this.setState({'items': result.result});
             }
         });
     },
@@ -675,5 +675,58 @@ export var InvMovementListFull = React.createClass({
     },
     render: function() {
         return <InvMovementList items={this.state.items} />
+    }
+});
+
+var SaleReportByDate= React.createClass({
+    render: function() {
+        return <table className="table">
+            <tr>
+                <td>Fecha</td>
+                <td>RUC</td>
+                <td>Venta</td>
+                <td>IVA</td>
+                <td>Numeros de factura</td>
+            </tr>;
+            {this.props.items.map( (x) => {
+                return <tr>
+                    <td>{x.timestamp}</td>
+                    <td>{x.ruc || ''}</td>
+                    <td>{x.sale_pretax_usd}</td>
+                    <td>{x.tax}</td>
+                    <td>{x.count}</td>
+                    <td>{Number(x.sale_pretax_usd) / x.count}</td>
+                </tr>;
+            })}
+        </table>;
+    }
+});
+
+export var SaleReportByDateFull = React.createClass({
+    fetchData: function(start, end) {
+        $.ajax({
+            url: `/import/sales_report?start=${start}&end=${end}`,
+            success: (result) => {
+                result = JSON.parse(result);
+                this.setState({'items': result.result});
+            }
+        });
+    },
+    getInitialState: function() {
+        console.log('getinitialstate');
+        return {'items': []};
+    },
+    fetchDataClick() {
+        var start = this.refs.start.value;
+        var end = this.refs.end.value;
+        this.fetchData(start, end);
+    },
+    render: function() {
+        return <div className="container">
+            Start: <input ref='start' />
+            End: <input ref='end' />
+            <button onClick={this.fetchDataClick} >Cargar</button>
+            <SaleReportByDate items={this.state.items} />
+        </div>
     }
 });

@@ -1,7 +1,7 @@
 import ReactDOM from 'react-dom';
 import React from 'react';
 import {Route, Router, Link, browserHistory} from 'react-router';
-import {InvMovementListFull, CreateInvBox, ShowProd, ShowPurchase, PurchaseContent} from './importation';
+import {SaleReportByDateFull, InvMovementListFull, CreateInvBox, ShowProd, ShowPurchase, PurchaseContent} from './importation';
 
 
 var ShowIndex = React.createClass({
@@ -11,6 +11,7 @@ var ShowIndex = React.createClass({
             <li><a href="#/allprod">Productos {"产品"}</a></li>
             <li><a href="#/allpurchase">Importaciones pasados {"进口"}</a></li>
             <li><a href="#/inv_movements">Movimientos {""}</a></li>
+            <li><a href="#/sale_report">SaleReport {""}</a></li>
         </ul>;
     }
 });
@@ -21,6 +22,7 @@ var router = <Router history={browserHistory}>
     <Route name="allpurchase" path='/allpurchase' component={ShowPurchase} />
     <Route name="purchase" path='/purchase/:uid' component={PurchaseContent} />
     <Route name="purchase" path='/inv_movements/:date' component={InvMovementListFull} />
+    <Route name="sale_report" path='/sale_report' component={SaleReportByDateFull} />
     <Route name="index" path='/' component={ShowIndex} />
 </Router>;
 ReactDOM.render(router, document.getElementById("content"));

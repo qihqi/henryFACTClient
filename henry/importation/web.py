@@ -14,7 +14,8 @@ from sqlalchemy import func
 from .schema import NSale
 from .dao import (Purchase, PurchaseItem, UniversalProd, DeclaredGood,
                   get_purchase_full, Sale, Entity, InvMovementFull,
-                  InvMovementMeta, Inventory, get_sales_by_date_and_user, get_or_create_inventory_id)
+                  InvMovementMeta, Inventory, get_sales_by_date_and_user, get_or_create_inventory_id,
+                  client_sale_report)
 
 
 def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
@@ -138,16 +139,14 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
         tomorrow = today + datetime.timedelta(days=1)
         print today, tomorrow
         movements = list(dbapi.search(InvMovementMeta, **{'timestamp-gte': today, 'timestamp-lte':tomorrow}))
-        return json_dumps({'results': movements})
+        return json_dumps({'result': movements})
 
     @app.get(prefix + '/sales_report')
     @dbcontext
     def get_sales_report():
         start, end = parse_start_end_date(request.query)
-        sales_by_date = list(dbapi.db_session.query(
-                func.date(NSale.timestamp), func.sum(NSale.pretax_amount_usd)).filter(
-                NSale.timestamp >= start, NSale.timestamp <= end).group_by(func.date(NSale.timestamp)))
-        return {'result': sales_by_date}
+        sales_by_date = list(client_sale_report(dbapi, start, end))
+        return json_dumps({'result': sales_by_date})
 
 
     # @app.post(prefix + '/raw_inv_movement')
