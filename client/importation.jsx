@@ -2,6 +2,7 @@ import React from 'react';
 import LinkedStateMixin from 'react-addons-linked-state-mixin';
 import SkyLight from 'react-skylight';
 import twoDecimalPlace from './view_account';
+import {Bar, Line} from 'react-chartjs';
 
 const API = '/import';
 
@@ -693,7 +694,7 @@ var SaleReportByDate= React.createClass({
                     <td>{x.timestamp}</td>
                     <td>{x.ruc || ''}</td>
                     <td>{x.sale_pretax_usd}</td>
-                    <td>{x.tax}</td>
+                    <td>{x.tax_usd}</td>
                     <td>{x.count}</td>
                     <td>{Number(x.sale_pretax_usd) / x.count}</td>
                 </tr>;
@@ -708,6 +709,7 @@ export var SaleReportByDateFull = React.createClass({
             url: `/import/sales_report?start=${start}&end=${end}`,
             success: (result) => {
                 result = JSON.parse(result);
+                console.log(result);
                 this.setState({'items': result.result});
             }
         });
@@ -719,14 +721,64 @@ export var SaleReportByDateFull = React.createClass({
     fetchDataClick() {
         var start = this.refs.start.value;
         var end = this.refs.end.value;
+        console.log('here');
         this.fetchData(start, end);
     },
     render: function() {
+        var labels = [];
+        var thedata = [];
+        var thedata2 = [];
+        var values_by_date = {};
+        var mayor_by_date = {};
+        for (var x in this.state.items) {
+            var y = this.state.items[x];
+            if (!(y.timestamp in values_by_date)) {
+                values_by_date[y.timestamp] = 0;
+                mayor_by_date[y.timestamp] = 0;
+            }
+            if (y.ruc) {
+                values_by_date[y.timestamp] += Number(y.sale_pretax_usd);
+            } else {
+                mayor_by_date[y.timestamp] += Number(y.sale_pretax_usd);
+            }
+        }
+        labels = Object.keys(values_by_date);
+        labels.sort();
+        for (var x in labels) {
+            var y = labels[x];
+            thedata.push(values_by_date[y]);
+            thedata2.push(mayor_by_date[y]);
+        }
+
+        var data = {
+        labels: labels,
+        datasets: [{
+            fillColor: "blue",
+            label: '零售',
+            data: thedata,
+            borderWidth: 1
+        },{
+            fillColor: "green",
+            label: '批发',
+            data: thedata2,
+            borderWidth: 1
+        }]
+        };
+        var options = {
+        scales: {
+            yAxes: [{
+                ticks: {
+                    beginAtZero:true
+                }
+            }]
+        }
+        };
         return <div className="container">
             Start: <input ref='start' />
             End: <input ref='end' />
             <button onClick={this.fetchDataClick} >Cargar</button>
             <SaleReportByDate items={this.state.items} />
+            <Bar data={data} options={options} height="800" width="1000"/>
         </div>
     }
 });

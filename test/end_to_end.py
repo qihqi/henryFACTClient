@@ -62,8 +62,8 @@ class EndToEndTest(unittest.TestCase):
         url = self.url_base + '/cliente'
         client = None
         with Timing('Search users'):
-            clients = requests.get(url, params={'prefijo': 'N'}).json()
-            client = clients[0]
+            clients = requests.get(url, params={'prefijo': 'N'})
+            client = clients.json()[0]
 
         with Timing('get cliente'):
             client = requests.get(url + '/na').json()
