@@ -217,6 +217,7 @@ public class FacturaVentana extends JFrame {
         else {
             int codigo = api.guardarDocumento(doc, false);
             if (codigo > 0) {
+                printer.printFactura(doc);
                 dialog.setText("El codigo es " + codigo);
                 dialog.setVisible(true);
                 clear();

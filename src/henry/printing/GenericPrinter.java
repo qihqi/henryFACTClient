@@ -163,8 +163,8 @@ public abstract class GenericPrinter {
         drawElement(imp.getBruto(), ZERO, "Subtotal", displayAsMoney(documento.getSubtotal()));
         drawElement(imp.getNeto(), ZERO, "Valor Neto", displayAsMoney(documento.getTotalNeto()));
         drawElement(imp.getDesc(), ZERO, "Descuento", displayAsMoney(documento.getDescuento()));
-        drawElement(imp.getIva(), ZERO, "Descuento", displayAsMoney(documento.getIva()));
-        drawElement(imp.getTotal(), ZERO, "Descuento", displayAsMoney(documento.getTotal()));
+        drawElement(imp.getIva(), ZERO, "IVA", displayAsMoney(documento.getIva()));
+        drawElement(imp.getTotal(), ZERO, "Total", displayAsMoney(documento.getTotal()));
     }
     
     protected void printFirma() {
