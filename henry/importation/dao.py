@@ -10,10 +10,21 @@ from .schema import (NUniversalProduct, NDeclaredGood, NPurchaseItem,
                      NInventory)
 
 UniversalProd = dbmix(NUniversalProduct)
-Purchase = dbmix(NPurchase)
-PurchaseItem = dbmix(NPurchaseItem)
 DeclaredGood = dbmix(NDeclaredGood)
+PurchaseItem = dbmix(NPurchaseItem)
 
+class Purchase(dbmix(NPurchase)):
+
+    @classmethod
+    def deserialize(cls, thedict):
+        result = super(Purchase, cls).deserialize(thedict)
+        if thedict.get('total_gross_weight_kg', None):
+            result.total_gross_weight_kg = Decimal(result.total_gross_weight_kg)
+        if thedict.get('total_rmb', None):
+            result.total_rmb = result.total_rmb
+        if thedict.get('timestamp', None):
+            result.timestamp = parse_iso_datetime(result.timestamp)
+        return result
 
 class PurchaseFull(SerializableMixin):
     _name = ('meta', 'items')

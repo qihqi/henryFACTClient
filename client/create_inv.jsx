@@ -71,7 +71,7 @@ var Searcher = React.createClass({
     render: function() {
         return <div style={{height: '80%'}}>
             <input ref="search_term" onKeyDown={this.maybeSearch} /> 
-            <button className="btn btn-primary" onClick={this.performSearch}>Buscar</button>
+            <button className="btn btn-sm btn-primary" onClick={this.performSearch}>Buscar</button>
             <ul className="list-group" style={{'overflow-y': 'scroll', height: '100%'}}>
                 {this.state.result.map( (x, index) => {
                     return <li className="list-group-item" key={index} onClick={this.clicked.bind(this, index)}>
@@ -134,17 +134,46 @@ const searchStyles = {
     marginLeft: '-35%',
 };
 
+function computeTotals(items) {
+    var subtotal = 0;
+    var desc = 0;
+    var cant_mayorista = 0;
+    for (var x in items) {
+        var x = items[x];
+        subtotal += (x.cant * x.prod.precio1);
+        cant_mayorista = Number(x.prod.cant_mayorista);
+        if (cant_mayorista >= 1000) {
+            cant_mayorista = cant_mayorista / 1000;
+        }
+        if (x.cant >= cant_mayorista) {
+            desc += x.cant * (x.prod.precio1 - (x.prod.precio2 || x.prod.precio1));     
+        }
+    }
+    var subs = subtotal - desc;
+    var iva = Math.round(IVA_PERCENT * subs / 100 );
+    var total = subs + iva;
+    return {
+        subtotal:subtotal,
+        discount: desc,
+        tax: iva,
+        total: total
+    };
+}
+
 
 var InvFormContent = React.createClass({
     mixins: [LinkedStateMixin],
     getInitialState: function() {
         return {
+            codigo: this.props.user.last_factura,
             user: {}, 
             client: null,
             meta: {almacen_id: 1},
             items: [],
             current_prod: null,
-            current_cant: 0
+            current_cant: 0,
+            paid_amount: 0,
+            payment_format: 'EFECTIVO'
         };
     },
     loadClient: function(uid, result) {
@@ -191,6 +220,30 @@ var InvFormContent = React.createClass({
     showSearchProd: function(event) {
         this.refs.searchProd.show();
     },
+    saveDoc: function(isOrden) {
+        var url= isOrden ? '/api/nota' : '/api/pedido';
+        var doc = {meta: computeTotals(this.state.items), items: this.state.items};
+        doc.meta.almacen_id = this.state.meta.almacen_id;
+        doc.meta.user = this.props.user.username;
+        doc.meta.codigo = this.state.codigo;
+        doc.meta.tax_percent = IVA_PERCENT;
+        doc.meta.bodega_id = this.props.user.bodega_id;
+        doc.meta.paid = true;
+        doc.meta.paid_amount = this.state.paid_amount;
+        doc.meta.payment_format = this.state.payment_format;
+        doc.options = {};
+        doc.options.usar_decimal = true;
+        doc.options.incrementar_codigo = true;
+
+        $.ajax({
+            url: url,
+            method: 'POST',
+            data: JSON.stringify(doc),
+            success: function(x) {
+                console.log(x);
+            }
+        });
+    },
     render: function() {
         var current_prod_name = '';
         var current_price = '';
@@ -226,8 +279,23 @@ var InvFormContent = React.createClass({
                           onSelectItem={this.loadClientSearch}/>
             </SkyLight>
             <div className="row">
+                <h3>Usuario: {this.props.user.username} </h3>
                 <div className="col-md-12">
-                <button className="btn btn-primary" onClick={()=>this.refs.searchClient.show()}>Buscar</button>
+                    <input ref="pedido_id" />
+                    <button className="btn btn-sm btn-success" 
+                        onClick={this.loadPedido} >Cargar Pedido</button>
+                    <button className="btn btn-sm btn-primary" 
+                        onClick={this.loadOrden} >Cargar Orden de Despacho</button>
+                    <button className="btn btn-sm btn-warning" 
+                        onClick={this.saveDoc.bind(this, false)} >Guardar Como Pedido</button>
+                    <button className="btn btn-sm btn-danger" 
+                        onClick={this.saveDoc.bind(this, true)} >Guardar Como Orden</button>
+
+                </div>
+            </div>
+            <div className="row">
+                <div className="col-md-12">
+                <button className="btn btn-sm btn-primary" onClick={()=>this.refs.searchClient.show()}>Buscar</button>
                 Cliente: <ItemLoader ref='input_client' handleItem={this.loadClient}
                     url="/api/cliente/" />
                     <span>
@@ -238,7 +306,7 @@ var InvFormContent = React.createClass({
                     </span>
                 </div>
                 <div className="col-md-12">
-                <button className="btn btn-success" 
+                <button className="btn btn-sm btn-success" 
                    onClick={this.showSearchProd}>Buscar</button>Producto: 
                    <ItemLoader size="10" handleItem={this.loadProd} ref="input_prod"
                     url="/api/alm/1/producto/"/>

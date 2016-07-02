@@ -36,8 +36,13 @@ class NPurchase(Base):
     __tablename__ = 'purchases'
     uid = Column(Integer, primary_key=True, autoincrement=True)
     timestamp = Column(DateTime)
+    last_edit_timestamp = Column(DateTime)
     providor = Column(String(20))
     total_rmb = Column(Numeric(15, 4))
+
+    created_by = Column(String(20))
+    total_box = Column(Integer)
+    total_gross_weight_kg = Column(Numeric(10, 3))
 
 
 class NPurchaseItem(Base):
@@ -48,6 +53,7 @@ class NPurchaseItem(Base):
     color = Column(String(20))
     quantity = Column(Numeric(11, 3))
     price_rmb = Column(Numeric(15, 4))
+    box = Column(Numeric(11, 3))
 
 
 class NEntity(Base):

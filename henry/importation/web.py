@@ -69,11 +69,35 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
                 quantity=Decimal(r['cant']),
                 price_rmb=Decimal(r['price']),
                 purchase_id=pid)
+
         items = map(make_item, rows)
         total = sum((r.price_rmb * r.quantity for r in items))
         dbapi.update(purchase, {'total_rmb': total})
         map(dbapi.create, items)
         return {'uid': pid}
+
+    @app.put(prefix + '/purchase_full/<uid>')
+    @dbcontext
+    def update_purchase_full(uid):
+        data = json.loads(request.body.read())
+        print data
+        # update meta
+        updated = Purchase.deserialize(data['meta'])
+        print updated.timestamp
+        updated.last_edit_timestamp = datetime.datetime.now()
+        dbapi.update_full(updated)
+
+        to_create_item = map(PurchaseItem.deserialize, data.get('create_items', []))
+        for pi in to_create_item:
+            pi.purchase_id = uid
+            dbapi.create(pi)
+        to_delete_item = map(PurchaseItem.deserialize, data.get('delete_items', []))
+        for pi in to_delete_item:
+            dbapi.delete(pi)
+        to_edit_item = map(PurchaseItem.deserialize, data.get('edit_items', []))
+        for pi in to_edit_item:
+            dbapi.update_full(pi)
+        return {'status': 'success'}
 
     @app.post(prefix + '/client_sale')
     @dbcontext
@@ -116,15 +140,15 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
         meta.dest = get_or_create_inventory_id(dbapi, meta.inventory_codename, meta.dest)
 
         if list(dbapi.search(InvMovementMeta,
-                        inventory_codename=meta.inventory_codename,
-                        inventory_docid=meta.inventory_docid,
-                        trans_type=meta.trans_type)):
-            #already exists
+                             inventory_codename=meta.inventory_codename,
+                             inventory_docid=meta.inventory_docid,
+                             trans_type=meta.trans_type)):
+            # already exists
             return {'created': 0, 'reason': 'already exists'}
         for igcant in inv_movement.items:
             prod_id = igcant.itemgroup.prod_id
             ig_real = dbapi.getone(ProdItemGroup, prod_id=prod_id)
-                # itemgroup does not exist, create
+            # itemgroup does not exist, create
             if not ig_real:
                 dbapi.create(igcant.itemgroup)
             else:  # replace itemgroup as the itemgroup id might be distinct
@@ -138,7 +162,7 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
         today = parse_iso_date(day)
         tomorrow = today + datetime.timedelta(days=1)
         print today, tomorrow
-        movements = list(dbapi.search(InvMovementMeta, **{'timestamp-gte': today, 'timestamp-lte':tomorrow}))
+        movements = list(dbapi.search(InvMovementMeta, **{'timestamp-gte': today, 'timestamp-lte': tomorrow}))
         return json_dumps({'result': movements})
 
     @app.get(prefix + '/sales_report')
@@ -147,7 +171,6 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
         start, end = parse_start_end_date(request.query)
         sales_by_date = list(client_sale_report(dbapi, start, end))
         return json_dumps({'result': sales_by_date})
-
 
     # @app.post(prefix + '/raw_inv_movement')
     @dbcontext
@@ -174,4 +197,3 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
             inventoryapi.save(i)
 
     return app
-

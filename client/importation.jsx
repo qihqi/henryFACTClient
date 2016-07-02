@@ -3,6 +3,7 @@ import LinkedStateMixin from 'react-addons-linked-state-mixin';
 import SkyLight from 'react-skylight';
 import twoDecimalPlace from './view_account';
 import {Bar, Line} from 'react-chartjs';
+import {EditPurchase} from './importation_purchase';
 
 const API = '/import';
 
@@ -334,6 +335,7 @@ var ItemList = React.createClass({
 export var CreateInvBox = React.createClass({
     getInitialState: function() {
         query(API + '/declaredgood', function(result) {
+            result = JSON.parse(result);
             this.setState({declaredgoods: result.result});
         }.bind(this));
         return {currentProd: {}, items: [], declaredgoods:[]};
@@ -364,6 +366,8 @@ export var CreateInvBox = React.createClass({
     loadInv: function() {
         var code = React.findDOMNode(this.refs.code).value;
         query(API + '/purchase_full/' + code, function(result) {
+            result = JSON.parse(result);
+            console.log(result);
             this.setState({'items': result.result});
         }.bind(this));
     },
@@ -378,7 +382,7 @@ export var CreateInvBox = React.createClass({
         var optionbox = {
             name: 'declaring_id', 
             items: this.state.declaredgoods, 
-            display: function(){},
+            display: (x) => x.display_name,
             size: 1
         };
         return <div className="container">
@@ -563,9 +567,22 @@ export var ShowPurchase = React.createClass({
         this.getAllPurchase();
         return {list: []};
     },
+    createPurchase: function() {
+        $.ajax({
+            url: API + '/purchase',
+            method: 'POST',
+            data: '{}',
+            success: (result) => {
+                var key = JSON.parse(result).key;
+                window.location = '#/edit_purchase/' + key;
+            }
+        });
+    },
     render: function() {
-        console.log('here');
-        return <PurchaseList list={this.state.list} />;
+        return <div className="container">
+            <button onClick={this.createPurchase}>{'创建新货柜'}</button>
+            <PurchaseList list={this.state.list} />;
+        </div>;
     }
 });
 
@@ -584,6 +601,9 @@ export var PurchaseContent = React.createClass({
         return {items: [], meta: {timestamp: ''}};
     },
     render: function() {
+        return <EditPurchase {...this.state} />;
+
+        /*
         var total = 0;
         for (var i in this.state.items) {
             var x = this.state.items[i];
@@ -596,6 +616,7 @@ export var PurchaseContent = React.createClass({
             {this.state.meta.timestamp}
          <PurchaseItemList list={this.state.items} />;
         </div>
+        */
     } 
 });
 
@@ -631,10 +652,11 @@ var PurchaseList = React.createClass({
         return <table className="table"><tbody>
             { this.props.list.map( (x) => {
                 return <tr>
-                    <td><a href={"#/purchase/" + x.uid}>{x.uid}</a></td>
+                    <td>{x.uid}</td>
                     <td>{x.providor}</td>
                     <td>{x.total_rmb}</td>
                     <td>{x.timestamp}</td>
+                    <td><a className='btn btn-sm btn-primary' href={"#/edit_purchase/" + x.uid}>{'编辑'}</a></td>
                 </tr>;
             })}
         </tbody></table>;
