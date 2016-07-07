@@ -18,7 +18,9 @@ const PROD_KEYS = [
 
 const DECLARED_KEYS = [
     "display_name", 
-    "display_price" 
+    "display_price",
+    "box_code",
+    "modify_strategy",
 ];
 
 function query(url, callback) {
@@ -415,7 +417,69 @@ export var CreateInvBox = React.createClass({
 //                <div className="myfloat">
 //                </div>
 //            </div>
-
+//
+export var ShowDeclared = React.createClass({
+    setCurrent: function(current) {
+        this.setState({current: current});
+    },
+    getAllProd: function() {
+        $.ajax({
+            url: API + '/declaredgood',
+            success: (result) => {
+                result = JSON.parse(result);
+                this.setState({list: result.result});
+            }
+        }); 
+    },
+    getInitialState: function() {
+        this.getAllProd();
+        return {
+            list: [],
+            current: {},
+        }
+    },
+    editProd: function(x) {
+        this.setState({current: x}, function() {
+            this.refs.editbox.fetchnew();
+            this.refs.editProd.show();
+        }.bind(this));
+    },
+    editedProd: function(newdeclared) {
+        for (var i in this.state.list) {
+            var x = this.state.list[i];
+            if (x.uid == newdeclared.uid) {
+                this.state.list[i] = newdeclared;
+            }
+        }
+        this.setState({'list': this.state.list});
+        this.refs.editProd.hide();
+    },
+    render: function() {
+        return (<div className="container">
+            <div className="row" >
+            <SkyLight hiddenOnOverlayClicked ref="editProd" title="Editar Producto">
+                <CreateOrUpdateBox url={API + "/declaredgood"} ref="editbox"
+                     names={DECLARED_KEYS} update={true} uid={this.state.current.uid}
+                     callback={this.editedProd} />
+            </SkyLight>
+            <div className="col-md-12">
+            <table className="table" >
+                {this.state.list.map((x) => {
+                    return <tr>
+                        <td><button onClick={this.editProd.bind(this, x)}>edit</button></td>
+                        <td>{x.uid}</td>
+                        <td>{x.display_name}</td>
+                        <td>{x.display_price}</td>
+                        <td>{x.box_code}</td>
+                        <td>{x.modify_strategy}</td>
+                    </tr>;
+                })}
+            </table>
+            </div>
+            </div>
+        </div>);
+    }
+});
 export var ShowProd = React.createClass({
     setCurrent: function(current) {
         this.setState({current: current});
@@ -432,10 +496,10 @@ export var ShowProd = React.createClass({
             success: (result) => {
                 result = JSON.parse(result);
                 result.prod.sort((a,b) => {
-                    if (a.providor_zh > b.providor_zh) {
+                    if (a.unit > b.unit) {
                         return 1;
                     }
-                    if (a.providor_zh < b.providor_zh) {
+                    if (a.unit < b.unit) {
                         return -1;
                     }
                     return 0;
@@ -525,6 +589,7 @@ var ProdList = React.createClass({
                 <td><button onClick={clickhandler}>edit</button></td>
                 <td>{prod.name_es}</td>
                 <td>{prod.name_zh}</td>
+                <td>{prod.unit}</td>
                 <td>{prod.providor_zh}</td>
                 <td>{prod.providor_item_id}</td>
                 <td>{prod.declared_name}</td>
@@ -589,58 +654,77 @@ export var ShowPurchase = React.createClass({
 export var PurchaseContent = React.createClass({
     getItems: function() {
         $.ajax({
-            url: API + '/purchase_full/' + this.props.params.uid,
+            url: API + '/purchase_filtered/' + this.props.params.uid,
             success: (x) => {
                 x = JSON.parse(x);
                 this.setState(x);
             }
         });
     },
+    getDeclared: function() {
+        $.ajax({
+            url: API + '/declaredgood',
+            success: (x) => {
+                x = JSON.parse(x);
+                var declared = {};
+                for (var i in x.result) {
+                    declared[x.result[i].uid] = x.result[i];
+                }
+                this.setState({declared: declared});
+            }
+        });
+    },
     getInitialState: function() {
         this.getItems();
-        return {items: [], meta: {timestamp: ''}};
+        this.getDeclared();
+        return {items: [], meta: {timestamp: ''}, declared: {}, units: {}};
     },
     render: function() {
-        return <EditPurchase {...this.state} />;
-
-        /*
-        var total = 0;
-        for (var i in this.state.items) {
-            var x = this.state.items[i];
-            x.item.quantity = Number(x.item.quantity);
-            x.item.price_rmb = Number(x.item.price_rmb);
-            total += x.item.quantity * x.item.price_rmb;
-        }
-        return <div className="col-md-12">
-            {total}
-            {this.state.meta.timestamp}
-         <PurchaseItemList list={this.state.items} />;
-        </div>
-        */
+        return <PurchaseItemList list={this.state.items} declared={this.state.declared} units={this.state.units}/>;
     } 
 });
 
 var PurchaseItemList = React.createClass({
     render: function() {
+        var hasDeclared = [];
+        var hasNot = [];
+        for (var i in this.props.list) {
+            i = this.props.list[i];
+            if (i.prod_detail.declaring_id || i.prod_detail.declaring_id == 0) {
+                hasDeclared.push(i);
+            } else {
+                hasNot.push(i);
+            }
+        }
+        hasDeclared.sort((a,b) => a.prod_detail.declaring_id - b.prod_detail.declaring_id);
+        console.log(hasDeclared, hasNot);
         return <table className="table"><tbody>
-            <tr>
-                <td>x.item.uid</td>
-                <td>x.prod_detail.name_zh</td>
-                <td>x.prod_detail.name_es</td>
-                <td>x.prod_detail.selling_id</td>
-                <td>x.item.quantity</td>
-                <td>x.item.price_rmb</td>
-                <td>total</td>
-            </tr>
-            { this.props.list.map( (x) => {
+            { hasDeclared.map( (x) => {
+                var decl = this.props.declared[x.prod_detail.declaring_id] || {};
+                console.log(x.prod_detail.declaring_id);
                 return <tr>
-                    <td>{x.item.uid}</td>
                     <td>{x.prod_detail.name_zh}</td>
                     <td>{x.prod_detail.name_es}</td>
-                    <td>{x.prod_detail.selling_id}</td>
                     <td>{x.item.quantity}</td>
-                    <td>{Math.round(x.item.price_rmb * 1000) / 1000  }</td>
-                    <td>{Math.round(x.item.price_rmb * x.item.quantity * 1000) / 100}</td>
+                    <td>{this.props.units[x.prod_detail.unit].name_es}</td>
+                    <td>{Math.round(x.item.price_rmb * 100) / 100  }</td>
+                    <td>{Math.round(x.item.price_rmb * x.item.quantity * 100) / 100}</td>
+                    <td>{decl.display_name}</td>
+                    <td>{decl.display_price}</td>
+                    <td>{decl.uid}</td>
+                </tr>;
+            })}
+            { hasNot.map( (x) => {
+                return <tr>
+                    <td>{x.prod_detail.name_zh}</td>
+                    <td>{x.prod_detail.name_es}</td>
+                    <td>{x.item.quantity}</td>
+                    <td>{this.props.units[x.prod_detail.unit].name_es}</td>
+                    <td>{Math.round(x.item.price_rmb * 100) / 100  }</td>
+                    <td>{Math.round(x.item.price_rmb * x.item.quantity * 100) / 100}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
                 </tr>;
             })}
         </tbody></table>;

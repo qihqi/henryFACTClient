@@ -15,7 +15,7 @@ from .schema import NSale
 from .dao import (Purchase, PurchaseItem, UniversalProd, DeclaredGood,
                   get_purchase_full, Sale, Entity, InvMovementFull,
                   InvMovementMeta, Inventory, get_sales_by_date_and_user, get_or_create_inventory_id,
-                  client_sale_report)
+                  client_sale_report, ALL_UNITS)
 
 
 def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
@@ -48,11 +48,25 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
             'declared': all_declared
         })
 
+    @app.get(prefix + '/purchase_filtered/<uid>')
+    @dbcontext
+    @auth_decorator
+    def purchase_fitered(uid):
+        purchase = get_purchase_full(dbapi, uid)
+        map(value_filter, purchase.items)
+        total = sum(i.item.price_rmb * i.item.quantity for i in purchase.items)
+        purchase.meta.total_rmb = total
+        res = purchase.serialize()
+        res['units'] = ALL_UNITS
+        return json_dumps(res)
+
     @app.get(prefix + '/purchase_full/<uid>')
     @dbcontext
     @auth_decorator
     def get_purchase_full_http(uid):
-        return json_dumps(get_purchase_full(dbapi, uid))
+        res = get_purchase_full(dbapi, uid).serialize()
+        res['units'] = ALL_UNITS
+        return json_dumps(res)
 
     @app.post(prefix + '/purchase_full')
     @dbcontext
@@ -98,6 +112,16 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
         for pi in to_edit_item:
             dbapi.update_full(pi)
         return {'status': 'success'}
+
+    @app.get(prefix + '/unit')
+    @dbcontext
+    def get_all_units():
+        return json_dumps(ALL_UNITS)
+
+    @app.get(prefix + '/unit/<uid>')
+    @dbcontext
+    def get_unit(uid):
+        return json_dumps(ALL_UNITS[uid])
 
     @app.post(prefix + '/client_sale')
     @dbcontext
@@ -197,3 +221,8 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
             inventoryapi.save(i)
 
     return app
+
+
+def value_filter(item):
+    item.item.price_rmb *= Decimal('0.4')
+    return item

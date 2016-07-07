@@ -112,7 +112,10 @@ var NewProduct = React.createClass({
             </tr>
             <tr>
                 <td>{"单位:"} </td>
-                <td><input valueLink={this.linkState('unit')} /></td>
+                <td><select valueLink={this.linkState('unit')}>
+                        {Object.keys(this.props.units).map((x) => <option value={x}>{this.props.units[x].name_zh}</option>)}
+                    </select>
+                </td>
             </tr>
             <tr>
                 <td>{"材料:"} </td>
@@ -163,9 +166,11 @@ class ItemList extends React.Component {
                 ('_edited' in item.item && item.item._edited)) {
                 moreStyle['background-color'] = 'yellow';
             }
+            var unit = item.prod_detail.unit in this.props.units ? this.props.units[item.prod_detail.unit].name_zh 
+                                                                 : item.prod_detail.unit;
             return <tr style={moreStyle}>
                 <td className="number">{item.item.box || ''}</td>
-                <td>{item.prod_detail.name_zh}({item.prod_detail.unit})</td>
+                <td>{item.prod_detail.name_zh}({unit})</td>
                 <td className="number">{Number(item.item.price_rmb).toFixed(2)}</td>
                 <td className="number">{Number(item.item.quantity)}</td>
                 <td className="number">
@@ -223,6 +228,7 @@ export class EditPurchase extends React.Component {
         this.changeMeta = this.changeMeta.bind(this);
         this.getAllProducts();
         this.getFullInv(this.props.params.uid);
+        this.getAllUnits();
         this.state = {
             all_providors: [],
             providors: [],
@@ -230,7 +236,8 @@ export class EditPurchase extends React.Component {
             allprod:{},
             items_by: {},
             currentProvidor: null,
-            meta: {}
+            meta: {},
+            units: {},
         };
     }
     onSelectProvidorVal(prov) {
@@ -246,6 +253,15 @@ export class EditPurchase extends React.Component {
             providors: this.state.providors,
             items_by: this.state.items_by,
             providors_data: this.state.providors_data,
+        });
+    }
+    getAllUnits() {
+        $.ajax({
+            url: API + '/unit',
+            success: (result) => {
+                result = JSON.parse(result);
+                this.setState({'units': result});
+            }
         });
     }
     getFullInv(uid) {
@@ -412,7 +428,7 @@ export class EditPurchase extends React.Component {
 
         return <div className="container" style={{height: '100%'}}>
             <SkyLight hiddenOnOverlayClicked dialogStyles={addNewProdStyle} ref="addNewProduct" title={"新产品"}>
-                <NewProduct ref="addNewProductBox" onNewProduct={this.onNewProduct} />
+                <NewProduct ref="addNewProductBox" units={this.state.units} onNewProduct={this.onNewProduct} />
             </SkyLight>
         <div className="row">
             <div className="col-sm-4">
@@ -456,11 +472,13 @@ export class EditPurchase extends React.Component {
                 </div>
                 <div className="row">
                     <ProductSelector ref="productSelector" prods={currentAllProd}
+                        units={this.state.units}
                         onNewItem={this.onNewItem}/>
                 </div>
                 <div ref="itemListContainer" style={{height: '75vh',
                     'overflowY': 'scroll'}}>
                     <ItemList items={currentItems} deleteItem={this.onDeleteItem} 
+                        units={this.state.units}
                         onEditedItem={this.onEditedItem}/>
                 </div>
             </div>
@@ -575,8 +593,10 @@ class ProductSelector extends React.Component {
     render() {
         return <div>
             <select ref="newProduct" onChange={this.focusPrice}>
-            {this.props.prods.map((x) =>
-                    <option key={x.upi} value={x.upi}>{x.name_zh}({x.unit})</option>)}
+            {this.props.prods.map((x) => {
+                    var unit = x.unit in this.props.units ? this.props.units[x.unit].name_zh : x.unit;
+                    return <option key={x.upi} value={x.upi}>{x.name_zh}({unit})</option>;
+            })}
             </select>
             <input className="smallNum"
                 ref="price_rmb" onKeyDown={this.focusCant} placeholder={'价格'}/>

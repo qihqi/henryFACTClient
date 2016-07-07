@@ -25,6 +25,8 @@ class NDeclaredGood(Base):
     uid = Column(Integer, primary_key=True, autoincrement=True)
     display_name = Column(String(100))
     display_price = Column(Numeric(15, 4))
+    box_code = Column(String(20))
+    modify_strategy = Column(String(20))
 
 
 
@@ -44,15 +46,29 @@ class NPurchase(Base):
     total_box = Column(Integer)
     total_gross_weight_kg = Column(Numeric(10, 3))
 
+    status = Column(String(20))
+
 
 class NPurchaseItem(Base):
     __tablename__ = 'purchase_items'
     uid = Column(Integer, primary_key=True, autoincrement=True)
+    purchase_id = Column(Integer, index=True)
     upi = Column(Integer)
-    purchase_id = Column(Integer)
     color = Column(String(20))
     quantity = Column(Numeric(11, 3))
     price_rmb = Column(Numeric(15, 4))
+    box = Column(Numeric(11, 3))
+    custom_item_uid = Column(Integer)
+
+
+class NCustomItem(Base):
+    __tablename__ = 'custom_items'
+    uid = Column(Integer, primary_key=True, autoincrement=True)
+    purchase_id = Column(Integer, index=True)
+    display_name = Column(String(100))
+    quantity = Column(Numeric(11, 3))
+    price_rmb = Column(Numeric(15, 4))
+    unit = Column(String(50))
     box = Column(Numeric(11, 3))
 
 
