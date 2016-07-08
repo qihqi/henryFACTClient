@@ -15,7 +15,7 @@ from .schema import NSale
 from .dao import (Purchase, PurchaseItem, UniversalProd, DeclaredGood,
                   get_purchase_full, Sale, Entity, InvMovementFull,
                   InvMovementMeta, Inventory, get_sales_by_date_and_user, get_or_create_inventory_id,
-                  client_sale_report, ALL_UNITS)
+                  client_sale_report, ALL_UNITS, get_custom_items_full)
 
 
 def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
@@ -112,6 +112,15 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
         for pi in to_edit_item:
             dbapi.update_full(pi)
         return {'status': 'success'}
+
+    @app.get(prefix + '/custom_full/<uid>')
+    @dbcontext
+    def get_custom_full(uid):
+        result = {}
+        result['meta'] = dbapi.get(uid, Purchase)
+        result['customs'] = get_custom_items_full(dbapi, uid)
+        return json_dumps(result)
+
 
     @app.get(prefix + '/unit')
     @dbcontext

@@ -62,6 +62,7 @@ def get_purchase_full(dbapi, uid):
     full_items = list(get_purchase_item_full(dbapi, uid))
     return PurchaseFull(meta=purchase, items=full_items)
 
+
 def create_custom(item, declared_map):
     display = declared_map.get(item.prod_detail.declaring_id, None)
     filters = None
@@ -88,8 +89,24 @@ def generate_custom_for_purchase(dbapi, uid):
     declared = {x.uid: x for x in dbapi.search(DeclaredGood)}
     for item in get_purchase_item_full(dbapi, uid):
         custom = create_custom(item, declared)
+        custom.purchase_id = uid
         custom_id = dbapi.create(custom)
         dbapi.update(item.item, {'custom_item_uid': custom_id})
+
+class CustomItemFull(SerializableMixin):
+    _name = ('custom', 'purchase_items')
+
+    def __init__(self, custom=None, purchase_items=None):
+        self.custom = custom
+        self.purchase_items = purchase_items or []
+
+
+def get_custom_items_full(dbapi, uid):
+    item_full = get_purchase_item_full(dbapi, uid)
+    items = {x.uid: CustomItemFull(x) for x in dbapi.search(CustomItem, purchase_id=uid)}
+    for i in item_full:
+        items[i.item.custom_item_uid].purchase_items.append(i)
+    return sorted(items.values(), key=lambda i: i.custom.uid)
 
 
 class InvMovementMeta(dbmix(NInvMovementMeta)):
