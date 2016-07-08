@@ -1,5 +1,6 @@
 # encoding=utf8
 from decimal import Decimal
+import functools
 
 from henry.base.dbapi import dbmix
 from henry.base.serialization import SerializableMixin, TypedSerializableMixin, parse_iso_datetime, json_dumps
@@ -15,7 +16,18 @@ NORMAL_FILTER_MULT = Decimal('0.35')
 UniversalProd = dbmix(NUniversalProduct)
 DeclaredGood = dbmix(NDeclaredGood)
 PurchaseItem = dbmix(NPurchaseItem)
-CustomItem = dbmix(NCustomItem)
+
+class CustomItem(dbmix(NCustomItem)):
+    @classmethod
+    def deserialize(cls, thedict):
+        result = super(CustomItem, cls).deserialize(thedict)
+        if thedict.get('box', None):
+            result.box = Decimal(result.box)
+        if thedict.get('price_rmb', None):
+            result.price_rmb = Decimal(result.price_rmb)
+        if thedict.get('quantity', None):
+            result.quantity = Decimal(result.quantity)
+        return result
 
 
 class Purchase(dbmix(NPurchase)):
@@ -39,8 +51,10 @@ class PurchaseFull(SerializableMixin):
         self.items = items
 
 
-class PurchaseItemFull(SerializableMixin):
-    _name = ('prod_detail', 'item')
+class PurchaseItemFull(TypedSerializableMixin):
+    _fields = (
+        ('prod_detail', UniversalProd.deserialize),
+        ('item', PurchaseItem.deserialize))
 
     def __init__(self, prod_detail=None, item=None):
         self.prod_detail = prod_detail
@@ -93,8 +107,11 @@ def generate_custom_for_purchase(dbapi, uid):
         custom_id = dbapi.create(custom)
         dbapi.update(item.item, {'custom_item_uid': custom_id})
 
-class CustomItemFull(SerializableMixin):
-    _name = ('custom', 'purchase_items')
+class CustomItemFull(TypedSerializableMixin):
+    _fields = (
+        ('custom', CustomItem.deserialize),
+        ('purchase_items', functools.partial(map, PurchaseItemFull.deserialize))
+    )
 
     def __init__(self, custom=None, purchase_items=None):
         self.custom = custom
@@ -102,7 +119,7 @@ class CustomItemFull(SerializableMixin):
 
 
 def get_custom_items_full(dbapi, uid):
-    item_full = get_purchase_item_full(dbapi, uid)
+    item_full = map(normal_filter, get_purchase_item_full(dbapi, uid))
     items = {x.uid: CustomItemFull(x) for x in dbapi.search(CustomItem, purchase_id=uid)}
     for i in item_full:
         items[i.item.custom_item_uid].purchase_items.append(i)

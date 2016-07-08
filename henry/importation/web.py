@@ -1,3 +1,4 @@
+from collections import defaultdict
 import json
 import datetime
 from decimal import Decimal
@@ -15,7 +16,7 @@ from .schema import NSale
 from .dao import (Purchase, PurchaseItem, UniversalProd, DeclaredGood,
                   get_purchase_full, Sale, Entity, InvMovementFull,
                   InvMovementMeta, Inventory, get_sales_by_date_and_user, get_or_create_inventory_id,
-                  client_sale_report, ALL_UNITS, get_custom_items_full)
+                  client_sale_report, ALL_UNITS, get_custom_items_full, CustomItem, CustomItemFull)
 
 
 def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
@@ -116,11 +117,42 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
     @app.get(prefix + '/custom_full/<uid>')
     @dbcontext
     def get_custom_full(uid):
-        result = {}
-        result['meta'] = dbapi.get(uid, Purchase)
-        result['customs'] = get_custom_items_full(dbapi, uid)
+        result = {'meta': dbapi.get(uid, Purchase), 'customs': get_custom_items_full(dbapi, uid)}
         return json_dumps(result)
 
+    @app.put(prefix + '/custom_full/<uid>')
+    @dbcontext
+    def get_custom_full(uid):
+        data = json.loads(request.body.read())
+        groupings = defaultdict(list)
+        for x in data['customs']:
+            obj = CustomItemFull.deserialize(x)
+            if 'grouping' in x['custom']:
+                grouping = x['custom']['grouping']
+                groupings[grouping].append(obj)
+            if '_edited' in x['custom'] and x['custom']['_edited']:
+                dbapi.update_full(obj.custom)
+        for val in groupings.values():
+            if len(val) < 2:
+                continue
+            first = val[0]
+            fcustom = first.custom
+            others = val[1:]
+            price = min(x.custom.price_rmb for x in val)
+            name = max((len(x.custom.display_name.strip()), x.custom.display_name) for x in val)[1]
+            for other in others:
+                fcustom.quantity += other.custom.quantity
+                if not fcustom.box:
+                    fcustom.box = 0
+                fcustom.box += (other.custom.box or 0)
+                first.purchase_items.extend(other.purchase_items)
+                dbapi.delete(other.custom)
+            fcustom.price_rmb = price
+            fcustom.display_name = name
+            dbapi.update_full(fcustom)
+            for pitem in first.purchase_items:
+                dbapi.update(pitem.item, {'custom_item_uid': fcustom.uid})
+        return '{"status": "success"}'
 
     @app.get(prefix + '/unit')
     @dbcontext
