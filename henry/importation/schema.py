@@ -70,6 +70,7 @@ class NCustomItem(Base):
     price_rmb = Column(Numeric(15, 4))
     unit = Column(String(50))
     box = Column(Numeric(11, 3))
+    box_code = Column(String(20))
 
 
 class NEntity(Base):
