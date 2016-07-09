@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .centered {
+        margin-left: auto;
+        margin-right:auto;
+        }
+        .right {
+        float: right;
+        }
+        table {
+        align: center;
+        }
+        td.num {
+        text-align: right;
+        width:10px;
+        }
+        .logo {
+        float: left;
+        }
+    </style>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+<div class="centered" style="text-align:center;">
+    <div class="logo" style="width: 50em;"></div>
+    <img height="40" class="logo" src="/static/logo.jpg" />
+    <h2>YIWU RIYAO IMP&EXP.CO.LTD</h2>
+    <h4>ROOM 8511.5F,  CUP INTERNATIONAL BUILDING NO1339  CHOUZHOU  ROAD, YIWU ZHEJIANG CHINA</h4>
+    <h4>TEL: 0086-579-85314583  FAX:0086-579-85436673</h4>
+    <h4><a href="http://riyaoimpexp.com">http://riyaoimpexp.com</a></h4>
+</div>
+<hr />
+<div class="centered" style="text-align:center;">
+    <img height="70" src="/static/barcode.svg"/>
+    <h2>Commercial Invoice No. HL 2721-094</h2>
+</div>
+
+<div class="centered" >
+    <p>Ningbo, {{ date_str }}</p>
+    <h4>
+        <p>TO:</p>
+        <p>Superbisuterias S.A.</p>
+        <p>RUC 0992932562001</p>
+        <p>LA FRAGATA Mz 2190 No. SL 5</p>
+        <p>Guayaquil - Ecuador</p>
+        <p>Telf: +593 4 2532007</p>
+    </h4>
+
+    <table border="1" class="centered">
+        <tr>
+            <th style="width:8px;">Item</th>
+            <th >Description</th>
+            <th style="width:10px;" class="num">Quantity</th>
+            <th style="width:5px;">Comercial Unit</th>
+            <th style="width:10px;" class="num">Price<br/>(CNY)</th>
+            <th style="width:10px;" class="num">Amount<br/>(CNY)</th>
+        </tr>
+        {% for item in custom_items %}
+        <tr>
+            <td>{{ item.box_code or ""}}</td>
+            <td>{{ item.display_name }} </td>
+            <td class="num">{{ ('%f' % item.quantity).rstrip('0').rstrip('.') }} </td>
+            <td>{{ item.unit }} </td>
+            <td class="num">{{ decimal_places(item.price_rmb) }} </td>
+            <td class="num">{{ decimal_places(item.price_rmb * item.quantity) }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td></td>
+            <td></td>
+            <td class="num"></td>
+            <td class="num"> Total </td>
+            <td >FOB NINGBO:</td>
+            <td class="num">{{total}}</td>
+        </tr>
+    </table>
+    <hr />
+    <div style="text-align:center">
+        <p>Total FOB NINGBO CNY: {{total}}</p>
+        <p>Payment Format: Open Account 30 days</p>
+        <p>Please complete the payment within 30 days.</p>
+    </div>
+</div>
+</body>
+</html>
+

@@ -10,13 +10,14 @@ from henry.importation.dao import InvMovementManager
 from henry.importation.web import make_import_apis
 from henry.product.dao import InventoryApi
 from henry.accounting.web import make_wsgi_api as accapi
+from henry.config import jinja_env
 
 dbapi = DBApiGeneric(sessionmanager)
 dbcontext = DBContext(sessionmanager)
 fileservice = FileService(INV_MOVEMENT_PATH)
 inventoryapi = InventoryApi(FileService(TRANSACTION_PATH))
 invmomanager = InvMovementManager(dbapi, fileservice, inventoryapi)
-api = make_import_apis('/import', auth_decorator, dbapi, invmomanager, inventoryapi)
+api = make_import_apis('/import', auth_decorator, dbapi, invmomanager, inventoryapi, jinja_env)
 
 
 if USE_ACCOUNTING_APP:

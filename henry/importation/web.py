@@ -19,7 +19,8 @@ from .dao import (Purchase, PurchaseItem, UniversalProd, DeclaredGood,
                   client_sale_report, ALL_UNITS, get_custom_items_full, CustomItem, CustomItemFull)
 
 
-def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
+def make_import_apis(prefix, auth_decorator, dbapi,
+                     invmomanager, inventoryapi, jinja_env):
     app = Bottle()
     dbcontext = DBContext(dbapi.session)
 
@@ -153,6 +154,34 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
             for pitem in first.purchase_items:
                 dbapi.update(pitem.item, {'custom_item_uid': fcustom.uid})
         return '{"status": "success"}'
+
+    @app.get(prefix + '/custom_invoice/<uid>')
+    @dbcontext
+    def get_custom_invoice(uid):
+        meta = dbapi.get(uid, Purchase)
+        customs = list(dbapi.search(CustomItem, purchase_id=uid))
+        date_str = meta.timestamp.strftime('%Y %B %d')
+        total = sum(item.quantity * item.price_rmb for item in customs)
+        temp = jinja_env.get_template('import/custom_invoice.html')
+        return temp.render(
+            custom_items=customs, total=total.quantize(Decimal('0.01')),
+            meta=meta, date_str=date_str)
+
+    @app.get(prefix + '/custom_plist/<uid>')
+    @dbcontext
+    def get_custom_invoice(uid):
+        meta = dbapi.get(uid, Purchase)
+        customs = list(dbapi.search(CustomItem, purchase_id=uid))
+        date_str = meta.timestamp.strftime('%Y %B %d')
+        temp = jinja_env.get_template('import/custom_plist.html')
+        total_box = 0
+        total_weight = 0
+        for item in customs:
+            pass
+        return temp.render(
+            custom_items=customs, total_box=total_box,
+            total_weight=total_weight,
+            meta=meta, date_str=date_str)
 
     @app.get(prefix + '/unit')
     @dbcontext
