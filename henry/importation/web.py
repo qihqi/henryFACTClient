@@ -118,7 +118,9 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     @app.get(prefix + '/custom_full/<uid>')
     @dbcontext
     def get_custom_full(uid):
-        result = {'meta': dbapi.get(uid, Purchase), 'customs': get_custom_items_full(dbapi, uid)}
+        result = {'meta': dbapi.get(uid, Purchase),
+                  'customs': get_custom_items_full(dbapi, uid),
+                  'units': ALL_UNITS}
         return json_dumps(result)
 
     @app.put(prefix + '/custom_full/<uid>')

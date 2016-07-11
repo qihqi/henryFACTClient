@@ -21,9 +21,12 @@ export class CustomFull extends React.Component {
         this.getCustom(this.props.params.uid);
         this.setItemValue = this.setItemValue.bind(this);
         this.saveCustom = this.saveCustom.bind(this);
+        this.openPList = () => window.open(API + '/custom_plist/' + props.params.uid);
+        this.openInvoice= () => window.open(API + '/custom_invoice/' + props.params.uid);
         this.state = {
             meta: {},
             customs: [],
+            units: {},
         }
     }
     getCustom(uid) {
@@ -67,6 +70,8 @@ export class CustomFull extends React.Component {
             <div style={FIX_HEADER}>
                 <h3>Contenedor #{this.props.params.uid}</h3>
                 <button onClick={this.saveCustom}>Guardar</button>
+                <button onClick={this.openInvoice}>Imprimir Invoice</button>
+                <button onClick={this.openPList}>Imprimir Packing List</button>
             </div>
             <div className="row" style={{marginTop: "100px"}}>
                 <div className="col-xs-1">Agrupar?</div>
@@ -84,7 +89,8 @@ export class CustomFull extends React.Component {
                 return <SingleCustomRow
                         key={`${x.custom.uid}-${x.purchase_items.length}-${hashCode(JSON.stringify(x.custom))}`}
                         {...x.custom} index={index}
-                        setItemValue={this.setItemValue} purchase_items={x.purchase_items}/>;
+                        setItemValue={this.setItemValue} purchase_items={x.purchase_items}
+                        units={this.state.units} />;
             })}
            </div>
         </div>);
@@ -159,7 +165,7 @@ class SingleCustomRow extends React.Component {
             </div>
             </div>
             <div className='collapse' id={"purchase" + this.props.uid}>
-                {this.props.purchase_items.map((x) => <PurchaseItemRow {...x} />)}
+                {this.props.purchase_items.map((x) => <PurchaseItemRow {...x} units={this.props.units}/>)}
             </div>
         </div>;
     }
@@ -171,12 +177,14 @@ class PurchaseItemRow extends React.Component {
     }
     render() {
         var it = this.props;
+        var unit = this.props.units[it.prod_detail.unit] ?
+            this.props.units[it.prod_detail.unit].name_es : it.prop_detail.unit;
         return <div className="row">
             <div className="col-xs-1 smallpadding"></div>
             <div className="col-xs-1 smallpadding"></div>
             <div className="col-xs-3 smallpadding">{it.prod_detail.name_es}</div>
             <div className="col-xs-1 smallpadding value_col">{Number(it.item.quantity)}</div>
-            <div className="col-xs-2 smallpadding">{it.prod_detail.unit}</div>
+            <div className="col-xs-2 smallpadding">{unit}</div>
             <div className="col-xs-1 smallpadding value_col">{Number(it.item.price_rmb).toFixed(2)}</div>
             <div className='value_col col-xs-1 smallpadding'>{(it.item.price_rmb * it.item.quantity).toFixed(2)}</div>
             <div className="col-xs-1 smallpadding value_col">{it.item.box}</div>
