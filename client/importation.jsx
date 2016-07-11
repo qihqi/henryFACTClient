@@ -632,6 +632,27 @@ export var ShowPurchase = React.createClass({
         this.getAllPurchase();
         return {list: []};
     },
+    render: function() {
+        return <div className="container">
+            <PurchaseList list={this.state.list} />;
+        </div>;
+    }
+});
+
+export var ShowPurchase2 = React.createClass({
+    getAllPurchase: function() {
+        $.ajax({
+            url: API + '/purchase',
+            success: (x) => {
+                x = JSON.parse(x);
+                this.setState({list: x.result});
+            }
+        });
+    },
+    getInitialState: function() {
+        this.getAllPurchase();
+        return {list: []};
+    },
     createPurchase: function() {
         $.ajax({
             url: API + '/purchase',
@@ -646,7 +667,7 @@ export var ShowPurchase = React.createClass({
     render: function() {
         return <div className="container">
             <button onClick={this.createPurchase}>{'创建新货柜'}</button>
-            <PurchaseList list={this.state.list} />;
+            <PurchaseList2 list={this.state.list} />;
         </div>;
     }
 });
@@ -737,10 +758,29 @@ var PurchaseList = React.createClass({
             { this.props.list.map( (x) => {
                 return <tr>
                     <td>{x.uid}</td>
-                    <td>{x.providor}</td>
-                    <td>{x.total_rmb}</td>
                     <td>{x.timestamp}</td>
-                    <td><a className='btn btn-sm btn-primary' href={"#/edit_purchase/" + x.uid}>{'编辑'}</a></td>
+                    <td>{x.status}</td>
+                    <td><a href={API + "/purchase_detailed/" + x.uid + '.html'}>Ver Compras</a></td>
+                    <td><a className='btn btn-sm btn-primary' href={"#/edit_custom/" + x.uid}>
+                            Editar Factura</a></td>
+                </tr>;
+            })}
+        </tbody></table>;
+    }
+});
+
+var PurchaseList2 = React.createClass({
+    render: function() {
+        return <table className="table"><tbody>
+            { this.props.list.map( (x) => {
+                return <tr>
+                    <td>{x.uid}</td>
+                    <td>{x.timestamp}</td>
+                    <td>{x.status}</td>
+                    <td><a href={API + "/purchase_detailed/" + x.uid + '.html?lang=zh'}>
+                        {'查看'}</a></td>
+                    <td><a className='btn btn-sm btn-primary' href={"#/edit_purchase/" + x.uid}>
+                        {'编辑'}</a></td>
                 </tr>;
             })}
         </tbody></table>;

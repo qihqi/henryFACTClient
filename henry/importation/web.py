@@ -16,7 +16,7 @@ from .schema import NSale
 from .dao import (Purchase, PurchaseItem, UniversalProd, DeclaredGood,
                   get_purchase_full, Sale, Entity, InvMovementFull,
                   InvMovementMeta, Inventory, get_sales_by_date_and_user, get_or_create_inventory_id,
-                  client_sale_report, ALL_UNITS, get_custom_items_full, CustomItem, CustomItemFull)
+                  client_sale_report, ALL_UNITS, get_custom_items_full, CustomItem, CustomItemFull, normal_filter)
 
 
 def make_import_apis(prefix, auth_decorator, dbapi,
@@ -55,7 +55,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     @auth_decorator
     def purchase_fitered(uid):
         purchase = get_purchase_full(dbapi, uid)
-        map(value_filter, purchase.items)
+        map(normal_filter, purchase.items)
         total = sum(i.item.price_rmb * i.item.quantity for i in purchase.items)
         purchase.meta.total_rmb = total
         res = purchase.serialize()
@@ -185,6 +185,19 @@ def make_import_apis(prefix, auth_decorator, dbapi,
             total_weight=total_weight,
             meta=meta, date_str=date_str)
 
+    @app.get(prefix + '/purchase_detailed/<uid>.html')
+    @dbcontext
+    def purchase_detailed(uid):
+        unfiltered = request.query.get('lang', '') == 'zh'
+        purchase = get_purchase_full(dbapi, uid)
+        temp = jinja_env.get_template('import/purchase_detailed.html')
+        if unfiltered:
+            temp = jinja_env.get_template('import/purchase_zh.html')
+        else:
+            map(normal_filter, purchase.items)
+            temp = jinja_env.get_template('import/purchase_detailed.html')
+        return temp.render(meta=purchase.meta, items=purchase.items, units=ALL_UNITS)
+
     @app.get(prefix + '/unit')
     @dbcontext
     def get_all_units():
@@ -294,7 +307,3 @@ def make_import_apis(prefix, auth_decorator, dbapi,
 
     return app
 
-
-def value_filter(item):
-    item.item.price_rmb *= Decimal('0.4')
-    return item
