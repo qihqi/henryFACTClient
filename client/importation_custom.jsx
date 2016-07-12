@@ -21,6 +21,7 @@ export class CustomFull extends React.Component {
         this.getCustom(this.props.params.uid);
         this.setItemValue = this.setItemValue.bind(this);
         this.saveCustom = this.saveCustom.bind(this);
+        this.splitCustom = this.splitCustom.bind(this);
         this.openPList = () => window.open(API + '/custom_plist/' + props.params.uid);
         this.openInvoice= () => window.open(API + '/custom_invoice/' + props.params.uid);
         this.state = {
@@ -35,6 +36,22 @@ export class CustomFull extends React.Component {
             success: (x) => {
                 x = JSON.parse(x);
                 this.setState(x);
+            }
+        });
+    }
+    splitCustom(index) {
+        var item = this.state.customs[index];
+        $.ajax({
+            url: API + '/split_custom_items',
+            data: JSON.stringify(item),
+            method: 'POST',
+            success: (x) => {
+                x = JSON.parse(x);
+                this.state.customs.splice(index, 1);
+                for (var i in x.result) {
+                    this.state.customs.splice(index, 0, x.result[i]);
+                }
+                this.setState({customs: this.state.customs});
             }
         });
     }
@@ -90,7 +107,8 @@ export class CustomFull extends React.Component {
                         key={`${x.custom.uid}-${x.purchase_items.length}-${hashCode(JSON.stringify(x.custom))}`}
                         {...x.custom} index={index}
                         setItemValue={this.setItemValue} purchase_items={x.purchase_items}
-                        units={this.state.units} />;
+                        units={this.state.units} 
+                        splitCustom={this.splitCustom} />;
             })}
            </div>
         </div>);
@@ -101,6 +119,7 @@ class SingleCustomRow extends React.Component {
     constructor(props) {
         super(props)
         this.onChange = this.onChange.bind(this);
+        this.splitCustom = this.splitCustom.bind(this);
         this.state = Object.assign({}, props);
     }
     onChange(event) {
@@ -113,6 +132,9 @@ class SingleCustomRow extends React.Component {
             newState['_edited'] = true;
         }
         this.setState(newState);
+    }
+    splitCustom() {
+        this.props.splitCustom(this.props.index);
     }
     render() {
         var moreStyle = {marginTop: '5px', border:'1px solid grey'};
@@ -159,9 +181,13 @@ class SingleCustomRow extends React.Component {
                 <input className="value_col tableCell" name='box' value={this.state.box}
                     onChange={this.onChange} />
             </div>
-            <div className="col-xs-1 smallpadding" data-toggle='collapse'
-                data-target={'#purchase' + this.props.uid} >
-                <button className="btn btn-primary btn-xs">Ver</button>
+            <div className="col-xs-1 smallpadding">
+                <button className="btn btn-primary btn-xs" data-toggle='collapse'
+                    data-target={'#purchase' + this.props.uid}>Ver</button>
+
+                { this.props.purchase_items.length > 1 ?
+                <button onClick={this.splitCustom} 
+                        className="btn btn-danger btn-xs">Separar</button> : ''}
             </div>
             </div>
             <div className='collapse' id={"purchase" + this.props.uid}>

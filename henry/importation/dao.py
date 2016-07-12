@@ -64,14 +64,21 @@ class PurchaseItemFull(TypedSerializableMixin):
         self.item = item
 
 
-def get_purchase_item_full(dbapi, purchase_id):
+def _get_purchase_item_full_filter(dbapi, filter_):
     for item, prod in dbapi.db_session.query(
-        NPurchaseItem, NUniversalProduct).filter(
-        NPurchaseItem.purchase_id == purchase_id).filter(
-        NPurchaseItem.upi == NUniversalProduct.upi):
+            NPurchaseItem, NUniversalProduct).filter(
+            NPurchaseItem.upi == NUniversalProduct.upi).filter(filter_):
         yield PurchaseItemFull(
             prod_detail=UniversalProd.from_db_instance(prod),
             item=PurchaseItem.from_db_instance(item))
+
+
+def get_purchase_item_full(dbapi, uid):
+    return _get_purchase_item_full_filter(dbapi, NPurchaseItem.purchase_id == uid)
+
+
+def get_purchase_item_full_by_custom(dbapi, uid):
+    return _get_purchase_item_full_filter(dbapi, NPurchaseItem.custom_item_uid == uid)
 
 
 def get_purchase_full(dbapi, uid):
@@ -95,6 +102,7 @@ def create_custom(item, declared_map):
     if filters == 'convert_to_kg':
         price, quant, unit = convert_to_kg(price, quant, unit, item.item.box)
     return CustomItem(
+        purchase_id=item.item.purchase_id,
         display_name=display_name,
         quantity=quant,
         price_rmb=price,

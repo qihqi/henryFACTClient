@@ -10,7 +10,7 @@ from henry.base.serialization import json_dumps
 from henry.base.session_manager import DBContext
 from .dao import (Purchase, PurchaseItem, UniversalProd, DeclaredGood,
                   get_purchase_full, ALL_UNITS, get_custom_items_full, CustomItem, CustomItemFull, normal_filter,
-                  generate_custom_for_purchase, PurchaseStatus)
+                  generate_custom_for_purchase, PurchaseStatus, create_custom, get_purchase_item_full_by_custom)
 
 
 def make_import_apis(prefix, auth_decorator, dbapi,
@@ -150,9 +150,25 @@ def make_import_apis(prefix, auth_decorator, dbapi,
                 dbapi.update(pitem.item, {'custom_item_uid': fcustom.uid})
         return '{"status": "success"}'
 
+    @app.post(prefix + '/split_custom_items')
+    @dbcontext
+    def split_custom_items():
+        declared = {x.uid: x for x in dbapi.search(DeclaredGood)}
+        obj = CustomItemFull.deserialize(json.loads(request.body.read()))
+        new_customs = []
+        pitems = get_purchase_item_full_by_custom(dbapi, obj.custom.uid)
+        for x in pitems:
+            c = create_custom(x, declared)
+            uid = dbapi.create(c)
+            dbapi.update(x.item, {'custom_item_uid': uid})
+            new_customs.append(CustomItemFull(c, [x]))
+        dbapi.delete(obj.custom)
+        return json_dumps({'result': new_customs})
+
+
     @app.post(prefix + '/custom_full/purchase/<uid>')
     @dbcontext
-    def create_custom(uid):
+    def post_create_custom(uid):
         purchase_meta = dbapi.get(uid, Purchase)
         if purchase_meta == PurchaseStatus.NEW:
             return '{"status": "not generated"}'
