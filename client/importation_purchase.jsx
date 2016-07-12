@@ -223,6 +223,7 @@ export class EditPurchase extends React.Component {
         this.onSelectProvidorVal = this.onSelectProvidorVal.bind(this);
         this.onNewProvidor = this.onNewProvidor.bind(this);
         this.savePurchase = this.savePurchase.bind(this);
+        this.setStatusReady = this.setStatusReady.bind(this);
         this.showAddNewProduct = this.showAddNewProduct.bind(this);
         this.onNewProduct = this.onNewProduct.bind(this);
         this.changeMeta = this.changeMeta.bind(this);
@@ -394,6 +395,10 @@ export class EditPurchase extends React.Component {
             }
         });
     }
+    setStatusReady() {
+        this.state.meta.status = 'READY';
+        this.savePurchase();
+    }
     showAddNewProduct() {
         this.refs.addNewProductBox.setState({providor_zh: this.state.currentProvidor});
         this.refs.addNewProduct.show();
@@ -448,7 +453,8 @@ export class EditPurchase extends React.Component {
             <div className="col-sm-4">
                 <p><label>{'总价 '}</label>{this.state.meta.total_rmb}</p>
                 <button onClick={this.showAddNewProduct}>{'添加新产品'}</button>
-                <button onClick={this.savePurchase}>{'保存'}</button>
+                <button className="btn btn-sm btn-warning" onClick={this.savePurchase}>{'保存'}</button>
+                <button className="btn btn-sm btn-danger" onClick={this.setStatusReady}>{'完成'}</button>
             </div>
         </div>
         <div className="row" style={{height: '90%'}}>

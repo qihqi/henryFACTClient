@@ -195,223 +195,8 @@ var SelectBox = React.createClass({
     }
 });
 
-var ProdCantPriceInput = React.createClass({
-    getInitialState: function() {
-        return {cant: 0, price: 0};
-    },
-    focus: function() {
-        var cant = React.findDOMNode(this.refs.cant);
-        cant.focus();
-        cant.select();
-    },
-    onChangeCant: function(event) {
-        this.setState({cant: event.target.value}); 
-    },
-    onChangePrice: function(event) {
-        this.setState({price: event.target.value}); 
-    },
-    focusPrice: function(event) {
-        if (event.nativeEvent.keyCode == 13) {
-            event.preventDefault();
-            var price = React.findDOMNode(this.refs.price);
-            price.focus();
-            price.select();
-        }
-    },
-    exportItem: function(event) {
-        if (event.nativeEvent.keyCode == 13) {
-            event.preventDefault();
-            this.props.callback({
-                prod: this.props.prod,
-                cant: this.state.cant,
-                price: this.state.price
-            });
-        }
-    },
-    render: function() {
-        var prod = this.props.prod || {};
-        var prodname = prod.name_zh || (prod.providor_id + " " + prod.providor_item_id);
-        var total = Math.round(this.state.cant * this.state.price * 100) / 100;
-        return (
-            <table>
-            <tbody>
-            <tr>
-                <td>{prodname}</td>
-                <td><input ref="cant" value={this.state.cant} onChange={this.onChangeCant} 
-                           onKeyDown={this.focusPrice} /> </td>
-                <td><input ref="price" value={this.state.price} 
-                           onChange={this.onChangePrice} onKeyDown={this.exportItem}/></td>
-                <td>{total}</td>
-            </tr>
-            </tbody>
-            </table>
-        );
-    }
-});
 
-var ProductSearcher = React.createClass({
-    getAllProduct: function(ready) {
-        $.ajax({
-            url: API + '/universal_prod', 
-            success: (result) => {
-                var result = JSON.parse(result);
-                this.allprod = {};
-                for (var x in result.result) {
-                    var item = result.result[x];
-                    if (!(item.providor_zh in this.allprod)) {
-                        this.allprod[item.providor_zh] = [];
-                    }
-                    this.allprod[item.providor_zh].push(item);
-                }
-                console.log(this.allprod);
-                var providors = Object.keys(this.allprod);
-                this.setState({'providors': providors});    
-            }
-        });
-    },
-    getInitialState: function() {
-        this.getAllProduct();
-        return {providors: [], products: []};
-    }, 
-    onProvidorChange: function(prov) {
-        var prods = this.allprod[prov] || [];
-        console.log('prods');
-        console.log(prods);
-        this.setState({products: prods});
-//        if (prods.length > 0) {
-//            this.props.onSelectProduct(prods[0]);
-//        }
-    },
-    render: function() {
-        return (<div className="container">
-            <div className="row"><button onClick={this.getAllProduct}>Reload</button></div>
-            <div className="row">
-            <SelectBox items={this.state.providors}
-                       size="10"
-                       name="providor"
-                       callback={this.onProvidorChange}
-                       itemdisplay={function(x){return x;}}  />
-            </div>
-            <div className="row">
-            <SelectBox items={this.state.products}
-                       size="20"
-                       name="product"
-                       callback={this.props.onSelectProduct}
-                       itemdisplay={displayProduct}  />
-            </div>
-           </div>);
-    }
-});
 
-function displayProduct(p) {
-    var chname = '(' + (p.providor_item_id || '') + ')' + p.name_zh;
-    return chname + " " + p.name_es;
-}
-
-var ItemList = React.createClass({
-    render: function() {
-        var rows = this.props.items.map(function(item) {
-            return <tr>
-                <td>{displayProduct(item.prod)}</td>
-                <td>{item.price}</td>
-                <td>{item.cant}</td>
-                <td>{Math.round(item.cant *  item.price * 100) / 100}</td>
-            </tr>;
-        });
-        return <table>
-            <thead>
-                <tr>
-                    <th>{"产品"}</th>
-                    <th>{"价格"}</th>
-                    <th>{"数量"}</th>
-                    <th>{"一共"}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {rows}
-            </tbody>
-        </table>
-    }
-});
-
-export var CreateInvBox = React.createClass({
-    getInitialState: function() {
-        query(API + '/declaredgood', function(result) {
-            result = JSON.parse(result);
-            this.setState({declaredgoods: result.result});
-        }.bind(this));
-        return {currentProd: {}, items: [], declaredgoods:[]};
-    },
-    onSelectProduct: function(prod) {
-        console.log("onSelectProducto");
-        console.log(prod);
-        this.setState({currentProd: prod});
-        this._input.focus();
-    },
-    addItem: function(item) {
-        var arr = this.state.items.concat([item]);
-        this.setState({items: arr});
-    },
-    saveInv: function() {
-        $.ajax({
-            method: 'POST',
-            data: JSON.stringify(this.state.items),
-            url: API + '/purchase_full',
-            success: function(r) {
-                alert(r.uid);
-            }
-        });
-    },
-    setInputRef: function(ref) {
-        this._input = ref;
-    },
-    loadInv: function() {
-        var code = React.findDOMNode(this.refs.code).value;
-        query(API + '/purchase_full/' + code, function(result) {
-            result = JSON.parse(result);
-            console.log(result);
-            this.setState({'items': result.result});
-        }.bind(this));
-    },
-    showCreateProduct: function() {
-        this.refs.createProd.show();
-    },
-    createdProd: function(prod) {
-        console.log(prod);
-        this.refs.createProd.hide();
-    },
-    render: function() {
-        var optionbox = {
-            name: 'declaring_id', 
-            items: this.state.declaredgoods, 
-            display: (x) => x.display_name,
-            size: 1
-        };
-        return <div className="container">
-            <SkyLight hiddenOnOverlayClicked ref="createProd" title="新建产品">
-                <CreateOrUpdateBox url={API + "/universal_prod"} ref="createProdBox"
-                     names={PROD_KEYS} update={false}
-                     optionbox={optionbox}
-                     callback={this.createdProd} />
-            </SkyLight>
-            <h4>{"购货"}</h4>
-            <div className="row">
-            <div className="col-xs-4 col-md-4">
-                <button onClick={this.showCreateProduct}>{'新建产品'}</button>
-                <ProductSearcher ref="prodSearcher" onSelectProduct={this.onSelectProduct} />
-            </div>
-            <div className="col-xs-8 col-md-8">
-                <input ref="code" />
-                <button onClick={this.loadInv}>LOAD</button>
-                <button onClick={this.saveInv}>SAVE</button>
-                <ProdCantPriceInput prod={this.state.currentProd} 
-                                    ref={this.setInputRef} callback={this.addItem} />
-                <ItemList items={this.state.items} />
-            </div>
-            </div>
-        </div>;
-    }
-});
 //
 //            <div className="col-md-4">
 //                <div className="myfloat">
@@ -480,6 +265,7 @@ export var ShowDeclared = React.createClass({
         </div>);
     }
 });
+
 export var ShowProd = React.createClass({
     setCurrent: function(current) {
         this.setState({current: current});
@@ -628,13 +414,51 @@ export var ShowPurchase = React.createClass({
             }
         });
     },
+    generateInv: function(item) {
+        if (item.status == 'NEW') {
+            alert('Aun no esta listo');
+            return;
+        }
+        var proceed = true;
+        if (item.status == 'CUSTOM') {
+            proceed = confirm('Regenerar Factura borrara los combios hechos');
+        }
+        if (proceed) {
+            $.ajax({
+                url: API + '/custom_full/purchase/' + item.uid,
+                method: 'POST',
+                success: (x) => {
+                    if (item.status != 'CUSTOM') {
+                        item.status = 'CUSTOM';
+                        this.setState({list: this.state.list});
+                    }
+                }
+            });
+        }
+    },
     getInitialState: function() {
         this.getAllPurchase();
         return {list: []};
     },
     render: function() {
         return <div className="container">
-            <PurchaseList list={this.state.list} />;
+            return <table className="table"><tbody>
+                { this.state.list.map( (x) => {
+                    return <tr>
+                        <td>{x.uid}</td>
+                        <td>{x.timestamp}</td>
+                        <td>{x.status}</td>
+                        <td><a href={API + "/purchase_detailed/" + x.uid + '.html'}>Ver Compras</a></td>
+                        <td>{x.status == 'CUSTOM' ? 
+                            <a className='btn btn-sm btn-primary' href={"#/edit_custom/" + x.uid}>
+                                Editar Factura</a>:''}</td>
+                        <td>{x.status != 'NEW' ? 
+                            <button onClick={this.generateInv.bind(this, x)} 
+                                className='btn btn-sm btn-warning'>
+                               Generar Factura</button> : ''}</td>
+                    </tr>;
+                })}
+        </tbody></table>
         </div>;
     }
 });
@@ -657,7 +481,7 @@ export var ShowPurchase2 = React.createClass({
         $.ajax({
             url: API + '/purchase',
             method: 'POST',
-            data: '{}',
+            data: '{"status": "NEW"}',
             success: (result) => {
                 var key = JSON.parse(result).key;
                 window.location = '#/edit_purchase/' + key;
@@ -672,100 +496,8 @@ export var ShowPurchase2 = React.createClass({
     }
 });
 
-export var PurchaseContent = React.createClass({
-    getItems: function() {
-        $.ajax({
-            url: API + '/purchase_filtered/' + this.props.params.uid,
-            success: (x) => {
-                x = JSON.parse(x);
-                this.setState(x);
-            }
-        });
-    },
-    getDeclared: function() {
-        $.ajax({
-            url: API + '/declaredgood',
-            success: (x) => {
-                x = JSON.parse(x);
-                var declared = {};
-                for (var i in x.result) {
-                    declared[x.result[i].uid] = x.result[i];
-                }
-                this.setState({declared: declared});
-            }
-        });
-    },
-    getInitialState: function() {
-        this.getItems();
-        this.getDeclared();
-        return {items: [], meta: {timestamp: ''}, declared: {}, units: {}};
-    },
-    render: function() {
-        return <PurchaseItemList list={this.state.items} declared={this.state.declared} units={this.state.units}/>;
-    } 
-});
-
-var PurchaseItemList = React.createClass({
-    render: function() {
-        var hasDeclared = [];
-        var hasNot = [];
-        for (var i in this.props.list) {
-            i = this.props.list[i];
-            if (i.prod_detail.declaring_id || i.prod_detail.declaring_id == 0) {
-                hasDeclared.push(i);
-            } else {
-                hasNot.push(i);
-            }
-        }
-        hasDeclared.sort((a,b) => a.prod_detail.declaring_id - b.prod_detail.declaring_id);
-        console.log(hasDeclared, hasNot);
-        return <table className="table"><tbody>
-            { hasDeclared.map( (x) => {
-                var decl = this.props.declared[x.prod_detail.declaring_id] || {};
-                console.log(x.prod_detail.declaring_id);
-                return <tr>
-                    <td>{x.prod_detail.name_zh}</td>
-                    <td>{x.prod_detail.name_es}</td>
-                    <td>{x.item.quantity}</td>
-                    <td>{this.props.units[x.prod_detail.unit].name_es}</td>
-                    <td>{Math.round(x.item.price_rmb * 100) / 100  }</td>
-                    <td>{Math.round(x.item.price_rmb * x.item.quantity * 100) / 100}</td>
-                    <td>{decl.display_name}</td>
-                    <td>{decl.display_price}</td>
-                    <td>{decl.uid}</td>
-                </tr>;
-            })}
-            { hasNot.map( (x) => {
-                return <tr>
-                    <td>{x.prod_detail.name_zh}</td>
-                    <td>{x.prod_detail.name_es}</td>
-                    <td>{x.item.quantity}</td>
-                    <td>{this.props.units[x.prod_detail.unit].name_es}</td>
-                    <td>{Math.round(x.item.price_rmb * 100) / 100  }</td>
-                    <td>{Math.round(x.item.price_rmb * x.item.quantity * 100) / 100}</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                </tr>;
-            })}
-        </tbody></table>;
-    }
-});
-
 var PurchaseList = React.createClass({
     render: function() {
-        return <table className="table"><tbody>
-            { this.props.list.map( (x) => {
-                return <tr>
-                    <td>{x.uid}</td>
-                    <td>{x.timestamp}</td>
-                    <td>{x.status}</td>
-                    <td><a href={API + "/purchase_detailed/" + x.uid + '.html'}>Ver Compras</a></td>
-                    <td><a className='btn btn-sm btn-primary' href={"#/edit_custom/" + x.uid}>
-                            Editar Factura</a></td>
-                </tr>;
-            })}
-        </tbody></table>;
     }
 });
 
