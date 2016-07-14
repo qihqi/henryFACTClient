@@ -165,7 +165,6 @@ def make_import_apis(prefix, auth_decorator, dbapi,
         dbapi.delete(obj.custom)
         return json_dumps({'result': new_customs})
 
-
     @app.post(prefix + '/custom_full/purchase/<uid>')
     @dbcontext
     def post_create_custom(uid):

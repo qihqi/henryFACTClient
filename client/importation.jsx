@@ -5,7 +5,7 @@ import twoDecimalPlace from './view_account';
 import {Bar, Line} from 'react-chartjs';
 import {EditPurchase} from './importation_purchase';
 
-const API = '/import';
+export const API = '/import';
 
 const PROD_KEYS = [
     "name_es",

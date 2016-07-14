@@ -4,6 +4,7 @@ import {Route, Router, Link, browserHistory} from 'react-router';
 import {SaleReportByDateFull, InvMovementListFull, ShowProd, ShowDeclared, ShowPurchase, ShowPurchase2} from './importation';
 import {EditPurchase} from './importation_purchase';
 import {CustomFull} from './importation_custom';
+import {EditProdPage} from './importation_edit_prod';
 
 
 var ShowIndex = React.createClass({
@@ -15,6 +16,7 @@ var ShowIndex = React.createClass({
 });
 
 var router = <Router history={browserHistory}>
+    <Route name="editprod" path='/editprod' component={EditProdPage} />
     <Route name="allprod" path='/allprod' component={ShowProd} />
     <Route name="alldeclared" path='/alldeclared' component={ShowDeclared} />
     <Route name="allpurchase" path='/allpurchase' component={ShowPurchase} />

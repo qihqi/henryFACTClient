@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import LinkedStateMixin from 'react-addons-linked-state-mixin';
 import SkyLight from 'react-skylight';
 import twoDecimalPlace from './view_account';
+import {NewProduct} from './importation_edit_prod';
 
 const API = '/import';
 
@@ -30,6 +31,7 @@ function getItemValue(item) {
                 */
 
 
+// This edits an PurchaseItem, usually shown inside of a skyline
 var EditItem = React.createClass({
     mixins: [LinkedStateMixin],
     getInitialState() {
@@ -74,70 +76,8 @@ var EditItem = React.createClass({
     }
 });
 
-var NewProduct = React.createClass({
-    mixins: [LinkedStateMixin],
-    getInitialState() {
-        return { };
-    },
-    saveNewProduct() {
-        $.ajax({
-            url: API + '/universal_prod',
-            method: 'POST',
-            data: JSON.stringify(this.state),
-            success: (result) => {
-                var key = JSON.parse(result).key;
-                var newProd = Object.assign({}, this.state);
-                newProd.uid = key;
-                this.props.onNewProduct(newProd);
-            }
-        });
-    },
-    render() {
-        return <table className="table"><tbody>
-            <tr>
-                <td>{"产品名:"} </td>
-                <td><input valueLink={this.linkState('name_zh')} /></td>
-            </tr>
-            <tr>
-                <td>Nombre Espanol:</td>
-                <td><input valueLink={this.linkState('name_es')} /></td>
-            </tr>
-            <tr>
-                <td>{"供货商:"} </td>
-                <td><input valueLink={this.linkState('providor_zh')} /></td>
-            </tr>
-            <tr>
-                <td>{"供货商产品号:"} </td>
-                <td><input valueLink={this.linkState('providor_item_id')} /></td>
-            </tr>
-            <tr>
-                <td>{"单位:"} </td>
-                <td><select valueLink={this.linkState('unit')}>
-                        {Object.keys(this.props.units).map((x) => <option value={x}>{this.props.units[x].name_zh}</option>)}
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <td>{"材料:"} </td>
-                <td><input valueLink={this.linkState('material')} /></td>
-            </tr>
-            <tr>
-                <td>{"卖货号:"} </td>
-                <td><input valueLink={this.linkState('selling_id')} /></td>
-            </tr>
-            <tr>
-                <td>{"说明:"} </td>
-                <td><input valueLink={this.linkState('description')} /></td>
-            </tr>
-            <tr>
-                <td></td>
-                <td><button className="btn btn-lg btn-primary" 
-                            onClick={this.saveNewProduct}>{"确定"}</button> </td>
-            </tr>
-            </tbody></table>;
-    }
-});
 
+// List of PurchaseItem (usually in lower right panel)
 class ItemList extends React.Component {
     constructor(props) {
         super(props);
@@ -239,6 +179,7 @@ export class EditPurchase extends React.Component {
             currentProvidor: null,
             meta: {},
             units: {},
+            declared: [],
         };
     }
     onSelectProvidorVal(prov) {
@@ -300,14 +241,14 @@ export class EditPurchase extends React.Component {
     }
     getAllProducts() {
         $.ajax({
-            url: API + '/universal_prod',
+            url: API + '/universal_prod_with_declared',
             success: (result) => {
                 if (typeof result === 'string') {
                     result = JSON.parse(result);
                 }
                 var allprod = {};
-                for (var x in result.result) {
-                    var item = result.result[x];
+                for (var x in result.prod) {
+                    var item = result.prod[x];
                     if (!(item.providor_zh in allprod)) {
                         allprod[item.providor_zh] = [];
                     }
@@ -317,6 +258,7 @@ export class EditPurchase extends React.Component {
                 this.setState({
                     all_providors: providors,
                     allprod: allprod,
+                    declared: result.declared,
                 });
             }
         });
@@ -433,7 +375,9 @@ export class EditPurchase extends React.Component {
 
         return <div className="container" style={{height: '100%'}}>
             <SkyLight hiddenOnOverlayClicked dialogStyles={addNewProdStyle} ref="addNewProduct" title={"新产品"}>
-                <NewProduct ref="addNewProductBox" units={this.state.units} onNewProduct={this.onNewProduct} />
+                <NewProduct ref="addNewProductBox" 
+                    units={this.state.units} onNewProduct={this.onNewProduct} 
+                    declared={this.state.declared} />
             </SkyLight>
         <div className="row">
             <div className="col-sm-4">
@@ -453,8 +397,11 @@ export class EditPurchase extends React.Component {
             <div className="col-sm-4">
                 <p><label>{'总价 '}</label>{this.state.meta.total_rmb}</p>
                 <button onClick={this.showAddNewProduct}>{'添加新产品'}</button>
-                <button className="btn btn-sm btn-warning" onClick={this.savePurchase}>{'保存'}</button>
-                <button className="btn btn-sm btn-danger" onClick={this.setStatusReady}>{'完成'}</button>
+                {this.state.meta.status != 'CUSTOM' ?
+                [<button className="btn btn-sm btn-warning" onClick={this.savePurchase}>{'保存'}</button>,
+                <button className="btn btn-sm btn-danger" onClick={this.setStatusReady}>{'完成'}</button>] 
+                    :''}
+
             </div>
         </div>
         <div className="row" style={{height: '90%'}}>
@@ -492,6 +439,7 @@ export class EditPurchase extends React.Component {
         </div>;
     }
 }
+
 // all_providors
 // providors
 // providor_data
