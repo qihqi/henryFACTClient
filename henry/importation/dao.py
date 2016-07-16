@@ -12,7 +12,22 @@ NORMAL_FILTER_MULT = Decimal('0.35')
 
 UniversalProd = dbmix(NUniversalProduct)
 DeclaredGood = dbmix(NDeclaredGood)
-PurchaseItem = dbmix(NPurchaseItem)
+
+class PurchaseItem(dbmix(NPurchaseItem)):
+
+    @classmethod
+    def deserialize(cls, thedict):
+        result = super(PurchaseItem, cls).deserialize(thedict)
+        if thedict.get('box', None):
+            result.box = Decimal(result.box)
+        if thedict.get('box') == '':
+            result.box = None
+        if thedict.get('price_rmb', None):
+            result.price_rmb = Decimal(result.price_rmb)
+        if thedict.get('quantity', None):
+            result.quantity = Decimal(result.quantity)
+        return result
+
 
 class CustomItem(dbmix(NCustomItem)):
     @classmethod
