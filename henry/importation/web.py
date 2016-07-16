@@ -29,17 +29,9 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     def get_universal_prod_with_declared():
         all_prod = dbapi.search(UniversalProd)
         all_declared = dbapi.search(DeclaredGood)
-        all_declared_map = {x.uid: x for x in all_declared}
-
-        def join_declared(x):
-            declared = x.declaring_id
-            x = x.serialize()
-            if declared in all_declared_map:
-                x['declared_name'] = all_declared_map[declared].display_name
-            return x
 
         return json_dumps({
-            'prod': map(join_declared, all_prod),
+            'prod': all_prod,
             'declared': all_declared
         })
 

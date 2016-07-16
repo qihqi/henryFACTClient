@@ -27,7 +27,7 @@ export var NewProduct = React.createClass({
                 var newProd = Object.assign({}, this.state);
                 if (!edit) {
                     var key = JSON.parse(result).key;
-                    newProd.uid = key;
+                    newProd.upi = key;
                     this.props.onNewProduct(newProd);
                 } else {
                     this.props.onNewProduct(newProd, this.index);
@@ -295,7 +295,7 @@ var ProductList = React.createClass({
                 <td>{prod.unit}</td>
                 <td>{prod.providor_zh}</td>
                 <td>{prod.providor_item_id}</td>
-                <td>{prod.declared_name}</td>
+                <td>{prod.declaring_id}</td>
                 <td>{prod.selling_id}</td>
             </tr>);
         }

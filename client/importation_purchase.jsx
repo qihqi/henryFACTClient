@@ -111,8 +111,8 @@ class ItemList extends React.Component {
             return <tr style={moreStyle}>
                 <td className="number">{item.item.box || ''}</td>
                 <td>{item.prod_detail.name_zh}({unit})</td>
-                <td className="number">{Number(item.item.price_rmb).toFixed(2)}</td>
                 <td className="number">{Number(item.item.quantity)}</td>
+                <td className="number">{Number(item.item.price_rmb).toFixed(2)}</td>
                 <td className="number">
                     {(Math.round(item.item.price_rmb*  item.item.quantity * 100) / 100).toFixed(2)}
                 </td>
@@ -131,8 +131,8 @@ class ItemList extends React.Component {
                     <tr>
                         <th className="number">{"箱数"}</th>
                         <th>{"产品"}</th>
-                        <th className="number">{"价格"}</th>
                         <th className="number">{"数量"}</th>
+                        <th className="number">{"价格"}</th>
                         <th className="number">{"一共"}</th>
                         <th>{'删除？'}</th>
                         <th>{''}</th>
@@ -184,7 +184,7 @@ export class EditPurchase extends React.Component {
     }
     onSelectProvidorVal(prov) {
         this.setState({currentProvidor: prov});
-        this.refs.productSelector.focusPrice();
+        this.refs.productSelector.focusCant();
     }
     onNewProvidor(prov) {
         this.state.providors.push(prov);
@@ -289,6 +289,7 @@ export class EditPurchase extends React.Component {
         }
         var value = Number(event.target.value);
         this.state.providors_data[this.state.currentProvidor].box = value;
+        this.state.providors_data[this.state.currentProvidor]._edited = true;
         this.setState({providors_data: this.state.providors_data});
     }
     savePurchase() {
@@ -297,15 +298,32 @@ export class EditPurchase extends React.Component {
             create_items: [],
             delete_items: [],
             edit_items: [],
-            providor_boxes: {},
         };
 
         for (var prov in this.state.items_by) {
+            var prov_data = this.state.providors_data[prov];
+            var modify_box = '_edited' in prov_data && prov_data._edited;
+            var cant_sum = 0;
+            var curbox = 0;
+            if (modify_box) {
+                for (var j in this.state.items_by[prov]) {
+                    var item = this.state.items_by[prov][j];
+                    var box = Number(item.item.box || 0);
+                    if (box == 0) {
+                        cant_sum += Number(item.item.quantity);
+                    }
+                    curbox += box;
+                }
+            }
             for (var j in this.state.items_by[prov]) {
                 var item = this.state.items_by[prov][j];
                 var deleted = '_deleted' in item.item && item.item._deleted;
                 var isNew = '_new' in item.item && item.item._new;
                 var edited = '_edited' in item.item && item.item._edited;
+                if (modify_box && Number(item.item.box || 0) == 0) {
+                    item.item.box = (Number(prov_data.box) - curbox) * item.item.quantity / cant_sum;
+                    edited = true;
+                }
                 if (isNew && deleted) {
                     // do nothing
                     continue;
@@ -508,14 +526,13 @@ class ProductSelector extends React.Component {
         this.addItemOnKey = this.addItemOnKey.bind(this);
     }
     focusCant(event) {
-        testEnter(this.refs.quantity, event);
+        selectInput(this.refs.quantity);
     }
     focusBox(event) {
         testEnter(this.refs.box, event);
     }
     focusPrice(event) {
-        console.log('here');
-        selectInput(this.refs.price_rmb);
+        testEnter(this.refs.price_rmb, event);
     }
     addItem(event) {
         if (!this.props.prods || this.props.prods.length == 0) {
@@ -546,16 +563,16 @@ class ProductSelector extends React.Component {
     }
     render() {
         return <div>
-            <select ref="newProduct" onChange={this.focusPrice}>
+            <select ref="newProduct" onChange={this.focusCant}>
             {this.props.prods.map((x) => {
                     var unit = x.unit in this.props.units ? this.props.units[x.unit].name_zh : x.unit;
                     return <option key={x.upi} value={x.upi}>{x.name_zh}({unit})</option>;
             })}
             </select>
             <input className="smallNum"
-                ref="price_rmb" onKeyDown={this.focusCant} placeholder={'价格'}/>
+                ref="quantity" onKeyDown={this.focusPrice} placeholder={'数量'}/>
             <input className="smallNum"
-                ref="quantity" onKeyDown={this.focusBox} placeholder={'数量'}/>
+                ref="price_rmb" onKeyDown={this.focusBox} placeholder={'价格'}/>
             <input className="smallNum" onKeyDown={this.addItemOnKey}
                 ref="box" placeholder={'箱数'}/>
             <button onClick={this.addItem}>{'添加'}</button>
