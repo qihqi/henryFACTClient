@@ -255,6 +255,11 @@ export class EditPurchase extends React.Component {
                     allprod[item.providor_zh].push(item);
                 }
                 var providors = Object.keys(allprod);
+                providors.sort((a, b) => a.localeCompare(b, [ "zh-CN-u-co-pinyin" ]));
+                for (var i in providors) {
+                    allprod[providors[i]].sort(
+                            (a, b) => a.name_zh.localeCompare(b.name_zh,[ "zh-CN-u-co-pinyin" ]));
+                }
                 this.setState({
                     all_providors: providors,
                     allprod: allprod,
@@ -566,7 +571,8 @@ class ProductSelector extends React.Component {
             <select ref="newProduct" onChange={this.focusCant}>
             {this.props.prods.map((x) => {
                     var unit = x.unit in this.props.units ? this.props.units[x.unit].name_zh : x.unit;
-                    return <option key={x.upi} value={x.upi}>{x.name_zh}({unit})</option>;
+                    return <option key={x.upi} value={x.upi}>
+                        ({x.providor_item_id}){x.name_zh}({unit})</option>;
             })}
             </select>
             <input className="smallNum"
