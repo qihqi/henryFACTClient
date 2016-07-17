@@ -91,8 +91,8 @@ class ItemList extends React.Component {
         var state = Object.assign({}, item.item);
         state['prod_detail'] = item.prod_detail;
         state['itemPosition'] = itemPosition;
-        this.refs.createItemBox.setState(state);
         this.refs.createItem.show();
+        this.refs.createItemBox.setState(state);
     }
     onEditedItem(itemPosition, data) {
         var item = this.props.items[itemPosition];
@@ -360,8 +360,8 @@ export class EditPurchase extends React.Component {
         this.savePurchase();
     }
     showAddNewProduct() {
-        this.refs.addNewProductBox.setState({providor_zh: this.state.currentProvidor});
         this.refs.addNewProduct.show();
+        this.refs.addNewProductBox.setState({providor_zh: this.state.currentProvidor});
     }
     onNewProduct(product) {
         if (!(product.providor_zh in this.state.allprod)) {

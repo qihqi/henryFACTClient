@@ -165,6 +165,7 @@ export class EditProdPage extends React.Component {
         this.onNewDeclared = this.onNewDeclared.bind(this);
         this.onEditedProduct = this.onEditedProduct.bind(this); 
         this.editProduct = this.editProduct.bind(this); 
+        this.editDeclared = this.editDeclared.bind(this); 
         this.getAllProd();
         this.getAllUnits();
     }
@@ -221,9 +222,9 @@ export class EditProdPage extends React.Component {
         this.refs.editProductDialog.hide();
     }
     editProduct(prod, index) {
+        this.refs.editProductDialog.show();
         this.refs.editProduct.setState(prod);
         this.refs.editProduct.index = index;
-        this.refs.editProductDialog.show();
     }
     onEditedDeclared(declared, index) {
         Object.assign(this.state.declaredgoods[index], declared);
@@ -231,9 +232,9 @@ export class EditProdPage extends React.Component {
         this.refs.editDeclaredDialog.hide();
     }
     editDeclared(declared, index) {
+        this.refs.editDeclaredDialog.show();
         this.refs.editDeclared.setState(declared);
         this.refs.editDeclared.index = index;
-        this.refs.editDeclaredDialog.show();
     }
     render() {
         return <div className="container">
@@ -310,7 +311,10 @@ var ProductList = React.createClass({
     }
 });
 
-class DeclaredList {
+class DeclaredList extends React.Component {
+    constructor(props) {
+        super(props);
+    }
     render() {
         return <table className="table" >
             {this.props.list.map((x) => {
