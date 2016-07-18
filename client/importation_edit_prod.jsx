@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import LinkedStateMixin from 'react-addons-linked-state-mixin';
-import SkyLight from 'react-skylight';
+import SkyLight from './skylight';
 import twoDecimalPlace from './view_account';
 import {API} from './importation';
 

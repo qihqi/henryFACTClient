@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import LinkedStateMixin from 'react-addons-linked-state-mixin';
-import SkyLight from 'react-skylight';
+import SkyLight from './skylight';
 import twoDecimalPlace from './view_account';
 import {NewProduct} from './importation_edit_prod';
 
@@ -110,7 +110,7 @@ class ItemList extends React.Component {
                                                                  : item.prod_detail.unit;
             return <tr style={moreStyle}>
                 <td className="number">{item.item.box || ''}</td>
-                <td>{item.prod_detail.name_zh}({unit})</td>
+                <td>{item.prod_detail.name_zh}({unit}) {item.item.color} </td>
                 <td className="number">{Number(item.item.quantity)}</td>
                 <td className="number">{Number(item.item.price_rmb).toFixed(2)}</td>
                 <td className="number">
@@ -548,6 +548,7 @@ class ProductSelector extends React.Component {
             quantity: this.refs.quantity.value,
             price_rmb: this.refs.price_rmb.value,
             box: this.refs.box.value,
+            color: this.refs.color.value,
             _new: true,
         };
         var prod_detail = null;
@@ -582,6 +583,8 @@ class ProductSelector extends React.Component {
             <input className="smallNum" onKeyDown={this.addItemOnKey}
                 ref="box" placeholder={'箱数'}/>
             <button onClick={this.addItem}>{'添加'}</button>
+            <input className="smallNum"
+                ref="color" placeholder={'颜色'}/>
         </div>;
     }
 }

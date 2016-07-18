@@ -1,6 +1,6 @@
 import React from 'react';
 import LinkedStateMixin from 'react-addons-linked-state-mixin';
-import SkyLight from 'react-skylight';
+import SkyLight from './skylight';
 import twoDecimalPlace from './view_account';
 import {Bar, Line} from 'react-chartjs';
 import {EditPurchase} from './importation_purchase';
