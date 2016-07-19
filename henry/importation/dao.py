@@ -5,8 +5,7 @@ import functools
 from henry.base.dbapi import dbmix
 from henry.base.serialization import SerializableMixin, TypedSerializableMixin, parse_iso_datetime
 from .schema import (NUniversalProduct, NDeclaredGood, NPurchaseItem,
-                     NPurchase, NCustomItem)
-from henry.sale_records.schema import NEntity
+                     NPurchase, NCustomItem, NUnit)
 
 NORMAL_FILTER_MULT = Decimal('0.35')
 
@@ -152,19 +151,10 @@ def get_custom_items_full(dbapi, uid):
     return sorted(items.values(), key=lambda i: i.custom.uid)
 
 
-class Unit(TypedSerializableMixin):
+class Unit(dbmix(NUnit)):
     LENGTH = 'length'
     WEIGHT = 'weight'
     UNIT = 'unit'
-
-    _fields = (
-        ('uid', str),
-        ('name_zh', unicode),
-        ('name_es', unicode),
-        ('type', str),
-        ('equiv_base', str),
-        ('equiv_multiplier', Decimal)
-    )
 
 def normal_filter(item):
     item.item.price_rmb *= NORMAL_FILTER_MULT

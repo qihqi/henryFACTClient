@@ -99,7 +99,7 @@ export var NewDeclared = React.createClass({
         var method = 'POST';
         var edit = 'edit' in this.props
         if (edit) {
-            url = url + this.props.uid;
+            url = url + '/' + this.state.uid;
             method = 'PUT';
         }
         $.ajax({
@@ -130,7 +130,7 @@ export var NewDeclared = React.createClass({
             </tr>
             <tr>
                 <td>{"Box Code"} </td>
-                <td><input valueLink={this.linkState('providor_item_id')} /></td>
+                <td><input valueLink={this.linkState('box_code')} /></td>
             </tr>
             <tr>
                 <td>{"Modify Strategy"} (docena, convert_to_kg) </td>
@@ -153,7 +153,7 @@ export var NewDeclared = React.createClass({
 const FIX_HEADER = {position: 'fixed', top: '0', width:'100%', zIndex: 10, backgroundColor: 'white'};
 const DIALOG_STYLE = {
     height: '70vh',
-    marginTop: '-400px',
+    marginTop: '-200px',
     overflowY: 'scroll',
 }
 
@@ -166,6 +166,7 @@ export class EditProdPage extends React.Component {
         this.onEditedProduct = this.onEditedProduct.bind(this); 
         this.editProduct = this.editProduct.bind(this); 
         this.editDeclared = this.editDeclared.bind(this); 
+        this.onEditedDeclared = this.onEditedDeclared.bind(this); 
         this.getAllProd();
         this.getAllUnits();
     }
@@ -259,7 +260,7 @@ export class EditProdPage extends React.Component {
                     declared={this.state.declaredgoods} />
             </SkyLight>
             <SkyLight hiddenOnOverlayClicked ref="editDeclaredDialog" title={"Edit Declared"}>
-                <NewDeclared ref="addNewProductBox" 
+                <NewDeclared ref="editDeclared"  edit
                     onNewItem={this.onEditedDeclared} />
             </SkyLight>
             <div style={FIX_HEADER}>
@@ -317,9 +318,9 @@ class DeclaredList extends React.Component {
     }
     render() {
         return <table className="table" >
-            {this.props.list.map((x) => {
+            {this.props.list.map((x, index) => {
                 return <tr>
-                    <td><button onClick={this.props.onItemSelected.bind(null, x)}>edit</button></td>
+                    <td><button onClick={this.props.onItemSelected.bind(null, x, index)}>edit</button></td>
                     <td>{x.uid}</td>
                     <td>{x.display_name}</td>
                     <td>{x.display_price}</td>

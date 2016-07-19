@@ -9,8 +9,10 @@ from henry.base.dbapi_rest import bind_dbapi_rest
 from henry.base.serialization import json_dumps
 from henry.base.session_manager import DBContext
 from .dao import (Purchase, PurchaseItem, UniversalProd, DeclaredGood,
-                  get_purchase_full, ALL_UNITS, get_custom_items_full, CustomItem, CustomItemFull, normal_filter,
-                  generate_custom_for_purchase, PurchaseStatus, create_custom, get_purchase_item_full_by_custom)
+                  get_purchase_full, get_custom_items_full, 
+                  CustomItem, CustomItemFull, normal_filter, Unit,
+                  generate_custom_for_purchase, PurchaseStatus, create_custom, 
+                  get_purchase_item_full_by_custom)
 
 
 def make_import_apis(prefix, auth_decorator, dbapi,
@@ -44,7 +46,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
         total = sum(i.item.price_rmb * i.item.quantity for i in purchase.items)
         purchase.meta.total_rmb = total
         res = purchase.serialize()
-        res['units'] = ALL_UNITS
+        res['units'] = {x.uid: x for x in dbapi.search(Unit)} 
         return json_dumps(res)
 
     @app.get(prefix + '/purchase_full/<uid>')
@@ -52,7 +54,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     @auth_decorator
     def get_purchase_full_http(uid):
         res = get_purchase_full(dbapi, uid).serialize()
-        res['units'] = ALL_UNITS
+        res['units'] = {x.uid: x for x in dbapi.search(Unit)} 
         return json_dumps(res)
 
     @app.post(prefix + '/purchase_full')
@@ -105,7 +107,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     def get_custom_full(uid):
         result = {'meta': dbapi.get(uid, Purchase),
                   'customs': get_custom_items_full(dbapi, uid),
-                  'units': ALL_UNITS}
+                  'units': {x.uid: x for x in dbapi.search(Unit)}}
         return json_dumps(result)
 
     @app.put(prefix + '/custom_full/<uid>')
@@ -205,17 +207,18 @@ def make_import_apis(prefix, auth_decorator, dbapi,
         else:
             map(normal_filter, purchase.items)
             temp = jinja_env.get_template('import/purchase_detailed.html')
-        return temp.render(meta=purchase.meta, items=purchase.items, units=ALL_UNITS)
+        return temp.render(meta=purchase.meta, 
+                items=purchase.items, units={x.uid: x for x in dbapi.search(Unit)})
 
     @app.get(prefix + '/unit')
     @dbcontext
     def get_all_units():
-        return json_dumps(ALL_UNITS)
+        return json_dumps({x.uid: x for x in dbapi.search(Unit)})
 
     @app.get(prefix + '/unit/<uid>')
     @dbcontext
     def get_unit(uid):
-        return json_dumps(ALL_UNITS[uid])
+        return json_dumps(dbapi.get(uid, Unit))
 
     return app
 

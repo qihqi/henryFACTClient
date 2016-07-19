@@ -20,6 +20,16 @@ class NUniversalProduct(Base):
     thumbpath = Column(String(200))
 
 
+class NUnit(Base):
+    __tablename__ = 'units'
+    uid = Column(String(20), primary_key=True)
+    name_zh = Column(String(50))
+    name_es = Column(String(50))
+    type = Column(String(20))
+    equiv_base= Column(String(20))
+    equiv_multiplier = Column(Numeric(10, 3))
+
+
 class NDeclaredGood(Base):
     __tablename__ = 'declared_good'
     uid = Column(Integer, primary_key=True, autoincrement=True)
