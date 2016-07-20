@@ -24,12 +24,6 @@ function testEnter(ref, event) {
 function getItemValue(item) {
     return Math.round(item.price_rmb * item.quantity * 100) / 100;
 }
-/*
-                <select ref='prod_select' onSelect={this.focusCant} >
-                    {this.props.prods.map((x) => <option value={x.uid}>{x.name_zh}</option>)}
-                </select>
-                */
-
 
 // This edits an PurchaseItem, usually shown inside of a skyline
 var EditItem = React.createClass({
@@ -392,7 +386,7 @@ export class EditPurchase extends React.Component {
         }
         const addNewProdStyle = {
             height: '70vh',
-            marginTop: '-400px',
+            marginTop: '-200px',
             overflowY: 'scroll',
         }
 

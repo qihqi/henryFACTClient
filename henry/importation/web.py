@@ -220,5 +220,19 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     def get_unit(uid):
         return json_dumps(dbapi.get(uid, Unit))
 
+    @app.post(prefix + '/unit')
+    @dbcontext
+    def create_unit():
+        u = Unit.deserialize(json.loads(request.body.read()))
+        key = dbapi.create(u)
+        return json_dumps({'key': key})
+
+    @app.put(prefix + '/unit/<uid>')
+    @dbcontext
+    def update_unit(uid):
+        u = Unit(uid=uid)
+        num = dbapi.update(u, json.loads(request.body.read()))
+        return json_dumps({'updated': num})
+
     return app
 
