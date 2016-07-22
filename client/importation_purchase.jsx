@@ -37,6 +37,7 @@ var EditItem = React.createClass({
             box: this.state.box,
             price_rmb: this.state.price_rmb,
             quantity: this.state.quantity,
+            color: this.state.color,
         };
         this.props.onEditedItem(this.state.itemPosition, data);
     },
@@ -57,6 +58,10 @@ var EditItem = React.createClass({
             <tr>
                 <td>{"数量:"} </td>
                 <td><input valueLink={this.linkState('quantity')} /></td>
+            </tr>
+            <tr>
+                <td>{"颜色:"} </td>
+                <td><input valueLink={this.linkState('color')} /></td>
             </tr>
             <tr>
                 <td>{"一共:"} </td>
@@ -106,7 +111,7 @@ class ItemList extends React.Component {
                 <td className="number">{item.item.box || ''}</td>
                 <td>{item.prod_detail.name_zh}({unit}) {item.item.color} </td>
                 <td className="number">{Number(item.item.quantity)}</td>
-                <td className="number">{Number(item.item.price_rmb).toFixed(2)}</td>
+                <td className="number">{Number(item.item.price_rmb).toFixed(4)}</td>
                 <td className="number">
                     {(Math.round(item.item.price_rmb*  item.item.quantity * 100) / 100).toFixed(2)}
                 </td>
@@ -249,6 +254,7 @@ export class EditPurchase extends React.Component {
                     allprod[item.providor_zh].push(item);
                 }
                 var providors = Object.keys(allprod);
+                result.declared.sort((a, b) => a.display_name.localeCompare(b.display_name));
                 providors.sort((a, b) => a.localeCompare(b, [ "zh-CN-u-co-pinyin" ]));
                 for (var i in providors) {
                     allprod[providors[i]].sort(
@@ -384,6 +390,15 @@ export class EditPurchase extends React.Component {
             currentAllProd = this.state.allprod[this.state.currentProvidor];
             currentData = this.state.providors_data[this.state.currentProvidor];
         }
+        var total_rmb = 0;
+        var total_box = 0;
+        for (var x in this.state.items_by) {
+            for (var i in this.state.items_by[x]) {
+                var item = this.state.items_by[x][i];
+                total_rmb += getItemValue(item.item);
+                total_box += Number(item.item.box || 0);
+            }
+        }
         const addNewProdStyle = {
             height: '70vh',
             marginTop: '-200px',
@@ -412,7 +427,8 @@ export class EditPurchase extends React.Component {
                 <input name="total_box" onChange={this.changeMeta} value={this.state.meta.total_box} />
             </div>
             <div className="col-sm-4">
-                <p><label>{'总价 '}</label>{this.state.meta.total_rmb}</p>
+                <p><label>{'总价 '}</label>{total_rmb.toFixed(2)}
+                       <label>{' 箱数 '}</label>{total_box.toFixed(3)}</p>
                 <button onClick={this.showAddNewProduct}>{'添加新产品'}</button>
                 {this.state.meta.status != 'CUSTOM' ?
                 [<button className="btn btn-sm btn-warning" onClick={this.savePurchase}>{'保存'}</button>,
@@ -504,7 +520,7 @@ class ProvidorSelector extends React.Component {
                      </td>
                      <td>{prov}</td>
                      <td className="number">
-                        {this.props.providors_data[prov].box}</td>
+                        {Number(this.props.providors_data[prov].box).toFixed(3)}</td>
                      <td className="number">
                         {this.props.providors_data[prov].total.toFixed(2)}</td>
                      </tr>
