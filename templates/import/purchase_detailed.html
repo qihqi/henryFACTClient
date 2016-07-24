@@ -42,7 +42,7 @@
     <table border="1" class="centered">
         {% for item in items%}
         <tr>
-            <td>{{ declared[item.prod_detail.declaring_id].box_code or ""}}</td>
+            <td>{{ item.item.box_code or ""}}</td>
             <td>{{ item.prod_detail.name_es}} </td>
             <td>{{item.prod_detail.providor_zh}} - {{item.prod_detail.name_zh}}({{units[item.prod_detail.unit].name_zh}})</td>
             <td class="num">{{ ('%f' % item.item.quantity).rstrip('0').rstrip('.') }} </td>

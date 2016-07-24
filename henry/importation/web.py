@@ -203,6 +203,11 @@ def make_import_apis(prefix, auth_decorator, dbapi,
         unfiltered = request.query.get('lang', '') == 'zh'
         purchase = get_purchase_full(dbapi, uid)
         declared = {x.uid: x for x in dbapi.search(DeclaredGood)}
+        for x in purchase.items:
+            x.item.box_code = declared[x.prod_detail.declaring_id].box_code
+        purchase.items = sorted(
+            purchase.items, 
+            key=lambda x: (x.item.box_code, x.item.prod_detail.providor_zh))
         if unfiltered:
             temp = jinja_env.get_template('import/purchase_zh.html')
         else:
@@ -210,7 +215,6 @@ def make_import_apis(prefix, auth_decorator, dbapi,
             temp = jinja_env.get_template('import/purchase_detailed.html')
         return temp.render(meta=purchase.meta, 
                 items=purchase.items, 
-                declared=declared,
                 units={x.uid: x for x in dbapi.search(Unit)})
 
     @app.get(prefix + '/unit')
