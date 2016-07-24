@@ -101,7 +101,7 @@ def get_purchase_full(dbapi, uid):
     return PurchaseFull(meta=purchase, items=full_items)
 
 
-def create_custom(item, declared_map):
+def create_custom(item, declared_map, all_units):
     display = declared_map.get(item.prod_detail.declaring_id, None)
     filters = None
     if display is None:
@@ -120,14 +120,15 @@ def create_custom(item, declared_map):
         display_name=display_name,
         quantity=quant,
         price_rmb=price,
-        unit=ALL_UNITS[unit].name_es,
+        unit=all_units[unit].name_es,
         box=item.item.box)
 
 
 def generate_custom_for_purchase(dbapi, uid):
     declared = {x.uid: x for x in dbapi.search(DeclaredGood)}
+    units = {x.uid: x for x in dbapi.search(Unit)}
     for item in get_purchase_item_full(dbapi, uid):
-        custom = create_custom(item, declared)
+        custom = create_custom(item, declared, units)
         custom.purchase_id = uid
         custom_id = dbapi.create(custom)
         dbapi.update(item.item, {'custom_item_uid': custom_id})

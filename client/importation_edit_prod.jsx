@@ -185,15 +185,7 @@ export class EditProdPage extends React.Component {
             url: API + '/universal_prod_with_declared',
             success: (result) => {
                 result = JSON.parse(result);
-                result.prod.sort((a,b) => {
-                    if (a.unit > b.unit) {
-                        return 1;
-                    }
-                    if (a.unit < b.unit) {
-                        return -1;
-                    }
-                    return 0;
-                });
+                result.prod.sort((a, b) => a.providor_zh.localeCompare(b.providor_zh, [ "zh-CN-u-co-pinyin" ]));
                 result.declared.sort((a,b) => {
                     if (a.display_name > b.display_name) {
                         return 1;
