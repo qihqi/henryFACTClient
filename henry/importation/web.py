@@ -207,7 +207,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
             x.item.box_code = declared[x.prod_detail.declaring_id].box_code
         purchase.items = sorted(
             purchase.items, 
-            key=lambda x: (x.item.box_code, x.item.prod_detail.providor_zh))
+            key=lambda x: (x.item.box_code, x.prod_detail.providor_zh))
         if unfiltered:
             temp = jinja_env.get_template('import/purchase_zh.html')
         else:
