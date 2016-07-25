@@ -9,6 +9,61 @@ from .schema import (NUniversalProduct, NDeclaredGood, NPurchaseItem,
 
 NORMAL_FILTER_MULT = Decimal('0.35')
 
+
+class Unit(dbmix(NUnit)):
+    LENGTH = 'length'
+    WEIGHT = 'weight'
+    UNIT = 'unit'
+
+ALL_UNITS = {
+    'kg': Unit(uid='kg', name_zh=u'公斤', name_es='kilogramo', equiv_base=None,
+               equiv_multiplier=1, type=Unit.WEIGHT),
+    'm': Unit(uid='m', name_zh=u'米', name_es='metro', equiv_base=None,
+              equiv_multiplier=1, type=Unit.LENGTH),
+    'ge': Unit(uid='ge', name_zh=u'个', name_es='unidad', equiv_base=None,
+               equiv_multiplier=1, type=Unit.UNIT),
+    'p': Unit(uid='p', name_zh=u'包', name_es='paquete', equiv_base=None,
+              equiv_multiplier=1, type=Unit.UNIT),
+    'r': Unit(uid='r', name_zh=u'卷', name_es='rollo', equiv_base=None,
+              equiv_multiplier=1, type=Unit.UNIT),
+    't': Unit(uid='t', name_zh=u'条', name_es='tira', equiv_base=None,
+              equiv_multiplier=1, type=Unit.UNIT),
+    'y': Unit(uid='y', name_zh=u'码', name_es='yarda', equiv_base='m',
+              equiv_multiplier='0.9144', type=Unit.LENGTH),
+    'jin': Unit(uid='jin', name_zh=u'斤', name_es='paquete de 0.5kg',
+                equiv_base='kg',
+                equiv_multiplier='0.5', type=Unit.WEIGHT),
+    'zh': Unit(uid='zh', name_zh=u'张', name_es='hoja',
+                equiv_base=None,
+                equiv_multiplier='1', type=Unit.UNIT),
+    'p350m': Unit(uid='p350m', name_zh=u'350米一卷', name_es='paquete de 350m', equiv_base='m',
+                  equiv_multiplier=350, type=Unit.LENGTH),
+    'p450g': Unit(uid='p450g', name_zh=u'450g一包', name_es='paquete de 450g', equiv_base='kg',
+                  equiv_multiplier='0.45', type=Unit.WEIGHT),
+    'p350g': Unit(uid='p350g', name_zh=u'350g一包', name_es='paquete de 350g', equiv_base='kg',
+                  equiv_multiplier='0.35', type=Unit.WEIGHT),
+    'p10y': Unit(uid='p10y', name_zh=u'10码一包', name_es='rollo de 10yardas', equiv_base='m',
+                 equiv_multiplier='91.44', type=Unit.LENGTH),
+    'p15y': Unit(uid='p15y', name_zh=u'15码一包', name_es='rollo de 15yardas', equiv_base='m',
+                 equiv_multiplier='13.716', type=Unit.WEIGHT),
+    'p100y': Unit(uid='p100y', name_zh=u'100码一包', name_es='rollo de 100yardas', equiv_base='m',
+                  equiv_multiplier='914.4', type=Unit.WEIGHT),
+    'p100ge': Unit(uid='p100ge', name_zh=u'100粒一包', name_es='paquete de 100', equiv_base='ge',
+                   equiv_multiplier='100', type=Unit.UNIT),
+    'p200ge': Unit(uid='p200ge', name_zh=u'200粒一包', name_es='paquete de 200', equiv_base='ge',
+                   equiv_multiplier='200', type=Unit.UNIT),
+    'p500ge': Unit(uid='p500ge', name_zh=u'500粒一包', name_es='paquete de 500', equiv_base='ge',
+                   equiv_multiplier='500', type=Unit.UNIT),
+    'p1000ge': Unit(uid='p1000ge', name_zh=u'1000粒一包', name_es='paquete de 1000', equiv_base='ge',
+                    equiv_multiplier='1000', type=Unit.UNIT),
+    'p2000ge': Unit(uid='p2000ge', name_zh=u'2000粒一包', name_es='paquete de 2000', equiv_base='ge',
+                    equiv_multiplier='2000', type=Unit.UNIT),
+    'p5000ge': Unit(uid='p5000ge', name_zh=u'5000粒一包', name_es='paquete de 5000', equiv_base='ge',
+                    equiv_multiplier='5000', type=Unit.UNIT),
+    'doz': Unit(uid='doz', name_zh=u'打', name_es='docena', equiv_base='ge',
+                    equiv_multiplier='12', type=Unit.UNIT),
+}
+
 UniversalProd = dbmix(NUniversalProduct)
 DeclaredGood = dbmix(NDeclaredGood)
 
@@ -106,21 +161,24 @@ def create_custom(item, declared_map, all_units):
     filters = None
     if display is None:
         display_name = ''
-        filters = display.modify_strategy
     else:
         display_name = display.display_name
+        filters = display.modify_strategy
     normal_filter(item)
     price, quant, unit = item.item.price_rmb, item.item.quantity, item.prod_detail.unit
+    unit = all_units[unit]
     if filters == 'docena':
-        price, quant, unit = docen_filter(price, quant, unit)
+        price, quant, unit = docen_filter(price, quant, unit, all_units)
     if filters == 'convert_to_kg':
-        price, quant, unit = convert_to_kg(price, quant, unit, item.item.box)
+        price, quant, unit = convert_to_kg(
+                price, quant, unit, item.item.box, all_units)
     return CustomItem(
+        box_code=display.box_code,
         purchase_id=item.item.purchase_id,
         display_name=display_name,
         quantity=quant,
         price_rmb=price,
-        unit=all_units[unit].name_es,
+        unit=unit.name_es,
         box=item.item.box)
 
 
@@ -152,75 +210,23 @@ def get_custom_items_full(dbapi, uid):
     return sorted(items.values(), key=lambda i: i.custom.uid)
 
 
-class Unit(dbmix(NUnit)):
-    LENGTH = 'length'
-    WEIGHT = 'weight'
-    UNIT = 'unit'
 
 def normal_filter(item):
     item.item.price_rmb *= NORMAL_FILTER_MULT
     return item
 
-def docen_filter(price, quantity, unit):
-    return price * 12, quantity / 12, ALL_UNITS['doz']
+def docen_filter(price, quantity, unit, all_units=ALL_UNITS):
+    return price * 12, quantity / 12, all_units['doz']
 
-def convert_to_kg(price, quantity, unit, box=None):
+def convert_to_kg(price, quantity, unit, box=None, all_units=ALL_UNITS):
     if unit.uid == 'kg':
         return price, quantity, unit
 
     # if unit converts to kg
     if unit.equiv_base == 'kg':
         mult = unit.equiv_multiplier
-        return price / mult, quantity * mult, ALL_UNITS['kg']
+        return price / mult, quantity * mult, all_units['kg']
 
     if box is not None:
-        return 0, box * 30, ALL_UNITS['kg']
+        return 0, box * 30, all_units['kg']
 
-ALL_UNITS = {
-    'kg': Unit(uid='kg', name_zh=u'公斤', name_es='kilogramo', equiv_base=None,
-               equiv_multiplier=1, type=Unit.WEIGHT),
-    'm': Unit(uid='m', name_zh=u'米', name_es='metro', equiv_base=None,
-              equiv_multiplier=1, type=Unit.LENGTH),
-    'ge': Unit(uid='ge', name_zh=u'个', name_es='unidad', equiv_base=None,
-               equiv_multiplier=1, type=Unit.UNIT),
-    'p': Unit(uid='p', name_zh=u'包', name_es='paquete', equiv_base=None,
-              equiv_multiplier=1, type=Unit.UNIT),
-    'r': Unit(uid='r', name_zh=u'卷', name_es='rollo', equiv_base=None,
-              equiv_multiplier=1, type=Unit.UNIT),
-    't': Unit(uid='t', name_zh=u'条', name_es='tira', equiv_base=None,
-              equiv_multiplier=1, type=Unit.UNIT),
-    'y': Unit(uid='y', name_zh=u'码', name_es='yarda', equiv_base='m',
-              equiv_multiplier='0.9144', type=Unit.LENGTH),
-    'jin': Unit(uid='jin', name_zh=u'斤', name_es='paquete de 0.5kg',
-                equiv_base='kg',
-                equiv_multiplier='0.5', type=Unit.WEIGHT),
-    'zh': Unit(uid='zh', name_zh=u'张', name_es='hoja',
-                equiv_base=None,
-                equiv_multiplier='1', type=Unit.UNIT),
-    'p350m': Unit(uid='p350m', name_zh=u'350米一卷', name_es='paquete de 350m', equiv_base='m',
-                  equiv_multiplier=350, type=Unit.LENGTH),
-    'p450g': Unit(uid='p450g', name_zh=u'450g一包', name_es='paquete de 450g', equiv_base='kg',
-                  equiv_multiplier='0.45', type=Unit.WEIGHT),
-    'p350g': Unit(uid='p350g', name_zh=u'350g一包', name_es='paquete de 350g', equiv_base='kg',
-                  equiv_multiplier='0.35', type=Unit.WEIGHT),
-    'p10y': Unit(uid='p10y', name_zh=u'10码一包', name_es='rollo de 10yardas', equiv_base='m',
-                 equiv_multiplier='91.44', type=Unit.LENGTH),
-    'p15y': Unit(uid='p15y', name_zh=u'15码一包', name_es='rollo de 15yardas', equiv_base='m',
-                 equiv_multiplier='13.716', type=Unit.WEIGHT),
-    'p100y': Unit(uid='p100y', name_zh=u'100码一包', name_es='rollo de 100yardas', equiv_base='m',
-                  equiv_multiplier='914.4', type=Unit.WEIGHT),
-    'p100ge': Unit(uid='p100ge', name_zh=u'100粒一包', name_es='paquete de 100', equiv_base='ge',
-                   equiv_multiplier='100', type=Unit.UNIT),
-    'p200ge': Unit(uid='p200ge', name_zh=u'200粒一包', name_es='paquete de 200', equiv_base='ge',
-                   equiv_multiplier='200', type=Unit.UNIT),
-    'p500ge': Unit(uid='p500ge', name_zh=u'500粒一包', name_es='paquete de 500', equiv_base='ge',
-                   equiv_multiplier='500', type=Unit.UNIT),
-    'p1000ge': Unit(uid='p1000ge', name_zh=u'1000粒一包', name_es='paquete de 1000', equiv_base='ge',
-                    equiv_multiplier='1000', type=Unit.UNIT),
-    'p2000ge': Unit(uid='p2000ge', name_zh=u'2000粒一包', name_es='paquete de 2000', equiv_base='ge',
-                    equiv_multiplier='2000', type=Unit.UNIT),
-    'p5000ge': Unit(uid='p5000ge', name_zh=u'5000粒一包', name_es='paquete de 5000', equiv_base='ge',
-                    equiv_multiplier='5000', type=Unit.UNIT),
-    'doz': Unit(uid='doz', name_zh=u'打', name_es='docena', equiv_base='ge',
-                    equiv_multiplier='12', type=Unit.UNIT),
-}

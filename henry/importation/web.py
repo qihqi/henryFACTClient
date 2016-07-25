@@ -148,11 +148,12 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     @dbcontext
     def split_custom_items():
         declared = {x.uid: x for x in dbapi.search(DeclaredGood)}
+        units = {x.uid: x for x in dbapi.search(Unit)}
         obj = CustomItemFull.deserialize(json.loads(request.body.read()))
         new_customs = []
         pitems = get_purchase_item_full_by_custom(dbapi, obj.custom.uid)
         for x in pitems:
-            c = create_custom(x, declared)
+            c = create_custom(x, declared, units)
             uid = dbapi.create(c)
             dbapi.update(x.item, {'custom_item_uid': uid})
             new_customs.append(CustomItemFull(c, [x]))
@@ -174,6 +175,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     def get_custom_invoice(uid):
         meta = dbapi.get(uid, Purchase)
         customs = list(dbapi.search(CustomItem, purchase_id=uid))
+        customs.sort(key=lambda x: x.box_code) 
         date_str = meta.timestamp.strftime('%Y %B %d')
         total = sum(item.quantity * item.price_rmb for item in customs)
         temp = jinja_env.get_template('import/custom_invoice.html')
@@ -186,6 +188,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     def get_custom_invoice(uid):
         meta = dbapi.get(uid, Purchase)
         customs = list(dbapi.search(CustomItem, purchase_id=uid))
+        customs.sort(key=lambda x: x.box_code) 
         date_str = meta.timestamp.strftime('%Y %B %d')
         temp = jinja_env.get_template('import/custom_plist.html')
         total_box = 0

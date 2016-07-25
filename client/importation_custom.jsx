@@ -35,6 +35,7 @@ export class CustomFull extends React.Component {
             url: API + '/custom_full/' + uid,
             success: (x) => {
                 x = JSON.parse(x);
+                x.customs.sort((a, b) => a.custom.box_code.localeCompare(b.custom.box_code))
                 this.setState(x);
             }
         });
@@ -163,7 +164,7 @@ class SingleCustomRow extends React.Component {
                     onChange={this.onChange} />
             </div>
             <div className="col-xs-1 smallpadding">
-                <input className=" value_col tableCell" name='quantity' value={Number(this.state.quantity)}
+                <input className=" value_col tableCell" name='quantity' value={this.state.quantity}
                     onChange={this.onChange} />
             </div>
             <div className="col-xs-2 smallpadding">
@@ -172,7 +173,7 @@ class SingleCustomRow extends React.Component {
             </div>
             <div className="col-xs-1 smallpadding">
                 <input className=" value_col tableCell" name='price_rmb'
-                       value={Number(this.state.price_rmb).toFixed(2)}
+                       value={this.state.price_rmb}
                        onChange={this.onChange} />
             </div>
             <div className="col-xs-1 smallpadding value_col">
@@ -190,7 +191,7 @@ class SingleCustomRow extends React.Component {
                         className="btn btn-danger btn-xs">Separar</button> : ''}
             </div>
             </div>
-            <div className='collapse' id={"purchase" + this.props.uid}>
+            <div className='collapse in' id={"purchase" + this.props.uid}>
                 {this.props.purchase_items.map((x) => <PurchaseItemRow {...x} units={this.props.units}/>)}
             </div>
         </div>;
@@ -211,7 +212,7 @@ class PurchaseItemRow extends React.Component {
             <div className="col-xs-3 smallpadding">{it.prod_detail.name_es}</div>
             <div className="col-xs-1 smallpadding value_col">{Number(it.item.quantity)}</div>
             <div className="col-xs-2 smallpadding">{unit}</div>
-            <div className="col-xs-1 smallpadding value_col">{Number(it.item.price_rmb).toFixed(2)}</div>
+            <div className="col-xs-1 smallpadding value_col">{Number(it.item.price_rmb).toFixed(4)}</div>
             <div className='value_col col-xs-1 smallpadding'>{(it.item.price_rmb * it.item.quantity).toFixed(2)}</div>
             <div className="col-xs-1 smallpadding value_col">{it.item.box}</div>
             <div></div>
