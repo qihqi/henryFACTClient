@@ -42,6 +42,7 @@ export class CustomFull extends React.Component {
     }
     splitCustom(index) {
         var item = this.state.customs[index];
+        this.refs.saving.show();
         $.ajax({
             url: API + '/split_custom_items',
             data: JSON.stringify(item),
@@ -53,6 +54,7 @@ export class CustomFull extends React.Component {
                     this.state.customs.splice(index, 0, x.result[i]);
                 }
                 this.setState({customs: this.state.customs});
+                this.refs.saving.hide();
             }
         });
     }
@@ -64,13 +66,14 @@ export class CustomFull extends React.Component {
                 modifiedRows.push(cust);
             }
         }
-        console.log('modifed', modifiedRows);
+        this.refs.saving.show();
         $.ajax({
             url: API + '/custom_full/' + this.props.params.uid,
             method: 'PUT',
             data: JSON.stringify({customs: modifiedRows}),
             success: (x) => {
                 this.getCustom(this.props.params.uid);
+                this.refs.saving.hide();
             }
         });
     }
@@ -83,13 +86,24 @@ export class CustomFull extends React.Component {
     //    this.setState({customs: this.state.customs});
     }
     render() {
-        console.log('render container');
+        var total = 0;
+        var total_box = 0;
+        for (var x in this.state.customs) {
+            var c = this.state.customs[x].custom;
+            total += Number(c.quantity * c.price_rmb);
+            total_box += Number(c.box);
+        }
         return (<div className="container">
+            <SkyLight 
+                    hiddenOnOverlayClicked ref="saving" title={"Guardando..."}>
+            </SkyLight>
             <div style={FIX_HEADER}>
                 <h3>Contenedor #{this.props.params.uid}</h3>
                 <button onClick={this.saveCustom}>Guardar</button>
                 <button onClick={this.openInvoice}>Imprimir Invoice</button>
                 <button onClick={this.openPList}>Imprimir Packing List</button>
+                <span>Total Cartones: {total_box.toFixed(3)} </span>
+                <span>Total : {total.toFixed(2)} </span>
             </div>
             <div className="row" style={{marginTop: "100px"}}>
                 <div className="col-xs-1">Agrupar?</div>

@@ -13,6 +13,7 @@ from .dao import (Purchase, PurchaseItem, UniversalProd, DeclaredGood,
                   CustomItem, CustomItemFull, normal_filter, Unit,
                   generate_custom_for_purchase, PurchaseStatus, create_custom, 
                   get_purchase_item_full_by_custom)
+from .schema import NCustomItem
 
 
 def make_import_apis(prefix, auth_decorator, dbapi,
@@ -166,6 +167,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
         purchase_meta = dbapi.get(uid, Purchase)
         if purchase_meta == PurchaseStatus.NEW:
             return '{"status": "not generated"}'
+        dbapi.db_session.query(NCustomItem).filter_by(purchase_id=uid).delete()
         generate_custom_for_purchase(dbapi, uid)
         dbapi.update(purchase_meta, {'status': PurchaseStatus.CUSTOM})
         return '{"status": "success"}'
