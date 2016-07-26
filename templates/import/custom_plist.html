@@ -78,16 +78,15 @@
                 <td>Total:</td>
                 <td></td>
                 <td></td>
-                <td></td>
-                <td class="num">{{ boxes }}</td>
-                <td class="num">{{ weight }}</td>
+                <td class="num">{{ meta.total_box }}</td>
+                <td class="num">{{ total_weight }}</td>
             </tr>
         </table>
         <hr />
         <div style="text-align:center">
-            <p>Total Boxes: {{ boxes }}
-            <p>Total Net Weight: {{ weight }} KG</p>
-            <p>Total Gross Weight: 17180 KG</p>
+            <p>Total Boxes: {{ meta.total_box }}
+            <p>Total Net Weight: {{ total_weight }} KG</p>
+            <p>Total Gross Weight: {{ meta.total_gross_weight_kg}}KG</p>
         </div>
     </div>
 </body>

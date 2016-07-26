@@ -25,6 +25,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     bind_dbapi_rest(prefix + '/purchase_item', dbapi, PurchaseItem, app)
     bind_dbapi_rest(prefix + '/universal_prod', dbapi, UniversalProd, app)
     bind_dbapi_rest(prefix + '/declaredgood', dbapi, DeclaredGood, app)
+    bind_dbapi_rest(prefix + '/custom_item', dbapi, CustomItem, app)
 
     @app.get(prefix + '/universal_prod_with_declared')
     @dbcontext
@@ -193,12 +194,15 @@ def make_import_apis(prefix, auth_decorator, dbapi,
         customs.sort(key=lambda x: x.box_code) 
         date_str = meta.timestamp.strftime('%Y %B %d')
         temp = jinja_env.get_template('import/custom_plist.html')
-        total_box = 0
         total_weight = 0
         for item in customs:
-            pass
+            if item.unit == 'kilogram':
+                item.weight = item.quantity
+            else:
+                item.weight = item.box * 30
+            total_weight += item.weight
         return temp.render(
-            custom_items=customs, total_box=total_box,
+            custom_items=customs, 
             total_weight=total_weight,
             meta=meta, date_str=date_str)
 
