@@ -26,16 +26,23 @@
 
 <div class="centered" style="text-align:center;">
     <div class="logo" style="width: 50em;"></div>
+{% if use_riyao %}
     <img height="40" class="logo" src="/static/logo.jpg" />
     <h2>YIWU RIYAO IMP&EXP.CO.LTD</h2>
     <h4>ROOM 8511.5F,  CUP INTERNATIONAL BUILDING NO1339  CHOUZHOU  ROAD, YIWU ZHEJIANG CHINA</h4>
     <h4>TEL: 0086-579-85314583  FAX:0086-579-85436673</h4>
     <h4><a href="http://riyaoimpexp.com">http://riyaoimpexp.com</a></h4>
+{% else %}
+    <img height="40" class="logo" src="/static/logo2.jpg" />
+    <h2>YIWU BENTAI IMP&EXP.CO.LTD</h2>
+    <h4>ROOM 8511.5F,  CUP INTERNATIONAL BUILDING NO1339  CHOUZHOU  ROAD, YIWU ZHEJIANG CHINA</h4>
+    <h4>TEL: 0086-579-85314583  FAX:0086-579-85436673</h4>
+{% endif  %}
 </div>
 <hr />
 <div class="centered" style="text-align:center;">
     <img height="70" src="/static/barcode.svg"/>
-    <h2>Commercial Invoice No. HL 2721-094</h2>
+    <h2>Commercial Invoice No. HL 2722-{{ inv_id}}</h2>
 </div>
 
 <div class="centered" >

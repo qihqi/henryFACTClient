@@ -183,6 +183,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
         total = sum(item.quantity * item.price_rmb for item in customs)
         temp = jinja_env.get_template('import/custom_invoice.html')
         return temp.render(
+            use_riyao=False, inv_id='0{}'.format(meta.uid), 
             custom_items=customs, total=total.quantize(Decimal('0.01')),
             meta=meta, date_str=date_str)
 
@@ -196,12 +197,13 @@ def make_import_apis(prefix, auth_decorator, dbapi,
         temp = jinja_env.get_template('import/custom_plist.html')
         total_weight = 0
         for item in customs:
-            if item.unit == 'kilogram':
+            if 'kilogram' in item.unit:
                 item.weight = item.quantity
             else:
                 item.weight = item.box * 30
             total_weight += item.weight
         return temp.render(
+            use_riyao=False, inv_uid='0{}'.format(meta.uid),
             custom_items=customs, 
             total_weight=total_weight,
             meta=meta, date_str=date_str)
