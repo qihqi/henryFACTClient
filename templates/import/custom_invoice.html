@@ -48,12 +48,21 @@
 <div class="centered" >
     <p>Ningbo, {{ date_str }}</p>
     <h4>
+        {% if use_corpesut %}
+        <p>TO:</p>
+        <p>Corpesut S.A.</p>
+        <p>RUC 0992584092001</p>
+        <p>BOYACA 1527 y AGUIRRE</p>
+        <p>Guayaquil - Ecuador</p>
+        <p>Telf: +593 4 2532007</p>
+        {% else %}
         <p>TO:</p>
         <p>Superbisuterias S.A.</p>
         <p>RUC 0992932562001</p>
         <p>LA FRAGATA Mz 2190 No. SL 5</p>
         <p>Guayaquil - Ecuador</p>
         <p>Telf: +593 4 2532007</p>
+        {% endif %}
     </h4>
 
     <table border="1" class="centered">

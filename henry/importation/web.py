@@ -176,6 +176,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     @app.get(prefix + '/custom_invoice/<uid>')
     @dbcontext
     def get_custom_invoice(uid):
+        use_corpesut = 'client' in request.query and request.query.client == 'corp'
         meta = dbapi.get(uid, Purchase)
         customs = list(dbapi.search(CustomItem, purchase_id=uid))
         customs.sort(key=lambda x: x.box_code) 
@@ -184,12 +185,14 @@ def make_import_apis(prefix, auth_decorator, dbapi,
         temp = jinja_env.get_template('import/custom_invoice.html')
         return temp.render(
             use_riyao=False, inv_id='0{}'.format(meta.uid), 
+            use_corpesut=use_corpesut,
             custom_items=customs, total=total.quantize(Decimal('0.01')),
             meta=meta, date_str=date_str)
 
     @app.get(prefix + '/custom_plist/<uid>')
     @dbcontext
     def get_custom_invoice(uid):
+        use_corpesut = 'client' in request.query and request.query.client == 'corp'
         meta = dbapi.get(uid, Purchase)
         customs = list(dbapi.search(CustomItem, purchase_id=uid))
         customs.sort(key=lambda x: x.box_code) 
@@ -204,6 +207,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
             total_weight += item.weight
         return temp.render(
             use_riyao=False, inv_uid='0{}'.format(meta.uid),
+            use_corpesut=use_corpesut,
             custom_items=customs, 
             total_weight=total_weight,
             meta=meta, date_str=date_str)

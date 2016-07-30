@@ -24,6 +24,8 @@ export class CustomFull extends React.Component {
         this.splitCustom = this.splitCustom.bind(this);
         this.openPList = () => window.open(API + '/custom_plist/' + props.params.uid);
         this.openInvoice= () => window.open(API + '/custom_invoice/' + props.params.uid);
+        this.openPListCorp = () => window.open(API + '/custom_plist/' + props.params.uid + '?client=corp');
+        this.openInvoiceCorp = () => window.open(API + '/custom_invoice/' + props.params.uid + '?client=corp');
         this.state = {
             meta: {},
             customs: [],
@@ -100,8 +102,10 @@ export class CustomFull extends React.Component {
             <div style={FIX_HEADER}>
                 <h3>Contenedor #{this.props.params.uid}</h3>
                 <button onClick={this.saveCustom}>Guardar</button>
-                <button onClick={this.openInvoice}>Imprimir Invoice</button>
-                <button onClick={this.openPList}>Imprimir Packing List</button>
+                <button onClick={this.openInvoice}>Imprimir Invoice Super</button>
+                <button onClick={this.openPList}>Imprimir Packing List Super</button>
+                <button onClick={this.openInvoice}>Imprimir Invoice Corp</button>
+                <button onClick={this.openPList}>Imprimir Packing List Corp</button>
                 <span>Total Cartones: {total_box.toFixed(3)} </span>
                 <span>Total : {total.toFixed(2)} </span>
             </div>
