@@ -104,8 +104,8 @@ export class CustomFull extends React.Component {
                 <button onClick={this.saveCustom}>Guardar</button>
                 <button onClick={this.openInvoice}>Imprimir Invoice Super</button>
                 <button onClick={this.openPList}>Imprimir Packing List Super</button>
-                <button onClick={this.openInvoice}>Imprimir Invoice Corp</button>
-                <button onClick={this.openPList}>Imprimir Packing List Corp</button>
+                <button onClick={this.openInvoiceCorp}>Imprimir Invoice Corp</button>
+                <button onClick={this.openPListCorp}>Imprimir Packing List Corp</button>
                 <span>Total Cartones: {total_box.toFixed(3)} </span>
                 <span>Total : {total.toFixed(2)} </span>
             </div>
