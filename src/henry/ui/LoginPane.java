@@ -92,6 +92,10 @@ class LoginPane extends JPanel implements ActionListener{
             pass.setText("");
             return;
         }
+        if (usuario.getAlmacenId() == 2 || usuario.getAlmacenId() == 1) {
+            message.setText("Solo para mayorista");
+            return;
+        }
         api.setAlmacenId(usuario.getAlmacenId());
         System.out.println(serverbox.getSelectedItem());
         System.out.println("index " + serverbox.getSelectedIndex());

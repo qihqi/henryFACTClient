@@ -109,7 +109,7 @@ public class FacturaVentana extends JFrame {
         if (isFactura) {
             setTitle("Orden de Despacho");
             //poner numero de factura
-            panel.setBackground(Color.RED);
+            panel.setBackground(Color.ORANGE);
             displayFacturaText = "No. de Factura: ";
             numeroLabel.setText("" + numero);
         }
@@ -200,9 +200,9 @@ public class FacturaVentana extends JFrame {
             doc.setCodigo(numero);
             int id = api.guardarDocumento(doc, isFactura);
             if (id > 0) {
-                if (!api.commitDocument(id)) {
-                    api.commitDocument(id); // if this magically fails, retry once;
-                }
+                //if (!api.commitDocument(id)) {
+                //  api.commitDocument(id); // if this magically fails, retry once;
+                // }
                 if (printer.printFactura(doc)) {
                     clear();
                     contenido.setMessage("");
