@@ -98,6 +98,7 @@ def make_sale_records_api(prefix, auth_decorator, dbapi,
         return json_dumps({'result': sales_by_date})
 
     # @app.post(prefix + '/raw_inv_movement')
+    # expects [proditemgroup, inventoryMovement, codename]
     @dbcontext
     def post_raw_inv_movement():
         raw_data = json.loads(request.body.read())

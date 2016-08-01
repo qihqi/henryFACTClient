@@ -9,9 +9,9 @@ from henry.base.dbapi_rest import bind_dbapi_rest
 from henry.base.serialization import json_dumps
 from henry.base.session_manager import DBContext
 from .dao import (Purchase, PurchaseItem, UniversalProd, DeclaredGood,
-                  get_purchase_full, get_custom_items_full, 
+                  get_purchase_full, get_custom_items_full,
                   CustomItem, CustomItemFull, normal_filter, Unit,
-                  generate_custom_for_purchase, PurchaseStatus, create_custom, 
+                  generate_custom_for_purchase, PurchaseStatus, create_custom,
                   get_purchase_item_full_by_custom)
 from .schema import NCustomItem
 
@@ -48,7 +48,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
         total = sum(i.item.price_rmb * i.item.quantity for i in purchase.items)
         purchase.meta.total_rmb = total
         res = purchase.serialize()
-        res['units'] = {x.uid: x for x in dbapi.search(Unit)} 
+        res['units'] = {x.uid: x for x in dbapi.search(Unit)}
         return json_dumps(res)
 
     @app.get(prefix + '/purchase_full/<uid>')
@@ -56,7 +56,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     @auth_decorator
     def get_purchase_full_http(uid):
         res = get_purchase_full(dbapi, uid).serialize()
-        res['units'] = {x.uid: x for x in dbapi.search(Unit)} 
+        res['units'] = {x.uid: x for x in dbapi.search(Unit)}
         return json_dumps(res)
 
     @app.post(prefix + '/purchase_full')
@@ -179,23 +179,23 @@ def make_import_apis(prefix, auth_decorator, dbapi,
         use_corpesut = 'client' in request.query and request.query.client == 'corp'
         meta = dbapi.get(uid, Purchase)
         customs = list(dbapi.search(CustomItem, purchase_id=uid))
-        customs.sort(key=lambda x: x.box_code) 
+        customs.sort(key=lambda x: x.box_code)
         date_str = meta.timestamp.strftime('%Y %B %d')
         total = sum(item.quantity * item.price_rmb for item in customs)
         temp = jinja_env.get_template('import/custom_invoice.html')
         return temp.render(
-            use_riyao=False, inv_id='0{}'.format(meta.uid), 
+            use_riyao=False, inv_id='0{}'.format(meta.uid),
             use_corpesut=use_corpesut,
             custom_items=customs, total=total.quantize(Decimal('0.01')),
             meta=meta, date_str=date_str)
 
     @app.get(prefix + '/custom_plist/<uid>')
     @dbcontext
-    def get_custom_invoice(uid):
+    def get_custom_plist(uid):
         use_corpesut = 'client' in request.query and request.query.client == 'corp'
         meta = dbapi.get(uid, Purchase)
         customs = list(dbapi.search(CustomItem, purchase_id=uid))
-        customs.sort(key=lambda x: x.box_code) 
+        customs.sort(key=lambda x: x.box_code)
         date_str = meta.timestamp.strftime('%Y %B %d')
         temp = jinja_env.get_template('import/custom_plist.html')
         total_weight = 0
@@ -208,9 +208,51 @@ def make_import_apis(prefix, auth_decorator, dbapi,
         return temp.render(
             use_riyao=False, inv_uid='0{}'.format(meta.uid),
             use_corpesut=use_corpesut,
-            custom_items=customs, 
+            custom_items=customs,
             total_weight=total_weight,
             meta=meta, date_str=date_str)
+
+    @app.get(prefix + '/custom_plist_condensed/<uid>')
+    @dbcontext
+    def get_custom_plist_condensed(uid):
+        use_corpesut = 'client' in request.query and request.query.client == 'corp'
+        meta = dbapi.get(uid, Purchase)
+        customs = list(dbapi.search(CustomItem, purchase_id=uid))
+
+        def make_null_custom_item():
+            c = CustomItem(quantity=Decimal(0), box=Decimal(0))
+            return c
+
+        agrouped = defaultdict(make_null_custom_item)
+        for x in customs:
+            key = (x.box_code, x.display_name)
+            agrouped[key].display_name = x.display_name
+            agrouped[key].box += x.box
+            agrouped[key].quantity += x.quantity
+            agrouped[key].unit = x.unit
+            agrouped[key].box_code = x.box_code
+
+        customs = sorted(agrouped.values(), key=lambda x: x.box_code)
+
+        date_str = meta.timestamp.strftime('%Y %B %d')
+        temp = jinja_env.get_template('import/custom_plist_condensed.html')
+        total_weight = 0
+        for item in customs:
+            if 'kilogram' in item.unit:
+                item.weight = item.quantity
+            else:
+                item.weight = item.box * 30
+            item.box = item.box.quantize(Decimal('1'))
+            item.weight = item.weight.quantize(Decimal('1'))
+            total_weight += item.weight
+
+        return temp.render(
+            use_riyao=False, inv_uid='0{}'.format(meta.uid),
+            use_corpesut=use_corpesut,
+            custom_items=customs,
+            total_weight=total_weight,
+            meta=meta, date_str=date_str)
+
 
     @app.get(prefix + '/purchase_detailed/<uid>.html')
     @dbcontext
@@ -221,15 +263,15 @@ def make_import_apis(prefix, auth_decorator, dbapi,
         for x in purchase.items:
             x.item.box_code = declared[x.prod_detail.declaring_id].box_code
         purchase.items = sorted(
-            purchase.items, 
+            purchase.items,
             key=lambda x: (x.item.box_code, x.prod_detail.providor_zh))
         if unfiltered:
             temp = jinja_env.get_template('import/purchase_zh.html')
         else:
             map(normal_filter, purchase.items)
             temp = jinja_env.get_template('import/purchase_detailed.html')
-        return temp.render(meta=purchase.meta, 
-                items=purchase.items, 
+        return temp.render(meta=purchase.meta,
+                items=purchase.items,
                 units={x.uid: x for x in dbapi.search(Unit)})
 
     @app.get(prefix + '/unit')
