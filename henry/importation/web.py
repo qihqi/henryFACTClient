@@ -258,6 +258,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     @dbcontext
     def purchase_detailed(uid):
         unfiltered = request.query.get('lang', '') == 'zh'
+        without_price = request.query.get('price', '') == 'no'
         purchase = get_purchase_full(dbapi, uid)
         declared = {x.uid: x for x in dbapi.search(DeclaredGood)}
         for x in purchase.items:
@@ -272,7 +273,8 @@ def make_import_apis(prefix, auth_decorator, dbapi,
             temp = jinja_env.get_template('import/purchase_detailed.html')
         return temp.render(meta=purchase.meta,
                 items=purchase.items,
-                units={x.uid: x for x in dbapi.search(Unit)})
+                units={x.uid: x for x in dbapi.search(Unit)},
+                without_price=without_price)
 
     @app.get(prefix + '/unit')
     @dbcontext
