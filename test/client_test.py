@@ -90,6 +90,7 @@ class ClientTest(unittest.TestCase):
             '0926418753',
             '1302576771',
             '1302576771',
+            '0905473934001',
         ]
         for x in test_false:
             self.assertFalse(validate_uid_and_ruc(x))
