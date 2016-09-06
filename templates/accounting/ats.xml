@@ -17,6 +17,7 @@
       <idCliente>{{ fix_id(id) }}</idCliente>
       {% if id_type(id) in ['05', '04', '06'] %}<parteRelVtas>NO</parteRelVtas>{% endif %}
       <tipoComprobante>18</tipoComprobante>
+      <tipoEm>F</tipoEm>
       <numeroComprobantes>{{ detalle.count }}</numeroComprobantes>
       <baseNoGraIva>0.00</baseNoGraIva>
       <baseImponible>0.00</baseImponible>
