@@ -15,7 +15,7 @@
     <detalleVentas>
       <tpIdCliente>{{ id_type(id) }}</tpIdCliente> <!-- 05 = venta cedula, 04 = venta ruc, 07 = consumidor final--> 
       <idCliente>{{ fix_id(id) }}</idCliente>
-      {% if id_type(id) in ['05', '04', '06'] %}<parteRelVtas>NO</parteRelVtas>{% endif %}
+      <parteRelVtas>NO</parteRelVtas>
       <tipoComprobante>18</tipoComprobante>
       <tipoEm>F</tipoEm>
       <numeroComprobantes>{{ detalle.count }}</numeroComprobantes>
