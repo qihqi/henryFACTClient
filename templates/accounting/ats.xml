@@ -17,15 +17,20 @@
       <idCliente>{{ fix_id(id) }}</idCliente>
       <parteRelVtas>NO</parteRelVtas>
       <tipoComprobante>18</tipoComprobante>
-      <tipoEm>F</tipoEm>
+      <tipoEmision>F</tipoEmision>
       <numeroComprobantes>{{ detalle.count }}</numeroComprobantes>
       <baseNoGraIva>0.00</baseNoGraIva>
       <baseImponible>0.00</baseImponible>
       <baseImpGrav>{{ '%.2f' % value_from_cents(detalle.subtotal)}}</baseImpGrav>
       <montoIva>{{ '%.2f' % value_from_cents(detalle.iva) }}</montoIva>
+      <montoIce>0.00</montoIce>
       <valorRetIva>0.00</valorRetIva>
       <valorRetRenta>0.00</valorRetRenta>
+      <formasDePago>
+        <formaPago>02</formaPago>
+      </formasDePago>
     </detalleVentas>
+
     {% endfor %}
   </ventas>
   <ventasEstablecimiento>
