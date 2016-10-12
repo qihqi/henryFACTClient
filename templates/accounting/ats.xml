@@ -15,7 +15,7 @@
     <detalleVentas>
       <tpIdCliente>{{ id_type(id) }}</tpIdCliente> <!-- 05 = venta cedula, 04 = venta ruc, 07 = consumidor final--> 
       <idCliente>{{ fix_id(id) }}</idCliente>
-      <parteRelVtas>NO</parteRelVtas>
+      {% if id_type(id) != '07' %}<parteRelVtas>NO</parteRelVtas>{% endif %}
       <tipoComprobante>18</tipoComprobante>
       <tipoEmision>F</tipoEmision>
       <numeroComprobantes>{{ detalle.count }}</numeroComprobantes>
@@ -27,10 +27,9 @@
       <valorRetIva>0.00</valorRetIva>
       <valorRetRenta>0.00</valorRetRenta>
       <formasDePago>
-        <formaPago>02</formaPago>
+        <formaPago>01</formaPago>
       </formasDePago>
     </detalleVentas>
-
     {% endfor %}
   </ventas>
   <ventasEstablecimiento>
