@@ -97,7 +97,8 @@ with dbapi.session:
             d = make_dict(plist)
             try:
                 create_full_item_from_dict(dbapi, d)
-            except:
+            except Exception as e:
+                print e
                 dbapi.db_session.rollback()
                 print 'ya existe', item
             else:
@@ -114,4 +115,5 @@ with dbapi.session:
                 update_content['precio2'] = plist.precio2
             dbapi.update(current, update_content)
             print 'updated', plist
+        dbapi.db_session.commit()
 
