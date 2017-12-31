@@ -10,6 +10,7 @@ from henry.importation.dao import InvMovementManager
 from henry.importation.web import make_import_apis
 from henry.product.dao import InventoryApi
 from henry.accounting.web import make_wsgi_api as accapi
+from henry.background_sync import sync_api
 
 dbapi = DBApiGeneric(sessionmanager)
 dbcontext = DBContext(sessionmanager)
@@ -34,4 +35,5 @@ if USE_ACCOUNTING_APP:
                  auth_decorator=auth_decorator, invapi=invapi)
     api.merge(aapi)
 
+api.merge(sync_api.make_wsgi_api('/app', dbapi, dbcontext))
 application = SessionMiddleware(api, BEAKER_SESSION_OPTS)
