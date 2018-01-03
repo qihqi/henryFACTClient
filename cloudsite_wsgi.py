@@ -10,6 +10,7 @@ from henry.importation.web import make_import_apis
 from henry.product.dao import InventoryApi
 from henry.config import jinja_env
 from henry.sale_records.web import make_sale_records_api
+from henry.background_sync import sync_api
 
 dbapi = DBApiGeneric(sessionmanager)
 dbcontext = DBContext(sessionmanager)
@@ -20,4 +21,5 @@ api = import_api = make_import_apis('/import', auth_decorator, dbapi, jinja_env)
 records_api = make_sale_records_api('/import', auth_decorator, dbapi,
                                     invmomanager, inventoryapi)
 import_api.merge(records_api)
+api.merge(sync_api.make_wsgi_api('/app'))
 application = SessionMiddleware(import_api, BEAKER_SESSION_OPTS)

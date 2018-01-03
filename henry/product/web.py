@@ -4,8 +4,9 @@ from decimal import Decimal
 import barcode
 import os
 from bottle import Bottle, request, redirect
+from henry.background_sync import sync_api
 from henry.base.common import parse_start_end_date
-from henry.base.dbapi_rest import bind_dbapi_rest
+from henry.base.dbapi_rest import bind_dbapi_rest, bind_restapi, RestApi
 from henry.base.serialization import json_dumps
 from henry.product.dao import ProdItemGroup, Store, Bodega, ProdItem, PriceList, ProdTag, ProdTagContent
 
@@ -48,7 +49,8 @@ def make_full_items(itemgroup, items, prices_by_prod_id):
         result['items'].append(new_item)
     return result
 
-def make_wsgi_api(prefix, sessionmanager, dbcontext, auth_decorator, dbapi, inventoryapi):
+def make_wsgi_api(prefix, sessionmanager, dbcontext, 
+                  auth_decorator, dbapi, inventoryapi, sync_api):
     app = Bottle()
 
     @app.post(prefix + '/item_full')
@@ -71,6 +73,8 @@ def make_wsgi_api(prefix, sessionmanager, dbcontext, auth_decorator, dbapi, inve
         if not valid:
             return {'status': 'failure', 'msg': message}
         create_full_item_from_dict(dbapi, content)
+        # write new prod to log
+        sync_api.write_new_prod(content)
         sessionmanager.session.commit()
         return {'status': 'success'}
 
@@ -128,7 +132,8 @@ def make_wsgi_api(prefix, sessionmanager, dbcontext, auth_decorator, dbapi, inve
         end = end.date()
         return json_dumps({'results': list(inventoryapi.list_transactions(uid, start, end))})
 
-    bind_dbapi_rest(prefix + '/pricelist', dbapi, PriceList, app)
+    bind_restapi(prefix + '/pricelist', 
+        RestApi(dbapi, PriceList, logging=sync_api.log_price_list_change), app)
     bind_dbapi_rest(prefix + '/itemgroup', dbapi, ProdItemGroup, app)
     bind_dbapi_rest(prefix + '/item', dbapi, ProdItem, app)
     return app
