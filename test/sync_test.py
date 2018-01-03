@@ -6,6 +6,7 @@ import unittest
 import bottle
 from webtest import TestApp
 from henry.background_sync import sync_api
+from henry.base.fileservice import FileService
 
 class SyncTest(unittest.TestCase):
 
@@ -14,10 +15,12 @@ class SyncTest(unittest.TestCase):
         bottle.debug(True)
         prefix = '/app'
         tmpdir = '/tmp/test'
-        shutil.rmtree(tmpdir)
+        if os.path.exists(tmpdir):
+            shutil.rmtree(tmpdir)
         os.mkdir(tmpdir)
+        fileservice = FileService(tmpdir)
         sync_api.FINAL_LOG_DIR = tmpdir
-        cls.test_app = TestApp(sync_api.make_wsgi_api(prefix))
+        cls.test_app = TestApp(sync_api.make_wsgi_api(prefix, fileservice))
 
     def tearDown(self):
         pass
@@ -36,15 +39,17 @@ class SyncTest(unittest.TestCase):
                 }
             }
         }
+        data = '\n'.join([json.dumps(content), json.dumps(content)])
 
-        self.test_app.post_json('/app/logs', content)
+        self.test_app.post('/app/logs', params=data)
         
         paths = os.listdir(sync_api.FINAL_LOG_DIR + '/1')
         self.assertEquals(1, len(paths))
 
         with open(os.path.join(sync_api.FINAL_LOG_DIR + '/1', paths[0])) as f:
-            content2 = json.loads(f.read())
-        self.assertEquals(content, content2)
+            for line in f.readlines():
+                content2 = json.loads(line)
+                self.assertEquals(content, content2)
 
 
 if __name__ == '__main__':

@@ -21,5 +21,5 @@ api = import_api = make_import_apis('/import', auth_decorator, dbapi, jinja_env)
 records_api = make_sale_records_api('/import', auth_decorator, dbapi,
                                     invmomanager, inventoryapi)
 import_api.merge(records_api)
-api.merge(sync_api.make_wsgi_api('/app'))
+api.merge(sync_api.make_wsgi_api('/import'))
 application = SessionMiddleware(import_api, BEAKER_SESSION_OPTS)
