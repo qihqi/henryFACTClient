@@ -35,5 +35,5 @@ if USE_ACCOUNTING_APP:
                  auth_decorator=auth_decorator, invapi=invapi)
     api.merge(aapi)
 
-api.merge(sync_api.make_wsgi_api('/app', dbapi, dbcontext))
+api.merge(sync_api.make_wsgi_api('/app'))
 application = SessionMiddleware(api, BEAKER_SESSION_OPTS)

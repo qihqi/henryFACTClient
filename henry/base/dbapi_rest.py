@@ -1,3 +1,4 @@
+import sys
 import bottle
 import json
 from henry.base.serialization import json_dumps
@@ -5,9 +6,10 @@ from henry.base.serialization import json_dumps
 
 class RestApi(object):
 
-    def __init__(self, dbapi, clazz):
+    def __init__(self, dbapi, clazz, logging=None):
         self.dbapi = dbapi
         self.clazz = clazz
+        self.logging = logging
 
     def get(self, pkey):
         with self.dbapi.session:
@@ -15,7 +17,15 @@ class RestApi(object):
 
     def put(self, pkey):
         content_dict = json.loads(bottle.request.body.read())
+
         with self.dbapi.session:
+            try:
+                if self.logging:
+                    old_obj = self.dbapi.get(pkey, self.clazz).serialize()
+                    self.logging(self.clazz, 'put', old_obj, content_dict)
+            except Exception as e:
+                print >>sys.stderr, e
+                print >>sys.stderr, 'logging failed'
             obj = self.clazz()
             setattr(obj, self.clazz.pkey.name, pkey)
             count = self.dbapi.update(obj, content_dict=content_dict)
@@ -43,8 +53,7 @@ class RestApi(object):
             return json_dumps({'result': [c.serialize() for c in content]})
 
 
-def bind_dbapi_rest(url, dbapi, clazz, app, skips_method=()):
-    restapi = RestApi(dbapi, clazz)
+def bind_restapi(url, restapi, app, skips_method=()):
     url_with_id = url + '/<pkey>'
     if 'GET' not in skips_method:
         app.get(url_with_id)(restapi.get)
@@ -56,3 +65,8 @@ def bind_dbapi_rest(url, dbapi, clazz, app, skips_method=()):
     if 'POST' not in skips_method:
         app.post(url)(restapi.post)
     return app
+
+
+def bind_dbapi_rest(url, dbapi, clazz, app, skips_method=()):
+    restapi = RestApi(dbapi, clazz)
+    return bind_restapi(url, restapi, app, skips_method)

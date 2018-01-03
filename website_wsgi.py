@@ -12,13 +12,14 @@ from henry.product.web import make_wsgi_api as prod_api_app
 from henry.inventory.web import make_inv_wsgi, make_inv_api
 from henry.invoice.websites import make_invoice_wsgi
 from henry.base.dbapi import DBApiGeneric
+from henry.base.fileservice import FileService
 from henry.constants import USE_ACCOUNTING_APP, FORWARD_INV
 from henry.config import (BEAKER_SESSION_OPTS, jinja_env, transapi,
                           imagefiles, paymentapi, BODEGAS_EXTERNAS)
 from henry.coreconfig import (dbcontext, auth_decorator, sessionmanager,
                               actionlogged, invapi, pedidoapi, transactionapi, sessionfactory)
 from henry.web import webmain as app
-
+from henry.background_sync import sync_api
 dbapi = DBApiGeneric(sessionmanager)
 
 
@@ -46,11 +47,12 @@ invappapi = make_inv_api(dbapi, transapi, auth_decorator, actionlogged, forward_
 papp = prodapp(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles)
 advanced = make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transactionapi)
 
+sync_api_obj = sync_api.SyncApi(FileService(sync_api.NEW_LOG_DIR))
 create_prod_api = prod_api_app(
     '/app/api',
     sessionmanager=sessionmanager,
     auth_decorator=auth_decorator, dbcontext=dbcontext,
-    dbapi=dbapi, inventoryapi=transactionapi)
+    dbapi=dbapi, inventoryapi=transactionapi, sync_api=sync_api_obj)
 
 app.merge(userapp)
 app.merge(invoiceapp)
