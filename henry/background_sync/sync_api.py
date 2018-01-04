@@ -1,3 +1,4 @@
+import shutil
 import requests
 import datetime
 import uuid
@@ -53,10 +54,10 @@ def make_wsgi_api(prefix, fileservice):
         #json list with all transactions
         for line in request.body.readlines():
             data = json.loads(line)
-            meta = LogMetadata.deserialize(data['meta'])
+            meta = data['meta']
             
-            destination = os.path.join(str(meta.almacen_id), make_date_name(
-                meta.date, meta.batch))
+            destination = os.path.join(str(meta['almacen_id']), make_date_name(
+                meta['date'], meta['batch']))
             fileservice.append_file(destination, line.strip())
 
     return app
