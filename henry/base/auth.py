@@ -40,10 +40,15 @@ class AuthDecorator:
         def decorator(func):
             def wrapped(*args, **kwargs):
                 print request.get_header('Authorization')
-                if ((self.is_logged_in_by_beaker()
-                        or self.is_auth_by_header()) and
-                    get_user(request).level >= level):
-                    return func(*args, **kwargs)
+                if (self.is_logged_in_by_beaker()
+                        or self.is_auth_by_header()):
+                    user = get_user(request)['username']
+                    db_user = get_user_info(self.db.session, user)
+                    if db_user.level >= level:
+		        return func(*args, **kwargs)
+                    else:
+			response.status = 401
+			response.set_header('www-authenticate', 'Basic realm="Henry"')
                 else:
                     response.status = 401
                     response.set_header('www-authenticate', 'Basic realm="Henry"')
@@ -66,7 +71,7 @@ class AuthDecorator:
             beaker = request.environ.get('beaker.session')
             beaker['login_info'] = create_user_dict(userinfo)
             beaker.save()
-            return True
+            return userinfo
         return False
 
     def is_logged_in_by_beaker(self):

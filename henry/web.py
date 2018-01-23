@@ -10,7 +10,7 @@ webmain = w = Bottle()
 @dbcontext
 @auth_decorator(0)
 def index():
-    return jinja_env.get_template('base.html').render(user=user)
+    return jinja_env.get_template('base.html').render()
 
 # @w.get('/app/client_stat/<uid>')
 # @dbcontext
