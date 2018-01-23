@@ -30,7 +30,7 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
 
     @app.get(prefix + '/universal_prod_with_declared')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def get_universal_prod_with_declared():
         all_prod = dbapi.search(UniversalProd)
         all_declared = dbapi.search(DeclaredGood)
@@ -50,13 +50,13 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
 
     @app.get(prefix + '/purchase_full/<uid>')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def get_purchase_full_http(uid):
         return json_dumps(get_purchase_full(dbapi, uid))
 
     @app.post(prefix + '/purchase_full')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def create_full_purchase():
         rows = json.loads(request.body.read())
         purchase = Purchase()
@@ -101,7 +101,7 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
 
     @app.post(prefix + '/client_sale')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def post_sale():
         content = Sale.deserialize(json.loads(request.body.read()))
         if list(dbapi.search(
@@ -113,7 +113,7 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
 
     @app.get(prefix + '/client_sale')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def get_sales():
         start, end = parse_start_end_date(request.query)
         result = list(get_sales_by_date_and_user(dbapi, start, end))
@@ -121,7 +121,7 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
 
     @app.delete(prefix + '/client_sale')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def delete_sale():
         content = Sale.deserialize(json.loads(request.body.read()))
         deleted = dbapi.db_session.query(NSale).filter_by(
@@ -131,7 +131,7 @@ def make_import_apis(prefix, auth_decorator, dbapi, invmomanager, inventoryapi):
 
     @app.post(prefix + '/inv_movement_set')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def post_inv_movement_set():
         raw_inv = request.body.read()
         inv_movement = InvMovementFull.deserialize(json.loads(raw_inv))

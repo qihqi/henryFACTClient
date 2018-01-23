@@ -93,7 +93,7 @@ def post_inv(json_content):
 
 @api.put('/api/nota/<uid>')
 @dbcontext
-@auth_decorator
+@auth_decorator(0)
 @actionlogged
 def put_inv(uid):
     command = Command(Command.COMMIT, uid)

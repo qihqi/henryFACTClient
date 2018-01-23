@@ -19,14 +19,16 @@
     "url": "https://github.com/qihqi/HenryFACTService/issues"
   },
   "dependencies": {
-    "webpack": "~1.12.9",
-    "react-dom": "~0.14.8",
-    "react": "~0.14.8",
-    "react-router": "~1.0.0-rc3",
-    "react-skylight": "~0.3.0",
-    "react-addons-linked-state-mixin": "~0.14.8",
     "chart.js": "~1.1.1",
-    "react-chartjs": "~0.7.3"
+    "chokidar": "^1.7.0",
+    "history": "^4.6.1",
+    "react": "~0.14.8",
+    "react-addons-linked-state-mixin": "~0.14.8",
+    "react-chartjs": "~0.7.3",
+    "react-dom": "~0.14.8",
+    "react-router": "^1.0.3",
+    "react-skylight": "~0.3.0",
+    "webpack": "~1.12.9"
   },
   "babel": {
     "presets": [

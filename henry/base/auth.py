@@ -36,17 +36,20 @@ class AuthDecorator:
         self.redirect = redirect_url
         self.db = db
 
-    def __call__(self, func):
-        def wrapped(*args, **kwargs):
-            print request.get_header('Authorization')
-            if (self.is_logged_in_by_beaker()
-                    or self.is_auth_by_header()):
-                return func(*args, **kwargs)
-            else:
-                response.status = 401
-                response.set_header('www-authenticate', 'Basic realm="Henry"')
+    def __call__(self, level):
+        def decorator(func):
+            def wrapped(*args, **kwargs):
+                print request.get_header('Authorization')
+                if ((self.is_logged_in_by_beaker()
+                        or self.is_auth_by_header()) and
+                    get_user(request).level >= level):
+                    return func(*args, **kwargs)
+                else:
+                    response.status = 401
+                    response.set_header('www-authenticate', 'Basic realm="Henry"')
+            return wrapped
 
-        return wrapped
+        return decorator
 
     def is_auth_by_header(self):
         header = request.get_header('Authorization')

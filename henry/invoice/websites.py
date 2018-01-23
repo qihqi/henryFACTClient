@@ -24,7 +24,7 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
 
     @w.get('/app/list_facturas')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def list_facturas():
         start, end = parse_start_end_date(request.query)
         if not start:
@@ -42,7 +42,7 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
 
     @w.get('/app/eliminar_factura')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(1)
     def eliminar_factura_form(message=None):
         almacenes = list(dbapi.search(Store))
         temp = jinja_env.get_template('invoice/eliminar_factura.html')
@@ -50,7 +50,7 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
 
     @w.post('/app/eliminar_factura')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(1)
     @actionlogged
     def eliminar_factura():
         almacen_id = int(request.forms.get('almacen_id'))
@@ -99,7 +99,7 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
 
     @w.get('/app/ver_factura_form')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def get_nota_form(message=None):
         almacenes = list(dbapi.search(Store))
         temp = jinja_env.get_template('invoice/ver_factura_form.html')
@@ -107,7 +107,7 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
 
     @w.get('/app/ver_factura')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def ver_factura():
         almacen_id = int(request.query.get('almacen_id'))
         codigo = request.query.get('codigo').strip()
@@ -119,7 +119,7 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
 
     @w.get('/app/nota/<uid>')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def get_nota(uid):
         doc = invapi.get_doc(uid)
         if doc:

@@ -1,7 +1,6 @@
-from bottle import Bottle
+from bottle import Bottle, request
 
 from henry.coreconfig import (dbcontext, auth_decorator)
-
 from henry.config import jinja_env
 
 webmain = w = Bottle()
@@ -9,13 +8,13 @@ webmain = w = Bottle()
 
 @w.get('/app')
 @dbcontext
-@auth_decorator
+@auth_decorator(0)
 def index():
-    return jinja_env.get_template('base.html').render()
+    return jinja_env.get_template('base.html').render(user=user)
 
 # @w.get('/app/client_stat/<uid>')
 # @dbcontext
-# @auth_decorator
+# @auth_decorator(0)
 # def get_client_stat(uid):
 #    start_date = datetime.date(2015, 7, 27)
 #    end_date = datetime.datetime.now()

@@ -22,7 +22,7 @@ def make_inv_api(dbapi, transapi, auth_decorator, actionlogged, forward_transact
 
     @api.post('/app/api/ingreso')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     @actionlogged
     def crear_ingreso():
         json_content = request.body.read()
@@ -33,7 +33,7 @@ def make_inv_api(dbapi, transapi, auth_decorator, actionlogged, forward_transact
 
     @api.put('/app/api/ingreso/<ingreso_id>')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     @actionlogged
     def postear_ingreso(ingreso_id):
         trans = transapi.get_doc(ingreso_id)
@@ -94,13 +94,13 @@ def make_inv_wsgi(dbapi, jinja_env, actionlogged, auth_decorator, transapi,
 
     @w.get('/app/ver_ingreso_form')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def ver_ingreso_form():
         return jinja_env.get_template('inventory/ver_ingreso_form.html').render()
 
     @w.get('/app/ingreso/<uid>')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def get_ingreso(uid):
         trans = transapi.get_doc(uid)
         if not trans:
@@ -114,7 +114,7 @@ def make_inv_wsgi(dbapi, jinja_env, actionlogged, auth_decorator, transapi,
 
     @w.get('/app/crear_ingreso')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def crear_ingreso():
         temp = jinja_env.get_template('inventory/crear_ingreso.html')
         bodegas = dbapi.search(Bodega)
@@ -129,7 +129,7 @@ def make_inv_wsgi(dbapi, jinja_env, actionlogged, auth_decorator, transapi,
 
     @w.post('/app/crear_ingreso')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     @actionlogged
     def post_crear_ingreso():
         meta = transmetadata_from_form(request.forms)
@@ -157,7 +157,7 @@ def make_inv_wsgi(dbapi, jinja_env, actionlogged, auth_decorator, transapi,
 
     @w.get('/app/ingresos_list')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def list_ingress():
         start, end = parse_start_end_date(request.query)
         if not end:
@@ -174,14 +174,14 @@ def make_inv_wsgi(dbapi, jinja_env, actionlogged, auth_decorator, transapi,
 
     @w.get('/app/revisar_inventario')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def revisar_inv_form():
         temp = jinja_env.get_template('inventory/crear_revision.html')
         return temp.render(bodegas=dbapi.search(Bodega))
 
 #    @w.post('/app/revisar_inventario')
 #    @dbcontext
-#    @auth_decorator
+#    @auth_decorator(0)
 #    def post_revisar_inv():
 #        bodega_id = request.forms.get('bodega_id', None)
 #        if bodega_id is None:
@@ -192,7 +192,7 @@ def make_inv_wsgi(dbapi, jinja_env, actionlogged, auth_decorator, transapi,
 #
 #    @w.get('/app/revision/<rid>')
 #    @dbcontext
-#    @auth_decorator
+#    @auth_decorator(0)
 #    def get_revision(rid):
 #        meta = revisionapi.get(rid)
 #        bodega_name = dbapi.get(meta.bodega_id, Bodega).nombre
@@ -213,7 +213,7 @@ def make_inv_wsgi(dbapi, jinja_env, actionlogged, auth_decorator, transapi,
 #
 #    @w.post('/app/revision/<rid>')
 #    @dbcontext
-#    @auth_decorator
+#    @auth_decorator(0)
 #    def post_revision(rid):
 #        prods = {}
 #        for key, value in request.forms.items():
@@ -223,7 +223,7 @@ def make_inv_wsgi(dbapi, jinja_env, actionlogged, auth_decorator, transapi,
 #
 #    @w.get('/app/list_revision')
 #    @dbcontext
-#    @auth_decorator
+#    @auth_decorator(0)
 #    def list_revision():
 #        start, end = parse_start_end_date(request.query)
 #        if end is None:
@@ -240,7 +240,7 @@ def make_inv_wsgi(dbapi, jinja_env, actionlogged, auth_decorator, transapi,
 #
 #    @w.get('/app/revisiones')
 #    @dbcontext
-#    @auth_decorator
+#    @auth_decorator(0)
 #    def revisiones_main():
 #        user = get_user(request)
 #        if 'level' not in user:

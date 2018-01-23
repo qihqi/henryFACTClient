@@ -20,7 +20,7 @@ def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, actionlogged):
 
     @w.get('/app/cliente/<id>')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def modificar_cliente_form(id, message=None):
         client = dbapi.get(id, Client)
         if client is None:
@@ -31,7 +31,7 @@ def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, actionlogged):
 
     @w.post('/app/modificar_cliente')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def modificar_cliente():
         clientid = request.forms.codigo
         client = Client(codigo=clientid)
@@ -40,7 +40,7 @@ def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, actionlogged):
 
     @w.get('/app/cliente')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def search_cliente_result():
         prefix = request.query.prefijo
         clientes = list(dbapi.search(Client, **{'apellidos-prefix': prefix}))
@@ -49,7 +49,7 @@ def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, actionlogged):
 
     @w.post('/app/crear_cliente')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def crear_cliente():
         cliente = Client.deserialize(request.forms)
         cliente.cliente_desde = datetime.date.today()
@@ -62,7 +62,7 @@ def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, actionlogged):
 
     @w.get('/app/secuencia')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(1)
     def get_secuencia():
         users = dbapi.search(User)
         temp = jinja_env.get_template('secuencia.html')
@@ -72,7 +72,7 @@ def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, actionlogged):
 
     @w.post('/app/secuencia')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(1)
     @actionlogged
     def post_secuencia():
         username = request.forms.usuario
@@ -83,7 +83,7 @@ def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, actionlogged):
 
     @w.get('/app/ver_cliente')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def ver_cliente():
         temp = jinja_env.get_template('ver_item.html')
         return temp.render(title='Ver Cliente', baseurl='/app/cliente',
@@ -91,7 +91,7 @@ def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, actionlogged):
 
     @w.get('/app/crear_cliente')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def crear_cliente_form(message=None):
         temp = jinja_env.get_template('crear_cliente.html')
         return temp.render(client=None, message=message, action='/app/crear_cliente',

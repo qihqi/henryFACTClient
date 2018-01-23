@@ -55,7 +55,7 @@ def make_wsgi_api(prefix, sessionmanager, dbcontext,
 
     @app.post(prefix + '/item_full')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def create_item_full():
         """
             input format:
@@ -145,7 +145,7 @@ def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles):
 
     @w.get('/app/ver_lista_precio')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def ver_lista_precio():
         almacen_id = int(request.query.get('almacen_id', 1))
         prefix = request.query.get('prefix', None)
@@ -177,7 +177,7 @@ def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles):
 
     @w.get('/app/barcode_form')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def barcode_form():
         msg = request.query.msg
         temp = jinja_env.get_template('prod/barcode_form.html')
@@ -185,7 +185,7 @@ def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles):
 
     @w.get('/app/barcode')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def get_barcode():
         prod_id = request.query.get('prod_id')
         almacen_id = request.query.get('almacen_id')

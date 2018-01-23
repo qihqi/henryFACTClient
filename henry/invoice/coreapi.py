@@ -126,7 +126,7 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
 
     @api.post('{}/nota'.format(url_prefix))
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     @actionlogged
     def create_invoice():
         json_content = request.body.read()
@@ -161,7 +161,7 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
 
     @api.put('{}/nota/<uid>'.format(url_prefix))
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     @actionlogged
     def postear_invoice(uid):
         inv = invapi.get_doc(uid)
@@ -173,7 +173,7 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
 
     @api.get(url_prefix + '/nota/<inv_id>')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     @actionlogged
     def get_invoice(inv_id):
         doc = invapi.get_doc(inv_id)
@@ -184,7 +184,7 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
 
     @api.delete(url_prefix + '/nota/<uid>')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     @actionlogged
     def delete_invoice(uid):
         inv = invapi.get_doc(uid)
@@ -202,7 +202,7 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
     # ####################### PEDIDO ############################
     @api.post(url_prefix + '/pedido')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     @actionlogged
     def save_pedido():
         json_content = request.body.read()

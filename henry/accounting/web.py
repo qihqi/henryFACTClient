@@ -126,7 +126,7 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
 
     @w.get('/app/api/noncash_sales_with_payments')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def ver_ventas_no_efectivos():
         start, end = parse_start_end_date(request.query)
         end += datetime.timedelta(hours=23)
@@ -160,7 +160,7 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
 
     @w.get('/app/api/account_deposit_with_img')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def get_account_deposit_with_img():
         today = datetime.datetime.today()
         thisyear = today - datetime.timedelta(days=365)
@@ -217,7 +217,7 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
 
     @w.post('/app/api/comment')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def post_comment():
         comment = json.loads(request.body.read())
         c = Comment()
@@ -246,7 +246,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.get('/app/resumen_form')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(1)
     def resume_form():
         temp = jinja_env.get_template('invoice/resumen_form.html')
         stores = dbapi.search(Store)
@@ -255,7 +255,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.get('/app/resumen')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(1)
     def get_resumen():
         user = request.query.get('user')
         store = request.query.get('almacen_id')
@@ -279,7 +279,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.get('/app/resumen_viejo')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(1)
     def get_resumen_viejo():
         user = request.query.get('user')
         store = request.query.get('almacen_id')
@@ -311,14 +311,14 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.get('/app/entregar_cuenta_form')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(1)
     def entrega_de_cuenta():
         temp = jinja_env.get_template('invoice/entregar_cuenta_form.html')
         return temp.render()
 
     @w.get('/app/crear_entrega_de_cuenta')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(1)
     def crear_entrega_de_cuenta():
         date = request.query.get('fecha')
         if date:
@@ -355,7 +355,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.post('/app/crear_entrega_de_cuenta')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def post_crear_entrega_de_cuenta():
         cash = request.forms.get('cash', 0)
         gastos = request.forms.get('gastos', 0)
@@ -391,7 +391,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.get('/app/entrega_de_cuenta_list')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def ver_entrega_de_cuenta_list():
         start, end = parse_start_end_date(request.query)
         if end is None:
@@ -411,21 +411,21 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.get('/app/crear_cuenta_form')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def create_cuenta():
         return render_form_with_msg(
             'invoice/crear_banco_form.html', title='Crear Cuenta')
 
     @w.get('/app/crear_banco_form')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def create_bank():
         return render_form_with_msg(
             'invoice/crear_banco_form.html', title='Crear Banco')
 
     @w.post('/app/crear_banco_form')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def post_create_bank():
         name = request.forms.name
         bank = Bank(nombre=name)
@@ -434,7 +434,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.post('/app/crear_cuenta_form')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def post_create_cuenta():
         name = request.forms.name
         acc = DepositAccount(nombre=name)
@@ -443,7 +443,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.post('/app/guardar_cheque_deposito')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def post_guardar_cheque_deposito():
         nexturl = request.forms.get('next', '/app')
         for key, value in request.forms.items():
@@ -458,7 +458,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.get('/app/ver_cheque/<cid>')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def ver_cheque(cid):
         check = paymentapi.get_check(cid)
         if check.imgcheck:
@@ -472,7 +472,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.post('/app/postregar_cheque')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def postregar_cheque():
         checkid = request.forms.checkid
         new_date = parse_iso(request.forms.new_date).date()
@@ -493,7 +493,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.post('/app/save_check_img/<imgtype>/<cid>')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def save_check_image(cid, imgtype):
         upload = request.files.get('imgcheck')
         _, ext = os.path.splitext(upload.raw_filename)
@@ -525,14 +525,14 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.get('/app/imgcheck/<cid>')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def check_image_get(cid):
         check = paymentapi.get(cid)
         return static_file(check.imgcheck, root='.')
 
     @w.get('/app/guardar_deposito')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def guardar_deposito():
         msg = request.query.msg
         temp = jinja_env.get_template('invoice/save_deposito_form.html')
@@ -542,7 +542,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.get('/app/guardar_cheque')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def save_check_form():
         msg = request.query.msg
         temp = jinja_env.get_template('invoice/save_check_form.html')
@@ -562,7 +562,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.post('/app/guardar_cheque')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def save_check():
         check = parse_payment_from_request(
             request.forms, Check, '/app/guardar_cheque')
@@ -572,7 +572,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.get('/app/ver_cheques_guardados')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def list_checks():
         today = datetime.date.today()
         start, end = parse_start_end_date_with_default(
@@ -587,7 +587,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.get('/app/ver_cheques_para_depositar')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def list_checks_deposit():
         today = datetime.date.today()
         start, end = parse_start_end_date_with_default(
@@ -603,7 +603,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.get('/app/ver_cheques_por_titular')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def ver_cheques_por_titular():
         start, end = parse_start_end_date_with_default(request.query, None, None)
         titular = request.query.titular
@@ -626,7 +626,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.post('/app/guardar_deposito')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def post_guardar_deposito():
         deposit = parse_payment_from_request(
             request.forms, Deposit, '/app/guardar_deposito')
@@ -635,7 +635,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.get('/app/guardar_abono')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def guardar_abono():
         msg = request.query.msg
         temp = jinja_env.get_template('invoice/save_abono_form.html')
@@ -645,7 +645,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.get('/app/guardar_retension')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def guardar_retension():
         msg = request.query.msg
         temp = jinja_env.get_template('invoice/save_abono_form.html')
@@ -655,7 +655,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.post('/app/guardar_abono')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def post_guardar_abono():
         payment = Payment()
         url = '/app/guardar_abono'
@@ -675,7 +675,7 @@ def make_wsgi_app(dbcontext, imgserver,
     @w.get('/app/guardar_gastos')
     @w.get('/app/guardar_gastos/<uid>')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def save_spent(msg='', uid=-1):
         spent = None
         if uid >= 0:
@@ -687,7 +687,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.post('/app/guardar_gastos')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def post_save_spent():
         uid = request.forms.get('uid')
         spent = None
@@ -718,7 +718,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.get('/app/ver_gastos')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def ver_gastos():
         today = datetime.datetime.today()
         start, end = parse_start_end_date_with_default(
@@ -790,7 +790,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.get('/app/img/<rest:path>')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def img(rest):
         if constants.ENV == 'test':
             return static_file(rest, root=constants.IMAGE_PATH)
@@ -807,7 +807,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.post('/app/attachimg')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def post_img():
         redirect_url = request.forms.get('redirect_url')
         save_img_from_request(request)
@@ -815,7 +815,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
     @w.post('/app/api/attachimg')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def post_img():
         img = save_img_from_request(request)
         url = imgserver.get_url_path(img.path)

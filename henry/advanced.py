@@ -20,7 +20,7 @@ def make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transaction
     dbcontext = DBContext(dbapi.session)
 
     @w.get('/app/adv')
-    @auth_decorator
+    @auth_decorator(0)
     def index():
         return '''
         <a href="/app/pricelist">Price List</a>
@@ -69,7 +69,7 @@ def make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transaction
 
     @w.get('/app/pricelist')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(2)
     def get_price_list():
         almacen_id = request.query.get('almacen_id')
         prefix = request.query.get('prefix')
@@ -84,7 +84,7 @@ def make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transaction
 
     @w.get('/app/vendidos_por_categoria_form')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(2)
     def vendidos_por_categoria_form():
         temp = jinja_env.get_template('vendidos_por_categoria_form.html')
         categorias = dbapi.search(Category)
@@ -101,7 +101,7 @@ def make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transaction
 
     @w.get('/app/vendidos_por_categoria')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(2)
     def vendidos_por_categoria():
         cat = request.query.categoria_id
         start, end = parse_start_end_date(request.query)
@@ -122,7 +122,7 @@ def make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transaction
 
     @w.get('/app/ver_transacciones')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(2)
     def ver_transacciones():
         prod_id = request.query.prod_id or '123'
         bodega_id = request.query.bodega_id or 1
@@ -155,7 +155,7 @@ def make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transaction
 
     @w.get('/app/ver_ventas')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(2)
     def sale_by_product():
         today = datetime.datetime.now()
         start, end = parse_start_end_date_with_default(
@@ -184,7 +184,7 @@ def make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transaction
 
     @w.get('/app/adv/producto/<pid>')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(0)
     def ver_prod_advanced(pid):
         session = dbapi.db_session
         prod = session.query(NProducto).filter_by(codigo=pid).first()
@@ -197,7 +197,7 @@ def make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transaction
 
     @w.get('/app/edit_note/<uid>')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(2)
     def edit_note(uid):
         note = dbapi.db_session.query(NNota).filter_by(id=uid).first()
         temp = jinja_env.get_template('edit_note.html')
@@ -205,7 +205,7 @@ def make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transaction
 
     @w.post('/app/edit_note/<uid>')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(2)
     def post_edit_note(uid):
         values = dict(request.forms)
         if values['payment_format'] not in PaymentFormat.names:
@@ -219,7 +219,7 @@ def make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transaction
 
     @w.get('/app/ver_comentarios')
     @dbcontext
-    @auth_decorator
+    @auth_decorator(2)
     def ver_comentarios():
         today = datetime.datetime.now() + datetime.timedelta(days=1)
         start, end = parse_start_end_date_with_default(
