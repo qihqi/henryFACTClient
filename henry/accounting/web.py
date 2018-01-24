@@ -10,6 +10,7 @@ from bottle import request, redirect, static_file, Bottle, response, abort
 from sqlalchemy import func
 
 from henry import constants
+from henry import hack
 from henry.base.auth import get_user
 from henry.base.common import parse_iso, parse_start_end_date, parse_start_end_date_with_default
 from henry.base.serialization import json_dumps
@@ -772,7 +773,8 @@ def make_wsgi_app(dbcontext, imgserver,
         ruc = request.query.get('alm')
         invs = invapi.search_metadata_by_date_range(
             start_date, end_date, other_filters={'almacen_ruc': ruc})
-
+        for inv in invs:
+            inv.meta.client.codigo = hack.fix_id_error(inv.meta.client.codigo)
         deleted, sold = split_records_binary(invs, lambda x: x.status == Status.DELETED)
         grouped = group_by_customer(sold)
 
