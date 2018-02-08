@@ -771,10 +771,10 @@ def make_wsgi_app(dbcontext, imgserver,
         form_type = request.query.get('form_type')
 
         ruc = request.query.get('alm')
-        invs = invapi.search_metadata_by_date_range(
-            start_date, end_date, other_filters={'almacen_ruc': ruc})
+        invs = list(invapi.search_metadata_by_date_range(
+            start_date, end_date, other_filters={'almacen_ruc': ruc}))
         for inv in invs:
-            inv.meta.client.codigo = hack.fix_id_error(inv.meta.client.codigo)
+            inv.client.codigo = hack.fix_id_error(inv.client.codigo)
         deleted, sold = split_records_binary(invs, lambda x: x.status == Status.DELETED)
         grouped = group_by_customer(sold)
 
