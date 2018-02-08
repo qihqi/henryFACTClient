@@ -22,9 +22,11 @@
       <baseNoGraIva>0.00</baseNoGraIva>
       <baseImponible>0.00</baseImponible>
       <baseImpGrav>{{ '%.2f' % value_from_cents(detalle.subtotal)}}</baseImpGrav>
+      <montoIce>0.00</montoIce>
       <montoIva>{{ '%.2f' % value_from_cents(detalle.iva) }}</montoIva>
       <valorRetIva>0.00</valorRetIva>
       <valorRetRenta>0.00</valorRetRenta>
+      <formasDePago><formaPago>01</formaPago></formasDePago>
     </detalleVentas>
     {% endfor %}
   </ventas>
