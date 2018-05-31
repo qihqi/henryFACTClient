@@ -1,112 +1,32 @@
-from collections import defaultdict
-import json
 import datetime
-from decimal import Decimal
-
+import json
 from bottle import Bottle, request
-
+from henry.base.common import parse_start_end_date
 from henry.base.dbapi_rest import bind_dbapi_rest
-from henry.base.serialization import json_dumps
+from henry.base.serialization import json_dumps, parse_iso_date
 from henry.base.session_manager import DBContext
-from .dao import (Purchase, PurchaseItem, UniversalProd, DeclaredGood,
-                  get_purchase_full, get_custom_items_full,
-                  CustomItem, CustomItemFull, normal_filter, Unit,
-                  generate_custom_for_purchase, PurchaseStatus, create_custom,
-                  get_purchase_item_full_by_custom)
-from .schema import NCustomItem
+from henry.dao.document import Status
+from henry.product.dao import ProdItemGroup, InventoryMovement
+
+from .dao import (
+    client_sale_report,
+    InvMovementMeta, InvMovementFull, Sale,
+    get_sales_by_date_and_user, get_or_create_inventory_id, Inventory, Entity)
+from .schema import NSale
+
+__author__ = 'han'
 
 
-def make_import_apis(prefix, auth_decorator, dbapi,
-                     jinja_env):
+def make_sale_records_api(prefix, auth_decorator, dbapi,
+                          invmomanager, inventoryapi):
     app = Bottle()
     dbcontext = DBContext(dbapi.session)
 
-    bind_dbapi_rest(prefix + '/purchase', dbapi, Purchase, app)
-    bind_dbapi_rest(prefix + '/purchase_item', dbapi, PurchaseItem, app)
-    bind_dbapi_rest(prefix + '/universal_prod', dbapi, UniversalProd, app)
-    bind_dbapi_rest(prefix + '/declaredgood', dbapi, DeclaredGood, app)
-    bind_dbapi_rest(prefix + '/custom_item', dbapi, CustomItem, app)
+    bind_dbapi_rest(prefix + '/entity', dbapi, Entity, app)
 
-    @app.get(prefix + '/universal_prod_with_declared')
-    @dbcontext
-    @auth_decorator(0)
-    def get_universal_prod_with_declared():
-        all_prod = dbapi.search(UniversalProd)
-        all_declared = dbapi.search(DeclaredGood)
-
-        return json_dumps({
-            'prod': all_prod,
-            'declared': all_declared
-        })
-
-    @app.get(prefix + '/purchase_filtered/<uid>')
+    @app.post(prefix + '/client_sale')
     @dbcontext
     @auth_decorator
-    def purchase_fitered(uid):
-        purchase = get_purchase_full(dbapi, uid)
-        map(normal_filter, purchase.items)
-        total = sum(i.item.price_rmb * i.item.quantity for i in purchase.items)
-        purchase.meta.total_rmb = total
-        res = purchase.serialize()
-        res['units'] = {x.uid: x for x in dbapi.search(Unit)}
-        return json_dumps(res)
-
-    @app.get(prefix + '/purchase_full/<uid>')
-    @dbcontext
-    @auth_decorator(0)
-    def get_purchase_full_http(uid):
-        res = get_purchase_full(dbapi, uid).serialize()
-        res['units'] = {x.uid: x for x in dbapi.search(Unit)}
-        return json_dumps(res)
-
-    @app.post(prefix + '/purchase_full')
-    @dbcontext
-    @auth_decorator(0)
-    def create_full_purchase():
-        rows = json.loads(request.body.read())
-        purchase = Purchase()
-        purchase.timestamp = datetime.datetime.now()
-        pid = dbapi.create(purchase)
-
-        def make_item(r):
-            return PurchaseItem(
-                upi=r['prod']['upi'],
-                quantity=Decimal(r['cant']),
-                price_rmb=Decimal(r['price']),
-                purchase_id=pid)
-
-        items = map(make_item, rows)
-        total = sum((r.price_rmb * r.quantity for r in items))
-        dbapi.update(purchase, {'total_rmb': total})
-        map(dbapi.create, items)
-        return {'uid': pid}
-
-    @app.put(prefix + '/purchase_full/<uid>')
-    @dbcontext
-    def update_purchase_full(uid):
-        data = json.loads(request.body.read())
-        print data
-        # update meta
-        updated = Purchase.deserialize(data['meta'])
-        print updated.timestamp
-        updated.last_edit_timestamp = datetime.datetime.now()
-        dbapi.update_full(updated)
-
-        to_create_item = map(PurchaseItem.deserialize, data.get('create_items', []))
-        for pi in to_create_item:
-            pi.purchase_id = uid
-            dbapi.create(pi)
-        to_delete_item = map(PurchaseItem.deserialize, data.get('delete_items', []))
-        for pi in to_delete_item:
-            dbapi.delete(pi)
-        to_edit_item = map(PurchaseItem.deserialize, data.get('edit_items', []))
-        for pi in to_edit_item:
-            dbapi.update_full(pi)
-        return {'status': 'success'}
-
-    @app.get(prefix + '/custom_full/<uid>')
-    @dbcontext
-    @auth_decorator(0)
     def post_sale():
         content = Sale.deserialize(json.loads(request.body.read()))
         if list(dbapi.search(
@@ -116,17 +36,17 @@ def make_import_apis(prefix, auth_decorator, dbapi,
         dbapi.create(content)
         return {'status': 'success'}
 
-    @app.put(prefix + '/custom_full/<uid>')
+    @app.get(prefix + '/client_sale')
     @dbcontext
-    @auth_decorator(0)
+    @auth_decorator
     def get_sales():
         start, end = parse_start_end_date(request.query)
         result = list(get_sales_by_date_and_user(dbapi, start, end))
         return json_dumps(result)
 
-    @app.post(prefix + '/split_custom_items')
+    @app.delete(prefix + '/client_sale')
     @dbcontext
-    @auth_decorator(0)
+    @auth_decorator
     def delete_sale():
         content = Sale.deserialize(json.loads(request.body.read()))
         deleted = dbapi.db_session.query(NSale).filter_by(
@@ -134,9 +54,9 @@ def make_import_apis(prefix, auth_decorator, dbapi,
         ).update({'status': Status.DELETED})
         return {'deleted': deleted}
 
-    @app.post(prefix + '/custom_full/purchase/<uid>')
+    @app.post(prefix + '/inv_movement_set')
     @dbcontext
-    @auth_decorator(0)
+    @auth_decorator
     def post_inv_movement_set():
         raw_inv = request.body.read()
         inv_movement = InvMovementFull.deserialize(json.loads(raw_inv))
@@ -178,6 +98,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
         return json_dumps({'result': sales_by_date})
 
     # @app.post(prefix + '/raw_inv_movement')
+    # expects [proditemgroup, inventoryMovement, codename]
     @dbcontext
     def post_raw_inv_movement():
         raw_data = json.loads(request.body.read())
@@ -202,4 +123,3 @@ def make_import_apis(prefix, auth_decorator, dbapi,
             inventoryapi.save(i)
 
     return app
-

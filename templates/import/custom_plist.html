@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .centered {
+        margin-left: auto;
+        margin-right:auto;
+        }
+        .right {
+        float: right;
+        }
+        table {
+        align: center;
+        }
+        td.num {
+        text-align: right;
+        }
+        .logo {
+        float: left;
+        }
+        .border {
+        border: 1px solid;
+        }
+        .noborder {
+        }
+    </style>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+<div class="centered" style="text-align:center;">
+    <div class="logo" style="width: 50em;"></div>
+{% if use_riyao %}
+    <img height="40" class="logo" src="/static/logo.jpg" />
+    <h2>YIWU RIYAO IMP&EXP.CO.LTD</h2>
+    <h4>ROOM 8511.5F,  CUP INTERNATIONAL BUILDING NO1339  CHOUZHOU  ROAD, YIWU ZHEJIANG CHINA</h4>
+    <h4>TEL: 0086-579-85314583  FAX:0086-579-85436673</h4>
+    <h4><a href="http://riyaoimpexp.com">http://riyaoimpexp.com</a></h4>
+{% else %}
+    <img height="40" class="logo" src="/static/logo2.jpg" />
+    <h2>YIWU BENTAI IMP&EXP.CO.LTD</h2>
+    <h4>ROOM 8511.5F,  CUP INTERNATIONAL BUILDING NO1339  CHOUZHOU  ROAD, YIWU ZHEJIANG CHINA</h4>
+    <h4>TEL: 0086-579-85314583  FAX:0086-579-85436673</h4>
+{% endif  %}
+</div>
+<hr />
+<div class="centered" style="text-align:center;">
+    <img height="70" src="/static/barcode.svg"/>
+    <h2>Packing List No. HL 2722-{{inv_uid}}</h2>
+</div>
+
+<div class="centered" >
+    <p>Ningbo, {{date_str}}</p>
+    <h4>
+        {% if use_corpesut %}
+        <p>TO:</p>
+        <p>Corpesut S.A.</p>
+        <p>RUC 0992584092001</p>
+        <p>BOYACA 1527 y AGUIRRE</p>
+        <p>Guayaquil - Ecuador</p>
+        <p>Telf: +593 4 2532007</p>
+        {% else %}
+        <p>TO:</p>
+        <p>Superbisuterias S.A.</p>
+        <p>RUC 0992932562001</p>
+        <p>LA FRAGATA Mz 2190 No. SL 5</p>
+        <p>Guayaquil - Ecuador</p>
+        <p>Telf: +593 4 2532007</p>
+        {% endif %}
+    </h4>
+
+    <div class="centered" >
+        <table border="1" style="border:1px solid;" class="centered">
+            <tr class="border">
+                <th>Item</th>
+                <th class="noborder">Description</th>
+                <th class="num noborder">Quantity</th>
+                <th class="noborder">Selling Unit</th>
+                <th class="num">Box</th>
+                <th class="num">Weight(KG)</th>
+            </tr>
+            {% for i in custom_items %}
+            <tr class="border">
+                <td> {{i.box_code}} </td>
+                <td class="noborder">{{i.display_name}}</td>
+                <td class="num noborder">{{normalize_decimal(i.quantity)}}</td>
+                <td class="noborder">{{i.unit}}</td>
+                <td class="num">{{ i.box or ""}} </td>
+                <td class="num">{{ i.weight or ((i.box or 0)* 30) or ""}} </td>
+            </tr>
+            {% endfor %}
+            <tr class="border">
+                <td></td>
+                <td>Total:</td>
+                <td></td>
+                <td></td>
+                <td class="num">{{ meta.total_box }}</td>
+                <td class="num">{{ total_weight }}</td>
+            </tr>
+        </table>
+        <hr />
+        <div style="text-align:center">
+            <p>Total Boxes: {{ meta.total_box }}
+            <p>Total Net Weight: {{ total_weight }} KG</p>
+            <p>Total Gross Weight: {{ meta.total_gross_weight_kg}}KG</p>
+        </div>
+    </div>
+</body>
+</html>
+

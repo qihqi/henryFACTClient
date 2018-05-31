@@ -8,7 +8,7 @@ import requests
 
 from henry.base.serialization import json_dumps, SerializableMixin
 from henry.dao.document import Status
-from henry.importation.dao import Sale, InvMovementFull, InvMovementMeta, ItemGroupCant
+from henry.sale_records.dao import InvMovementMeta, ItemGroupCant, InvMovementFull, Sale
 from henry.inventory.dao import Transferencia, transtype_to_invtype
 from henry.invoice.dao import InvMetadata, Invoice
 

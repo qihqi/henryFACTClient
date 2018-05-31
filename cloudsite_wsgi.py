@@ -1,15 +1,15 @@
 from beaker.middleware import SessionMiddleware
-from henry.accounting.dao import ImageServer, PaymentApi
+
 from henry.base.dbapi import DBApiGeneric
 from henry.base.fileservice import FileService
 from henry.base.session_manager import DBContext
-from henry.config import imagefiles, jinja_env
-from henry.constants import INV_MOVEMENT_PATH, TRANSACTION_PATH, USE_ACCOUNTING_APP
-from henry.coreconfig import sessionmanager, BEAKER_SESSION_OPTS, auth_decorator, invapi
-from henry.importation.dao import InvMovementManager
+from henry.constants import INV_MOVEMENT_PATH, TRANSACTION_PATH
+from henry.coreconfig import sessionmanager, BEAKER_SESSION_OPTS, auth_decorator
+from henry.sale_records.dao import InvMovementManager
 from henry.importation.web import make_import_apis
 from henry.product.dao import InventoryApi
-from henry.accounting.web import make_wsgi_api as accapi
+from henry.config import jinja_env
+from henry.sale_records.web import make_sale_records_api
 from henry.background_sync import sync_api
 
 dbapi = DBApiGeneric(sessionmanager)
@@ -17,23 +17,9 @@ dbcontext = DBContext(sessionmanager)
 fileservice = FileService(INV_MOVEMENT_PATH)
 inventoryapi = InventoryApi(FileService(TRANSACTION_PATH))
 invmomanager = InvMovementManager(dbapi, fileservice, inventoryapi)
-api = make_import_apis('/import', auth_decorator, dbapi, invmomanager, inventoryapi)
-
-
-if USE_ACCOUNTING_APP:
-    from PIL import Image as PilImage
-    def save_image(imgfile, size, filename):
-        im = PilImage.open(imgfile)
-        if im.size[0] > size[0]:
-            im.resize(size)
-        im.save(filename)
-
-    imgserver = ImageServer('/app/img', dbapi, imagefiles, save_image)
-    paymentapi = PaymentApi(sessionmanager)
-
-    aapi = accapi(dbapi=dbapi, imgserver=imgserver, dbcontext=dbcontext, paymentapi=paymentapi,
-                 auth_decorator=auth_decorator, invapi=invapi)
-    api.merge(aapi)
-
-api.merge(sync_api.make_wsgi_api('/app'))
-application = SessionMiddleware(api, BEAKER_SESSION_OPTS)
+api = import_api = make_import_apis('/import', auth_decorator, dbapi, jinja_env)
+records_api = make_sale_records_api('/import', auth_decorator, dbapi,
+                                    invmomanager, inventoryapi)
+import_api.merge(records_api)
+api.merge(sync_api.make_wsgi_api('/import', FileService(sync_api.FINAL_LOG_DIR)))
+application = SessionMiddleware(import_api, BEAKER_SESSION_OPTS)

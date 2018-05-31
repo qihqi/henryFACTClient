@@ -6,7 +6,8 @@ import datetime
 from henry.base.dbapi import DBApiGeneric
 from henry.base.fileservice import FileService
 from henry.base.session_manager import SessionManager
-from henry.importation.dao import InvMovementManager, InvMovementMeta, InvMovementFull, ItemGroupCant
+from henry.importation.dao import InvMovementManager, InvMovementFull, ItemGroupCant
+from henry.sale_records.dao import InvMovementMeta, ItemGroupCant, InvMovementFull, InvMovementManager
 from henry.product.dao import ProdItemGroup, InventoryApi
 from henry.schema.base import Base
 from sqlalchemy import create_engine

@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom';
-import SkyLight from 'react-skylight'; 
+import SkyLight from './skylight'; 
 import LinkedStateMixin from 'react-addons-linked-state-mixin';
 import {makeOption, PriceForm, UNITS} from './CreateProduct';
 

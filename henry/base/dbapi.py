@@ -149,7 +149,8 @@ class DBApiGeneric(object):
         count = self.sm.session.query(obj.db_class).filter(
             obj.pkey == pkey).update(
             content_dict)
-        obj.merge_from(content_dict)
+        for x, y in content_dict.items():
+            setattr(obj, x, y)
         return count
 
     def update_full(self, obj):

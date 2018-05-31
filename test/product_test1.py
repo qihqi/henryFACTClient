@@ -2,7 +2,7 @@ import unittest
 import datetime
 from decimal import Decimal
 
-from henry.importation.dao import InvMovementManager
+from henry.sale_records.dao import InvMovementManager
 from henry.users.dao import Client
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

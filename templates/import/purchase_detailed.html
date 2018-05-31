@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .centered {
+        margin-left: auto;
+        margin-right:auto;
+        }
+        .right {
+        float: right;
+        }
+        table {
+        align: center;
+        }
+        td.num {
+        text-align: right;
+        width:10px;
+        }
+        .logo {
+        float: left;
+        }
+    </style>
+    <meta charset="UTF-8">
+</head>
+<body>
+<div class="centered" >
+    <h4>Contenedor # {{meta.uid}}</h4>
+    <table class="centered">
+        <tr>
+            <td>日期 Fecha</td>
+            <td>{{meta.timestamp.date().isoformat()}}</td>
+        </tr>
+        <tr>
+            <td>箱数 No. Carton</td>
+            <td>{{meta.total_box}}</td>
+        </tr>
+        <tr>
+            <td>毛重 Peso Bruto</td>
+            <td>{{meta.total_gross_weight_kg}}</td>
+        </tr>
+    </table>
+    <table border="1" class="centered">
+        {% for item in items%}
+        <tr>
+            {% if not without_price %}
+            <td>{{ item.item.box_code or ""}}</td>
+            {% endif %}
+            <td>{{ item.prod_detail.name_es}} </td>
+            <td>{{item.prod_detail.providor_zh}} - {{item.prod_detail.name_zh}}({{units[item.prod_detail.unit].name_zh}})</td>
+            <td class="num">{{ ('%f' % item.item.quantity).rstrip('0').rstrip('.') }} </td>
+            <td>{{ units[item.prod_detail.unit].name_es }} </td>
+            {% if not without_price %}
+            <td class="num">{{ decimal_places(item.item.price_rmb) }} </td>
+            <td class="num">{{ decimal_places(item.item.price_rmb * item.item.quantity) }}</td>
+            <td class="num">{{item.item.box  }}</td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+</body>
+</html>

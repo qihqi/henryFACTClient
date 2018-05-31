@@ -1,3 +1,5 @@
+import shutil
+import requests
 import datetime
 import uuid
 import os
@@ -44,27 +46,19 @@ def make_date_name(date, batch):
 # This is the code that processes the the logs
 # for now it just save it.
 # this code runs in the remote server.
-def make_wsgi_api(prefix):
+def make_wsgi_api(prefix, fileservice):
     app = Bottle()
     
     @app.post(prefix + '/logs')
     def save_logs():
         #json list with all transactions
-        raw_content = request.body.read()
-        data = json.loads(raw_content)
-        meta = LogMetadata.deserialize(data['meta'])
-        destination_dir = os.path.join(
-                FINAL_LOG_DIR, 
-                str(meta.almacen_id))
-        if not os.path.exists(destination_dir):
-            os.makedirs(destination_dir)
-        destination = os.path.join(
-            destination_dir, 
-            '{date}_{batch}'.format(date=meta.date,
-                                    batch=meta.batch))
-        with open(destination, 'w') as f:
-            f.write(raw_content)
-            f.flush()
+        for line in request.body.readlines():
+            data = json.loads(line)
+            meta = data['meta']
+            
+            destination = os.path.join(str(meta['almacen_id']), make_date_name(
+                meta['date'], meta['batch']))
+            fileservice.append_file(destination, line.strip())
 
     return app
 
@@ -72,13 +66,15 @@ def make_wsgi_api(prefix):
 # This is the code that uploads the logs to the server
 def upload_raw_logs(log_dir, processed_log_dir):
     for name in os.listdir(log_dir):
-        fname = os.path.join(processed_log_dir)
+        print 'processing', name
+        fname = os.path.join(log_dir, name)
         with open(fname) as f:
             data = f.read()
-        r = requests.post(LOG_UPLOAD_URL, data=data, auth=auth)
+        r = requests.post(LOG_UPLOAD_URL, data=data)
         if r.status_code == 200:
-            shutil.move(fname, processed_log_dir) 
-        return r.status_code
+            shutil.move(fname, processed_log_dir)
+        print r.status_code
+        return r.status_code == 200
 
 
 def _make_log(action, content):

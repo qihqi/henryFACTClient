@@ -5,7 +5,8 @@ from decimal import Decimal
 from henry.base.fileservice import FileService
 from henry.base.serialization import json_dumps
 from henry.dao.document import Status
-from henry.importation.dao import Sale, InvMovementManager
+from henry.importation.dao import Sale
+from henry.sale_records.dao import InvMovementManager, Sale
 from henry.importation.web import make_import_apis
 from henry.invoice.dao import PaymentFormat
 from henry.product.dao import InventoryApi

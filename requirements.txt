@@ -4,12 +4,11 @@ bottle==0.12.9
 funcsigs==1.0.2
 Jinja2==2.8
 MarkupSafe==0.23
-MySQL-python==1.2.5
 olefile==0.44
 Pillow==4.3.0
 pkg-resources==0.0.0
 python-Levenshtein==0.12.0
 requests==2.10.0
-SQLAlchemy==1.0.14
+SQLAlchemy==1.2
 uwsgidecorators==1.1.0
 

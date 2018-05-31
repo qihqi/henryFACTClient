@@ -34,13 +34,25 @@ def abs_string(string):
         return string[1:]
     return string
 
+def validate_ruc(uid):
+    if uid[2] == '9': # ruc of private parties
+        coef = [4, 3, 2, 7, 6, 5, 4, 3, 2]
+        the_sum = sum(x * y for x, y in zip(coef, map(int, uid[:9])))
+        the_sum = 11 - the_sum % 11
+        if the_sum > 10:
+            the_sum -= 10
+        return int(uid[9]) == the_sum
+    elif uid[2] == '6': # ruc of public parties
+        coef = [3, 2, 7, 6, 5, 4, 3, 2]
+        the_sum = sum(x * y for x, y in zip(coef, map(int, uid[:8])))
+        the_sum = 11 - the_sum % 11
+        if the_sum > 10:
+            the_sum -= 10
+        return int(uid[8]) == the_sum
+    else: # ruc of persons
+        return validate_cedula(uid[:10])
 
-def validate_uid_and_ruc(uid):
-    if len(uid) == 13:
-        # uid = uid[:10]
-        return True
-    if len(uid) != 10:
-        return False
+def validate_cedula(uid):
     first_digits = int(uid[:2])
     if first_digits < 1 or first_digits > 24:
         return False
@@ -66,6 +78,15 @@ def validate_uid_and_ruc(uid):
         validator = 0
 
     return validator == int(uid[-1])
+
+
+def validate_uid_and_ruc(uid):
+    if len(uid) == 13:
+        return validate_ruc(uid)
+    if len(uid) == 10:
+        return validate_cedula(uid)
+    else:
+        return False
 
 
 def value_from_cents(cents):
