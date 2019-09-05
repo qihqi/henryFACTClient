@@ -37,7 +37,7 @@ actionlogged = ActionLogApiDecor(actionlogapi, workerqueue)
 pedidoapi = PedidoApi(sessionmanager, filemanager=FileService(PEDIDO_PATH))
 
 # for testing, make auth_decorator do nothing
-auth_decorator = lambda x: x
+auth_decorator = lambda x: (lambda y: y)
 if ENV == 'prod':
     auth_decorator = AuthDecorator(LOGIN_URL, sessionmanager)
 

@@ -28,7 +28,6 @@ if FORWARD_INV:
     workerqueue = method.spool
     print 'started worker thread'
 
-
 actionlogged = lambda x: x
 
 # GET pricelist
