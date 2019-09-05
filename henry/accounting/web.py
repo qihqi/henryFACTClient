@@ -747,6 +747,8 @@ def make_wsgi_app(dbcontext, imgserver,
             cliente_id = fix_id(i.client.codigo)
             if not i.discount:
                 i.discount = 0
+            if not i.tax:
+                i.tax = 0
             result[cliente_id].subtotal += (i.subtotal - i.discount)
             result[cliente_id].iva += i.tax
             result[cliente_id].total += i.total
