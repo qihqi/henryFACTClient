@@ -1,4 +1,5 @@
 import datetime
+from operator import itemgetter
 
 from bottle import request, abort, redirect, Bottle
 from henry.background_sync.worker import WorkObject, doc_to_workobject
@@ -8,7 +9,9 @@ from henry.base.common import parse_start_end_date
 from henry.base.serialization import json_dumps
 from henry.base.session_manager import DBContext
 from henry.dao.document import Status
+from henry.users.dao import Client
 
+from henry.accounting.acct_schema import NPayment
 from henry.product.dao import Store
 from henry.accounting.dao import Comment
 
@@ -145,5 +148,30 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
         result = invapi.search_metadata_by_date_range(
             start_date, end_date, status, other_filters)
         return json_dumps(list(result))
+
+    @w.get('/app/client_stat/<uid>')
+    @dbcontext
+    @auth_decorator(0)
+    def get_client_stat(uid):
+       end_date = datetime.datetime.now()
+       start_date = end_date - datetime.timedelta(days=365)
+       status = Status.COMITTED
+
+       result = list(invapi.search_metadata_by_date_range(
+           start_date, end_date, status, {'client_id': uid}))
+       payments = list(dbapi.db_session.query(NPayment).filter(
+           NPayment.client_id == uid))
+
+       all_data = [('COMPRA', r.uid, r.timestamp.date(), '', r.total / 100)
+                   for r in result if r.payment_format != PaymentFormat.CASH]
+       all_data.extend((('PAGO ' + r.type, r.uid, r.date, r.value / 100, '') for r in payments))
+       all_data.sort(key=itemgetter(2), reverse=True)
+
+       compra = sum(r.total for r in result if r.payment_format != PaymentFormat.CASH) / 100
+       pago = sum(r.value for r in payments) / 100
+
+       temp = jinja_env.get_template('client_stat.html')
+       client = dbapi.get(uid, Client) # clientapi.get(uid)
+       return temp.render(client=client, activities=all_data, compra=compra, pago=pago)
 
     return w
