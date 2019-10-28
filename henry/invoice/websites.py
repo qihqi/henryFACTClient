@@ -14,6 +14,7 @@ from henry.users.dao import Client
 from henry.accounting.acct_schema import NPayment
 from henry.product.dao import Store
 from henry.accounting.dao import Comment
+from henry.invoice.dao import PaymentFormat
 
 from .coreschema import NNota
 from .coreapi import get_inv_db_instance
