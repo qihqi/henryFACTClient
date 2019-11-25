@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import map
 import unittest
 
 from henry.base.dbapi import DBApiGeneric
@@ -30,8 +32,8 @@ class ItemApiTest(unittest.TestCase):
             Store(almacen_id=1, nombre="1", bodega_id=1),
             Store(almacen_id=2, nombre="2", bodega_id=2)]
         with cls.sessionmanager:
-            map(cls.dbapi.create, bodegas)
-            map(cls.dbapi.create, stores)
+            list(map(cls.dbapi.create, bodegas))
+            list(map(cls.dbapi.create, stores))
 
     def test_create_item(self):
         content = {
@@ -90,7 +92,7 @@ class ItemApiTest(unittest.TestCase):
             create_full_item_from_dict(self.dbapi, content)
             self.sessionmanager.session.commit()
 
-            print json_dumps(self.dbapi.search(PriceList))
+            print(json_dumps(self.dbapi.search(PriceList)))
             self.assertEquals(4, len(self.dbapi.search(PriceList)))
             self.assertEquals(1, len(self.dbapi.search(ProdItemGroup)))
             self.assertEquals(2, len(self.dbapi.search(ProdItem)))

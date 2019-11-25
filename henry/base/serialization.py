@@ -1,3 +1,6 @@
+from builtins import str
+from builtins import map
+from builtins import object
 import datetime
 import decimal
 import json
@@ -20,15 +23,14 @@ def decode(s):
 def json_dumps(content):
     return json.dumps(
         content,
-        cls=ModelEncoder,
-        encoding=DB_ENCODING)
+        cls=ModelEncoder)
 
 
 def parse_iso_datetime(datestring):
-    return datetime.datetime(*map(int, re.split('[^\d]', datestring)))
+    return datetime.datetime(*list(map(int, re.split('[^\d]', datestring))))
 
 def parse_iso_date(datestring):
-    return datetime.date(*map(int, datestring.split('-')))
+    return datetime.date(*list(map(int, datestring.split('-'))))
 
 def json_loads(content):
     return json.loads(content, encoding=DB_ENCODING)
@@ -57,9 +59,9 @@ class DbMixin(object):
     @classmethod
     def _get_name_pairs(cls, names):
         if isinstance(names, dict):
-            return names.items()
+            return list(names.items())
         else:
-            return map(lambda x: (x, x), names)
+            return [(x, x) for x in names]
 
     def db_instance(self):
         x = self._db_class()
@@ -78,7 +80,7 @@ class DbMixin(object):
         for thisname, dbname in cls._get_name_pairs(cls._db_attr):
             if thisname not in excluded:
                 value = getattr(db_instance, dbname, None)
-                if isinstance(value, str):
+                if isinstance(value, bytes):
                     value = decode(value)
                 setattr(y, thisname, value)
         return y
@@ -92,7 +94,7 @@ def extract_obj_fields(obj, names):
 
 class TypedSerializableMixin(object):
     _fields = ()
-    _natural_fields = (int, float, str, unicode)
+    _natural_fields = (int, float, str, str)
 
     def __init__(self, **kwargs):
         for x, const in self._fields:
@@ -119,7 +121,7 @@ class TypedSerializableMixin(object):
         return self
 
     def serialize(self):
-        return extract_obj_fields(self, map(itemgetter(0), self._fields))
+        return extract_obj_fields(self, list(map(itemgetter(0), self._fields)))
 
     @classmethod
     def deserialize(cls, thedict):
@@ -135,7 +137,7 @@ class SerializableMixin(object):
             if their is None and hasattr(obj, 'get'):  # merge from dict
                 their = obj.get(key, None)
             mine = getattr(self, key, None)
-            if isinstance(their, str):
+            if isinstance(their, bytes):
                 their = decode(their)
             setattr(self, key, their or mine)  # defaults to theirs
         return self

@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import object
 from hashlib import sha1
 
 from bottle import request, response, parse_auth
@@ -11,7 +13,7 @@ def get_user_info(session, username):
 
 def authenticate(password, userinfo):
     s = sha1()
-    s.update(password)
+    s.update(password.encode('utf-8'))
     return s.hexdigest() == userinfo.password
 
 
@@ -31,7 +33,7 @@ def get_user(r):
     return None
 
 
-class AuthDecorator:
+class AuthDecorator(object):
     def __init__(self, redirect_url, db):
         self.redirect = redirect_url
         self.db = db
@@ -39,16 +41,16 @@ class AuthDecorator:
     def __call__(self, level):
         def decorator(func):
             def wrapped(*args, **kwargs):
-                print request.get_header('Authorization')
+                print(request.get_header('Authorization'))
                 if (self.is_logged_in_by_beaker()
                         or self.is_auth_by_header()):
                     user = get_user(request)['username']
                     db_user = get_user_info(self.db.session, user)
                     if db_user.level >= level:
-		        return func(*args, **kwargs)
+                        return func(*args, **kwargs)
                     else:
-			response.status = 401
-			response.set_header('www-authenticate', 'Basic realm="Henry"')
+                        response.status = 401
+                        response.set_header('www-authenticate', 'Basic realm="Henry"')
                 else:
                     response.status = 401
                     response.set_header('www-authenticate', 'Basic realm="Henry"')

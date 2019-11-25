@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import object
 from multiprocessing import Process
 
 import zmq
@@ -34,7 +36,7 @@ def do_work():
     receiver.connect('tcp://localhost:{}'.format(ZEROMQ_PORT))
     receiver.setsockopt(zmq.SUBSCRIBE, '')
     externalapi = ExternalApi('http://45.55.88.99:99/api/', 'nota', 'yu', 'yu')
-    print 'worker ready'
+    print('worker ready')
 
     while True:
         s = receiver.recv_pyobj()
@@ -67,7 +69,7 @@ def do_work():
 def start_worker():
     p = Process(target=do_work)
     p.start()
-    print 'worker started'
+    print('worker started')
     return p
 
 

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import sys
 import shutil
@@ -23,21 +24,21 @@ def main():
 
 def backup_dir(from_dir, to_dir, backup=True):
     if not os.path.exists(to_dir):
-        print 'FIRST time deployment!!'
-        print 'make sure correct configs on server is made'
+        print('FIRST time deployment!!')
+        print('make sure correct configs on server is made')
     else:
-        print 'no es primera vez'
+        print('no es primera vez')
         old_path = to_dir + '-old'
         if backup:
             if os.path.exists(old_path):
                 shutil.rmtree(old_path)
-            print 'backup at', old_path
+            print('backup at', old_path)
             shutil.copytree(to_dir, old_path)
         shutil.rmtree(to_dir)
 
-    print 'copiando desde', from_dir, 'hasta', to_dir
+    print('copiando desde', from_dir, 'hasta', to_dir)
     shutil.copytree(from_dir, to_dir)
-    print 'exitoso!'
+    print('exitoso!')
 
 
 if __name__ == '__main__':

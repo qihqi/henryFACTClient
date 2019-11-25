@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import map
 import datetime
 import json
 from bottle import Bottle, request
@@ -28,7 +30,8 @@ def make_sale_records_api(prefix, auth_decorator, dbapi,
     @dbcontext
     @auth_decorator(0)
     def post_sale():
-        content = Sale.deserialize(json.loads(request.body.read()))
+        content = Sale.deserialize(json.loads(
+            request.body.read().decode('utf-8')))
         if list(dbapi.search(
                 Sale, seller_codename=content.seller_codename,
                 seller_inv_uid=content.seller_inv_uid)):
@@ -40,7 +43,7 @@ def make_sale_records_api(prefix, auth_decorator, dbapi,
     @dbcontext
     @auth_decorator(0)
     def get_sales():
-        start, end = parse_start_end_date(request.query)
+        start, end = parse_start_end_date(request.query.decode('utf-8'))
         result = list(get_sales_by_date_and_user(dbapi, start, end))
         return json_dumps(result)
 
@@ -48,7 +51,8 @@ def make_sale_records_api(prefix, auth_decorator, dbapi,
     @dbcontext
     @auth_decorator(0)
     def delete_sale():
-        content = Sale.deserialize(json.loads(request.body.read()))
+        content = Sale.deserialize(json.loads(
+            request.body.read().decode('utf-8')))
         deleted = dbapi.db_session.query(NSale).filter_by(
             seller_codename=content.seller_codename, seller_inv_uid=content.seller_inv_uid
         ).update({'status': Status.DELETED})
@@ -58,7 +62,7 @@ def make_sale_records_api(prefix, auth_decorator, dbapi,
     @dbcontext
     @auth_decorator(0)
     def post_inv_movement_set():
-        raw_inv = request.body.read()
+        raw_inv = request.body.read().decode('utf-8')
         inv_movement = InvMovementFull.deserialize(json.loads(raw_inv))
         meta = inv_movement.meta
         meta.origin = get_or_create_inventory_id(dbapi, meta.inventory_codename, meta.origin)
@@ -86,14 +90,15 @@ def make_sale_records_api(prefix, auth_decorator, dbapi,
     def last_inv_movements(day):
         today = parse_iso_date(day)
         tomorrow = today + datetime.timedelta(days=1)
-        print today, tomorrow
+        print(today, tomorrow)
         movements = list(dbapi.search(InvMovementMeta, **{'timestamp-gte': today, 'timestamp-lte': tomorrow}))
         return json_dumps({'result': movements})
 
     @app.get(prefix + '/sales_report')
     @dbcontext
     def get_sales_report():
-        start, end = parse_start_end_date(request.query)
+        start, end = parse_start_end_date(
+                request.query.decode('utf-8'))
         sales_by_date = list(client_sale_report(dbapi, start, end))
         return json_dumps({'result': sales_by_date})
 
@@ -101,9 +106,9 @@ def make_sale_records_api(prefix, auth_decorator, dbapi,
     # expects [proditemgroup, inventoryMovement, codename]
     @dbcontext
     def post_raw_inv_movement():
-        raw_data = json.loads(request.body.read())
+        raw_data = json.loads(request.body.read().decode('utf-8'))
         ig = ProdItemGroup.deserialize(raw_data[0])
-        trans = map(InventoryMovement.deserialize, raw_data[1])
+        trans = list(map(InventoryMovement.deserialize, raw_data[1]))
         codename = raw_data[2]
 
         if dbapi.getone(ProdItemGroup, prod_id=ig.prod_id) is None:

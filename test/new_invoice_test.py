@@ -1,3 +1,4 @@
+from __future__ import print_function
 import unittest
 from henry.base.fileservice import FileService
 from henry.dao.document import DocumentApi, PedidoApi
@@ -17,7 +18,7 @@ class InvoiceTest(unittest.TestCase):
         transaction = FakeTransaction()
         invapi = DocumentApi(dbapi.session, filemanager, transaction, Invoice)
         pedidoapi = PedidoApi(sessionmanager=dbapi.session, filemanager=filemanager)
-        identity = lambda x: x
+        identity = lambda _: (lambda x: x)
         wsgi = make_nota_api(
             '/api',
             dbapi,
@@ -109,11 +110,11 @@ class InvoiceTest(unittest.TestCase):
         self.assertTrue('codigo' in resp.json)
 
         for x in self.dbapi.search(PriceList):
-            print x.serialize()
+            print(x.serialize())
         for x in self.dbapi.search(ProdItem):
-            print x.serialize()
+            print(x.serialize())
         for x in self.dbapi.search(ProdItemGroup):
-            print x.serialize()
+            print(x.serialize())
 
 
 if __name__ == '__main__':

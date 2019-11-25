@@ -1,3 +1,10 @@
+from __future__ import division
+from __future__ import print_function
+from builtins import filter
+from builtins import map
+from builtins import str
+from past.utils import old_div
+from builtins import object
 import datetime
 from collections import defaultdict
 from datetime import timedelta
@@ -16,6 +23,7 @@ from henry.base.dbapi import decode_str
 from henry.invoice.dao import PaymentFormat, InvMetadata
 from henry.dao.document import Status
 from henry.users.dao import Client
+from functools import reduce
 
 
 def get_notas_with_clients(dbapi, end_date, start_date,
@@ -38,7 +46,7 @@ def get_notas_with_clients(dbapi, end_date, start_date,
         result = result.filter_by(almacen_id=store)
     if user_id is not None:
         result = result.filter_by(user_id=user_id)
-    return map(decode_db_row_with_client, result)
+    return list(map(decode_db_row_with_client, result))
 
 
 def split_records(source, classifier):
@@ -91,7 +99,7 @@ def payment_report(dbapi, start, end, store_id=None, user_id=None):
 
     report.total_by_payment = {
         key: get_total(value) for key, value in
-        report.list_by_payment.items()}
+        list(report.list_by_payment.items())}
     return report
 
 
@@ -158,7 +166,7 @@ def generate_daily_report(dbapi, day):
 
 def make_acct_trans(value):
     return AccountTransaction(
-        value=Decimal(value) / 100,
+        value=old_div(Decimal(value), 100),
         desc='Deposito/Entregado',
         type='turned_in')
 
@@ -179,7 +187,7 @@ def get_sales_as_transactions(dbapi, start_date, end_date):
         yield AccountTransaction(
             uid='sale{}.{}'.format(x[0].isoformat(), x[1]),
             date=x[0],
-            value=Decimal(int(x[2])) / 100,
+            value=old_div(Decimal(int(x[2])), 100),
             desc='Venta {}: {}'.format(x[0], all_alms[x[1]].nombre),
             type='venta')
 
@@ -203,7 +211,7 @@ def get_payments_as_transactions(dbapi, start_date, end_date):
         acct = AccountTransaction(
             uid='pago-'+str(pago.uid),
             date=timestamp.date(),
-            value=-Decimal(pago.value) / 100,
+            value=old_div(-Decimal(pago.value), 100),
             desc='{} para Factura {} ({})'.format(
                 pago.type, pago.note_id, pago.date.isoformat()),
             type=thetype)
@@ -218,14 +226,14 @@ def get_spent_as_transactions(dbapi, start_date, end_date):
     for gasto in dbapi.search(Spent, **{'inputdate-gte': start_date,
                                         'inputdate-lte': end_date}):
         if gasto.paid_from_cashier is None:
-            print 'ERROR', gasto.serialize()
+            print('ERROR', gasto.serialize())
             continue
         if gasto.deleted is True:
             continue
         yield AccountTransaction(
             uid='gasto'+str(gasto.uid),
             date=gasto.inputdate.date(),
-            value=(-Decimal(gasto.paid_from_cashier) / 100),
+            value=(old_div(-Decimal(gasto.paid_from_cashier), 100)),
             desc=gasto.desc,
             type='gasto')
 
@@ -285,9 +293,9 @@ def get_sale_report_full(invapi, start, end):
     for inv in invs:
         datestr = inv.timestamp.date().isoformat()
         if inv.almacen_id == 2:
-            report.mayor[datestr] += Decimal(inv.subtotal - (inv.discount or 0)) / 100
+            report.mayor[datestr] += old_div(Decimal(inv.subtotal - (inv.discount or 0)), 100)
         if inv.almacen_id in (1, 3):
-            report.menor[datestr] += Decimal(inv.subtotal - (inv.discount or 0)) / 100
+            report.menor[datestr] += old_div(Decimal(inv.subtotal - (inv.discount or 0)), 100)
             report.menor_inv_count[datestr] += 1
         visitors.add(inv.client.codigo)
 
@@ -296,9 +304,9 @@ def get_sale_report_full(invapi, start, end):
             cod = get_real_prod_id(item.prod.prod_id)
             prod_sale_map[cod].prod = item.prod.nombre
             prod_sale_map[cod].cant += item.cant * (item.prod.multiplicador or 1)
-            prod_sale_map[cod].value += item.cant * Decimal(item.prod.precio2 or item.prod.precio1) / 100
+            prod_sale_map[cod].value += old_div(item.cant * Decimal(item.prod.precio2 or item.prod.precio1), 100)
 
-    report.best_sellers = prod_sale_map.items()
+    report.best_sellers = list(prod_sale_map.items())
     report.unique_visitors = len(visitors)
     return report
 

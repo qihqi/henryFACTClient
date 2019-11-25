@@ -1,6 +1,11 @@
+from __future__ import division
+from __future__ import print_function
+from builtins import map
+from past.utils import old_div
+from builtins import object
 from collections import defaultdict
 from decimal import Decimal
-from itertools import imap
+
 from operator import itemgetter
 import os
 from henry.base.serialization import json_loads
@@ -45,7 +50,7 @@ class SaleTransaction(object):
 
     @property
     def items(self):
-        return imap(SaleItem, self.sale.items)
+        return map(SaleItem, self.sale.items)
 
 
 class TransItem(object):
@@ -91,7 +96,7 @@ class DailyReport(object):
         self.total_count = 0
         for inv in self._raw_inv:
             for i in inv.items:
-                val = i.cant * i.price / 100
+                val = old_div(i.cant * i.price, 100)
                 self.by_type[get_type(i.uid)] += val
                 self.by_type_count[get_type(i.uid)] += 1
                 self.by_prod[i.uid] += val
@@ -111,7 +116,7 @@ class ExportManager(object):
         def d_(line):
             j = json_loads(line)
             return Invoice.deserialize(j)
-        raw = imap(d_, content)
+        raw = map(d_, content)
         return raw
 
     def get(self, day):
@@ -120,7 +125,7 @@ class ExportManager(object):
         if not os.path.exists(fname):
             return None
         with open(fname) as f:
-            content = self.decode_iter(f.xreadlines())
+            content = self.decode_iter(f)
             result = DailyReport(day, content)
             result.process()
             return result
@@ -138,9 +143,9 @@ if __name__ == '__main__':
         def decode(line):
             j = json_loads(line)
             return Invoice.deserialize(j)
-        raw = imap(decode, f.xreadlines())
-        report = DailyReport(None, imap(SaleTransaction, raw))
+        raw = map(decode, f)
+        report = DailyReport(None, map(SaleTransaction, raw))
         report.process()
-        for x, y in sorted(report.by_prod_count.items(), key=itemgetter(1)):
-            print x, y
+        for x, y in sorted(list(report.by_prod_count.items()), key=itemgetter(1)):
+            print(x, y)
 

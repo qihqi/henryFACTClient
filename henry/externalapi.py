@@ -1,5 +1,11 @@
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import object
+from past.utils import old_div
 import os
-from urlparse import urljoin
+from urllib.parse import urljoin
 
 import requests
 
@@ -7,7 +13,7 @@ from henry.base.serialization import json_dumps
 from henry.dao.exceptions import BaseServiceException
 
 
-class ExternalApi:
+class ExternalApi(object):
     def __init__(self, root, path, user=None, password=None, auth_url=None):
         self.root = root
         self.path = path
@@ -24,7 +30,7 @@ class ExternalApi:
 
     def execute_query_with_auth(self, func, url, data=None):
         response = func(url, data=data, allow_redirects=False, cookies=self.cookies)
-        if response.status_code / 100 == 3 or response.status_code == 401:
+        if old_div(response.status_code, 100) == 3 or response.status_code == 401:
             self.authenticate()
             response = func(url, data=data, allow_redirects=False, cookies=self.cookies)
         return response

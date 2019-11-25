@@ -1,3 +1,6 @@
+from builtins import map
+from builtins import str
+from builtins import object
 from collections import defaultdict
 from decimal import Decimal
 import datetime
@@ -89,7 +92,7 @@ def create_items_chain(dbapi, pl):
         dbapi.create(pricelist)
 
 
-class RevisionApi:
+class RevisionApi(object):
     AJUSTADO = 'AJUSTADO'
     NUEVO = 'NUEVO'
     CONTADO = 'CONTADO'
@@ -159,7 +162,7 @@ def quantity_tuple(quantities):
     # quantities should be a list of tuples of bodega_id: quantity
     # with type (int, Decimal)
     # the starting type is (int, str), need to convert str to decimal
-    return map(lambda x: (x[0], Decimal(x[1])), quantities)
+    return [(x[0], Decimal(x[1])) for x in quantities]
 
 
 #  saves the item stock count at a given time
@@ -170,14 +173,14 @@ class InventorySnapshot(TypedSerializableMixin):
     _fields = (
         ('creation_time', parse_iso_datetime),
         ('itemgroup_id', int),
-        ('prod_id', unicode),
+        ('prod_id', str),
         ('quantity', quantity_tuple),
         ('upto_date', parse_iso_date),
         ('last_upto_date', parse_iso_date),
         ('last_quantity', quantity_tuple))
 
 
-class InvMovementType:
+class InvMovementType(object):
     SALE = 'sale'
     TRANSFER = 'transfer'
     INGRESS = 'ingress'
@@ -208,7 +211,7 @@ class InventoryMovement(TypedSerializableMixin):
         ('to_inv_id', int),
         ('quantity', Decimal),
         ('itemgroup_id', int),
-        ('prod_id', unicode),
+        ('prod_id', str),
         ('timestamp', parse_iso_datetime),
         ('type', str),
         ('reference_id', str),
@@ -218,7 +221,7 @@ class InventoryMovement(TypedSerializableMixin):
         self.from_inv_id, self.to_inv_id = self.to_inv_id, self.from_inv_id
         return self
 
-class InventoryApi:
+class InventoryApi(object):
 
     SNAPSHOT_FILE_NAME = '__snapshot'
 
@@ -248,7 +251,7 @@ class InventoryApi:
         snapshot_path = self.fileservice.make_fullpath(snapshotname)
         if os.path.exists(snapshot_path):
             records = self.fileservice.get_file(snapshotname)
-            return map(InventorySnapshot.deserialize, json.loads(records))
+            return list(map(InventorySnapshot.deserialize, json.loads(records)))
         return []
 
     def list_transactions(self, igid, start_date, end_date):
@@ -263,11 +266,11 @@ class InventoryApi:
         if all_fname:
             if start_date is None:
                 smallest = min(all_fname)
-                year, month = map(int, smallest.split('-'))
+                year, month = list(map(int, smallest.split('-')))
                 start_date = datetime.date(year, month, 1)
             all_fname = [f for f in all_fname if
                          f >= InventoryApi._year_month(start_date)]
-            all_fname = map(functools.partial(os.path.join, str(igid)), all_fname)
+            all_fname = list(map(functools.partial(os.path.join, str(igid)), all_fname))
             for x in self.fileservice.get_file_lines(all_fname):
                 item = InventoryMovement.deserialize(json.loads(x))
                 if start_date <= item.timestamp.date() <= end_date:
@@ -309,8 +312,8 @@ class InventoryApi:
         new_record = InventorySnapshot()
         new_record.upto_date = end_date
         new_record.creation_date = datetime.datetime.now()
-        new_record.quantity = new_quantities.items()
-        new_record.last_quantity = last_quantities.items()
+        new_record.quantity = list(new_quantities.items())
+        new_record.last_quantity = list(last_quantities.items())
         new_record.last_upto_date = start_date
 
         return new_record, records

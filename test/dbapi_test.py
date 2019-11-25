@@ -1,3 +1,4 @@
+from builtins import object
 import unittest
 from sqlalchemy import Integer, Column
 from sqlalchemy.ext.declarative import declarative_base

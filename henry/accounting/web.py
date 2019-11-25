@@ -1,3 +1,9 @@
+from __future__ import division
+from __future__ import print_function
+from builtins import map
+from builtins import str
+from builtins import object
+from past.utils import old_div
 from collections import defaultdict
 from decimal import Decimal
 import json
@@ -27,6 +33,7 @@ from .reports import (generate_daily_report, split_records_binary, get_transacti
 from .acct_schema import NCheck, NSpent, NAccountStat
 from .dao import (Todo, Check, Deposit, Payment, Bank,
                   DepositAccount, AccountStat, Spent, AccountTransaction, Comment)
+from functools import reduce
 
 
 def extract_nota_and_client(dbapi, form, redirect_url):
@@ -61,7 +68,7 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
             NNota.status != Status.DELETED).group_by(NNota.almacen_id)
         result = []
         for aid, total in query:
-            result.append((aid, Decimal(total) / 100))
+            result.append((aid, old_div(Decimal(total), 100)))
         return json_dumps({'result': result})
 
     @w.get('/app/api/payment')
@@ -104,13 +111,13 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
         for x in checks:
             x.imgdeposit = imgserver.get_url_path(x.imgdeposit)
             x.imgcheck = imgserver.get_url_path(x.imgcheck)
-            x.value = Decimal(x.value) / 100
+            x.value = old_div(Decimal(x.value), 100)
         return json_dumps({'result': checks})
 
     @w.post('/app/api/acct_transaction')
     @dbcontext
     def post_acct_transaction():
-        data = request.body.read()
+        data = request.body.read().decode('utf-8')
         acct = AccountTransaction.deserialize(json.loads(data))
         acct.input_timestamp = datetime.datetime.now()
         acct.deleted = False
@@ -120,7 +127,7 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
     @w.put('/app/api/acct_transaction/<uid>')
     @dbcontext
     def put_acct_transaction(uid):
-        data = json.loads(request.body.read())
+        data = json.loads(request.body.read().decode('utf-8'))
         acct = AccountTransaction(uid=uid)
         count = dbapi.update(acct, data)
         return {'updated': count}
@@ -135,7 +142,7 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
             NNota.timestamp >= start).filter(NNota.timestamp <= end).filter(
             NNota.payment_format != PaymentFormat.CASH)
 
-        sales = map(InvMetadata.from_db_instance, sales)
+        sales = list(map(InvMetadata.from_db_instance, sales))
         payments = list(paymentapi.list_payments(start, end))
 
         result = {}
@@ -156,7 +163,7 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
         result['unused_payments'] = unused_payments
         return json_dumps({
             'unused_payments': unused_payments,
-            'sales': result.items()
+            'sales': list(result.items())
         })
 
     @w.get('/app/api/account_deposit_with_img')
@@ -203,7 +210,7 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
     @w.put('/app/api/pago/<uid>')
     @dbcontext
     def modify_payment(uid):
-        data = json.loads(request.body.read())
+        data = json.loads(request.body.read().decode('utf-8'))
         success = dbapi.db_session.query(NPayment).filter_by(uid=uid).update(data)
         dbapi.db_session.commit()
         return {'success': success > 0}
@@ -220,7 +227,7 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
     @dbcontext
     @auth_decorator(0)
     def post_comment():
-        comment = json.loads(request.body.read())
+        comment = json.loads(request.body.read().decode('utf-8'))
         c = Comment()
         c.objid = comment['objid']
         c.objtype = comment['objtype']
@@ -234,7 +241,7 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
     @w.get('/app/api/sale_report_monthly')
     @dbcontext
     def sale_report_monthly():
-        start, end = parse_start_end_date(request.query)
+        start, end = parse_start_end_date(request.query.decode('utf-8'))
         report = get_sale_report(invapi, start, end)
         return json_dumps(report)
 
@@ -447,11 +454,11 @@ def make_wsgi_app(dbcontext, imgserver,
     @auth_decorator(0)
     def post_guardar_cheque_deposito():
         nexturl = request.forms.get('next', '/app')
-        for key, value in request.forms.items():
-            print key, value
+        for key, value in list(request.forms.items()):
+            print(key, value)
             if key.startswith('acct-'):
                 key = key.replace('acct-', '')
-                print key, value
+                print(key, value)
                 dbapi.db_session.query(NCheck).filter_by(uid=key).update(
                     {NCheck.deposit_account: value})
                 dbapi.db_session.flush()
@@ -615,7 +622,7 @@ def make_wsgi_app(dbcontext, imgserver,
                 result = result.filter(NCheck.checkdate >= start)
             if end is not None:
                 result = result.filter(NCheck.checkdate <= end)
-            result = map(Check.from_db_instance, result)
+            result = list(map(Check.from_db_instance, result))
         else:
             result = []
         temp = jinja_env.get_template('invoice/list_cheque.html')
@@ -759,7 +766,7 @@ def make_wsgi_app(dbcontext, imgserver,
     @dbcontext
     def get_sells_xml_form():
         temp = jinja_env.get_template('accounting/ats_form.html')
-        stores = filter(lambda x: x.ruc, dbapi.search(Store))
+        stores = [x for x in dbapi.search(Store) if x.ruc]
         return temp.render(stores=stores, title='ATS')
 
     class Meta(object):
@@ -782,7 +789,7 @@ def make_wsgi_app(dbcontext, imgserver,
 
         meta = Meta()
         meta.date = start_date
-        meta.total = reduce(lambda acc, x: acc + x.subtotal, grouped.values(), 0)
+        meta.total = reduce(lambda acc, x: acc + x.subtotal, list(grouped.values()), 0)
         meta.almacen_ruc = ruc
         meta.almacen_name = [x.nombre for x in dbapi.search(Store) if x.ruc == ruc][0]
         temp = jinja_env.get_template('accounting/resumen_agrupado.html')

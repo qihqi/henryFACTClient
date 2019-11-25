@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import str
 import datetime
 import traceback
 
@@ -169,7 +171,7 @@ def make_inv_wsgi(dbapi, jinja_env, actionlogged, auth_decorator, transapi,
         trans_list = transapi.search_metadata_by_date_range(start, end)
         temp = jinja_env.get_template('inventory/ingresos_list.html')
         bodega = {b.id: b.nombre for b in dbapi.search(Bodega)}
-        print start, end
+        print(start, end)
         return temp.render(trans=trans_list, start=start, end=end, bodega=bodega)
 
     @w.get('/app/revisar_inventario')

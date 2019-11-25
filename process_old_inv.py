@@ -1,3 +1,7 @@
+from __future__ import division
+from __future__ import print_function
+from builtins import map
+from past.utils import old_div
 from collections import defaultdict
 import datetime
 import os
@@ -24,7 +28,7 @@ def open_and_iterate_file(fname):
     if not os.path.exists(fname):
         return None
     with open(fname) as f:
-        return map(json.loads, f.xreadlines())
+        return list(map(json.loads, f))
 
 
 def stream_inv(prefix, start_date, end_date):
@@ -63,8 +67,8 @@ def make_bar_graph(list_of_pairs):
 def make_graph(list_of_pairs):
 
     for x, y in list_of_pairs:
-        print x.isoweekday(), x.isoformat(),
-        print '=' * (y / 50000)
+        print(x.isoweekday(), x.isoformat(), end=' ')
+        print('=' * (old_div(y, 50000)))
 
 def histogram(values):
     plt.hist(values, bins=50000)
@@ -74,7 +78,7 @@ def get_trans_val(i, pricelist):
     total = 0
     for x in i.items:
         if x.prod.base_price_usd is None:
-            x.prod.base_price_usd = Decimal(pricelist.get(x.prod.prod_id, 0)) / 100
+            x.prod.base_price_usd = old_div(Decimal(pricelist.get(x.prod.prod_id, 0)), 100)
         total += x.cant * (x.prod.base_price_usd or 0)
     return total
 
@@ -102,7 +106,7 @@ def main():
         if i.meta.almacen_id == 2:
             continue
         key = tuple(i.meta.timestamp.isocalendar()[:2])
-        sales_by_week[key] += Decimal(i.meta.total) / 100
+        sales_by_week[key] += old_div(Decimal(i.meta.total), 100)
 
     for i in stream_trans('trans', start_date, end_date):
         if i.meta.status == Status.DELETED:
@@ -113,7 +117,7 @@ def main():
         transfer_by_week[key] += get_trans_val(i, pricelist)
 
     for x, y in sorted(sales_by_week.items()):
-        print x[0], ',', x[1], ',', y, ',', transfer_by_week.get(x, 0)
+        print(x[0], ',', x[1], ',', y, ',', transfer_by_week.get(x, 0))
 
 
 

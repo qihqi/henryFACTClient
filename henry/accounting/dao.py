@@ -1,3 +1,5 @@
+from builtins import map
+from builtins import object
 import os
 import uuid
 from sqlalchemy import desc
@@ -97,7 +99,7 @@ def _extract_payment(payment):
 
 
 
-class PaymentApi:
+class PaymentApi(object):
     def __init__(self, sessionmanager):
         self.sm = sessionmanager
 
@@ -143,10 +145,10 @@ class PaymentApi:
         return self._get_doc(uid, NCheck, Check)
 
     def list_payments(self, start, end):
-        return map(Payment.deserialize,
+        return list(map(Payment.deserialize,
                    self.sm.session.query(NPayment).filter(
                        NPayment.date >= start).filter(NPayment.date <= end,
-                                                      NPayment.deleted != True))
+                                                      NPayment.deleted != True)))
 
     def list_checks(self, paymentdate=None, checkdate=None):
         query = self.sm.session.query(NCheck).join(NPayment)
@@ -160,13 +162,13 @@ class PaymentApi:
             query = query.order_by(desc(NPayment.date))
         else:
             query = query.order_by(desc(NCheck.checkdate))
-        return map(Check.from_db_instance, query)
+        return list(map(Check.from_db_instance, query))
 
     def get_deposit(self, uid):
         return self._get_doc(uid, NDeposit, Deposit)
 
 
-class ImageServer:
+class ImageServer(object):
     def __init__(self, imgbasepath, dbapi, fileapi, imagewriter):
         self.imgbasepath = imgbasepath
         self.dbapi = dbapi
@@ -180,7 +182,7 @@ class ImageServer:
             img.imgurl = self.get_url_path(img.path)
             return img
 
-        return map(addpath, imgs)
+        return list(map(addpath, imgs))
 
     def get_url_path(self, filepath):
         if filepath is None:

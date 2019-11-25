@@ -16,9 +16,6 @@ from henry.invoice.dao import Invoice
 from henry.dao.actionlog import ActionLogApi, ActionLogApiDecor
 from henry.product.dao import InventoryApi
 
-reload(sys)
-sys.setdefaultencoding('utf8')
-
 engine = create_engine(CONN_STRING, pool_recycle=3600, echo=False)
 sessionfactory = sessionmaker(bind=engine)
 sessionmanager = SessionManager(sessionfactory)

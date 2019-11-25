@@ -1,3 +1,5 @@
+from builtins import str
+from builtins import map
 from decimal import Decimal
 from bottle import Bottle, request, abort
 
@@ -40,7 +42,7 @@ def make_search_pricelist_api(api_url_prefix, actionlogged, dbapi):
         # FIXME remove this hack when client side is ready
         use_thousandth = request.query.get('use_thousandth', 1)
         if int(use_thousandth):
-            map(mult_thousand, result)
+            list(map(mult_thousand, result))
         return json_dumps(result)
 
     @api.get('{}/alm/<almacen_id>/producto/<prod_id:path>'.format(api_url_prefix))

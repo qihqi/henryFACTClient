@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import str
+from builtins import object
 import datetime
 import json
 import unittest
@@ -5,7 +8,7 @@ import time
 
 import requests
 
-class Timing:
+class Timing(object):
     def __init__(self, name):
         self.name = name
 
@@ -15,7 +18,7 @@ class Timing:
 
     def __exit__(self, *args, **kwargs):
         self.end = time.time()
-        print self.name, ': ', self.end - self.start
+        print(self.name, ': ', self.end - self.start)
 
 
 
@@ -30,29 +33,29 @@ class EndToEndTest(unittest.TestCase):
 
     def test_end_to_end(self):
         #authenticate
-        print 'Today is ', datetime.datetime.now().isoformat()
+        print('Today is ', datetime.datetime.now().isoformat())
         url = self.url_base + '/authenticate'
         r = None
         response = None
         with Timing('authenticate'):
             r = requests.post(url, data={'username': 'yu', 'password': 'yu'})
             response = r.json()
-            print response
+            print(response)
         cookies = r.cookies
-        print r.cookies
-        print response
+        print(r.cookies)
+        print(response)
         number = response['last_factura']
         # search for a product
         url = self.url_base + '/alm/1/producto'
         content = None
         with Timing('search producto'):
-            r = requests.get(url, params={'prefijo': 'A'})
+            r = requests.get(url, params={'prefijo': 'h'})
             content = r.json()
 
 
         p1 = content[0]
-        p2 = content[1]
-        p3 = content[2]
+        p2 = content[0]
+        p3 = content[0]
 
         del p1['upi']  # test one without upi
 
@@ -61,8 +64,9 @@ class EndToEndTest(unittest.TestCase):
 
         url = self.url_base + '/cliente'
         client = None
+
         with Timing('Search users'):
-            clients = requests.get(url, params={'prefijo': 'N'})
+            clients = requests.get(url, params={'prefijo': 'a'})
             client = clients.json()[0]
 
         with Timing('get cliente'):
@@ -92,29 +96,29 @@ class EndToEndTest(unittest.TestCase):
         with Timing('save factura'):
             r = requests.post(nota_url, data=json.dumps(content), cookies=cookies)
             codigo = r.json()['codigo']
-        print 'codigo es', codigo
+        print('codigo es', codigo)
 
         with Timing('put factura'):
             r = requests.put(self.url_base + '/nota/' + str(codigo), cookies=cookies)
             self.assertEquals(200, r.status_code)
-            print r
+            print(r)
 
         with Timing('Get FACTura'):
             r = requests.get(nota_url + '/' + str(codigo), cookies=cookies)
             fact = r.json()
             self.assertEquals(codigo, fact['meta']['uid'])
             self.assertEquals(1, fact['meta']['almacen_id'])
-            print 'got factura ', fact
+            print('got factura ', fact)
 
         with Timing('Delete'):
             r = requests.delete(nota_url + '/' + str(codigo), cookies=cookies)
             self.assertEquals(200, r.status_code)
-            print r
+            print(r)
 
 
 
 
-        print '================================Test end============================================'
+        print('================================Test end============================================')
 
 
 

@@ -1,5 +1,10 @@
 """ Miscellanous stuff"""
+from __future__ import division
+from __future__ import print_function
 
+from builtins import str
+from builtins import zip
+from builtins import map
 import re
 from decimal import Decimal
 from henry.hack import fix_id_error
@@ -15,7 +20,7 @@ def id_type(uid):
     elif len(uid) == 13:
         return '04'  # RUC
     else:
-        print 'error!! uid {} with length {}'.format(uid, len(uid))
+        print('error!! uid {} with length {}'.format(uid, len(uid)))
     return '07'
 
 
@@ -37,14 +42,14 @@ def abs_string(string):
 def validate_ruc(uid):
     if uid[2] == '9': # ruc of private parties
         coef = [4, 3, 2, 7, 6, 5, 4, 3, 2]
-        the_sum = sum(x * y for x, y in zip(coef, map(int, uid[:9])))
+        the_sum = sum(x * y for x, y in zip(coef, list(map(int, uid[:9]))))
         the_sum = 11 - the_sum % 11
         if the_sum > 10:
             the_sum -= 10
         return int(uid[9]) == the_sum
     elif uid[2] == '6': # ruc of public parties
         coef = [3, 2, 7, 6, 5, 4, 3, 2]
-        the_sum = sum(x * y for x, y in zip(coef, map(int, uid[:8])))
+        the_sum = sum(x * y for x, y in zip(coef, list(map(int, uid[:8]))))
         the_sum = 11 - the_sum % 11
         if the_sum > 10:
             the_sum -= 10

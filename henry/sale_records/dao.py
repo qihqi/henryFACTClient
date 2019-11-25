@@ -1,3 +1,5 @@
+from builtins import map
+from builtins import object
 from decimal import Decimal
 from sqlalchemy import func
 from henry.dao.document import Status
@@ -33,7 +35,7 @@ class InvMovementMeta(dbmix(NInvMovementMeta)):
         if getattr(self, 'value_usd', None):
             self.value_usd = Decimal(self.value_usd)
         if hasattr(self, 'timestamp') and (isinstance(self.timestamp, str)
-                                           or isinstance(self.timestamp, unicode)):
+                                           or isinstance(self.timestamp, str)):
             self.timestamp = parse_iso_datetime(self.timestamp)
         return self
 
@@ -48,7 +50,7 @@ class ItemGroupCant(TypedSerializableMixin):
 class InvMovementFull(TypedSerializableMixin):
     _fields = (
         ('meta', InvMovementMeta.deserialize),
-        ('items', lambda x: map(ItemGroupCant.deserialize, x))
+        ('items', lambda x: list(map(ItemGroupCant.deserialize, x)))
     )
 
 
@@ -81,7 +83,7 @@ class InvMovementManager(object):
             inv.reference_id = invmo.meta.uid
             return inv
 
-        transactions = map(make_inv_movement, invmo.items)
+        transactions = list(map(make_inv_movement, invmo.items))
         self.inventoryapi.bulk_save(transactions)
         return invmo
 
@@ -94,7 +96,7 @@ class Sale(dbmix(NSale)):
         if getattr(self, 'tax_usd', None):
             self.tax_usd = Decimal(self.tax_usd)
         if hasattr(self, 'timestamp') and (isinstance(self.timestamp, str)
-                                           or isinstance(self.timestamp, unicode)):
+                                           or isinstance(self.timestamp, str)):
             self.timestamp = parse_iso_datetime(self.timestamp)
         return self
 

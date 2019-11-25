@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import map
 from collections import defaultdict
 import json
 import datetime
@@ -44,7 +46,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     @auth_decorator
     def purchase_fitered(uid):
         purchase = get_purchase_full(dbapi, uid)
-        map(normal_filter, purchase.items)
+        list(map(normal_filter, purchase.items))
         total = sum(i.item.price_rmb * i.item.quantity for i in purchase.items)
         purchase.meta.total_rmb = total
         res = purchase.serialize()
@@ -63,7 +65,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     @dbcontext
     @auth_decorator(0)
     def create_full_purchase():
-        rows = json.loads(request.body.read())
+        rows = json.loads(request.body.read().decode('utf-8'))
         purchase = Purchase()
         purchase.timestamp = datetime.datetime.now()
         pid = dbapi.create(purchase)
@@ -75,31 +77,31 @@ def make_import_apis(prefix, auth_decorator, dbapi,
                 price_rmb=Decimal(r['price']),
                 purchase_id=pid)
 
-        items = map(make_item, rows)
+        items = list(map(make_item, rows))
         total = sum((r.price_rmb * r.quantity for r in items))
         dbapi.update(purchase, {'total_rmb': total})
-        map(dbapi.create, items)
+        list(map(dbapi.create, items))
         return {'uid': pid}
 
     @app.put(prefix + '/purchase_full/<uid>')
     @dbcontext
     def update_purchase_full(uid):
-        data = json.loads(request.body.read())
-        print data
+        data = json.loads(request.body.read().decode('utf-8'))
+        print(data)
         # update meta
         updated = Purchase.deserialize(data['meta'])
-        print updated.timestamp
+        print(updated.timestamp)
         updated.last_edit_timestamp = datetime.datetime.now()
         dbapi.update_full(updated)
 
-        to_create_item = map(PurchaseItem.deserialize, data.get('create_items', []))
+        to_create_item = list(map(PurchaseItem.deserialize, data.get('create_items', [])))
         for pi in to_create_item:
             pi.purchase_id = uid
             dbapi.create(pi)
-        to_delete_item = map(PurchaseItem.deserialize, data.get('delete_items', []))
+        to_delete_item = list(map(PurchaseItem.deserialize, data.get('delete_items', [])))
         for pi in to_delete_item:
             dbapi.delete(pi)
-        to_edit_item = map(PurchaseItem.deserialize, data.get('edit_items', []))
+        to_edit_item = list(map(PurchaseItem.deserialize, data.get('edit_items', [])))
         for pi in to_edit_item:
             dbapi.update_full(pi)
         return {'status': 'success'}
@@ -108,7 +110,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     @dbcontext
     @auth_decorator(0)
     def post_sale():
-        content = Sale.deserialize(json.loads(request.body.read()))
+        content = Sale.deserialize(json.loads(request.body.read().decode('utf-8')))
         if list(dbapi.search(
                 Sale, seller_codename=content.seller_codename,
                 seller_inv_uid=content.seller_inv_uid)):
@@ -128,7 +130,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     @dbcontext
     @auth_decorator(0)
     def delete_sale():
-        content = Sale.deserialize(json.loads(request.body.read()))
+        content = Sale.deserialize(json.loads(request.body.read().decode('utf-8')))
         deleted = dbapi.db_session.query(NSale).filter_by(
             seller_codename=content.seller_codename, seller_inv_uid=content.seller_inv_uid
         ).update({'status': Status.DELETED})
@@ -138,7 +140,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     @dbcontext
     @auth_decorator(0)
     def post_inv_movement_set():
-        raw_inv = request.body.read()
+        raw_inv = request.body.read().decode('utf-8')
         inv_movement = InvMovementFull.deserialize(json.loads(raw_inv))
         meta = inv_movement.meta
         meta.origin = get_or_create_inventory_id(dbapi, meta.inventory_codename, meta.origin)
@@ -166,7 +168,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     def last_inv_movements(day):
         today = parse_iso_date(day)
         tomorrow = today + datetime.timedelta(days=1)
-        print today, tomorrow
+        print(today, tomorrow)
         movements = list(dbapi.search(InvMovementMeta, **{'timestamp-gte': today, 'timestamp-lte': tomorrow}))
         return json_dumps({'result': movements})
 
@@ -180,9 +182,9 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     # @app.post(prefix + '/raw_inv_movement')
     @dbcontext
     def post_raw_inv_movement():
-        raw_data = json.loads(request.body.read())
+        raw_data = json.loads(request.body.read().decode('utf-8'))
         ig = ProdItemGroup.deserialize(raw_data[0])
-        trans = map(InventoryMovement.deserialize, raw_data[1])
+        trans = list(map(InventoryMovement.deserialize, raw_data[1]))
         codename = raw_data[2]
 
         if dbapi.getone(ProdItemGroup, prod_id=ig.prod_id) is None:

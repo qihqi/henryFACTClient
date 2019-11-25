@@ -1,5 +1,11 @@
+from __future__ import division
+from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
+from past.utils import old_div
 import json
-from urlparse import urljoin
+from urllib.parse import urljoin
 from decimal import Decimal
 
 import datetime
@@ -51,7 +57,7 @@ def doc_to_workobject(inv, action, objtype):
     obj.objid = inv.meta.uid
     return obj
 
-class ForwardRequestProcessor:
+class ForwardRequestProcessor(object):
 
     def __init__(self, dbapi, root_url, auth, codename):
         self.dbapi = dbapi
@@ -81,7 +87,7 @@ class ForwardRequestProcessor:
         return r
 
     def forward_request(self, work):
-        print 'work', work['work'], type(work['work'])
+        print('work', work['work'], type(work['work']))
         work = work['work']
         work = WorkObject.deserialize(json.loads(work))
         if work.objtype == WorkObject.INV:
@@ -94,7 +100,7 @@ class ForwardRequestProcessor:
         elif work.objtype == WorkObject.TRANS:
             work.content = Transferencia.deserialize(work.content)
         else:
-            print 'ERROR'
+            print('ERROR')
             return -1 # RETRY
         r = self.exec_work(work)
         if r.status_code == 200:
@@ -107,7 +113,7 @@ class ForwardRequestProcessor:
         doc = work.content
         if work.objtype == WorkObject.INV_TRANS:
             invmeta.timestamp = doc.meta.timestamp
-            invmeta.value_usd = Decimal(doc.meta.subtotal - (doc.meta.discount or 0)) / 100
+            invmeta.value_usd = old_div(Decimal(doc.meta.subtotal - (doc.meta.discount or 0)), 100)
             invmeta.inventory_docid = doc.meta.uid
             invmeta.trans_type = InvMovementType.SALE
             invmeta.origin = doc.meta.bodega_id
@@ -137,8 +143,8 @@ class ForwardRequestProcessor:
         sale.seller_ruc = meta.almacen_ruc
         sale.seller_inv_uid = meta.uid
         sale.invoice_code = meta.codigo
-        sale.pretax_amount_usd = Decimal(meta.subtotal - (meta.discount or 0)) / 100
-        sale.tax_usd = Decimal(meta.tax or 0) / 100
+        sale.pretax_amount_usd = old_div(Decimal(meta.subtotal - (meta.discount or 0)), 100)
+        sale.tax_usd = old_div(Decimal(meta.tax or 0), 100)
         sale.status = Status.NEW
         sale.user_id = meta.user
         sale.payment_format = meta.payment_format

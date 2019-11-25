@@ -1,3 +1,4 @@
+from builtins import object
 from sqlalchemy import Column, Date, Integer, String, ForeignKey, Numeric, DateTime, Index, Boolean
 from sqlalchemy.orm import relationship, backref
 
@@ -92,7 +93,7 @@ class NDeposit(Base):
     payment = relationship(NPayment)
 
 
-class SpentType:
+class SpentType(object):
     LOCAL = 'local'
     LOCALN = 'n'  # local pero doesn't go into daily account
     FOREIGN = 'extrangero'
@@ -118,7 +119,7 @@ class NSpent(Base):
     deleted = Column(Boolean)
 
 
-class ObjType:
+class ObjType(object):
     INV = 'notas'
     TRANS = 'transfer'
     CHECK = 'cheque'

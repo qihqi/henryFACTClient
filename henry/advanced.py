@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import object
 from collections import defaultdict
 import datetime
 from bottle import Bottle, request, abort, redirect
@@ -35,7 +37,7 @@ def make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transaction
         prods = []
         for x in dbapi.search(ProdItemGroup):
             prods.append((x, transactionapi.get_current_quantity(x.uid)))
-        print prods
+        print(prods)
 
     class Prod(object):
         def __init__(self):
@@ -142,7 +144,7 @@ def make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transaction
         for x in count_expr:
             counts[x.bodega_id] = x.cant
         if bodega_id:
-            items = filter(lambda i: i.bodega_id == bodega_id, items)
+            items = [i for i in items if i.bodega_id == bodega_id]
         for i in items:
             i.bodega_name = dbapi.get(i.bodega_id, Bodega).nombre
             i.count = counts[i.bodega_id]
@@ -174,10 +176,10 @@ def make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transaction
             else:
                 obj.cant = x.cant
         temp = jinja_env.get_template('ver_ventas_por_prod.html')
-        values = sorted(prods_sale.values(),
+        values = sorted(list(prods_sale.values()),
                         key=lambda x: -x.cant * x.prod.precio1)
         for x in values:
-            print x.serialize()
+            print(x.serialize())
         return temp.render(items=values, start=start, end=end,
                            almacen=almacen.nombre,
                            almacenes=dbapi.search(Store))

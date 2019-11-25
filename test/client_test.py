@@ -1,3 +1,4 @@
+from __future__ import print_function
 import unittest
 import datetime
 
@@ -15,7 +16,7 @@ from henry.misc import validate_uid_and_ruc
 class ClientTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        engine = create_engine('sqlite:///:memory:', echo=False)
+        engine = create_engine('sqlite:///:memory:?charset=utf8', echo=False)
         sessionfactory = sessionmaker(bind=engine)
         session = sessionfactory()
         Base.metadata.create_all(engine)
@@ -55,7 +56,7 @@ class ClientTest(unittest.TestCase):
         with self.sessionmanager:
             x = list(self.dbapi.search(Client, **{'apellidos-prefix': 'a'}))
             for i in x:
-                print i.serialize()
+                print(i.serialize())
             self.assertEquals(2, len(x))
 
     def test_validate_cedula(self):

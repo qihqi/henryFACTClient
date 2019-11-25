@@ -1,3 +1,4 @@
+from __future__ import print_function
 import datetime
 import os
 import sys
@@ -18,7 +19,7 @@ def dump_content(ddate, dest_dir, prefix, listurl, itemurl):
         for x in all_items:
             inv = requests.get('{}/{}'.format(itemurl, x['uid']))
             if inv.status_code != 200:
-                print >>sys.stderr, inv.text
+                print(inv.text, file=sys.stderr)
                 continue
             f.write(inv.text)
             f.write('\n')

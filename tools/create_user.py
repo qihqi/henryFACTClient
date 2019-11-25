@@ -10,7 +10,7 @@ def main():
     user = User()
     user.username = username
     s = sha1()
-    s.update(password)
+    s.update(password.encode('utf-8'))
     user.password = s.hexdigest()
     user.level = 3
     user.is_staff = True

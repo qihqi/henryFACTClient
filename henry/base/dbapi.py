@@ -1,3 +1,5 @@
+from builtins import map
+from builtins import object
 from sqlalchemy.inspection import inspect
 
 def decode_str(strobj):
@@ -25,7 +27,7 @@ def fieldcopy(src, dest, fields):
     for f in fields:
         try:
             value = srcgetter(f)
-            if isinstance(value, str):
+            if isinstance(value, bytes):
                 value = decode_str(value)
             destsetter(f, value)
         except:
@@ -49,21 +51,21 @@ def dbmix(database_class, override_name=()):
 
         def db_instance(self):
             result = self.db_class()
-            fieldcopy(self, result, self._columns.keys())
+            fieldcopy(self, result, list(self._columns.keys()))
             return result
 
         @classmethod
         def from_db_instance(cls, db_instance):
             y = cls()
-            fieldcopy(db_instance, y, cls._columns.keys())
+            fieldcopy(db_instance, y, list(cls._columns.keys()))
             return y
 
         def merge_from(self, obj):
-            fieldcopy(obj, self, self._columns.keys())
+            fieldcopy(obj, self, list(self._columns.keys()))
             return self
 
         def serialize(self):
-            return self._serialize_helper(self, self._columns.keys())
+            return self._serialize_helper(self, list(self._columns.keys()))
 
         @classmethod
         def deserialize(cls, dict_input):
@@ -149,13 +151,13 @@ class DBApiGeneric(object):
         count = self.sm.session.query(obj.db_class).filter(
             obj.pkey == pkey).update(
             content_dict)
-        for x, y in content_dict.items():
+        for x, y in list(content_dict.items()):
             setattr(obj, x, y)
         return count
 
     def update_full(self, obj):
         values = {col: getattr(obj, col)
-                  for col in obj._columns.keys()
+                  for col in list(obj._columns.keys())
                   if col != obj.pkey.name}
         return self.update(obj, values)
 
@@ -173,7 +175,7 @@ class DBApiGeneric(object):
 
     def search(self, objclass, **kwargs):
         query = self.sm.session.query(objclass.db_class)
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             mode = None
             if '-' in key:
                 key, mode = key.split('-')
@@ -186,4 +188,4 @@ class DBApiGeneric(object):
             if mode == 'gte':
                 f = col >= value
             query = query.filter(f)
-        return map(objclass.from_db_instance, iter(query))
+        return list(map(objclass.from_db_instance, iter(query)))

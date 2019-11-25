@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import str
+from past.utils import old_div
 import datetime
 from operator import itemgetter
 
@@ -163,13 +166,13 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
        payments = list(dbapi.db_session.query(NPayment).filter(
            NPayment.client_id == uid))
 
-       all_data = [('COMPRA', r.uid, r.timestamp.date(), '', r.total / 100)
+       all_data = [('COMPRA', r.uid, r.timestamp.date(), '', old_div(r.total, 100))
                    for r in result if r.payment_format != PaymentFormat.CASH]
-       all_data.extend((('PAGO ' + r.type, r.uid, r.date, r.value / 100, '') for r in payments))
+       all_data.extend((('PAGO ' + r.type, r.uid, r.date, old_div(r.value, 100), '') for r in payments))
        all_data.sort(key=itemgetter(2), reverse=True)
 
-       compra = sum(r.total for r in result if r.payment_format != PaymentFormat.CASH) / 100
-       pago = sum(r.value for r in payments) / 100
+       compra = old_div(sum(r.total for r in result if r.payment_format != PaymentFormat.CASH), 100)
+       pago = old_div(sum(r.value for r in payments), 100)
 
        temp = jinja_env.get_template('client_stat.html')
        client = dbapi.get(uid, Client) # clientapi.get(uid)

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from beaker.middleware import SessionMiddleware
 from bottle import Bottle
 from henry.background_sync.worker import ForwardRequestProcessor
@@ -26,7 +27,7 @@ if FORWARD_INV:
     def method(x):
         processor.forward_request(x)
     workerqueue = method.spool
-    print 'started worker thread'
+    print('started worker thread')
 
 actionlogged = lambda x: x
 

@@ -67,7 +67,7 @@ def make_wsgi_api(prefix, sessionmanager, dbcontext,
             }
         """
 
-        content = request.body.read()
+        content = request.body.read().decode('utf-8')
         content = json.loads(content)
         valid, message = validate_full_item(content, dbapi)
         if not valid:
@@ -92,14 +92,14 @@ def make_wsgi_api(prefix, sessionmanager, dbcontext,
     @dbcontext
     def save_item_with_price():
         # TODO: VALIDATION
-        item_with_price = json.loads(request.body.read())
+        item_with_price = json.loads(request.body.read().decode('utf-8'))
         item = ProdItem.deserialize(item_with_price)
         prod_id = item_with_price['prod_id']
         if int(item_with_price['multiplier']) > 1:
             prod_id += '+'
         item.prod_id = prod_id
         uid = dbapi.create(item)
-        for aid, x in item_with_price['price'].items():
+        for aid, x in list(item_with_price['price'].items()):
             p = PriceList()
             p.almacen_id = aid
             p.prod_id = prod_id
@@ -258,7 +258,7 @@ def create_full_item_from_dict(dbapi, content):
         items[i.unit] = i
 
         # create prices
-        for alm_id, p in prices.items():
+        for alm_id, p in list(prices.items()):
             price = PriceList()
             price.nombre = p['display_name']
             price.precio1 = int(float(p['price1']) * 100)

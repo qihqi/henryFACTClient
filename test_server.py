@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 import os
 
@@ -33,7 +34,7 @@ def main():
         host, port = url.split(':')
         port = int(port)
     for r in app.app.routes:
-        print r.method, r.rule
+        print(r.method, r.rule)
     run(app, host=host, debug=True, port=port)
     return 'http://localhost:8080'
 

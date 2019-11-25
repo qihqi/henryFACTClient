@@ -1,3 +1,4 @@
+from __future__ import print_function
 import unittest
 from henry.dao import Transferencia, TransMetadata, Item, Product
 from henry.externalapi import ExternalApi
@@ -23,7 +24,7 @@ class ExternalTest(unittest.TestCase):
         )
         doc = self.api.save(ing)
         self.assertTrue(doc is not None)
-        print doc.meta.ref
+        print(doc.meta.ref)
 
 
 if __name__ == '__main__':

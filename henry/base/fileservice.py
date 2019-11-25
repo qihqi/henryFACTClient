@@ -1,9 +1,10 @@
+from builtins import object
 import os
 import fcntl
 # importation threading
 
 
-class FileService:
+class FileService(object):
     def __init__(self, root):
         self.root = root
 
@@ -53,7 +54,7 @@ class FileService:
                             yield line
 
 
-class LockClass:
+class LockClass(object):
     def __init__(self, fileobj):
         self.fileno = fileobj.fileno()
 

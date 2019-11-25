@@ -1,3 +1,8 @@
+from __future__ import print_function
+from builtins import str
+from builtins import map
+from builtins import range
+from builtins import object
 import logging
 import datetime
 import os
@@ -12,7 +17,7 @@ from henry.invoice.coreschema import NPedidoTemporal
 from henry.product.dao import PriceList, InvMovementType
 
 
-class Status:
+class Status(object):
     NEW = 'NUEVO'
     COMITTED = 'POSTEADO'
     DELETED = 'ELIMINADO'
@@ -51,11 +56,11 @@ class MetaItemSet(SerializableMixin):
     def deserialize(cls, the_dict):
         x = cls()
         x.meta = cls._metadata_cls.deserialize(the_dict['meta'])
-        x.items = map(Item.deserialize, the_dict['items'])
+        x.items = list(map(Item.deserialize, the_dict['items']))
         return x
 
 
-class DocumentApi:
+class DocumentApi(object):
     def __init__(self, sessionmanager, filemanager, transaction, object_cls):
         self.db_session = sessionmanager
         self.dbapi = DBApiGeneric(sessionmanager)
@@ -70,8 +75,8 @@ class DocumentApi:
         session = self.db_session.session
         db_instance = session.query(self.db_class).filter_by(id=uid).first()
         if db_instance is None:
-            print 'cannot find document in table ', self.db_class.__tablename__,
-            print ' with id ', uid
+            print('cannot find document in table ', self.db_class.__tablename__, end=' ')
+            print(' with id ', uid)
             return None
         doc = self.get_doc_from_file(db_instance.items_location)
         doc.meta.status = db_instance.status
@@ -80,7 +85,7 @@ class DocumentApi:
     def get_doc_from_file(self, filename):
         file_content = self.filemanager.get_file(filename)
         if file_content is None:
-            print 'could not find file at ', filename
+            print('could not find file at ', filename)
             return None
         content = json_loads(file_content)
         doc = self.cls.deserialize(content)
@@ -167,7 +172,7 @@ class DocumentApi:
             yield meta
 
 
-class PedidoApi:
+class PedidoApi(object):
     def __init__(self, sessionmanager, filemanager):
         self.session = sessionmanager
         self.filemanager = filemanager

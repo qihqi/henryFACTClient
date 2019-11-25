@@ -1,3 +1,4 @@
+from builtins import object
 import os
 import datetime
 
@@ -33,7 +34,7 @@ class ActionLog(SerializableMixin):
         self.body = body
 
 
-class ActionLogApi:
+class ActionLogApi(object):
 
     def __init__(self, root):
         self.root = root
@@ -50,7 +51,7 @@ class ActionLogApi:
                 f.flush()
 
 
-class ActionLogApiDecor:
+class ActionLogApiDecor(object):
 
     def __init__(self, api, workerqueue):
         self.api = api
@@ -63,7 +64,7 @@ class ActionLogApiDecor:
                 ip_address=request.remote_addr,
                 method=request.method,
                 url=request.url,
-                body=request.body.read())
+                body=request.body.read().decode('utf-8'))
             self.api.save(log)
             request.body.seek(0)  # reset body to the beginning
             return func(*args, **argv)
@@ -71,7 +72,7 @@ class ActionLogApiDecor:
 
 
 # Logs changes done to product
-class ChangeType:
+class ChangeType(object):
     PRICE_CHANGED = 'price_change'
     CHECK_DATE_CHANGE = 'check_date'
     DELETE_INVOICE = 'delete_invoice'

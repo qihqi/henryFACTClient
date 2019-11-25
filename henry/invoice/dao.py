@@ -1,3 +1,5 @@
+from builtins import str
+from builtins import object
 import datetime
 import os
 import uuid
@@ -11,7 +13,7 @@ from .coreschema import NNota
 __author__ = 'han'
 
 
-class PaymentFormat:
+class PaymentFormat(object):
     CASH = "efectivo"
     CARD = "tarjeta"
     CHECK = "cheque"

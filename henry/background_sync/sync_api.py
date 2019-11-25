@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import str
+from builtins import object
 import shutil
 import requests
 import datetime
@@ -14,7 +17,7 @@ NEW_LOG_DIR = os.path.join(DATA_ROOT, 'log_dir/new')
 PROCESSED_LOG_DIR = os.path.join(DATA_ROOT, 'log_dir/processed')
 
 
-class ActionType:
+class ActionType(object):
     NEW_PROD = 'new_prod'
     MODIFY_PROD = 'modify_prod'
     NEW_INV = 'new_inv'
@@ -53,9 +56,9 @@ def make_wsgi_api(prefix, fileservice):
     def save_logs():
         #json list with all transactions
         for line in request.body.readlines():
+            line = line.decode('utf-8')
             data = json.loads(line)
             meta = data['meta']
-            
             destination = os.path.join(str(meta['almacen_id']), make_date_name(
                 meta['date'], meta['batch']))
             fileservice.append_file(destination, line.strip())
@@ -66,14 +69,14 @@ def make_wsgi_api(prefix, fileservice):
 # This is the code that uploads the logs to the server
 def upload_raw_logs(log_dir, processed_log_dir):
     for name in os.listdir(log_dir):
-        print 'processing', name
+        print('processing', name)
         fname = os.path.join(log_dir, name)
         with open(fname) as f:
             data = f.read()
         r = requests.post(LOG_UPLOAD_URL, data=data)
         if r.status_code == 200:
             shutil.move(fname, processed_log_dir)
-        print r.status_code
+        print(r.status_code)
         return r.status_code == 200
 
 
@@ -114,12 +117,12 @@ class SyncApi(object):
 
 
 if __name__ == '__main__':
-    print 'Start Uploading...'
-    print 'new dir', NEW_LOG_DIR
-    print 'processed dir', PROCESSED_LOG_DIR
+    print('Start Uploading...')
+    print('new dir', NEW_LOG_DIR)
+    print('processed dir', PROCESSED_LOG_DIR)
     if upload_raw_logs(NEW_LOG_DIR, PROCESSED_LOG_DIR):
-        print 'Success'
+        print('Success')
     else:
-        print 'Failed'
+        print('Failed')
 
 

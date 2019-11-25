@@ -1,4 +1,8 @@
 # encoding=utf8
+from __future__ import division
+from builtins import map
+from past.utils import old_div
+from builtins import object
 from decimal import Decimal
 import functools
 
@@ -96,7 +100,7 @@ class CustomItem(dbmix(NCustomItem)):
         return result
 
 
-class PurchaseStatus:
+class PurchaseStatus(object):
     NEW = 'NEW'
     READY = 'READY'
     CUSTOM = 'CUSTOM'
@@ -203,11 +207,11 @@ class CustomItemFull(TypedSerializableMixin):
 
 
 def get_custom_items_full(dbapi, uid):
-    item_full = map(normal_filter, get_purchase_item_full(dbapi, uid))
+    item_full = list(map(normal_filter, get_purchase_item_full(dbapi, uid)))
     items = {x.uid: CustomItemFull(x) for x in dbapi.search(CustomItem, purchase_id=uid)}
     for i in item_full:
         items[i.item.custom_item_uid].purchase_items.append(i)
-    return sorted(items.values(), key=lambda i: i.custom.uid)
+    return sorted(list(items.values()), key=lambda i: i.custom.uid)
 
 
 
@@ -216,7 +220,7 @@ def normal_filter(item):
     return item
 
 def docen_filter(price, quantity, unit, all_units=ALL_UNITS):
-    return price * 12, quantity / 12, all_units['doz']
+    return price * 12, old_div(quantity, 12), all_units['doz']
 
 def convert_to_kg(price, quantity, unit, box=None, all_units=ALL_UNITS):
     if unit.uid == 'kg':
@@ -225,7 +229,7 @@ def convert_to_kg(price, quantity, unit, box=None, all_units=ALL_UNITS):
     # if unit converts to kg
     if unit.equiv_base == 'kg':
         mult = unit.equiv_multiplier
-        return price / mult, quantity * mult, all_units['kg']
+        return old_div(price, mult), quantity * mult, all_units['kg']
 
     if box is not None:
         return 0, box * 30, all_units['kg']

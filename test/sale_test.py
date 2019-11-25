@@ -5,9 +5,8 @@ from decimal import Decimal
 from henry.base.fileservice import FileService
 from henry.base.serialization import json_dumps
 from henry.dao.document import Status
-from henry.importation.dao import Sale
 from henry.sale_records.dao import InvMovementManager, Sale
-from henry.importation.web import make_import_apis
+from henry.sale_records.web import make_sale_records_api
 from henry.invoice.dao import PaymentFormat
 from henry.product.dao import InventoryApi
 from test.testutils import make_test_dbapi
@@ -20,10 +19,13 @@ class InvoiceTest(unittest.TestCase):
     def setUpClass(cls):
         dbapi = make_test_dbapi()
         fileservice = FileService('/tmp')
-        inventoryapi = InventoryApi('/tmp')
-        auth_decorator = lambda x: x
-        invmomanager = InvMovementManager(dbapi, fileservice, inventoryapi)
-        wsgi = make_import_apis('/import', auth_decorator, dbapi, invmomanager)
+        inventoryapi = InventoryApi(fileservice)
+        auth_decorator = lambda y: (lambda x: x)
+        invmomanager = InvMovementManager(
+                dbapi, fileservice, inventoryapi)
+        wsgi = make_sale_records_api(
+                '/import', auth_decorator, dbapi, invmomanager,
+                inventoryapi)
         cls.test_app = TestApp(wsgi)
         cls.dbapi = dbapi
 

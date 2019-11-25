@@ -1,3 +1,4 @@
+import os
 import shutil
 import unittest
 
@@ -6,7 +7,6 @@ import datetime
 from henry.base.dbapi import DBApiGeneric
 from henry.base.fileservice import FileService
 from henry.base.session_manager import SessionManager
-from henry.importation.dao import InvMovementManager, InvMovementFull, ItemGroupCant
 from henry.sale_records.dao import InvMovementMeta, ItemGroupCant, InvMovementFull, InvMovementManager
 from henry.product.dao import ProdItemGroup, InventoryApi
 from henry.schema.base import Base
@@ -22,7 +22,8 @@ class ProductApiTest(unittest.TestCase):
         Base.metadata.create_all(engine)
         cls.sessionmanager = SessionManager(sessionfactory)
         filemanager = FileService('/tmp')
-        shutil.rmtree('/tmp/1')
+        if os.path.exists('/tmp/1'):
+            shutil.rmtree('/tmp/1')
         cls.dbapi = DBApiGeneric(cls.sessionmanager)
         cls.inventoryapi = InventoryApi(filemanager)
         cls.invmomanager = InvMovementManager(cls.dbapi, filemanager, cls.inventoryapi)

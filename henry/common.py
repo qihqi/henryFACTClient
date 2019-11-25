@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import zip
+from past.utils import old_div
 import datetime
 from decimal import Decimal
 
@@ -17,7 +20,7 @@ def get_base_price(dbapi, prod_id):
         return None
     price = price[0]
     mult = price.multiplicador or 1
-    return Decimal(price.precio1) / 100 / mult
+    return old_div(old_div(Decimal(price.precio1), 100), mult)
 
 
 def items_from_form(dbapi, form):
@@ -41,9 +44,9 @@ def items_from_form(dbapi, form):
 
 def transmetadata_from_form(form):
     meta = TransMetadata()
-    meta.dest = form.get('dest')
-    meta.origin = form.get('origin')
-    fecha = form.get('fecha')
+    meta.dest = form.get('dest').decode('utf-8')
+    meta.origin = form.get('origin').decode('utf-8')
+    fecha = form.get('fecha').decode('utf-8')
     if fecha:
         fecha = parse_iso(fecha)
         meta.timestamp = datetime.datetime.combine(

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from beaker.middleware import SessionMiddleware
 
 from henry.accounting.dao import ImageServer, PaymentApi
@@ -36,7 +37,7 @@ if FORWARD_INV:
     def method(x):
         processor.forward_request(x)
     forward_transaction = method.spool
-    print 'website_wsgi forward trans enabled'
+    print('website_wsgi forward trans enabled')
 
 invoiceapp = make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, jinja_env,
                                workqueue=forward_transaction)

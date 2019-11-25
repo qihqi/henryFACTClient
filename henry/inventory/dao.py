@@ -1,3 +1,6 @@
+from builtins import map
+from builtins import str
+from builtins import object
 import datetime
 import os
 import uuid
@@ -10,7 +13,7 @@ from henry.product.dao import PriceList, ProdItemGroup, InvMovementType, Invento
 from .schema import NTransferencia
 
 
-class TransType:
+class TransType(object):
     INGRESS = 'INGRESO'
     TRANSFER = 'TRANSFER'
     EXTERNAL = 'EXTERNA'
@@ -33,7 +36,7 @@ class TransMetadata(SerializableMixin, DbMixin):
         'timestamp': 'timestamp',
         'status': 'status',
         'value': 'value'}
-    _name = _db_attr.keys()
+    _name = list(_db_attr.keys())
     _db_class = NTransferencia
 
     def __init__(self,
@@ -124,7 +127,7 @@ class Transferencia(MetaItemSet):
     def deserialize(cls, the_dict):
         x = cls()
         x.meta = cls._metadata_cls.deserialize(the_dict['meta'])
-        x.items = map(TransItem.deserialize, the_dict['items'])
+        x.items = list(map(TransItem.deserialize, the_dict['items']))
         return x
 
 

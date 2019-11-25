@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import object
 import sys
 import bottle
 import json
@@ -24,8 +26,8 @@ class RestApi(object):
                     old_obj = self.dbapi.get(pkey, self.clazz).serialize()
                     self.logging(self.clazz, 'put', old_obj, content_dict)
             except Exception as e:
-                print >>sys.stderr, e
-                print >>sys.stderr, 'logging failed'
+                print(e, file=sys.stderr)
+                print('logging failed', file=sys.stderr)
             obj = self.clazz()
             setattr(obj, self.clazz.pkey.name, pkey)
             count = self.dbapi.update(obj, content_dict=content_dict)

@@ -1,3 +1,6 @@
+from __future__ import division
+from __future__ import print_function
+from past.utils import old_div
 from decimal import Decimal
 
 from bottle import Bottle, request, abort
@@ -30,11 +33,11 @@ class InvoiceOptions(SerializableMixin):
 
 
 def fix_inv_by_options(dbapi, inv, options):
-    inv.items = filter(lambda x: x.cant >= 0, inv.items)
+    inv.items = [x for x in inv.items if x.cant >= 0]
     inv.meta.paid = True
 
     if options.revisar_producto:  # create producto if not exist
-        print 'here'
+        print('here')
         create_prod_if_not_exist(dbapi, inv)
 
     for item in inv.items:
@@ -43,7 +46,7 @@ def fix_inv_by_options(dbapi, inv, options):
         else:
             # if not using decimal, means that cant is send as int.
             # treating it as a decimal of 3 decimal places.
-            item.cant = Decimal(item.cant) / 1000
+            item.cant = old_div(Decimal(item.cant), 1000)
 
         # this is an effort so that the prod coming from
         # invoice is incomplete. So it attempts so complete it with updated data
@@ -51,7 +54,7 @@ def fix_inv_by_options(dbapi, inv, options):
             alm_id = item.prod.almacen_id or inv.meta.almacen_id
             if alm_id != 2:
                 alm_id = 1
-            print item.prod.prod_id, alm_id
+            print(item.prod.prod_id, alm_id)
             newprod = dbapi.search(PriceList, prod_id=item.prod.prod_id,
                                    almacen_id=alm_id)[0]
             item.prod.almacen_id = alm_id
@@ -85,7 +88,7 @@ def fix_inv_by_options(dbapi, inv, options):
 
     # FIXME huge hack!!
     if alm is None:
-        print 'save nota huge hack corpesut'
+        print('save nota huge hack corpesut')
         if ruc.upper() == 'CORPESUT':
             alm = dbapi.get(3, Store)
 
@@ -129,7 +132,7 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
     @auth_decorator(0)
     @actionlogged
     def create_invoice():
-        json_content = request.body.read()
+        json_content = request.body.read().decode('utf-8')
         if not json_content:
             return ''
 
@@ -205,7 +208,7 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
     @auth_decorator(0)
     @actionlogged
     def save_pedido():
-        json_content = request.body.read()
+        json_content = request.body.read().decode('utf-8')
         uid, _ = pedidoapi.save(json_content)
         return {'codigo': uid}
 
