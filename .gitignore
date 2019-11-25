@@ -39,4 +39,5 @@ rest/*
 *.pyc
 henry-api/*
 henry/constants.py
-
+*.p12
+*.pem
