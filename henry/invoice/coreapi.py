@@ -15,7 +15,7 @@ from henry.product.dao import Store, PriceList, create_items_chain
 from henry.users.dao import User, Client
 
 from .coreschema import NNota
-from .dao import Invoice
+from .dao import Invoice, NotaExtra
 
 __author__ = 'han'
 
@@ -139,8 +139,7 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
         content = json_loads(json_content)
         inv, options = parse_invoice_and_options(content)
         fix_inv_by_options(dbapi, inv, options)
-        if inv.meta.timestamp is None:
-            inv.meta.timestamp = datetime.datetime.now()
+        inv.meta.timestamp = datetime.datetime.now()  # always use server's time.
         # at this point, inv should no longer change
 
         if options.crear_cliente:  # create client if not exist
@@ -156,10 +155,6 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
             dbapi.update(user, {'last_factura': int(inv.meta.codigo) + 1})
         dbapi.db_session.commit()
 
-        if workerqueue is not None:
-            obj = doc_to_workobject(inv, objtype=WorkObject.INV, action=WorkObject.CREATE)
-            workerqueue(work=json_dumps(obj))
-
         return {'codigo': inv.meta.uid}
 
     @api.put('{}/nota/<uid>'.format(url_prefix))
@@ -169,9 +164,13 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
     def postear_invoice(uid):
         inv = invapi.get_doc(uid)
         invapi.commit(inv)
-        if workerqueue is not None:
-            obj = doc_to_workobject(inv, objtype=WorkObject.INV_TRANS, action=WorkObject.CREATE)
-            workerqueue(work=json_dumps(obj))
+        
+        nota_extra = NotaExtra()
+        nota_extra.uid = inv.uid
+        nota_extra.status = Status.COMITTED
+        nota_extra.last_change_time = datetime.datetime.now()
+        dbapi.save(nota_extra)
+
         return {'status': inv.meta.status}
 
     @api.get(url_prefix + '/nota/<inv_id>')
@@ -193,12 +192,13 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
         inv = invapi.get_doc(uid)
         old_status = inv.meta.status
         invapi.delete(inv)
-        if workerqueue is not None:
-            obj = doc_to_workobject(inv, objtype=WorkObject.INV, action=WorkObject.DELETE)
-            workerqueue(work=json_dumps(obj))
-            if old_status == Status.COMITTED:
-                obj = doc_to_workobject(inv, objtype=WorkObject.INV_TRANS, action=WorkObject.DELETE)
-                workerqueue(work=json_dumps(obj))
+        # Save extra information
+        nota_extra = dbapi.get(uid, NotaExtra)
+        if nota_extra is not None:
+            dbapi.update(
+                    nota_extra, 
+                    {'status': Status.DELETED, 
+                     nota_extra.last_change_time = datetime.datetime.now()})
 
         return {'status': inv.meta.status}
 

@@ -154,3 +154,41 @@ class Invoice(MetaItemSet):
             self._path = os.path.join(
                 self.meta.timestamp.date().isoformat(), uuid.uuid1().hex)
         return self._path
+
+
+class SRINotaStatus:
+    CREATED = 'created'
+    CREATED_SENT = 'created_sent'
+    CREATED_SENT_VALIDATED = 'created_sent_validated'
+    DELETED = 'deleted'
+    DELETED_SENT = 'deleted_sent'
+    DELETED_SENT_VALIDATED = 'deleted_sent_validated'
+
+
+class NotaExtra(SerializableMixin, DbMixin):
+    _db_class = NNotaExtra
+    _db_attr = {
+        'uid': 'id',
+        'status': 'status',
+        'last_change_time', 'last_change_time'
+    }
+    _name = tuple(_db_attr.keys())
+    
+
+
+class SRINota(SerializableMixin, DbMixin):
+    _db_class = NSRINota
+    _excluded_vars = ('users',)
+    _db_attr = {
+        'uid': 'id',
+        'almacen_ruc': 'almacen_ruc',
+        'orig_codigo': 'orig_codigo',
+        'timestamp_received': 'timestamp_received',
+        'status': 'status',
+        'json_inv_location': 'json_inv_location',
+        'xml_inv_location': 'xml_inv_location',
+        'resp1_location': 'resp1_location',
+        'resp2_location': 'resp2_location',
+    }
+    _name = tuple(_db_attr.keys())
+

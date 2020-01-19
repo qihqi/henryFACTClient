@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<factura id="comprobante" version="2.0.0">
+    <infoTributaria>
+        <ambiente>{{ ambiente }}</ambiente> <!-- prueba 1, prod 2 -->
+        <tipoEmision>1</tipoEmision>  <!-- always 1 -->
+        <razonSocial>{{ razon_social }}</razonSocial> <!-- quinal sa etc -->
+        <ruc>{{ ruc }}</ruc>
+        <claveAcceso>{{ clave_acceso }}</claveAcceso>
+        <codDoc>01</codDoc> <!-- 01 = Factura -->
+        <estab>001</estab>
+        <ptoEmi>001</ptoEmi>
+        <secuencial>{{ codigo }}</secuencial>  <!-- esto es codigo de factura -->
+        <dirMatriz>{{ dir_matriz }}</dirMatriz>
+    </infoTributaria>
+    <infoFactura>
+        <fechaEmision>{{ fecha }}</fechaEmision> <!-- dd/mm/aaaa -->
+        <!-- ruc = 04 , cedula = 05, final = 07--> 
+        <tipoIdentificacionComprador>{{ tipo_identificacion_comprador }}</tipoIdentificacionComprador> <!-- numero cedula -->
+        <razonSocialComprador>{{ razon_social_comprador }}</razonSocialComprador>
+        <identificacionComprador>{{ id_comprador }}</identificacionComprador>
+        <totalSinImpuestos>{{ subtotal }}</totalSinImpuestos>
+        <totalDescuento>{{ descuento }}</totalDescuento>
+        <totalConImpuestos>
+            <totalImpuesto>
+                <codigo>2</codigo>  <!-- iva = 2 -->
+                <codigoPorcentaje>2</codigoPorcentaje> <!-- 0 / 2 / 3 for 0/12/14 --> 
+                <baseImponible> {{ subtotal }}</baseImponible>
+                <valor>{{ iva }}</valor>
+            </totalImpuesto>
+        </totalConImpuestos>
+        <importeTotal>{{ total }} </importeTotal>
+    </infoFactura>
+    <detalles>
+        {% for d in detalles %}
+        <detalle>
+            <descripcion> {{ d.nombre }}</descripcion>
+            <cantidad>{{ d.cantidad }}</cantidad>
+            <precioUnitario>{{ d.precio }}</precioUnitario>
+            <descuento>
+                {{ d.descuento }}
+            </descuento>
+            <precioTotalSinImpuesto>
+                {{ d.total_sin_impuesto }}
+            </precioTotalSinImpuesto>
+            <impuestos>
+                <impuesto>
+                    <codigo>2</codigo> <!-- 2 = IVA -->
+                    <codigoPorcentaje>2</codigoPorcentaje> <!-- 2 = 12%, 3 = 14% -->
+                    <tarifa>12</tarifa>
+                    <baseImponible>{{ d.total_sin_impuesto }}</baseImponible>
+                    <valor>{{ d.total_sin_impuesto * 0.12 }}</valor>
+                </impuesto>
+            </impuestos>
+        </detalle>
+        {% endfor %}
+    </detalles>
+</factura>

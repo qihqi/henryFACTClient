@@ -29,7 +29,7 @@ if FORWARD_INV:
     workerqueue = method.spool
     print('started worker thread')
 
-actionlogged = lambda x: x
+# actionlogged = lambda x: x
 
 # GET pricelist
 queryprod = make_search_pricelist_api('/api', actionlogged=actionlogged, dbapi=dbapi)
