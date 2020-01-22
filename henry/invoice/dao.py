@@ -4,11 +4,13 @@ import datetime
 import os
 import uuid
 from henry.base.serialization import SerializableMixin, DbMixin, parse_iso_datetime
+from henry.base.dbapi import dbmix
 from henry.dao.document import MetaItemSet
 from henry.product.dao import InventoryMovement, ProdItem, InvMovementType, get_real_prod_id
 from henry.users.dao import Client
 
-from .coreschema import NNota
+from .coreschema import NNota, NNotaExtra
+from .schema import NSRINota
 
 __author__ = 'han'
 
@@ -165,30 +167,6 @@ class SRINotaStatus:
     DELETED_SENT_VALIDATED = 'deleted_sent_validated'
 
 
-class NotaExtra(SerializableMixin, DbMixin):
-    _db_class = NNotaExtra
-    _db_attr = {
-        'uid': 'id',
-        'status': 'status',
-        'last_change_time', 'last_change_time'
-    }
-    _name = tuple(_db_attr.keys())
-    
-
-
-class SRINota(SerializableMixin, DbMixin):
-    _db_class = NSRINota
-    _excluded_vars = ('users',)
-    _db_attr = {
-        'uid': 'id',
-        'almacen_ruc': 'almacen_ruc',
-        'orig_codigo': 'orig_codigo',
-        'timestamp_received': 'timestamp_received',
-        'status': 'status',
-        'json_inv_location': 'json_inv_location',
-        'xml_inv_location': 'xml_inv_location',
-        'resp1_location': 'resp1_location',
-        'resp2_location': 'resp2_location',
-    }
-    _name = tuple(_db_attr.keys())
+NotaExtra = dbmix(NNotaExtra)
+SRINota = dbmix(NSRINota)    
 

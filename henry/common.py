@@ -1,12 +1,18 @@
 from __future__ import division
 from builtins import zip
 from past.utils import old_div
+
+import base64
 import datetime
+import hashlib
 from decimal import Decimal
 
 from bottle import abort
+from Crypto.Cipher import AES
 
+from henry import constants
 from henry.base.common import parse_iso
+from henry.base.serialization import json_dumps, json_loads
 from henry.inventory.dao import TransMetadata, TransType, TransItem
 from henry.product.dao import PriceList, ProdItemGroup
 
@@ -66,4 +72,31 @@ def transmetadata_from_form(form):
         meta.timestamp = datetime.datetime.now()
     return meta
 
+_MODE = AES.MODE_EAX
+def aes_encrypt(text_bytes):
+    """Returns a blob that contains(cipher_text, nonce, tag)."""
+    m = hashlib.sha1()
+    m.update(constants.AES_KEY.encode('utf-8'))
+    key = m.digest()[:16]
+    cipher = AES.new(key, _MODE)
+    cipher_text, tag = cipher.encrypt_and_digest(text_bytes)
+    content = [
+        base64.b64encode(cipher_text).decode('ascii'), 
+        base64.b64encode(cipher.nonce).decode('ascii'), 
+        base64.b64encode(tag).decode('ascii')]
+    return json_dumps(content).encode('utf-8')
+
+
+def aes_decrypt(blob):
+    """returns decrypted text or exception."""
+    m = hashlib.sha1()
+    m.update(constants.AES_KEY.encode('utf-8'))
+    key = m.digest()[:16]
+    blob_str = blob.decode('utf-8')
+    json_decoded = json_loads(blob_str)
+    cipher_text, nonce, tag = tuple(map(base64.b64decode, json_decoded))
+    cipher = AES.new(key, _MODE, nonce=nonce)
+    plaintext = cipher.decrypt(cipher_text)
+    cipher.verify(tag)
+    return plaintext
 

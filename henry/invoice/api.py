@@ -1,18 +1,21 @@
 from __future__ import division
 from __future__ import print_function
 from past.utils import old_div
+import os
+import uuid
 from decimal import Decimal
 
 from bottle import Bottle, request, abort
 import datetime
 
-from henry import constants
+from henry import constants, common
 
 from henry.background_sync.worker import WorkObject, doc_to_workobject
 
 from henry.base.serialization import SerializableMixin, json_loads, json_dumps
 from henry.base.session_manager import DBContext
 from henry.dao.document import Status
+from henry.invoice.dao import SRINota, SRINotaStatus
 
 from henry.product.dao import Store, PriceList, create_items_chain
 from henry.users.dao import User, Client
@@ -28,7 +31,7 @@ _ALM_ID_TO_INFO = {
         'name': constants.NAME,
     },
     3: {
-        'ruc': constants.RUC_CORP
+        'ruc': constants.RUC_CORP,
         'name': constants.NAME_CORP,
     }
 }
@@ -72,31 +75,31 @@ def make_nota_all(url_prefix, dbapi, actionlogged,
     dbcontext = DBContext(dbapi.session)
     # ########## NOTA ############################
 
-    @api.post('{}/srinota'.format(url_prefix))
+    @api.post('{}/remote_nota'.format(url_prefix))
     @dbcontext
-    @auth_decorator(2)
-    @actionlogged
     def create_sri_nota():
-        json_content = request.body.read().decode('utf-8')
-        if not json_content:
+        msg = request.body.read()
+        if not msg:
             return ''
-
-        inv_json = json_loads(json_content)
+        msg_decoded = common.aes_decrypt(msg).decode('utf-8')
+        loaded = json_loads(msg_decoded)
+        inv_json = loaded['inv']
+        method = loaded['method']
         inv = Invoice.deserialize(inv_json)
 
-        prefix = os.path.join('srinota',
-                datetime.date.toda().isoformat(),
-                uuid.uuid4().hex)
+        prefix = os.path.join('remote_nota',
+            datetime.date.today().isoformat(),
+            uuid.uuid4().hex)
 
-        file_manager.put_file(prefix + '.json', inv_json)
+        file_manager.put_file(prefix + '.json', json_dumps(inv_json))
 
         # gen xml
-        inv_xml = ...
-        file_manager.put_file(prefix + '.xml', inv_xml)
+        # inv_xml = ...
+        # file_manager.put_file(prefix + '.xml', inv_xml)
 
         row = SRINota()
-        row.almacen_ruc = inv.almancenruc
-        row.orig_codigo = inv.codigo
+        row.almacen_ruc = inv.meta.almacen_ruc
+        row.orig_codigo = inv.meta.codigo
         row.timestamp_received = datetime.datetime.now()
         row.status = SRINotaStatus.CREATED
         row.json_inv_location = prefix + '.json'
@@ -105,14 +108,5 @@ def make_nota_all(url_prefix, dbapi, actionlogged,
         row.resp2_location = ''
         pkey = dbapi.create(row)
         return {'created': pkey}
-
-
-    @api.delete('{}/srinota')
-    @dbcontext
-    @auth_decorator(2)
-    @actionlogged
-    def postear_invoice(uid):
-        pass
-
 
     return api

@@ -166,10 +166,10 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
         invapi.commit(inv)
         
         nota_extra = NotaExtra()
-        nota_extra.uid = inv.uid
+        nota_extra.id = inv.meta.uid
         nota_extra.status = Status.COMITTED
         nota_extra.last_change_time = datetime.datetime.now()
-        dbapi.save(nota_extra)
+        dbapi.create(nota_extra)
 
         return {'status': inv.meta.status}
 
@@ -198,7 +198,7 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
             dbapi.update(
                     nota_extra, 
                     {'status': Status.DELETED, 
-                     nota_extra.last_change_time = datetime.datetime.now()})
+                     'last_change_time': datetime.datetime.now()})
 
         return {'status': inv.meta.status}
 
