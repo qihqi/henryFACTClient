@@ -1,21 +1,28 @@
-from builtins import map
-from builtins import object
+import abc
+
 from sqlalchemy.inspection import inspect
 
-def decode_str(strobj):
+from typing import Callable, Any, Type, TypeVar, Generic, Dict, Mapping, Optional, List
+from sqlalchemy.orm.session import Session
+from sqlalchemy.sql.schema import Column
+from sqlalchemy.util._collections import OrderedProperties
+from henry.base.session_manager import SessionManager
+
+
+def decode_str(strobj: bytes) -> str:
     try:
-        return strobj.decode('utf8')
+        return strobj.decode('utf-8')
     except:
         return strobj.decode('latin1')
 
 
-def mkgetter(obj):
+def mkgetter(obj: Any) -> Callable:
     if hasattr(obj, 'get'):
         return obj.get
     return obj.__getattribute__
 
 
-def mksetter(obj):
+def mksetter(obj: Any) -> Callable:
     if hasattr(obj, 'get'):
         return obj.__setitem__
     return obj.__setattr__
@@ -33,6 +40,35 @@ def fieldcopy(src, dest, fields):
         except:
             pass
 
+DBType = TypeVar('DBType')
+MappedType = TypeVar('MappedType')
+
+
+class DBObjectInterface(abc.ABC, Generic[DBType]):
+
+    pkey: Column
+    _columns: OrderedProperties
+    db_class: Type[DBType]
+
+    @abc.abstractmethod
+    def db_instance(self) -> DBType:
+        pass
+
+    @abc.abstractmethod
+    def serialize(self) -> Dict:
+        pass
+
+    @classmethod
+    @abc.abstractmethod
+    def deserialize(cls, content: Dict) -> MappedType:
+        pass
+
+    @classmethod
+    @abc.abstractmethod
+    def from_db_instance(cls, dbins: DBType) -> MappedType:
+        pass
+
+
 
 # A method that converts a class of SQLAlchemy model into
 # a serializeble object
@@ -40,9 +76,9 @@ def fieldcopy(src, dest, fields):
 #     .db_instance() returns an object of the given class with the same data
 #     .serialize() returns an dict with same data
 #     Class.from_db_instance, and Class.deserialize do the opposite
-def dbmix(database_class, override_name=()):
-    class DataObjectMixin(object):
-        db_class = database_class
+def dbmix(database_class: Type[DBType], override_name=()) -> Type[DBObjectInterface[DBType]]:
+    class DataObjectMixin(DBObjectInterface[DBType]):
+        db_class = database_class  # type: Type[DBType]
         _columns = inspect(database_class).columns
         pkey = inspect(database_class).primary_key[0]
 
@@ -84,6 +120,7 @@ def dbmix(database_class, override_name=()):
                 result[y] = original
                 del result[x]
             return result
+
     return DataObjectMixin
 
 
@@ -119,18 +156,18 @@ class DBApi(object):
 
 class DBApiGeneric(object):
 
-    def __init__(self, sessionmanager):
+    def __init__(self, sessionmanager: SessionManager):
         self.sm = sessionmanager
 
     @property
-    def session(self):
+    def session(self) -> SessionManager:
         return self.sm
 
     @property
-    def db_session(self):
+    def db_session(self) -> Session:
         return self.sm.session
 
-    def create(self, obj):
+    def create(self, obj: DBObjectInterface):
         dbobj = obj.db_instance()
         self.sm.session.add(dbobj)
         self.sm.session.flush()
@@ -139,14 +176,15 @@ class DBApiGeneric(object):
         setattr(obj, pkey, pkeyval)
         return pkeyval
 
-    def get(self, pkey, objclass):
+    def get(self, pkey, objclass: Type[DBObjectInterface[DBType]]
+            ) -> Optional[DBObjectInterface[DBType]]:
         db_instance = self.sm.session.query(objclass.db_class).filter(
             objclass.pkey == pkey).first()
         if db_instance is None:
             return None
         return objclass.from_db_instance(db_instance)
 
-    def update(self, obj, content_dict):
+    def update(self, obj: DBObjectInterface, content_dict: Mapping) -> int:
         pkey = getattr(obj, obj.pkey.name)
         count = self.sm.session.query(obj.db_class).filter(
             obj.pkey == pkey).update(
@@ -155,25 +193,29 @@ class DBApiGeneric(object):
             setattr(obj, x, y)
         return count
 
-    def update_full(self, obj):
+    def update_full(self, obj: DBObjectInterface) -> int:
         values = {col: getattr(obj, col)
                   for col in list(obj._columns.keys())
                   if col != obj.pkey.name}
         return self.update(obj, values)
 
-    def delete(self, obj):
+    def delete(self, obj: DBObjectInterface) -> int:
         pkey = getattr(obj, obj.pkey.name)
         count = self.sm.session.query(obj.db_class).filter(
             obj.pkey == pkey).delete()
         return count
 
-    def getone(self, objclass, **kwargs):
+    def getone(
+            self, objclass: Type[DBObjectInterface[DBType]], **kwargs
+    ) -> Optional[DBObjectInterface[DBType]]:
         result = self.search(objclass, **kwargs)
         if not result:
             return None
         return result[0]
 
-    def search(self, objclass, **kwargs):
+    def search(
+        self, objclass: Type[DBObjectInterface[DBType]], **kwargs
+    ) -> List[DBObjectInterface[DBType]]:
         query = self.sm.session.query(objclass.db_class)
         for key, value in list(kwargs.items()):
             mode = None

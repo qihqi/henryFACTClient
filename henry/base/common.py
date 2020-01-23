@@ -4,42 +4,41 @@ from bottle import abort
 
 __author__ = 'han'
 
+from typing import Mapping, Tuple, Optional
 
-def parse_iso(date_string):
+
+def parse_iso(date_string: str) -> datetime.datetime:
     return datetime.datetime.strptime(date_string, '%Y-%m-%d')
 
 
-def parse_start_end_date(forms, start_name='start', end_name='end'):
+def parse_start_end_date(forms: Mapping[str, str],
+                         start_name:str = 'start', end_name: str = 'end'
+                         ) -> Tuple[Optional[datetime.datetime],
+                                    Optional[datetime.datetime]]:
     start = forms.get(start_name, None)
     end = forms.get(end_name, None)
+    start_date = None
+    end_date = None
     try:
         if start:
-            start = parse_iso(start)
-        else:
-            start = None
+            start_date = parse_iso(start)
         if end:
-            end = parse_iso(end)
-        else:
-            end = None
+            end_date = parse_iso(end)
     except:
         abort(400, 'Fecha en formato equivocada')
-    return start, end
+    return start_date, end_date
 
 
-def convert_to_cent(dec):
+def convert_to_cent(dec) -> int:
     if not isinstance(dec, Decimal):
         dec = Decimal(dec)
     return int(dec * 100)
 
 
-def parse_start_end_date_with_default(form, start, end):
-    newstart, newend = parse_start_end_date(form)
-    if newend is None:
-        newend = end
-    if newstart is None:
-        newstart = start
-    if isinstance(newstart, datetime.datetime):
-        newstart = newstart.date()
-    if isinstance(newend, datetime.datetime):
-        newend = newend.date()
-    return newstart, newend
+def parse_start_end_date_with_default(
+        form: Mapping[str, str],
+        start:datetime.date, end: datetime.date) -> Tuple[datetime.date, datetime.date]:
+    new_start, new_end = parse_start_end_date(form)
+    new_end_res = end if new_end is None else new_end.date()
+    new_start_res = start if new_start is None else new_start.date()
+    return new_start_res, new_end_res

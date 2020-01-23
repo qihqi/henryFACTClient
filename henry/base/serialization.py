@@ -1,11 +1,9 @@
-from builtins import str
-from builtins import map
-from builtins import object
 import datetime
 import decimal
 import json
 from operator import itemgetter
 import re
+from typing import Dict
 
 # encoding of the database
 DB_ENCODING = 'latin1'
@@ -15,24 +13,22 @@ def decode(s):
     if s is None:
         return None
     try:
-        return s.decode('utf8')
+        return s.decode('utf-8')
     except UnicodeDecodeError:
         return s.decode('latin1')
 
 
-def json_dumps(content):
-    return json.dumps(
-        content,
-        cls=ModelEncoder)
+def json_dumps(content: Dict) -> str:
+    return json.dumps(content, cls=ModelEncoder)
 
 
-def parse_iso_datetime(datestring):
-    return datetime.datetime(*list(map(int, re.split('[^\d]', datestring))))
+def parse_iso_datetime(datestring: str) -> datetime.datetime:
+    return datetime.datetime(*list(map(int, re.split('[^\d]', datestring))))  # type: ignore
 
-def parse_iso_date(datestring):
-    return datetime.date(*list(map(int, datestring.split('-'))))
+def parse_iso_date(datestring: str) -> datetime.date:
+    return datetime.date(*list(map(int, datestring.split('-'))))  # type: ignore
 
-def json_loads(content):
+def json_loads(content: str) -> Dict:
     return json.loads(content, encoding=DB_ENCODING)
 
 

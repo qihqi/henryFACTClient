@@ -1,23 +1,26 @@
-from __future__ import print_function
-from builtins import object
 from hashlib import sha1
 
+import bottle
 from bottle import request, response, parse_auth
-
 from henry.users.schema import NUsuario
 
+from typing import TYPE_CHECKING, Any, Dict, Optional
+if TYPE_CHECKING:
+    from sqlalchemy.orm.session import Session
+    from henry.base.session_manager import DBContext
 
-def get_user_info(session, username):
+
+def get_user_info(session: Session, username: str) -> NUsuario:
     return session.query(NUsuario).filter_by(username=username).first()
 
 
-def authenticate(password, userinfo):
+def authenticate(password: str, userinfo: NUsuario):
     s = sha1()
     s.update(password.encode('utf-8'))
     return s.hexdigest() == userinfo.password
 
 
-def create_user_dict(userinfo):
+def create_user_dict(userinfo: NUsuario) -> Dict[str, Any]:
     return {
         'username': userinfo.username,
         'status': True,
@@ -26,7 +29,7 @@ def create_user_dict(userinfo):
     }
 
 
-def get_user(r):
+def get_user(r: bottle.LocalRequest) -> Optional[str]:
     session = r.environ['beaker.session']
     if session is not None:
         return session.get('login_info', None)
@@ -34,11 +37,11 @@ def get_user(r):
 
 
 class AuthDecorator(object):
-    def __init__(self, redirect_url, db):
+    def __init__(self, redirect_url: str, db: DBContext):
         self.redirect = redirect_url
         self.db = db
 
-    def __call__(self, level):
+    def __call__(self, level: int):
         def decorator(func):
             def wrapped(*args, **kwargs):
                 print(request.get_header('Authorization'))
@@ -76,5 +79,5 @@ class AuthDecorator(object):
             return userinfo
         return False
 
-    def is_logged_in_by_beaker(self):
+    def is_logged_in_by_beaker(self) -> bool:
         return get_user(request) is not None

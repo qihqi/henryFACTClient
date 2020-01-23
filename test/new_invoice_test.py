@@ -18,11 +18,12 @@ class InvoiceTest(unittest.TestCase):
         transaction = FakeTransaction()
         invapi = DocumentApi(dbapi.session, filemanager, transaction, Invoice)
         pedidoapi = PedidoApi(sessionmanager=dbapi.session, filemanager=filemanager)
+        actionlogged = lambda x: x
         identity = lambda _: (lambda x: x)
         wsgi = make_nota_api(
             '/api',
             dbapi,
-            actionlogged=identity,
+            actionlogged=actionlogged,
             invapi=invapi,
             auth_decorator=identity,
             pedidoapi=pedidoapi,

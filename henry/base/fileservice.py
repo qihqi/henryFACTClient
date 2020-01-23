@@ -1,14 +1,15 @@
 from builtins import object
 import os
 import fcntl
+from typing import Optional, Callable, Iterator
 # importation threading
 
 
 class FileService(object):
-    def __init__(self, root):
+    def __init__(self, root: str):
         self.root = root
 
-    def make_fullpath(self, filename):
+    def make_fullpath(self, filename: str) -> str:
         dirname, name = os.path.split(filename)
         if not filename.startswith('/'):
             dirname = os.path.join(self.root, dirname)
@@ -17,7 +18,7 @@ class FileService(object):
         fullpath = os.path.join(dirname, name)
         return fullpath
 
-    def put_file(self, filename, content, override=True):
+    def put_file(self, filename: str, content: str, override=True) -> Optional[str]:
         fullpath = self.make_fullpath(filename)
         if not override and os.path.exists(fullpath):
             return None
@@ -26,14 +27,14 @@ class FileService(object):
             f.flush()
             return fullpath
 
-    def get_file(self, filename):
+    def get_file(self, filename: str) -> Optional[str]:
         fullpath = self.make_fullpath(filename)
         if not os.path.exists(fullpath):
             return None
         with open(fullpath) as f:
             return f.read()
 
-    def append_file(self, filename, data):
+    def append_file(self, filename: str, data: str) -> str:
         fullpath = self.make_fullpath(filename)
         with open(fullpath, 'a') as f:
             with LockClass(f):
@@ -42,7 +43,8 @@ class FileService(object):
                 f.flush()
         return fullpath
 
-    def get_file_lines(self, filenames, condition=None):
+    def get_file_lines(self, filenames: str,
+                       condition: Optional[Callable[[str], bool]] = None) -> Iterator[str]:
         if condition is None:
             condition = lambda x: True
         for fname in filenames:
