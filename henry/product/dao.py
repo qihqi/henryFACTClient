@@ -1,18 +1,16 @@
-from builtins import map
-from builtins import str
-from builtins import object
 from collections import defaultdict
 from decimal import Decimal
 import datetime
 import functools
 import json
 import os
-from henry.base.dbapi import dbmix
+from henry.base.dbapi import dbmix, DBObjectInterface
 from henry.base.serialization import (json_dumps, parse_iso_datetime, parse_iso_date,
     TypedSerializableMixin)
 from .schema import NInventoryRevision, NInventoryRevisionItem
 from .schema import (NBodega, NCategory, NPriceListLabel,
                      NPriceList, NItemGroup, NItem, NStore, NProdTag, NProdTagContent)
+from typing import Dict, Optional
 
 Bodega = dbmix(NBodega)
 
@@ -23,27 +21,27 @@ Store = dbmix(NStore)
 ProdTag = dbmix(NProdTag)
 ProdTagContent = dbmix(NProdTagContent)
 
-def convert_decimal(x, default=None):
+def convert_decimal(x, default=None) -> Optional[Decimal]:
     return default if x is None else Decimal(x)
 
 price_override_name = (('prod_id', 'codigo'), ('cant_mayorista', 'threshold'))
-class PriceList(dbmix(NPriceList, price_override_name)):
 
+class PriceList(dbmix(NPriceList, price_override_name)):  # type: ignore
     @classmethod
-    def deserialize(cls, dict_input):
+    def deserialize(cls, dict_input: Dict) -> DBObjectInterface[NPriceList]:
         prod = super(cls, PriceList).deserialize(dict_input)
         if prod.multiplicador:
             prod.multiplicador = Decimal(prod.multiplicador)
         return prod
 
-class ProdItem(dbmix(NItem)):
-    def merge_from(self, the_dict):
+class ProdItem(dbmix(NItem)):  # type: ignore
+    def merge_from(self, the_dict: Dict) -> DBObjectInterface[NItem]:
         super(ProdItem, self).merge_from(the_dict)
-        self.multiplier = convert_decimal(self.multiplier, 1)
+        self.multiplier = convert_decimal(self.multiplier, 1)  # type: Optional[Decimal]
         return self
 
 
-class ProdItemGroup(dbmix(NItemGroup)):
+class ProdItemGroup(dbmix(NItemGroup)):  # type: ignore
     def merge_from(self, the_dict):
         super(ProdItemGroup, self).merge_from(the_dict)
         self.base_price_usd = convert_decimal(self.base_price_usd, 0)
@@ -56,7 +54,7 @@ def get_real_prod_id(uid):
     return uid
 
 
-def make_itemgroup_from_pricelist(pl):
+def make_itemgroup_from_pricelist(pl: PriceList) -> ProdItemGroup:
     ig = ProdItemGroup(
         prod_id=get_real_prod_id(pl.prod_id),
         name=get_real_prod_id(pl.nombre))
@@ -66,7 +64,7 @@ def make_itemgroup_from_pricelist(pl):
     return ig
 
 
-def make_item_from_pricelist(pl):
+def make_item_from_pricelist(pl: PriceList) -> ProdItem:
     i = ProdItem(
         prod_id=pl.prod_id,
         multiplier=pl.multiplicador,

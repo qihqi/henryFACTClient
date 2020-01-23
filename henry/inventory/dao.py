@@ -1,6 +1,3 @@
-from builtins import map
-from builtins import str
-from builtins import object
 import datetime
 import os
 import uuid
@@ -11,6 +8,7 @@ from henry.dao.document import MetaItemSet, Item
 from henry.product.dao import PriceList, ProdItemGroup, InvMovementType, InventoryMovement
 
 from .schema import NTransferencia
+from typing import Dict, Type, Iterator
 
 
 class TransType(object):
@@ -25,7 +23,7 @@ class TransType(object):
              EGRESS)
 
 
-class TransMetadata(SerializableMixin, DbMixin):
+class TransMetadata(SerializableMixin, DbMixin[NTransferencia]):
     _db_attr = {
         'uid': 'id',
         'origin': 'origin',
@@ -36,7 +34,7 @@ class TransMetadata(SerializableMixin, DbMixin):
         'timestamp': 'timestamp',
         'status': 'status',
         'value': 'value'}
-    _name = list(_db_attr.keys())
+    _name = tuple(_db_attr.keys())
     _db_class = NTransferencia
 
     def __init__(self,
@@ -66,13 +64,14 @@ class TransMetadata(SerializableMixin, DbMixin):
 
 
 class TransItem(Item):
+
     @classmethod
-    def deserialize(cls, the_dict):
+    def deserialize(cls, the_dict: Dict) -> 'TransItem':
         if 'name' in the_dict['prod'] and 'prod_id' in the_dict['prod']:
             prod = ProdItemGroup.deserialize(the_dict['prod'])
         else:
             price = PriceList.deserialize(the_dict['prod'])
-            prod = ProdItemGroup(prod_id=price.prod_id, name=price.nombre)
+            prod = ProdItemGroup(prod_id=price.prod_id, name=price.nombre)  # type: ignore
         cant = Decimal(the_dict['cant'])
         return cls(prod, cant)
 
@@ -89,8 +88,9 @@ def transtype_to_invtype(tipo):
 
 class Transferencia(MetaItemSet):
     _metadata_cls = TransMetadata
+    meta: TransMetadata
 
-    def items_to_transaction(self, _dbapi):
+    def items_to_transaction(self) -> Iterator[InventoryMovement]:
         tipo = self.meta.trans_type
         for item in self.items:
             yield InventoryMovement(
@@ -116,7 +116,7 @@ class Transferencia(MetaItemSet):
             self.meta.origin = None
 
     @property
-    def filepath_format(self):
+    def filepath_format(self) -> str:
         path = getattr(self, '_path', None)
         if path is None:
             self._path = os.path.join(
@@ -124,7 +124,7 @@ class Transferencia(MetaItemSet):
         return self._path
 
     @classmethod
-    def deserialize(cls, the_dict):
+    def deserialize(cls, the_dict: Dict) -> 'Transferencia':
         x = cls()
         x.meta = cls._metadata_cls.deserialize(the_dict['meta'])
         x.items = list(map(TransItem.deserialize, the_dict['items']))

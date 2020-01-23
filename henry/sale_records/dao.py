@@ -29,7 +29,7 @@ def client_sale_report(dbapi, start, end):
         )
 
 
-class InvMovementMeta(dbmix(NInvMovementMeta)):
+class InvMovementMeta(dbmix(NInvMovementMeta)):  # type: ignore
     def merge_from(self, other):
         super(InvMovementMeta, self).merge_from(other)
         if getattr(self, 'value_usd', None):
@@ -88,7 +88,7 @@ class InvMovementManager(object):
         return invmo
 
 
-class Sale(dbmix(NSale)):
+class Sale(dbmix(NSale)):  # type: ignore
     def merge_from(self, other):
         super(Sale, self).merge_from(other)
         if getattr(self, 'total_usd', None):

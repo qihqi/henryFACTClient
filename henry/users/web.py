@@ -6,12 +6,20 @@ import datetime
 from bottle import Bottle, request, redirect
 
 from henry.base.dbapi_rest import bind_dbapi_rest
+from henry.base.session_manager import DBContext
+from henry.base.dbapi import DBApiGeneric
+from henry.base.auth import AuthType
 from henry.dao.exceptions import ItemAlreadyExists
 from henry.product.dao import Store
 from henry.users.dao import User, Client
 
+from typing import Callable
 
-def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, actionlogged):
+
+def make_wsgi_app(
+        dbcontext: DBContext,
+        auth_decorator: AuthType,
+        jinja_env, dbapi: DBApiGeneric, actionlogged: Callable[[Callable], Callable]):
     w = Bottle()
 
     # bind apis

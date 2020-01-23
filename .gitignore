@@ -41,3 +41,5 @@ henry-api/*
 henry/constants.py
 *.p12
 *.pem
+node_modules/*
+**/.mypy*

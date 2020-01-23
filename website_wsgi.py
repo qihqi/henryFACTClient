@@ -16,7 +16,7 @@ from henry.base.dbapi import DBApiGeneric
 from henry.base.fileservice import FileService
 from henry.constants import USE_ACCOUNTING_APP, FORWARD_INV
 from henry.config import (BEAKER_SESSION_OPTS, jinja_env, transapi,
-                          imagefiles, paymentapi, BODEGAS_EXTERNAS)
+                          imagefiles, BODEGAS_EXTERNAS)
 from henry.coreconfig import (dbcontext, auth_decorator, sessionmanager,
                               actionlogged, invapi, pedidoapi, transactionapi, sessionfactory)
 from henry.web import webmain as app

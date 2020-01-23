@@ -1,31 +1,32 @@
-from builtins import str
-from builtins import map
 from decimal import Decimal
 from bottle import Bottle, request, abort
 
+from henry.base.dbapi import DBApiGeneric
 from henry.base.serialization import json_dumps
 from henry.base.session_manager import DBContext
 from henry.bottlehelper import get_property_or_fail
 
 from .dao import Store, PriceList
 
+from typing import Callable
+
 __author__ = 'han'
 
 
-def mult_thousand(prod):
+def mult_thousand(prod: PriceList):
     if prod.cant_mayorista:
         prod.cant_mayorista *= 1000
 
 
-def convert_to_cent(dec):
+def convert_to_cent(dec) -> int:
     if not isinstance(dec, Decimal):
         dec = Decimal(dec)
     return int(dec * 100)
 
 
-
-
-def make_search_pricelist_api(api_url_prefix, actionlogged, dbapi):
+def make_search_pricelist_api(
+        api_url_prefix: str, actionlogged: Callable[[Callable], Callable],
+        dbapi: DBApiGeneric):
     api = Bottle()
     dbcontext = DBContext(dbapi.session)
 
@@ -82,5 +83,4 @@ def make_search_pricelist_api(api_url_prefix, actionlogged, dbapi):
         return json_dumps(result)
 
     return api  ## END BLOCK
-
 

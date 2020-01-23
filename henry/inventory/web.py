@@ -2,23 +2,30 @@ from __future__ import print_function
 from builtins import str
 import datetime
 import traceback
+from typing import Callable
 
 from bottle import Bottle, request, abort, redirect, json_loads
+
+from henry.base.dbapi import DBApiGeneric
 from henry.background_sync.worker import WorkObject, doc_to_workobject
 
-from henry.base.auth import get_user
+from henry.base.auth import AuthType
 from henry.base.common import parse_start_end_date
 from henry.base.serialization import json_dumps
 from henry.base.session_manager import DBContext
 from henry.common import transmetadata_from_form, items_from_form
-from henry.dao.document import Status
+from henry.dao.document import Status, DocumentApi
 
 from henry.product.dao import Bodega
 
 from .dao import TransType, Transferencia, TransMetadata
 
 
-def make_inv_api(dbapi, transapi, auth_decorator, actionlogged, forward_transaction):
+def make_inv_api(dbapi: DBApiGeneric,
+                 transapi: DocumentApi,
+                 auth_decorator: AuthType,
+                 actionlogged: Callable[[Callable], Callable],
+                 forward_transaction):
     api = Bottle()
     dbcontext = DBContext(dbapi.session)
 
@@ -89,8 +96,11 @@ def make_inv_api(dbapi, transapi, auth_decorator, actionlogged, forward_transact
     return api
 
 
-def make_inv_wsgi(dbapi, jinja_env, actionlogged, auth_decorator, transapi,
-                  revisionapi, external_bodegas):
+def make_inv_wsgi(
+        dbapi: DBApiGeneric, jinja_env,
+        actionlogged: Callable[[Callable], Callable],
+        auth_decorator: AuthType, transapi: DocumentApi,
+        revisionapi, external_bodegas):
     w = Bottle()
     dbcontext = DBContext(dbapi.session)
 

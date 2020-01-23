@@ -5,7 +5,7 @@ __author__ = 'han'
 User = dbmix(NUsuario)
 
 
-class Client(dbmix(NCliente)):
+class Client(dbmix(NCliente)):  # type: ignore
 
     @property
     def fullname(self):

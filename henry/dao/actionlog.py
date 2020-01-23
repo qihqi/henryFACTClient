@@ -55,7 +55,6 @@ class ActionLogApiDecor(object):
 
     def __init__(self, api, workerqueue):
         self.api = api
-        self.workerqueue = workerqueue
 
     def __call__(self, func):
         def wrapped(*args, **argv):
@@ -93,7 +92,3 @@ class ChangesLog(SerializableMixin):
         self.user_id = user_id
         self.before = before
         self.after = after
-
-
-
-

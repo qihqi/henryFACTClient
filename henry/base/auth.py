@@ -4,10 +4,9 @@ import bottle
 from bottle import request, response, parse_auth
 from henry.users.schema import NUsuario
 
-from typing import TYPE_CHECKING, Any, Dict, Optional
-if TYPE_CHECKING:
-    from sqlalchemy.orm.session import Session
-    from henry.base.session_manager import DBContext
+from typing import Any, Dict, Optional, Callable
+from sqlalchemy.orm.session import Session
+from henry.base.session_manager import SessionManager
 
 
 def get_user_info(session: Session, username: str) -> NUsuario:
@@ -36,8 +35,9 @@ def get_user(r: bottle.LocalRequest) -> Optional[str]:
     return None
 
 
+AuthType = Callable[[int], Callable[[Callable], Callable]]
 class AuthDecorator(object):
-    def __init__(self, redirect_url: str, db: DBContext):
+    def __init__(self, redirect_url: str, db: SessionManager):
         self.redirect = redirect_url
         self.db = db
 

@@ -1,6 +1,5 @@
 from __future__ import print_function
 import unittest
-from henry.dao import Transferencia, TransMetadata, Item, Product
 from henry.externalapi import ExternalApi
 
 

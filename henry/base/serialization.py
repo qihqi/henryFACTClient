@@ -3,7 +3,7 @@ import decimal
 import json
 from operator import itemgetter
 import re
-from typing import Dict
+from typing import Dict, Tuple, TypeVar, Type, Generic, Union
 
 # encoding of the database
 DB_ENCODING = 'latin1'
@@ -47,19 +47,20 @@ class ModelEncoder(json.JSONEncoder):
             return obj.isoformat()
         return super(ModelEncoder, self).default(obj)
 
-
-class DbMixin(object):
-    _db_class = None
-    _db_attr = ()
+DBType = TypeVar('DBType')
+class DbMixin(Generic[DBType]):
+    _db_class: Type[DBType]
+    _db_attr: Dict[str, str] = {}
+    _excluded_vars: tuple = ()
 
     @classmethod
-    def _get_name_pairs(cls, names):
+    def _get_name_pairs(cls, names: Union[Dict, Tuple]):
         if isinstance(names, dict):
             return list(names.items())
         else:
             return [(x, x) for x in names]
 
-    def db_instance(self):
+    def db_instance(self) -> DBType:
         x = self._db_class()
         excluded = getattr(self, '_excluded_vars', [])
         for thisname, dbname in DbMixin._get_name_pairs(self._db_attr):
@@ -70,7 +71,7 @@ class DbMixin(object):
         return x
 
     @classmethod
-    def from_db_instance(cls, db_instance):
+    def from_db_instance(cls, db_instance: DBType):
         y = cls()
         excluded = getattr(cls, '_excluded_vars', [])
         for thisname, dbname in cls._get_name_pairs(cls._db_attr):
@@ -89,7 +90,7 @@ def extract_obj_fields(obj, names):
 
 
 class TypedSerializableMixin(object):
-    _fields = ()
+    _fields = ()  # type: Tuple
     _natural_fields = (int, float, str, str)
 
     def __init__(self, **kwargs):
@@ -125,7 +126,7 @@ class TypedSerializableMixin(object):
 
 
 class SerializableMixin(object):
-    _name = ()
+    _name = ()  # type: Tuple
 
     def merge_from(self, obj):
         for key in self._name:

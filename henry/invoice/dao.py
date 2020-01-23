@@ -32,7 +32,7 @@ class PaymentFormat(object):
     )
 
 
-class InvMetadata(SerializableMixin, DbMixin):
+class InvMetadata(SerializableMixin, DbMixin[NNota]):
     _db_class = NNota
     _excluded_vars = ('users',)
     _db_attr = {
@@ -167,6 +167,6 @@ class SRINotaStatus:
     DELETED_SENT_VALIDATED = 'deleted_sent_validated'
 
 
-NotaExtra = dbmix(NNotaExtra)
-SRINota = dbmix(NSRINota)    
+NotaExtra = dbmix(NNotaExtra)  # type: ignore
+SRINota = dbmix(NSRINota)  # type: ignore
 

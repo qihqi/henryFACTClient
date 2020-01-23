@@ -4,20 +4,27 @@ from decimal import Decimal
 import barcode
 import os
 from bottle import Bottle, request, redirect
-from henry.background_sync import sync_api
+
+from henry.background_sync.sync_api import SyncApi
+from henry.base.dbapi import DBApiGeneric
 from henry.base.common import parse_start_end_date
 from henry.base.dbapi_rest import bind_dbapi_rest, bind_restapi, RestApi
 from henry.base.serialization import json_dumps
-from henry.product.dao import ProdItemGroup, Store, Bodega, ProdItem, PriceList, ProdTag, ProdTagContent
+from henry.base.session_manager import SessionManager, DBContext
+from henry.product.dao import ProdItemGroup, Store, Bodega, ProdItem, PriceList, ProdTag, ProdTagContent, InventoryApi
+
+from typing import Dict, Tuple, Callable
+
+AuthType = Callable[[int], Callable[[Callable], Callable]]
 
 
-def validate_full_item(content, dbapi):
+def validate_full_item(content: Dict, dbapi: DBApiGeneric) -> Tuple[bool, str]:
     prod_id = content['prod']['prod_id']
     if dbapi.getone(ProdItemGroup, prod_id=prod_id) is not None:
         return False, 'Codigo ya existe'
     if len([x for x in content['items'] if int(x['multiplier']) == 1]) != 1:
         return False, 'Debe haber un unidad con multiplicador 1'
-    all_mult = set()
+    all_mult = set()  # type: set
     for i in content['items']:
         if i['multiplier'] in all_mult:
             return False, 'Todos las unidades debe tener multiplicador distintos'
@@ -49,8 +56,12 @@ def make_full_items(itemgroup, items, prices_by_prod_id):
         result['items'].append(new_item)
     return result
 
-def make_wsgi_api(prefix, sessionmanager, dbcontext, 
-                  auth_decorator, dbapi, inventoryapi, sync_api):
+def make_wsgi_api(
+        prefix: str, sessionmanager: SessionManager, dbcontext: DBContext,
+                  auth_decorator: AuthType,
+        dbapi: DBApiGeneric,
+        inventoryapi: InventoryApi,
+        sync_api: SyncApi):
     app = Bottle()
 
     @app.post(prefix + '/item_full')

@@ -1,9 +1,3 @@
-from __future__ import division
-from __future__ import print_function
-from builtins import map
-from builtins import str
-from builtins import object
-from past.utils import old_div
 from collections import defaultdict
 from decimal import Decimal
 import json
@@ -15,13 +9,16 @@ import uuid
 from bottle import request, redirect, static_file, Bottle, response, abort
 from sqlalchemy import func
 
+from henry.base.fileservice import FileService
+from henry.base.session_manager import DBContext
 from henry import constants
 from henry import hack
-from henry.base.auth import get_user
+from henry.base.auth import get_user, AuthType
 from henry.base.common import parse_iso, parse_start_end_date, parse_start_end_date_with_default
 from henry.base.serialization import json_dumps
+from henry.base.dbapi import DBApiGeneric
 from henry.base.dbapi_rest import bind_dbapi_rest
-from henry.dao.document import Status
+from henry.dao.document import Status, DocumentApi
 from henry.invoice.dao import PaymentFormat, InvMetadata
 from henry.misc import fix_id
 from henry.product.dao import Store
@@ -32,11 +29,14 @@ from .reports import (generate_daily_report, split_records_binary, get_transacti
                       get_notas_with_clients, split_records, get_turned_in_cash, get_sale_report)
 from .acct_schema import NCheck, NSpent, NAccountStat
 from .dao import (Todo, Check, Deposit, Payment, Bank,
-                  DepositAccount, AccountStat, Spent, AccountTransaction, Comment)
+                  DepositAccount, AccountStat, Spent, AccountTransaction, Comment, PaymentApi, ImageServer)
 from functools import reduce
+from typing import Mapping
 
 
-def extract_nota_and_client(dbapi, form, redirect_url):
+def extract_nota_and_client(dbapi: DBApiGeneric,
+                            form: Mapping[str, str],
+                            redirect_url: str):
     codigo = form.get('codigo')
     almacen = form.get('almacen_id')
     if codigo:
@@ -49,7 +49,12 @@ def extract_nota_and_client(dbapi, form, redirect_url):
     return None, None
 
 
-def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserver, override_transaction_getter=None):
+def make_wsgi_api(dbapi: DBApiGeneric, invapi: DocumentApi,
+                  dbcontext: DBContext,
+                  auth_decorator: AuthType,
+                  paymentapi: PaymentApi,
+                  imgserver: ImageServer,
+                  override_transaction_getter=None):
     w = Bottle()
 
     @w.get('/app/api/sales')
@@ -188,7 +193,6 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
     bind_dbapi_rest('/app/api/account_stat', dbapi, AccountStat, w)
     bind_dbapi_rest('/app/api/bank_account', dbapi, DepositAccount, w)
     bind_dbapi_rest('/app/api/account_deposit', dbapi, AccountTransaction, w)
-
     bind_dbapi_rest('/app/api/spent', dbapi, Spent, w, skips_method=('DELETE', ))
 
     @w.get('/app/api/pago/<uid>')
@@ -217,7 +221,7 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
 
     @w.delete('/app/api/spent/<uid>')
     @dbcontext
-    def mark_pago_deleted(uid):
+    def mark_spent_deleted(uid):
         spent = Spent(uid=uid)
         sucess = dbapi.update(spent, {'deleted': True})
         dbapi.db_session.commit()
@@ -248,8 +252,10 @@ def make_wsgi_api(dbapi, invapi, dbcontext, auth_decorator, paymentapi, imgserve
     return w
 
 
-def make_wsgi_app(dbcontext, imgserver,
-                  dbapi, paymentapi, jinja_env, auth_decorator, imagefiles, invapi):
+def make_wsgi_app(dbcontext: DBContext, imgserver: ImageServer,
+                  dbapi: DBApiGeneric, paymentapi: PaymentApi,
+                  jinja_env, auth_decorator: AuthType, imagefiles: FileService,
+                  invapi: DocumentApi):
     w = Bottle()
 
     @w.get('/app/resumen_form')
@@ -827,7 +833,7 @@ def make_wsgi_app(dbcontext, imgserver,
     @w.post('/app/api/attachimg')
     @dbcontext
     @auth_decorator(0)
-    def post_img():
+    def post_img_api():
         img = save_img_from_request(request)
         url = imgserver.get_url_path(img.path)
         return {'url': url}

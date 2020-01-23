@@ -1,20 +1,20 @@
-from __future__ import print_function
-from builtins import str
-from builtins import map
-from builtins import range
-from builtins import object
 import logging
 import datetime
 import os
 from decimal import Decimal
+from typing import Type
 
 from sqlalchemy.exc import SQLAlchemyError
+from henry.base.fileservice import FileService
+from henry.base.session_manager import SessionManager
 from henry.base.dbapi import DBApiGeneric
 
-from henry.base.serialization import SerializableMixin
+from henry.base.serialization import SerializableMixin, DbMixin
 from henry.base.serialization import json_loads
 from henry.invoice.coreschema import NPedidoTemporal
-from henry.product.dao import PriceList, InvMovementType
+from henry.product.dao import PriceList, InvMovementType, InventoryApi
+
+from typing import Iterable, Optional, TypeVar, Generic
 
 
 class Status(object):
@@ -28,6 +28,8 @@ class Status(object):
 
 
 class Item(SerializableMixin):
+    prod: PriceList
+    cant: Decimal
     _name = ('prod', 'cant')
 
     def __init__(self, prod=None, cant=None):
@@ -41,13 +43,15 @@ class Item(SerializableMixin):
         return cls(prod, cant)
 
 
-class MetaItemSet(SerializableMixin):
+T = TypeVar('T')
+class MetaItemSet(SerializableMixin, Generic[T]):
     _name = ('meta', 'items')
-    _metadata_cls = None
+    _metadata_cls: Type[DbMixin[T]]
 
-    def __init__(self, meta=None, items=None):
+    def __init__(self, meta: Optional[DbMixin[T]] = None,
+                 items: Iterable[Item] = []):
         self.meta = meta
-        self.items = list(items) if items else []
+        self.items = list(items)
 
     def items_to_transaction(self):
         raise NotImplementedError()
@@ -61,7 +65,10 @@ class MetaItemSet(SerializableMixin):
 
 
 class DocumentApi(object):
-    def __init__(self, sessionmanager, filemanager, transaction, object_cls):
+    def __init__(self, sessionmanager: SessionManager,
+                 filemanager: FileService,
+                 transaction: InventoryApi,
+                 object_cls: Type[MetaItemSet]):
         self.db_session = sessionmanager
         self.dbapi = DBApiGeneric(sessionmanager)
         self.filemanager = filemanager
@@ -82,7 +89,7 @@ class DocumentApi(object):
         doc.meta.status = db_instance.status
         return doc
 
-    def get_doc_from_file(self, filename):
+    def get_doc_from_file(self, filename: str):
         file_content = self.filemanager.get_file(filename)
         if file_content is None:
             print('could not find file at ', filename)

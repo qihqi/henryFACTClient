@@ -1,14 +1,18 @@
 from bottle import Bottle, abort, request
 from henry.base.auth import get_user_info, authenticate, create_user_dict
+from henry.base.dbapi import DBApiGeneric
 from henry.base.serialization import json_dumps
 from henry.base.session_manager import DBContext
 
 from .dao import Client
+from typing import Callable
 
 __author__ = 'han'
 
 
-def make_client_coreapi(url_prefix, dbapi, actionlogged):
+def make_client_coreapi(
+        url_prefix: str, dbapi: DBApiGeneric,
+        actionlogged: Callable[[Callable], Callable]):
 
     api = Bottle()
     dbcontext = DBContext(dbapi.session)

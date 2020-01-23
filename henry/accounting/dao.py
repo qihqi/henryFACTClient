@@ -209,7 +209,7 @@ class ImageServer(object):
         return img
 
 
-class AccountTransaction(dbmix(NAccountTransaction)):
+class AccountTransaction(dbmix(NAccountTransaction)):  # type: ignore
     SALE = 'sales'
     SPENT = 'spents'
     CUSTOMER_PAYMENT = 'payments'
