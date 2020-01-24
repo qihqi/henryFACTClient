@@ -4,46 +4,153 @@ import datetime
 import functools
 import json
 import os
-from henry.base.dbapi import dbmix, DBObjectInterface
+import dataclasses
+from henry.base.interface import SerializableInterface, DBObjectInterface
+from henry.base.dbapi import dbmix, P
 from henry.base.serialization import (json_dumps, parse_iso_datetime, parse_iso_date,
-    TypedSerializableMixin)
+                                      TypedSerializableMixin)
 from .schema import NInventoryRevision, NInventoryRevisionItem
 from .schema import (NBodega, NCategory, NPriceListLabel,
                      NPriceList, NItemGroup, NItem, NStore, NProdTag, NProdTagContent)
 from typing import Dict, Optional
 
-Bodega = dbmix(NBodega)
 
-Category = dbmix(NCategory)
-PriceListLabel = dbmix(NPriceListLabel)
-Store = dbmix(NStore)
+@dbmix(NBodega)
+@dataclasses.dataclass(init=False)
+class Bodega(DBObjectInterface[NBodega], SerializableInterface):
+    id: int
+    nombre: str
+    nivel: int
 
-ProdTag = dbmix(NProdTag)
-ProdTagContent = dbmix(NProdTagContent)
+    def __init__(self, **kwargs):
+        self.merge_from(kwargs)
+
+
+@dbmix(NCategory)
+@dataclasses.dataclass
+class Category(DBObjectInterface[NCategory], SerializableInterface):
+    id: int
+    nombre: str
+
+    def __init__(self, **kwargs):
+        self.merge_from(kwargs)
+
+
+@dbmix(NPriceListLabel)
+@dataclasses.dataclass
+class PriceListLabel:
+    uid: int
+    name: str
+
+    def __init__(self, **kwargs):
+        self.merge_from(kwargs)
+
+
+@dbmix(NStore)
+@dataclasses.dataclass
+class Store:
+    almacen_id: int
+    ruc: str
+    nombre: str
+    bodega_id: int
+
+    def __init__(self, **kwargs):
+        self.merge_from(kwargs)
+
+
+@dbmix(NProdTag)
+@dataclasses.dataclass
+class ProdTag:
+    tag: str
+    description: str
+    created_by: str
+
+    def __init__(self, **kwargs):
+        self.merge_from(kwargs)
+
+
+@dbmix(NProdTagContent)
+@dataclasses.dataclass
+class ProdTagContent:
+    uid: int
+    tag: str
+    itemgroup_id: int
+
+    def __init__(self, **kwargs):
+        self.merge_from(kwargs)
+
 
 def convert_decimal(x, default=None) -> Optional[Decimal]:
     return default if x is None else Decimal(x)
 
-price_override_name = (('prod_id', 'codigo'), ('cant_mayorista', 'threshold'))
 
-class PriceList(dbmix(NPriceList, price_override_name)):  # type: ignore
+# display these names in serialized formats
+_PRICE_OVERRIDE_NAME = (('prod_id', 'codigo'), ('cant_mayorista', 'threshold'))
+
+@dbmix(NPriceList)
+@dataclasses.dataclass(init=False)
+class PriceList(P, DBObjectInterface[NPriceList]):
+    pid: int
+    nombre: str
+    almacen_id: int
+    prod_id: str
+    # Using int for money as in number of cents.
+    precio1: int
+    precio2: int
+    cant_mayorista: int
+    upi: int
+    unidad: str
+    multiplicador: Decimal
+
+    def __init__(self, **kwargs):
+        self.merge_from(kwargs)
+
     @classmethod
-    def deserialize(cls, dict_input: Dict) -> DBObjectInterface[NPriceList]:
-        prod = super(cls, PriceList).deserialize(dict_input)
-        if prod.multiplicador:
-            prod.multiplicador = Decimal(prod.multiplicador)
-        return prod
+    def deserialize(cls, dict_input: Dict):
+        result = cls().merge_from(dict_input)
+        for x, y in _PRICE_OVERRIDE_NAME:
+            original = dict_input.get(y, None)
+            setattr(result, x, original)
+        # this is needed because deserialize does not have custom converter
+        # so json parse will get float instead of decimal
+        if result.multiplicador:
+            result.multiplicador = Decimal(result.multiplicador)
+        return result
 
-class ProdItem(dbmix(NItem)):  # type: ignore
-    def merge_from(self, the_dict: Dict) -> DBObjectInterface[NItem]:
+
+@dbmix(NItem)
+@dataclasses.dataclass(init=False)
+class ProdItem(SerializableInterface, DBObjectInterface[NItem]):
+    uid: int
+    itemgroupid: int
+    prod_id: str
+    multiplier: Decimal
+    unit: str
+
+    def __init__(self, **kwargs):
+        self.merge_from(kwargs)
+
+    def merge_from(self, the_dict: Dict) -> 'ProdItem':
         super(ProdItem, self).merge_from(the_dict)
-        self.multiplier = convert_decimal(self.multiplier, 1)  # type: Optional[Decimal]
+        self.multiplier = convert_decimal(self.multiplier, 1) or Decimal(1) # type: Decimal
         return self
 
 
-class ProdItemGroup(dbmix(NItemGroup)):  # type: ignore
+@dbmix(NItemGroup)
+@dataclasses.dataclass(init=False)
+class ProdItemGroup:
+    uid: int
+    prod_id: str
+    name: str
+    desc: str
+    base_unit: str
+    base_price_usd: Decimal
+
+    def __init__(self, **kwargs):
+        self.merge_from(kwargs)
+
     def merge_from(self, the_dict):
-        super(ProdItemGroup, self).merge_from(the_dict)
+        fieldcopy(self, the_dict)
         self.base_price_usd = convert_decimal(self.base_price_usd, 0)
         return self
 
@@ -60,7 +167,7 @@ def make_itemgroup_from_pricelist(pl: PriceList) -> ProdItemGroup:
         name=get_real_prod_id(pl.nombre))
     if pl.multiplicador == 1:
         ig.base_unit = pl.unidad
-        ig.base_unit_usd = pl.precio1
+        ig.base_price_usd = Decimal(pl.precio1) / 100
     return ig
 
 
@@ -143,18 +250,19 @@ class RevisionApi(object):
         bodega_id = revision.bodega_id
         for item in revision.items:
             pass
-#           TODO: use inventory api
-#            delta = item.real_cant - item.inv_cant
-#            transaction = Transaction(
-#                upi=None,
-#                bodega_id=bodega_id,
-#                prod_id=item.prod_id,
-#                delta=delta,
-#                ref=reason,
-#                fecha=now)
-#            self.transactionapi.save(transaction)
+        #           TODO: use inventory api
+        #            delta = item.real_cant - item.inv_cant
+        #            transaction = Transaction(
+        #                upi=None,
+        #                bodega_id=bodega_id,
+        #                prod_id=item.prod_id,
+        #                delta=delta,
+        #                ref=reason,
+        #                fecha=now)
+        #            self.transactionapi.save(transaction)
         revision.status = 'AJUSTADO'
         return revision
+
 
 def quantity_tuple(quantities):
     # quantities should be a list of tuples of bodega_id: quantity
@@ -193,6 +301,7 @@ class InvMovementType(object):
     def delete_type(cls, type_):
         return 'delete_' + type_
 
+
 #  tracks every movement of inventory
 class InventoryMovement(TypedSerializableMixin):
     """
@@ -219,8 +328,8 @@ class InventoryMovement(TypedSerializableMixin):
         self.from_inv_id, self.to_inv_id = self.to_inv_id, self.from_inv_id
         return self
 
-class InventoryApi(object):
 
+class InventoryApi(object):
     SNAPSHOT_FILE_NAME = '__snapshot'
 
     def __init__(self, fileservice):

@@ -2,10 +2,11 @@ import abc
 
 from sqlalchemy.inspection import inspect
 
-from typing import Callable, Any, Type, TypeVar, Generic, Dict, Mapping, Optional, List
+from typing import (Callable, Any, Type, TypeVar, Generic,
+                    Dict, Mapping, Optional, List, Dict, Set, Iterable)
 from sqlalchemy.orm.session import Session
-from sqlalchemy.sql.schema import Column
-from sqlalchemy.util._collections import OrderedProperties
+
+from henry.base.interface import DBObjectInterface, DBType
 from henry.base.session_manager import SessionManager
 
 
@@ -40,88 +41,76 @@ def fieldcopy(src, dest, fields):
         except:
             pass
 
-DBType = TypeVar('DBType')
-MappedType = TypeVar('MappedType')
 
+class P:
 
-class DBObjectInterface(abc.ABC, Generic[DBType]):
+    columns: Dict
 
-    pkey: Column
-    _columns: OrderedProperties
-    db_class: Type[DBType]
-
-    @abc.abstractmethod
-    def db_instance(self) -> DBType:
-        pass
-
-    @abc.abstractmethod
-    def serialize(self) -> Dict:
-        pass
+    def db_instance(self):
+        result = self.db_class()
+        fieldcopy(self, result, self.columns.keys())
+        return result
 
     @classmethod
-    @abc.abstractmethod
-    def deserialize(cls, content: Dict) -> MappedType:
-        pass
+    def from_db_instance(cls, db_instance):
+        y = cls()
+        fieldcopy(db_instance, y, cls.columns.keys())
+        return y
+
+    def merge_from(self, obj):
+        fieldcopy(obj, self, self.columns.keys())
+        return self
+
+    def serialize(self):
+        result = {}
+        fieldcopy(self, result, self.columns.keys())
+        return result
 
     @classmethod
-    @abc.abstractmethod
-    def from_db_instance(cls, dbins: DBType) -> MappedType:
-        pass
+    def deserialize(cls, dict_input):
+        result = cls().merge_from(dict_input)
+        return result
 
 
-
-# A method that converts a class of SQLAlchemy model into
-# a serializeble object
-# APIs:
-#     .db_instance() returns an object of the given class with the same data
-#     .serialize() returns an dict with same data
-#     Class.from_db_instance, and Class.deserialize do the opposite
-def dbmix(database_class: Type[DBType], override_name=()) -> Type[DBObjectInterface[DBType]]:
-    class DataObjectMixin(DBObjectInterface[DBType]):
-        db_class = database_class  # type: Type[DBType]
-        _columns = inspect(database_class).columns
-        pkey = inspect(database_class).primary_key[0]
-
-        def __init__(self, **kwargs):
-            self.merge_from(kwargs)
+# Use as decorator
+def dbmix(database_class: Type[DBType]):
+    columns = inspect(database_class).columns
+    def wrap(clazz):
+        clazz.db_class = database_class
+        clazz.columns = columns
 
         def db_instance(self):
             result = self.db_class()
-            fieldcopy(self, result, list(self._columns.keys()))
+            fieldcopy(self, result, columns.keys())
             return result
+        clazz.db_instance = db_instance
 
         @classmethod
         def from_db_instance(cls, db_instance):
             y = cls()
-            fieldcopy(db_instance, y, list(cls._columns.keys()))
+            fieldcopy(db_instance, y, columns.keys())
             return y
+        clazz.from_db_instance = from_db_instance
 
         def merge_from(self, obj):
-            fieldcopy(obj, self, list(self._columns.keys()))
+            fieldcopy(obj, self, columns.keys())
             return self
+        clazz.merge_from = merge_from
 
         def serialize(self):
-            return self._serialize_helper(self, list(self._columns.keys()))
+            result = {}
+            fieldcopy(self, result, columns.keys())
+            return result
+      #  clazz.serialize = serialize
 
         @classmethod
         def deserialize(cls, dict_input):
             result = cls().merge_from(dict_input)
-            for x, y in override_name:
-                original = dict_input.get(y, None)
-                setattr(result, x, original)
             return result
+      #  clazz.deserialize = deserialize
 
-        @classmethod
-        def _serialize_helper(cls, obj, names):
-            result = {}
-            fieldcopy(obj, result, names)
-            for x, y in override_name:
-                original = result[x]
-                result[y] = original
-                del result[x]
-            return result
-
-    return DataObjectMixin
+        return clazz
+    return wrap
 
 
 class DBApi(object):
@@ -154,8 +143,12 @@ class DBApi(object):
         return self.api.search(self.objclass, **kwargs)
 
 
+T = TypeVar('T', bound='DBObjectInterface')
 class DBApiGeneric(object):
 
+    # db_class = database_class  # type: Type[DBType]
+    # _columns = inspect(database_class).columns
+    # pkey = inspect(database_class).primary_key[0]
     def __init__(self, sessionmanager: SessionManager):
         self.sm = sessionmanager
 
@@ -168,60 +161,63 @@ class DBApiGeneric(object):
         return self.sm.session
 
     def create(self, obj: DBObjectInterface):
+        pkey_col = inspect(obj.db_class).primary_key[0]
         dbobj = obj.db_instance()
         self.sm.session.add(dbobj)
         self.sm.session.flush()
-        pkey = obj.pkey.name
+        pkey = pkey_col.name
         pkeyval = getattr(dbobj, pkey)
         setattr(obj, pkey, pkeyval)
         return pkeyval
 
-    def get(self, pkey, objclass: Type[DBObjectInterface[DBType]]
-            ) -> Optional[DBObjectInterface[DBType]]:
+    def get(self, pkey, objclass: Type[T]) -> Optional[T]:
+        pkey_col = inspect(objclass.db_class).primary_key[0]
         db_instance = self.sm.session.query(objclass.db_class).filter(
-            objclass.pkey == pkey).first()
+            pkey_col == pkey).first()
         if db_instance is None:
             return None
         return objclass.from_db_instance(db_instance)
 
     def update(self, obj: DBObjectInterface, content_dict: Mapping) -> int:
-        pkey = getattr(obj, obj.pkey.name)
+        pkey_col = inspect(obj.db_class).primary_key[0]
+        pkey = getattr(obj, pkey_col.name)
         count = self.sm.session.query(obj.db_class).filter(
-            obj.pkey == pkey).update(
+            pkey_col == pkey).update(
             content_dict)
         for x, y in list(content_dict.items()):
             setattr(obj, x, y)
         return count
 
     def update_full(self, obj: DBObjectInterface) -> int:
+        columns = inspect(obj.db_class).columns
+        pkey_col = inspect(obj.db_class).primary_key[0]
         values = {col: getattr(obj, col)
-                  for col in list(obj._columns.keys())
-                  if col != obj.pkey.name}
+                  for col in list(columns.keys())
+                  if col != pkey_col.name}
         return self.update(obj, values)
 
     def delete(self, obj: DBObjectInterface) -> int:
-        pkey = getattr(obj, obj.pkey.name)
+        pkey_col = inspect(obj.db_class).primary_key[0]
+        pkey = getattr(obj, pkey_col.name)
         count = self.sm.session.query(obj.db_class).filter(
-            obj.pkey == pkey).delete()
+            pkey_col == pkey).delete()
         return count
 
-    def getone(
-            self, objclass: Type[DBObjectInterface[DBType]], **kwargs
-    ) -> Optional[DBObjectInterface[DBType]]:
+    def getone(self, objclass: Type[T], **kwargs) -> Optional[T]:
         result = self.search(objclass, **kwargs)
         if not result:
             return None
         return result[0]
 
     def search(
-        self, objclass: Type[DBObjectInterface[DBType]], **kwargs
-    ) -> List[DBObjectInterface[DBType]]:
+        self, objclass: Type[T], **kwargs) -> List[T]:
         query = self.sm.session.query(objclass.db_class)
+        columns = inspect(objclass.db_class).columns
         for key, value in list(kwargs.items()):
             mode = None
             if '-' in key:
                 key, mode = key.split('-')
-            col = objclass._columns[key]
+            col = columns[key]
             f = col == value
             if mode == 'prefix':
                 f = col.startswith(value)

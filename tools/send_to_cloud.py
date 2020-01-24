@@ -1,12 +1,17 @@
+import datetime
 import requests
 from henry import constants
 from henry import common
 from henry.dao.document import Status
 from henry.invoice.dao import NotaExtra
 from henry.base.serialization import json_dumps
+from henry.base.dbapi import DBApiGeneric
+
+from typing import List, Union
 
 
-def get_notas_by_dates(dbapi, start, end):
+def get_notas_by_dates(dbapi: DBApiGeneric, start: datetime.datetime,
+                       end: datetime.datetime):
     with dbapi.session:
         notas = dbapi.db_session.query(NotaExtra.db_class).filter(
                 NotaExtra.db_class.last_change_time <= end).filter(
