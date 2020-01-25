@@ -130,7 +130,7 @@ class InvMetadata(SerializableMixin, DbMixin[NNota]):
 class Invoice(MetaItemSet):
     _metadata_cls = InvMetadata
 
-    def items_to_transaction(self, dbapi):
+    def items_to_transaction(self, dbapi) -> Iterator[InventoryMovement]:
         for item in self.items:
             proditem = dbapi.getone(ProdItem, prod_id=item.prod.prod_id)
             # TODO: deprecate use of upi at all

@@ -1,7 +1,7 @@
 from builtins import object
 import os
 import fcntl
-from typing import Optional, Callable, Iterator
+from typing import Optional, Callable, Iterator, Iterable
 # importation threading
 
 
@@ -43,7 +43,7 @@ class FileService(object):
                 f.flush()
         return fullpath
 
-    def get_file_lines(self, filenames: str,
+    def get_file_lines(self, filenames: Iterable[str],
                        condition: Optional[Callable[[str], bool]] = None) -> Iterator[str]:
         if condition is None:
             condition = lambda x: True

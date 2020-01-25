@@ -3,9 +3,12 @@ import decimal
 import json
 from operator import itemgetter
 import re
-from typing import Dict, Tuple, TypeVar, Type, Generic, Union
+from typing import Dict, Tuple, TypeVar, Type, Generic, Union, Any
 
 # encoding of the database
+from henry.base.interface import SerializableInterface
+from henry.base.dbapi import fieldcopy
+
 DB_ENCODING = 'latin1'
 
 
@@ -18,7 +21,7 @@ def decode(s):
         return s.decode('latin1')
 
 
-def json_dumps(content: Dict) -> str:
+def json_dumps(content) -> str:
     return json.dumps(content, cls=ModelEncoder)
 
 
@@ -87,6 +90,45 @@ def extract_obj_fields(obj, names):
     return {
         name: getattr(obj, name) for name in names if getattr(obj, name, None) is not None
         }
+
+
+T = TypeVar('T', bound='SerializableData')
+class SerializableData(SerializableInterface):
+    """Meant to be subclassed by a class with @dataclass decorator.
+
+    Adds methods to support converting to / from dicts
+    """
+    def __init__(self, **kwargs):
+        self.merge_from(kwargs)
+
+    def merge_from(self: T, obj: Any) -> T:
+        fieldcopy(self, obj, self.__dataclass_fields__.keys())  # type: ignore
+        return self
+
+    def serialize(self) -> Dict[str, Any]:
+        """Respects renaming or / and skipping."""
+        res = {}
+        for field in self.__dataclass_fields__.values():  # type: ignore
+            dictname = field.metadata.get('dict_name', field.name)
+            res[dictname] = getattr(self, field.name)
+        return res
+
+    @classmethod
+    def deserialize(cls: Type[T], dict_input: Dict[str, Any]) -> T:
+        """Nested struct only deserialize one level"""
+        kwargs = {}
+        for field in cls.__dataclass_fields__.values():  # type: ignore
+            dictname = field.metadata.get('dict_name', field.name)
+            potential_val = dict_input.get(dictname)
+            if potential_val is not None:
+                if isinstance(potential_val, field.type):
+                    kwargs[field.name] = potential_val
+                else:
+                    kwargs[field.name] = field.type(potential_val)
+        return cls(**kwargs)
+
+    def to_json(self) -> str:
+        return json_dumps(self.serialize())
 
 
 class TypedSerializableMixin(object):

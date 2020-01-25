@@ -5,157 +5,120 @@ import functools
 import json
 import os
 import dataclasses
-from henry.base.interface import SerializableInterface, DBObjectInterface
-from henry.base.dbapi import dbmix, P
+
+from henry.base.fileservice import FileService
+from henry.base.dbapi import DBObject, DBApiGeneric
 from henry.base.serialization import (json_dumps, parse_iso_datetime, parse_iso_date,
-                                      TypedSerializableMixin)
-from .schema import NInventoryRevision, NInventoryRevisionItem
+                                      TypedSerializableMixin, SerializableData)
 from .schema import (NBodega, NCategory, NPriceListLabel,
                      NPriceList, NItemGroup, NItem, NStore, NProdTag, NProdTagContent)
-from typing import Dict, Optional
+from typing import Dict, Optional, List, Tuple, Union, Iterable, Iterator, Mapping, DefaultDict
 
 
-@dbmix(NBodega)
 @dataclasses.dataclass(init=False)
-class Bodega(DBObjectInterface[NBodega], SerializableInterface):
-    id: int
-    nombre: str
-    nivel: int
-
-    def __init__(self, **kwargs):
-        self.merge_from(kwargs)
+class Bodega(DBObject[NBodega], SerializableData):
+    db_class = NBodega
+    id: Optional[int] = None
+    nombre: Optional[str] = None
+    nivel: Optional[int] = None
 
 
-@dbmix(NCategory)
 @dataclasses.dataclass
-class Category(DBObjectInterface[NCategory], SerializableInterface):
-    id: int
-    nombre: str
-
-    def __init__(self, **kwargs):
-        self.merge_from(kwargs)
+class Category(DBObject[NCategory], SerializableData):
+    db_class = NCategory
+    id: Optional[int] = None
+    nombre: Optional[str] = None
 
 
-@dbmix(NPriceListLabel)
 @dataclasses.dataclass
-class PriceListLabel:
-    uid: int
-    name: str
-
-    def __init__(self, **kwargs):
-        self.merge_from(kwargs)
+class PriceListLabel(DBObject[NPriceListLabel], SerializableData):
+    db_class = NPriceListLabel
+    uid: Optional[int] = None
+    name: Optional[str] = None
 
 
-@dbmix(NStore)
 @dataclasses.dataclass
-class Store:
-    almacen_id: int
-    ruc: str
-    nombre: str
-    bodega_id: int
-
-    def __init__(self, **kwargs):
-        self.merge_from(kwargs)
+class Store(DBObject[NStore], SerializableData):
+    db_class = NStore
+    almacen_id: Optional[int] = None
+    ruc: Optional[str] = None
+    nombre: Optional[str] = None
+    bodega_id: Optional[int] = None
 
 
-@dbmix(NProdTag)
 @dataclasses.dataclass
-class ProdTag:
-    tag: str
-    description: str
-    created_by: str
-
-    def __init__(self, **kwargs):
-        self.merge_from(kwargs)
+class ProdTag(DBObject[NProdTag], SerializableData):
+    db_class = NProdTag
+    tag: Optional[str] = None
+    description: Optional[str] = None
+    created_by: Optional[str] = None
 
 
-@dbmix(NProdTagContent)
 @dataclasses.dataclass
-class ProdTagContent:
-    uid: int
-    tag: str
-    itemgroup_id: int
-
-    def __init__(self, **kwargs):
-        self.merge_from(kwargs)
+class ProdTagContent(DBObject[NProdTagContent], SerializableData):
+    uid: Optional[int] = None
+    tag: Optional[str] = None
+    itemgroup_id: Optional[int] = None
 
 
 def convert_decimal(x, default=None) -> Optional[Decimal]:
     return default if x is None else Decimal(x)
 
 
-# display these names in serialized formats
-_PRICE_OVERRIDE_NAME = (('prod_id', 'codigo'), ('cant_mayorista', 'threshold'))
-
-@dbmix(NPriceList)
 @dataclasses.dataclass(init=False)
-class PriceList(P, DBObjectInterface[NPriceList]):
-    pid: int
-    nombre: str
-    almacen_id: int
-    prod_id: str
+class PriceList(SerializableData, DBObject[NPriceList]):
+    pid: Optional[int] = None
+    nombre: Optional[str] = None
+    almacen_id: Optional[int] = None
+    prod_id: Optional[str] = dataclasses.field(
+        default=None,
+        metadata={'dict_name': 'codigo'})
     # Using int for money as in number of cents.
-    precio1: int
-    precio2: int
-    cant_mayorista: int
-    upi: int
-    unidad: str
-    multiplicador: Decimal
-
-    def __init__(self, **kwargs):
-        self.merge_from(kwargs)
-
-    @classmethod
-    def deserialize(cls, dict_input: Dict):
-        result = cls().merge_from(dict_input)
-        for x, y in _PRICE_OVERRIDE_NAME:
-            original = dict_input.get(y, None)
-            setattr(result, x, original)
-        # this is needed because deserialize does not have custom converter
-        # so json parse will get float instead of decimal
-        if result.multiplicador:
-            result.multiplicador = Decimal(result.multiplicador)
-        return result
+    precio1: Optional[int] = None
+    precio2: Optional[int] = None
+    cant_mayorista: Optional[int] = dataclasses.field(
+        default=None,
+        metadata={'dict_name': 'threshold'})
+    upi: Optional[int] = None
+    unidad: Optional[str] = None
+    multiplicador: Optional[Decimal] = None
 
 
-@dbmix(NItem)
 @dataclasses.dataclass(init=False)
-class ProdItem(SerializableInterface, DBObjectInterface[NItem]):
-    uid: int
-    itemgroupid: int
-    prod_id: str
-    multiplier: Decimal
-    unit: str
-
-    def __init__(self, **kwargs):
-        self.merge_from(kwargs)
+class ProdItem(SerializableData, DBObject[NItem]):
+    db_class = NItem
+    uid: Optional[int] = None
+    itemgroupid: Optional[int] = None
+    prod_id: Optional[str] = None
+    multiplier: Optional[Decimal] = None
+    unit: Optional[str] = None
 
     def merge_from(self, the_dict: Dict) -> 'ProdItem':
         super(ProdItem, self).merge_from(the_dict)
-        self.multiplier = convert_decimal(self.multiplier, 1) or Decimal(1) # type: Decimal
+        self.multiplier = convert_decimal(self.multiplier, 1)
         return self
 
 
-@dbmix(NItemGroup)
 @dataclasses.dataclass(init=False)
-class ProdItemGroup:
-    uid: int
-    prod_id: str
-    name: str
-    desc: str
-    base_unit: str
-    base_price_usd: Decimal
-
-    def __init__(self, **kwargs):
-        self.merge_from(kwargs)
+class ProdItemGroup(DBObject[NItemGroup], SerializableData):
+    db_class = NItemGroup
+    uid: Optional[int] = None
+    prod_id: Optional[str] = None
+    name: Optional[str] = None
+    desc: Optional[str] = None
+    base_unit: Optional[str] = None
+    base_price_usd: Optional[Decimal] = Decimal(0)
 
     def merge_from(self, the_dict):
-        fieldcopy(self, the_dict)
-        self.base_price_usd = convert_decimal(self.base_price_usd, 0)
+        super().merge_from(the_dict)
+        self.base_price_usd = convert_decimal(self.base_price_usd, Decimal(0))
         return self
 
 
-def get_real_prod_id(uid):
+def get_real_prod_id(uid: Optional[str]) -> str:
+    if not uid:
+        print('Uid is None/empty in get_real_prod_id')
+        return ''
     if uid[-1] in ('+', '-'):
         return uid[:-1]
     return uid
@@ -167,7 +130,8 @@ def make_itemgroup_from_pricelist(pl: PriceList) -> ProdItemGroup:
         name=get_real_prod_id(pl.nombre))
     if pl.multiplicador == 1:
         ig.base_unit = pl.unidad
-        ig.base_price_usd = Decimal(pl.precio1) / 100
+        if pl.precio1 is not None:
+            ig.base_price_usd = Decimal(pl.precio1) / 100
     return ig
 
 
@@ -179,7 +143,7 @@ def make_item_from_pricelist(pl: PriceList) -> ProdItem:
     return i
 
 
-def create_items_chain(dbapi, pl):
+def create_items_chain(dbapi: DBApiGeneric, pl: PriceList):
     prod_id = get_real_prod_id(pl.prod_id)
     ig = dbapi.getone(ProdItemGroup, prod_id=prod_id)
     if ig is None:
@@ -197,74 +161,7 @@ def create_items_chain(dbapi, pl):
         dbapi.create(pricelist)
 
 
-class RevisionApi(object):
-    AJUSTADO = 'AJUSTADO'
-    NUEVO = 'NUEVO'
-    CONTADO = 'CONTADO'
-
-    def __init__(self, sessionmanager, countapi, transactionapi):
-        self.sm = sessionmanager
-        self.countapi = countapi
-        self.transactionapi = transactionapi
-
-    def save(self, bodega_id, user_id, items):
-        session = self.sm.session
-        revision = NInventoryRevision()
-        revision.bodega_id = bodega_id
-        revision.timestamp = datetime.datetime.now()
-        revision.created_by = user_id
-        revision.status = self.NUEVO
-        for prod_id in items:
-            item = NInventoryRevisionItem(prod_id=prod_id)
-            revision.items.append(item)
-        session.add(revision)
-        session.flush()
-        return revision
-
-    def get(self, rid):
-        return self.sm.session.query(
-            NInventoryRevision).filter_by(uid=rid).first()
-
-    def update_count(self, rid, items_counts):
-        revision = self.get(rid)
-        if revision is None:
-            return None
-        for item in revision.items:
-            prod = self.countapi.getone(prod_id=item.prod_id,
-                                        bodega_id=revision.bodega_id)
-            item.inv_cant = prod.cant
-            item.real_cant = items_counts[item.prod_id]
-
-        revision.status = self.CONTADO
-        self.sm.session.flush()
-        return revision
-
-    def commit(self, rid):
-        revision = self.get(rid)
-        if revision is None:
-            return None
-        if revision.status != 'CONTADO':
-            return revision
-        reason = 'Revision: codigo {}'.format(rid)
-        now = datetime.datetime.now()
-        bodega_id = revision.bodega_id
-        for item in revision.items:
-            pass
-        #           TODO: use inventory api
-        #            delta = item.real_cant - item.inv_cant
-        #            transaction = Transaction(
-        #                upi=None,
-        #                bodega_id=bodega_id,
-        #                prod_id=item.prod_id,
-        #                delta=delta,
-        #                ref=reason,
-        #                fecha=now)
-        #            self.transactionapi.save(transaction)
-        revision.status = 'AJUSTADO'
-        return revision
-
-
-def quantity_tuple(quantities):
+def quantity_tuple(quantities: List[Tuple[int, str]]) -> List[Tuple[int, Decimal]]:
     # quantities should be a list of tuples of bodega_id: quantity
     # with type (int, Decimal)
     # the starting type is (int, str), need to convert str to decimal
@@ -272,18 +169,27 @@ def quantity_tuple(quantities):
 
 
 #  saves the item stock count at a given time
-class InventorySnapshot(TypedSerializableMixin):
+@dataclasses.dataclass
+class InventorySnapshot(SerializableData):
     """
     quantity is a list of tuples (bodega_id, quantity)
     """
-    _fields = (
-        ('creation_time', parse_iso_datetime),
-        ('itemgroup_id', int),
-        ('prod_id', str),
-        ('quantity', quantity_tuple),
-        ('upto_date', parse_iso_date),
-        ('last_upto_date', parse_iso_date),
-        ('last_quantity', quantity_tuple))
+    creation_time: Optional[datetime.datetime] = None
+    itemgroup_id: Optional[int] = None
+    prod_id: Optional[str] = None
+    quantity: List[Tuple[int, Decimal]] = []
+    upto_date: Optional[datetime.date] = None
+    last_upto_date: Optional[datetime.date] = None
+    last_quantity: List[Tuple[int, Decimal]] = []
+
+    # _fields = (
+    #     ('creation_time', parse_iso_datetime),
+    #     ('itemgroup_id', int),
+    #     ('prod_id', str),
+    #     ('quantity', quantity_tuple),
+    #     ('upto_date', parse_iso_date),
+    #     ('last_upto_date', parse_iso_date),
+    #     ('last_quantity', quantity_tuple))
 
 
 class InvMovementType(object):
@@ -313,16 +219,14 @@ class InventoryMovement(TypedSerializableMixin):
         timestamp: (datetime) time of execution
         type: (str) one of InvMovementType
     """
-    _fields = (
-        ('from_inv_id', int),
-        ('to_inv_id', int),
-        ('quantity', Decimal),
-        ('itemgroup_id', int),
-        ('prod_id', str),
-        ('timestamp', parse_iso_datetime),
-        ('type', str),
-        ('reference_id', str),
-    )
+    from_inv_id: Optional[int] = None
+    to_inv_id: Optional[int] = None
+    quantity: Optional[Decimal] = None
+    itemgroup_id: Optional[int] = None
+    prod_id: Optional[str] = None
+    timestamp: Optional[datetime.datetime] = None
+    type: Optional[str] = None
+    reference_id: Optional[str] = None
 
     def inverse(self):
         self.from_inv_id, self.to_inv_id = self.to_inv_id, self.from_inv_id
@@ -332,36 +236,42 @@ class InventoryMovement(TypedSerializableMixin):
 class InventoryApi(object):
     SNAPSHOT_FILE_NAME = '__snapshot'
 
-    def __init__(self, fileservice):
+    def __init__(self, fileservice: FileService):
         self.fileservice = fileservice
 
     @classmethod
-    def _year_month(cls, date):
+    def _year_month(cls, date: Union[datetime.date, datetime.datetime]):
         return '{:04d}-{:02d}'.format(date.year, date.month)
 
     @classmethod
-    def _make_filename(cls, igid, date):
+    def _make_filename(cls, igid: int, date: datetime.date):
         # PROD_ID/yyyy-mm
         return os.path.join(str(igid), cls._year_month(date))
 
-    def save(self, inv_movement):
+    def save(self, inv_movement: InventoryMovement):
+        assert inv_movement.itemgroup_id is not None
+        assert inv_movement.timestamp is not None
         path = InventoryApi._make_filename(
-            inv_movement.itemgroup_id, inv_movement.timestamp.date())
+            inv_movement.itemgroup_id,
+            inv_movement.timestamp.date())
         self.fileservice.append_file(path, json_dumps(inv_movement))
 
-    def bulk_save(self, trans):
+    def bulk_save(self, trans: Iterable[InventoryMovement]):
         for t in trans:
             self.save(t)
 
-    def get_past_records(self, igid):
+    def get_past_records(self, igid: int) -> List[InventorySnapshot]:
         snapshotname = os.path.join(str(igid), self.SNAPSHOT_FILE_NAME)
         snapshot_path = self.fileservice.make_fullpath(snapshotname)
         if os.path.exists(snapshot_path):
             records = self.fileservice.get_file(snapshotname)
-            return list(map(InventorySnapshot.deserialize, json.loads(records)))
+            if records:
+                return list(map(InventorySnapshot.deserialize, json.loads(records)))
         return []
 
-    def list_transactions(self, igid, start_date, end_date):
+    def list_transactions(
+            self, igid: int, start_date: datetime.date, end_date: datetime.date
+    ) -> Iterator[InventoryMovement]:
         # start date can be None, but end_date cannot
         if not isinstance(end_date, datetime.date):
             raise ValueError('end_date must be a valid date object')
@@ -383,32 +293,36 @@ class InventoryApi(object):
                 if start_date <= item.timestamp.date() <= end_date:
                     yield item
 
-    def get_changes(self, igid, start_date, end_date):
-        deltas = defaultdict(Decimal)
+    def get_changes(self, igid: int, start_date: datetime.date, end_date: datetime.date
+                    ) -> Mapping[int, Decimal]:
+        deltas = defaultdict(Decimal)  # type: DefaultDict[int, Decimal]
         for x in self.list_transactions(igid, start_date, end_date):
             if x.from_inv_id is not None:
-                deltas[x.from_inv_id] -= x.quantity
+                if x.quantity:
+                    deltas[x.from_inv_id] -= x.quantity
             if x.to_inv_id is not None:
-                deltas[x.to_inv_id] += x.quantity
+                if x.quantity:
+                    deltas[x.to_inv_id] += x.quantity
         return deltas
 
-    def _write_snapshot(self, igid, records):
+    def _write_snapshot(self, igid: int, records):
         snapshotname = os.path.join(str(igid), self.SNAPSHOT_FILE_NAME)
         self.fileservice.put_file(snapshotname, json_dumps(records))
 
-    def take_snapshot_to_date(self, igid, end_date):
+    def take_snapshot_to_date(self, igid: int, end_date: datetime.date):
         new_record, records = self._get_new_snapshot_to_date(igid, end_date)
         records.insert(0, new_record)
         self._write_snapshot(igid, records[:-1])
 
-    def _get_new_snapshot_to_date(self, igid, end_date):
+    def _get_new_snapshot_to_date(self, igid: int, end_date: datetime.date
+                                  ) -> Tuple[InventorySnapshot, List[InventorySnapshot]]:
         # get last account
         records = self.get_past_records(igid)
-        start_date = None
+        start_date = datetime.date(2000, 1, 1)
         if records:
             # starting date is one day after lasttime!
+            assert records[0].upto_date is not None
             start_date = records[0].upto_date + datetime.timedelta(days=1)
-
         deltas = self.get_changes(igid, start_date, end_date)
         last_quantities = self._get_last_snapshot_quantities(records)
 
@@ -418,20 +332,20 @@ class InventoryApi(object):
 
         new_record = InventorySnapshot()
         new_record.upto_date = end_date
-        new_record.creation_date = datetime.datetime.now()
+        new_record.creation_time = datetime.datetime.now()
         new_record.quantity = list(new_quantities.items())
         new_record.last_quantity = list(last_quantities.items())
         new_record.last_upto_date = start_date
 
         return new_record, records
 
-    def _get_last_snapshot_quantities(self, records):
-        last_quantities = defaultdict(Decimal)
+    def _get_last_snapshot_quantities(self, records: List[InventorySnapshot]):
+        last_quantities = defaultdict(Decimal)  # type: DefaultDict[int, Decimal]
         if records:
             for inv_id, quantity in records[0].quantity:
                 last_quantities[inv_id] = quantity
         return last_quantities
 
-    def get_current_quantity(self, igid):
+    def get_current_quantity(self, igid: int):
         new_record, _ = self._get_new_snapshot_to_date(igid, datetime.date.today())
         return defaultdict(Decimal, new_record.quantity)
