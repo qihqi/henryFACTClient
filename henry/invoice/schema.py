@@ -7,7 +7,7 @@ class NSRINota(Base):
     __tablename__ = 'sri_notas'
 
     # id
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    uid = Column(Integer, primary_key=True, autoincrement=True)
 
     almacen_ruc = Column(String(100))
     orig_codigo = Column(String(100))

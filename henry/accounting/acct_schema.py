@@ -52,7 +52,7 @@ class NCheckOld(Base):
 class NPayment(Base):
     __tablename__ = 'pagos'
     uid = Column(Integer, primary_key=True, autoincrement=True)
-    note_id = Column(Integer, ForeignKey(NNota.id))
+    note_id = Column(Integer, ForeignKey(NNota.uid))
     client_id = Column(String(20))
     value = Column('valor', Integer)
     type = Column('tipo', String(10))

@@ -3,11 +3,10 @@ import decimal
 import json
 from operator import itemgetter
 import re
-from typing import Dict, Tuple, TypeVar, Type, Generic, Union, Any
+from typing import Dict, Tuple, TypeVar, Type, Generic, Union, Any, Callable
 
 # encoding of the database
 from henry.base.interface import SerializableInterface
-from henry.base.dbapi import fieldcopy
 
 DB_ENCODING = 'latin1'
 
@@ -50,41 +49,6 @@ class ModelEncoder(json.JSONEncoder):
             return obj.isoformat()
         return super(ModelEncoder, self).default(obj)
 
-DBType = TypeVar('DBType')
-class DbMixin(Generic[DBType]):
-    _db_class: Type[DBType]
-    _db_attr: Dict[str, str] = {}
-    _excluded_vars: tuple = ()
-
-    @classmethod
-    def _get_name_pairs(cls, names: Union[Dict, Tuple]):
-        if isinstance(names, dict):
-            return list(names.items())
-        else:
-            return [(x, x) for x in names]
-
-    def db_instance(self) -> DBType:
-        x = self._db_class()
-        excluded = getattr(self, '_excluded_vars', [])
-        for thisname, dbname in DbMixin._get_name_pairs(self._db_attr):
-            if thisname not in excluded:
-                value = getattr(self, thisname, None)
-                if value is not None:
-                    setattr(x, dbname, value)
-        return x
-
-    @classmethod
-    def from_db_instance(cls, db_instance: DBType):
-        y = cls()
-        excluded = getattr(cls, '_excluded_vars', [])
-        for thisname, dbname in cls._get_name_pairs(cls._db_attr):
-            if thisname not in excluded:
-                value = getattr(db_instance, dbname, None)
-                if isinstance(value, bytes):
-                    value = decode(value)
-                setattr(y, thisname, value)
-        return y
-
 
 def extract_obj_fields(obj, names):
     return {
@@ -121,10 +85,20 @@ class SerializableData(SerializableInterface):
             dictname = field.metadata.get('dict_name', field.name)
             potential_val = dict_input.get(dictname)
             if potential_val is not None:
-                if isinstance(potential_val, field.type):
+                # unions have this attribute
+                # Assume its a normal type
+                possible_types = getattr(field.type, '__args__', [field.type])
+                if isinstance(potential_val, possible_types):
                     kwargs[field.name] = potential_val
                 else:
-                    kwargs[field.name] = field.type(potential_val)
+                    # if potential_val is str, and have a from_str consturctor:
+                    metadata = field.metadata
+                    if isinstance(potential_val, str) and 'from_str' in metadata:
+                        from_str = metadata['from_str']
+                        kwargs[field.name] = from_str(potential_val)
+                    else:
+                        # try use the first type
+                        kwargs[field.name] = possible_types[0](potential_val)
         return cls(**kwargs)
 
     def to_json(self) -> str:
@@ -196,3 +170,35 @@ class SerializableMixin(object):
 
     def to_json(self):
         return json_dumps(self.serialize())
+
+
+def mkgetter(obj: Any) -> Callable:
+    if hasattr(obj, 'get'):
+        return obj.get
+    return obj.__getattribute__
+
+
+def decode_str(strobj: bytes) -> str:
+    try:
+        return strobj.decode('utf-8')
+    except:
+        return strobj.decode('latin1')
+
+
+def mksetter(obj: Any) -> Callable:
+    if hasattr(obj, 'get'):
+        return obj.__setitem__
+    return obj.__setattr__
+
+
+def fieldcopy(src, dest, fields):
+    srcgetter = mkgetter(src)
+    destsetter = mksetter(dest)
+    for f in fields:
+        try:
+            value = srcgetter(f)
+            if isinstance(value, bytes):
+                value = decode_str(value)
+            destsetter(f, value)
+        except:
+            pass

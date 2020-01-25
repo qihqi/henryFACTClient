@@ -23,7 +23,7 @@ def fix_inv(uid, old_path):
 def main():
 
     # invs = dbapi.db_session.query(NNota).filter_by(status=Status.NEW).filter(NNota.almacen_id.isnot(None))
-    invs = dbapi.db_session.query(NNota).filter_by(id=10857)
+    invs = dbapi.db_session.query(NNota).filter_by(uid=10857)
 
     for i in invs:
         print i.id, i.items_location

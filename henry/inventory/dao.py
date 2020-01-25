@@ -3,12 +3,13 @@ import os
 import uuid
 from decimal import Decimal
 
-from henry.base.serialization import SerializableMixin, DbMixin, parse_iso_datetime
+from henry.base.dbapi import SerializableDB
+from henry.base.serialization import parse_iso_datetime
 from henry.dao.document import MetaItemSet, Item
-from henry.product.dao import PriceList, ProdItemGroup, InvMovementType, InventoryMovement
+from henry.product.dao import PriceList, ProdItemGroup, InvMovementType, InventoryMovement, ProdItem
 
 from .schema import NTransferencia
-from typing import Dict, Type, Iterator
+from typing import Dict, Type, Iterator, Optional
 
 
 class TransType(object):
@@ -23,37 +24,17 @@ class TransType(object):
              EGRESS)
 
 
-class TransMetadata(SerializableMixin, DbMixin[NTransferencia]):
-    _db_attr = {
-        'uid': 'id',
-        'origin': 'origin',
-        'dest': 'dest',
-        'user': 'user',
-        'trans_type': 'trans_type',
-        'ref': 'ref',
-        'timestamp': 'timestamp',
-        'status': 'status',
-        'value': 'value'}
-    _name = tuple(_db_attr.keys())
-    _db_class = NTransferencia
-
-    def __init__(self,
-                 trans_type=None,
-                 uid=None,
-                 origin=None,
-                 dest=None,
-                 user=None,
-                 ref=None,
-                 status=None,
-                 timestamp=None):
-        self.uid = uid
-        self.origin = origin
-        self.dest = dest
-        self.user = user
-        self.trans_type = trans_type
-        self.ref = ref
-        self.timestamp = timestamp if timestamp else datetime.datetime.now()
-        self.status = status
+class TransMetadata(SerializableDB[NTransferencia]):
+    db_class = NTransferencia
+    uid: Optional[int] = None
+    timestamp: Optional[datetime.datetime] = None
+    status: Optional[str] = None
+    origin: Optional[int] = None
+    dest: Optional[int] = None
+    trans_type: Optional[str] = None
+    ref: Optional[str] = None
+    value: Optional[Decimal] = None
+    items_location: Optional[str] = None
 
     @classmethod
     def deserialize(cls, the_dict):
@@ -90,15 +71,18 @@ class Transferencia(MetaItemSet):
     _metadata_cls = TransMetadata
     meta: TransMetadata
 
-    def items_to_transaction(self) -> Iterator[InventoryMovement]:
+    def items_to_transaction(self, dbapi) -> Iterator[InventoryMovement]:
         tipo = self.meta.trans_type
         for item in self.items:
+            proditem = dbapi.getone(ProdItem, prod_id=item.prod.prod_id)
+            # TODO: deprecate use of upi at all
+            assert item.prod.multiplicador is not None
             yield InventoryMovement(
                 from_inv_id=self.meta.origin or -1,
                 to_inv_id=self.meta.dest or -1,
                 quantity=item.cant,
                 prod_id=item.prod.prod_id,
-                itemgroup_id=item.prod.uid,
+                itemgroup_id=proditem.itemgroupid,
                 type=transtype_to_invtype(tipo),
                 reference_id=str(self.meta.uid),
             )
@@ -119,6 +103,7 @@ class Transferencia(MetaItemSet):
     def filepath_format(self) -> str:
         path = getattr(self, '_path', None)
         if path is None:
+            assert self.meta.timestamp is not None
             self._path = os.path.join(
                 self.meta.timestamp.date().isoformat(), uuid.uuid1().hex)
         return self._path

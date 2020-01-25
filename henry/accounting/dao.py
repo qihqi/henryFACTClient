@@ -1,9 +1,11 @@
-from builtins import map
-from builtins import object
+import datetime
 import os
 import uuid
+from decimal import Decimal
+from typing import Optional
+
 from sqlalchemy import desc
-from henry.base.dbapi import dbmix
+from henry.base.dbapi import SerializableDB
 from henry.base.serialization import SerializableMixin
 from henry.invoice.dao import PaymentFormat
 
@@ -11,13 +13,74 @@ from .acct_schema import (NBank, NDepositAccount, NPayment, NCheck, NDeposit, NI
                           NComment, NAccountStat, NSpent, NAccountTransaction)
 from henry.schema.legacy import NTodo
 
-Todo = dbmix(NTodo)
-Comment = dbmix(NComment)
-Image = dbmix(NImage)
-Bank = dbmix(NBank)
-DepositAccount = dbmix(NDepositAccount)
-AccountStat = dbmix(NAccountStat)
-Spent = dbmix(NSpent)
+class Todo(SerializableDB[NTodo]):
+    db_class = NTodo
+    uid : Optional[int] = None
+    objtype : Optional[str] = None
+    objid : Optional[str] = None
+    msg : Optional[str] = None
+    status : Optional[str] = None
+    due_date: Optional[datetime.datetime] = None
+    creation_date: Optional[datetime.datetime] = None
+
+
+class Comment(SerializableDB[NComment]):
+    db_class = NComment
+    uid: Optional[int] = None
+    objtype: Optional[str] = None
+    objid: Optional[str] = None
+    timestamp: Optional[datetime.datetime] = None
+    user_id: Optional[str] = None
+    comment: Optional[str] = None
+
+class Image(SerializableDB[NImage]):
+    db_class = NImage
+    uid: Optional[int] = None
+    objtype: Optional[str] = None
+    objid: Optional[str] = None
+    imgtag: Optional[str] = None
+    path: Optional[str] = None
+
+
+class Bank(SerializableDB[NBank]):
+    db_class = NBank
+    id: Optional[int] = None
+    name: Optional[str] = None
+
+
+class DepositAccount(SerializableDB[NDepositAccount]):
+    db_class = NDepositAccount
+    id: Optional[int] = None
+    name: Optional[str] = None
+
+
+class AccountStat(SerializableDB[NAccountStat]):
+    db_class = NAccountStat
+    date: Optional[datetime.date] = None
+    total_spend: Optional[int] = None
+    turned_cash: Optional[int] = None
+    deposit: Optional[int] = None
+    diff: Optional[int] = None
+    created_by: Optional[str] = None
+    revised_by: Optional[str] = None
+
+
+class Spent(SerializableDB[NSpent]):
+    db_class = NSpent
+    uid: Optional[int] = None
+    seller: Optional[str] = None
+    seller_ruc: Optional[str] = None
+    invnumber: Optional[str] = None
+    invdate: Optional[datetime.date] = None
+    inputdate: Optional[datetime.datetime] = None
+    desc: Optional[str] = None
+    total: Optional[int] = None
+    paid_from_cashier: Optional[int] = None
+    tax: Optional[int] = None
+    retension: Optional[int] = None
+    spent_type: Optional[str] = None
+    imgreceipt: Optional[str] = None
+    deleted: Optional[bool] = None
 
 
 class Payment(SerializableMixin):
@@ -96,7 +159,6 @@ def _extract_payment(payment):
         date=payment.date,
         deleted=False,
     )
-
 
 
 class PaymentApi(object):
@@ -209,7 +271,18 @@ class ImageServer(object):
         return img
 
 
-class AccountTransaction(dbmix(NAccountTransaction)):  # type: ignore
+class AccountTransaction(SerializableDB[NAccountTransaction]):
+    db_class = NAccountTransaction
+    uid: Optional[int] = None
+    date: Optional[datetime.date] = None
+    desc: Optional[str] = None
+    type: Optional[str] = None
+    value: Optional[Decimal] = None
+    to_bank_account: Optional[int] = None
+    deleted: Optional[bool] = None
+    input_timestamp: Optional[datetime.datetime] = None
+    last_modified: Optional[datetime.datetime] = None
+
     SALE = 'sales'
     SPENT = 'spents'
     CUSTOMER_PAYMENT = 'payments'

@@ -35,7 +35,6 @@ class NSale(Base):  # nominal sale
     tax_usd = Column(Numeric(15, 4), default=0)
     status = Column(String(10))
 
-    client_id = Column(String(20))
     user_id = Column(String(20))
     payment_format = Column(String(20))
 Index('ix_sales_2', NSale.seller_codename, NSale.seller_inv_uid)

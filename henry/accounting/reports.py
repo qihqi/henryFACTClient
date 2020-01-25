@@ -1,10 +1,3 @@
-from __future__ import division
-from __future__ import print_function
-from builtins import filter
-from builtins import map
-from builtins import str
-from past.utils import old_div
-from builtins import object
 import datetime
 from collections import defaultdict
 from datetime import timedelta
@@ -19,7 +12,7 @@ from henry.base.serialization import SerializableMixin
 from henry.product.dao import Store, get_real_prod_id
 from henry.invoice.coreschema import NNota
 from henry.users.schema import NCliente
-from henry.base.dbapi import decode_str
+from henry.base.serialization import decode_str
 from henry.invoice.dao import PaymentFormat, InvMetadata
 from henry.dao.document import Status
 from henry.users.dao import Client
@@ -198,7 +191,7 @@ def get_payments_as_transactions(dbapi, start_date, end_date):
     for pago, pformat, timestamp in dbapi.db_session.query(
             NPayment, NNota.payment_format,
             NNota.timestamp).join(
-            NNota, NPayment.note_id == NNota.id).filter(
+            NNota, NPayment.note_id == NNota.uid).filter(
             NNota.timestamp >= start_date, NNota.timestamp <= end_date,
             NPayment.deleted != True):
         if pago.type == PaymentFormat.CASH:

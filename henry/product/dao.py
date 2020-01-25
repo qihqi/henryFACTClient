@@ -7,7 +7,7 @@ import os
 import dataclasses
 
 from henry.base.fileservice import FileService
-from henry.base.dbapi import DBObject, DBApiGeneric
+from henry.base.dbapi import SerializableDB, DBApiGeneric
 from henry.base.serialization import (json_dumps, parse_iso_datetime, parse_iso_date,
                                       TypedSerializableMixin, SerializableData)
 from .schema import (NBodega, NCategory, NPriceListLabel,
@@ -16,7 +16,7 @@ from typing import Dict, Optional, List, Tuple, Union, Iterable, Iterator, Mappi
 
 
 @dataclasses.dataclass(init=False)
-class Bodega(DBObject[NBodega], SerializableData):
+class Bodega(SerializableDB[NBodega]):
     db_class = NBodega
     id: Optional[int] = None
     nombre: Optional[str] = None
@@ -24,21 +24,21 @@ class Bodega(DBObject[NBodega], SerializableData):
 
 
 @dataclasses.dataclass
-class Category(DBObject[NCategory], SerializableData):
+class Category(SerializableDB[NCategory]):
     db_class = NCategory
     id: Optional[int] = None
     nombre: Optional[str] = None
 
 
 @dataclasses.dataclass
-class PriceListLabel(DBObject[NPriceListLabel], SerializableData):
+class PriceListLabel(SerializableDB[NPriceListLabel]):
     db_class = NPriceListLabel
     uid: Optional[int] = None
     name: Optional[str] = None
 
 
 @dataclasses.dataclass
-class Store(DBObject[NStore], SerializableData):
+class Store(SerializableDB[NStore]):
     db_class = NStore
     almacen_id: Optional[int] = None
     ruc: Optional[str] = None
@@ -47,7 +47,7 @@ class Store(DBObject[NStore], SerializableData):
 
 
 @dataclasses.dataclass
-class ProdTag(DBObject[NProdTag], SerializableData):
+class ProdTag(SerializableDB[NProdTag]):
     db_class = NProdTag
     tag: Optional[str] = None
     description: Optional[str] = None
@@ -55,7 +55,8 @@ class ProdTag(DBObject[NProdTag], SerializableData):
 
 
 @dataclasses.dataclass
-class ProdTagContent(DBObject[NProdTagContent], SerializableData):
+class ProdTagContent(SerializableDB[NProdTagContent]):
+    db_class = NProdTagContent
     uid: Optional[int] = None
     tag: Optional[str] = None
     itemgroup_id: Optional[int] = None
@@ -66,7 +67,8 @@ def convert_decimal(x, default=None) -> Optional[Decimal]:
 
 
 @dataclasses.dataclass(init=False)
-class PriceList(SerializableData, DBObject[NPriceList]):
+class PriceList(SerializableDB[NPriceList]):
+    db_class = NPriceList
     pid: Optional[int] = None
     nombre: Optional[str] = None
     almacen_id: Optional[int] = None
@@ -85,7 +87,7 @@ class PriceList(SerializableData, DBObject[NPriceList]):
 
 
 @dataclasses.dataclass(init=False)
-class ProdItem(SerializableData, DBObject[NItem]):
+class ProdItem(SerializableDB[NItem]):
     db_class = NItem
     uid: Optional[int] = None
     itemgroupid: Optional[int] = None
@@ -100,7 +102,7 @@ class ProdItem(SerializableData, DBObject[NItem]):
 
 
 @dataclasses.dataclass(init=False)
-class ProdItemGroup(DBObject[NItemGroup], SerializableData):
+class ProdItemGroup(SerializableDB[NItemGroup], ):
     db_class = NItemGroup
     uid: Optional[int] = None
     prod_id: Optional[str] = None
@@ -177,10 +179,10 @@ class InventorySnapshot(SerializableData):
     creation_time: Optional[datetime.datetime] = None
     itemgroup_id: Optional[int] = None
     prod_id: Optional[str] = None
-    quantity: List[Tuple[int, Decimal]] = []
+    quantity: List[Tuple[int, Decimal]] = dataclasses.field(default_factory=lambda: [])
     upto_date: Optional[datetime.date] = None
     last_upto_date: Optional[datetime.date] = None
-    last_quantity: List[Tuple[int, Decimal]] = []
+    last_quantity: List[Tuple[int, Decimal]] = dataclasses.field(default_factory=lambda: [])
 
     # _fields = (
     #     ('creation_time', parse_iso_datetime),

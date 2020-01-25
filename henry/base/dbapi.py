@@ -1,49 +1,17 @@
-import abc
-
 from sqlalchemy.inspection import inspect
 
-from typing import (Callable, Any, Type, TypeVar, Generic,
-                    Dict, Mapping, Optional, List, Dict, Set, Iterable)
+from typing import (Type, TypeVar, Generic,
+                    Mapping, Optional, List)
 from sqlalchemy.orm.session import Session
 
+from henry.base.serialization import fieldcopy
+from henry.base.serialization import SerializableData
 from henry.schema.base import Base
 from henry.base.session_manager import SessionManager
 
-
-def decode_str(strobj: bytes) -> str:
-    try:
-        return strobj.decode('utf-8')
-    except:
-        return strobj.decode('latin1')
-
-
-def mkgetter(obj: Any) -> Callable:
-    if hasattr(obj, 'get'):
-        return obj.get
-    return obj.__getattribute__
-
-
-def mksetter(obj: Any) -> Callable:
-    if hasattr(obj, 'get'):
-        return obj.__setitem__
-    return obj.__setattr__
-
-
-def fieldcopy(src, dest, fields):
-    srcgetter = mkgetter(src)
-    destsetter = mksetter(dest)
-    for f in fields:
-        try:
-            value = srcgetter(f)
-            if isinstance(value, bytes):
-                value = decode_str(value)
-            destsetter(f, value)
-        except:
-            pass
-
 DBType = TypeVar('DBType', bound=Base)  # this is one of the sqlalchemy classes
-SelfType = TypeVar('SelfType', bound='DBObject')
-class DBObject(Generic[DBType]):
+SelfType = TypeVar('SelfType', bound='SerializableDB')
+class SerializableDB(SerializableData, Generic[DBType]):
     """Interface for objects that knows how to convert into a db object.
 
     The db object can the be used with DBApiGeneric to save and store stuff.
@@ -96,7 +64,7 @@ class DBApi(object):
         return self.api.search(self.objclass, **kwargs)
 
 
-T = TypeVar('T', bound='DBObject')
+T = TypeVar('T', bound='SerializableDB')
 class DBApiGeneric(object):
 
     # db_class = database_class  # type: Type[DBType]
@@ -113,7 +81,7 @@ class DBApiGeneric(object):
     def db_session(self) -> Session:
         return self.sm.session
 
-    def create(self, obj: DBObject):
+    def create(self, obj: SerializableDB):
         pkey_col = inspect(obj.db_class).primary_key[0]
         dbobj = obj.db_instance()
         self.sm.session.add(dbobj)
@@ -131,7 +99,7 @@ class DBApiGeneric(object):
             return None
         return objclass.from_db_instance(db_instance)
 
-    def update(self, obj: DBObject, content_dict: Mapping) -> int:
+    def update(self, obj: SerializableDB, content_dict: Mapping) -> int:
         pkey_col = inspect(obj.db_class).primary_key[0]
         pkey = getattr(obj, pkey_col.name)
         count = self.sm.session.query(obj.db_class).filter(
@@ -141,7 +109,7 @@ class DBApiGeneric(object):
             setattr(obj, x, y)
         return count
 
-    def update_full(self, obj: DBObject) -> int:
+    def update_full(self, obj: SerializableDB) -> int:
         columns = inspect(obj.db_class).columns
         pkey_col = inspect(obj.db_class).primary_key[0]
         values = {col: getattr(obj, col)
@@ -149,7 +117,7 @@ class DBApiGeneric(object):
                   if col != pkey_col.name}
         return self.update(obj, values)
 
-    def delete(self, obj: DBObject) -> int:
+    def delete(self, obj: SerializableDB) -> int:
         pkey_col = inspect(obj.db_class).primary_key[0]
         pkey = getattr(obj, pkey_col.name)
         count = self.sm.session.query(obj.db_class).filter(

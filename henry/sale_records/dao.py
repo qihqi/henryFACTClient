@@ -1,9 +1,10 @@
-from builtins import map
-from builtins import object
+import datetime
 from decimal import Decimal
 from sqlalchemy import func
+from typing import Optional, Iterator
+
+from henry.base.dbapi import SerializableDB, DBApiGeneric
 from henry.dao.document import Status
-from henry.base.dbapi import dbmix
 from henry.base.serialization import parse_iso_datetime, TypedSerializableMixin, json_dumps
 from henry.product.dao import ProdItemGroup, InventoryMovement
 
@@ -11,10 +12,34 @@ from .schema import NInventory, NSale, NInvMovementMeta, NEntity
 
 __author__ = 'han'
 
-Inventory = dbmix(NInventory)
-Entity = dbmix(NEntity)
+class Inventory(SerializableDB[NInventory]):
+    db_class = NInventory
+    uid: Optional[int] = None
+    entity_codename: Optional[str] = None
+    external_id: Optional[int] = None
+    inventory_id: Optional[int] = None
+    name: Optional[str] = None
 
-def client_sale_report(dbapi, start, end):
+
+class Entity(SerializableDB[NEntity]):
+    db_class = NEntity
+    codename: Optional[str] = None
+    name: Optional[str] = None
+    desc: Optional[str] = None
+
+
+class SaleReportByDate(TypedSerializableMixin):
+    _fields = (
+        ('timestamp', parse_iso_datetime),
+        ('ruc', str),
+        ('sale_pretax_usd', Decimal),
+        ('tax_usd', Decimal),
+        ('count', int)
+    )
+
+
+def client_sale_report(dbapi: DBApiGeneric, start: datetime.date, end: datetime.date
+                       ) -> Iterator[SaleReportByDate]:
     sales_by_date = list(dbapi.db_session.query(
         NSale.seller_ruc,
         func.date(NSale.timestamp), func.sum(NSale.pretax_amount_usd),
@@ -29,7 +54,23 @@ def client_sale_report(dbapi, start, end):
         )
 
 
-class InvMovementMeta(dbmix(NInvMovementMeta)):  # type: ignore
+class InvMovementMeta(SerializableDB[NInvMovementMeta]):
+    uid: Optional[int] = None
+    inventory_codename: Optional[str] = None
+    inventory_docid: Optional[int] = None
+
+    timestamp: Optional[datetime.datetime] = None
+    status: Optional[str] = None
+
+    origin: Optional[int] = None
+    dest: Optional[int] = None
+
+    trans_type: Optional[str] = None
+    value_usd: Optional[Decimal] = None
+
+    # unix filepath where the items is stored
+    items_location: Optional[str] = None
+
     def merge_from(self, other):
         super(InvMovementMeta, self).merge_from(other)
         if getattr(self, 'value_usd', None):
@@ -88,7 +129,21 @@ class InvMovementManager(object):
         return invmo
 
 
-class Sale(dbmix(NSale)):  # type: ignore
+class Sale(SerializableDB[NSale]):
+    db_class = NSale
+    uid : Optional[int] = None
+    timestamp : Optional[datetime.datetime] = None
+    client_id : Optional[str] = None
+    seller_codename : Optional[str] = None
+    seller_ruc : Optional[str] = None
+    seller_inv_uid : Optional[int] = None
+    invoice_code : Optional[str] = None
+    pretax_amount_usd : Optional[Decimal] = None
+    tax_usd : Optional[Decimal] = None
+    status : Optional[str] = None
+    user_id : Optional[str] = None
+    payment_format : Optional[str] = None
+
     def merge_from(self, other):
         super(Sale, self).merge_from(other)
         if getattr(self, 'total_usd', None):
@@ -121,11 +176,3 @@ def get_or_create_inventory_id(dbapi, codename, external_id):
     return inv.inventory_id
 
 
-class SaleReportByDate(TypedSerializableMixin):
-    _fields = (
-        ('timestamp', parse_iso_datetime),
-        ('ruc', str),
-        ('sale_pretax_usd', Decimal),
-        ('tax_usd', Decimal),
-        ('count', int)
-    )

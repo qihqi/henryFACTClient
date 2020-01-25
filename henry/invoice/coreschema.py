@@ -7,7 +7,7 @@ __author__ = 'han'
 class NNota(Base):
     __tablename__ = 'notas'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    uid = Column('id', Integer, primary_key=True, autoincrement=True)
     timestamp = Column(DateTime, index=True)
     status = Column(String(10))
 
@@ -41,7 +41,8 @@ Index('ix_notas_2', NNota.almacen_id, NNota.codigo)
 
 class NNotaExtra(Base):
     __tablename__ = 'nota_extra'
-    id = Column(Integer, primary_key=True)
+    # same as NNota.uid
+    uid = Column(Integer, primary_key=True)
     status = Column(String(10))
     last_change_time = Column(DateTime)
 

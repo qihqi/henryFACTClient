@@ -2,17 +2,17 @@ import logging
 import datetime
 import os
 from decimal import Decimal
-from typing import Type
+from typing import Type, List
 
 from sqlalchemy.exc import SQLAlchemyError
 from henry.base.fileservice import FileService
 from henry.base.session_manager import SessionManager
-from henry.base.dbapi import DBApiGeneric
+from henry.base.dbapi import DBApiGeneric, SerializableDB
 
-from henry.base.serialization import SerializableMixin, DbMixin
+from henry.base.serialization import SerializableMixin
 from henry.base.serialization import json_loads
 from henry.invoice.coreschema import NPedidoTemporal
-from henry.product.dao import PriceList, InvMovementType, InventoryApi
+from henry.product.dao import PriceList, InvMovementType, InventoryApi, InventoryMovement
 
 from typing import Iterable, Optional, TypeVar, Generic
 
@@ -43,21 +43,24 @@ class Item(SerializableMixin):
         return cls(prod, cant)
 
 
-T = TypeVar('T')
+T = TypeVar('T', bound=SerializableDB)
+SelfType = TypeVar('SelfType', bound='MetaItemSet')
 class MetaItemSet(SerializableMixin, Generic[T]):
     _name = ('meta', 'items')
-    _metadata_cls: Type[DbMixin[T]]
+    _metadata_cls: Type[T]
+    meta: Optional[T]
+    items: List[Item]
 
-    def __init__(self, meta: Optional[DbMixin[T]] = None,
+    def __init__(self, meta: Optional[T] = None,
                  items: Iterable[Item] = []):
         self.meta = meta
         self.items = list(items)
 
-    def items_to_transaction(self):
+    def items_to_transaction(self, dbapi) -> Iterable[InventoryMovement]:
         raise NotImplementedError()
 
     @classmethod
-    def deserialize(cls, the_dict):
+    def deserialize(cls: Type[SelfType], the_dict) -> SelfType:
         x = cls()
         x.meta = cls._metadata_cls.deserialize(the_dict['meta'])
         x.items = list(map(Item.deserialize, the_dict['items']))
@@ -76,7 +79,7 @@ class DocumentApi(object):
 
         self.cls = object_cls
         self.metadata_cls = object_cls._metadata_cls
-        self.db_class = self.metadata_cls._db_class
+        self.db_class = self.metadata_cls.db_class
 
     def get_doc(self, uid):
         session = self.db_session.session

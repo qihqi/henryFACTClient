@@ -201,7 +201,7 @@ def make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transaction
     @dbcontext
     @auth_decorator(2)
     def edit_note(uid):
-        note = dbapi.db_session.query(NNota).filter_by(id=uid).first()
+        note = dbapi.db_session.query(NNota).filter_by(uid=uid).first()
         temp = jinja_env.get_template('edit_note.html')
         return temp.render(note=note)
 
@@ -215,7 +215,7 @@ def make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transaction
         for key in ('subtotal', 'total', 'tax', 'discount'):
             if key in values:
                 values[key] = int(values[key])
-        dbapi.db_session.query(NNota).filter_by(id=uid).update(
+        dbapi.db_session.query(NNota).filter_by(uid=uid).update(
             values)
         redirect(request.url)
 

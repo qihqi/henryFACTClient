@@ -7,7 +7,7 @@ from henry.schema.base import Base
 class NTransferencia(Base):
     __tablename__ = 'transferencias'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    uid = Column('id', Integer, primary_key=True, autoincrement=True)
     timestamp = Column(DateTime, index=True)
     status = Column(String(10))
 

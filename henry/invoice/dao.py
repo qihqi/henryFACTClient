@@ -1,13 +1,12 @@
-from builtins import str
-from builtins import object
 import datetime
 import os
 import uuid
-from henry.base.serialization import SerializableMixin, DbMixin, parse_iso_datetime
-from henry.base.dbapi import dbmix
+from typing import Optional, Iterator
+from henry.base.serialization import parse_iso_datetime
+from henry.base.dbapi import SerializableDB
 from henry.dao.document import MetaItemSet
 from henry.product.dao import InventoryMovement, ProdItem, InvMovementType, get_real_prod_id
-from henry.users.dao import Client
+from henry.users.dao import Client, User
 
 from .coreschema import NNota, NNotaExtra
 from .schema import NSRINota
@@ -32,78 +31,38 @@ class PaymentFormat(object):
     )
 
 
-class InvMetadata(SerializableMixin, DbMixin[NNota]):
-    _db_class = NNota
-    _excluded_vars = ('users',)
-    _db_attr = {
-        'uid': 'id',
-        'codigo': 'codigo',
-        'user': 'user_id',
-        'timestamp': 'timestamp',
-        'status': 'status',
-        'total': 'total',
-        'tax': 'tax',
-        'tax_percent': 'tax_percent',
-        'discount_percent': 'discount_percent',
-        'subtotal': 'subtotal',
-        'discount': 'discount',
-        'bodega_id': 'bodega_id',
-        'paid': 'paid',
-        'paid_amount': 'paid_amount',
-        'almacen_id': 'almacen_id',
-        'almacen_name': 'almacen_name',
-        'almacen_ruc': 'almacen_ruc',
-        'payment_format': 'payment_format',
-        'retension': 'retension',
-    }
+class InvMetadata(SerializableDB[NNota]):
+    db_class = NNota
+    uid: Optional[int] = None
+    timestamp: Optional[datetime.datetime] = None
+    status: Optional[str] = None
 
-    _name = tuple(_db_attr.keys()) + ('users', 'client')
+    # this pair should be unique
+    codigo: Optional[str] = None
+    almacen_id: Optional[int] = None
+    almacen_name: Optional[str] = None
+    almacen_ruc: Optional[str] = None
 
-    def __init__(
-            self,
-            uid=None,
-            codigo=None,
-            client=None,
-            user=None,
-            timestamp=None,
-            status=None,
-            total=None,
-            tax=None,
-            subtotal=None,
-            discount=None,
-            bodega_id=None,
-            tax_percent=None,
-            discount_percent=None,
-            paid=None,
-            paid_amount=None,
-            payment_format=None,
-            almacen_id=None,
-            almacen_name=None,
-            almacen_ruc=None,
-            retension=None):
-        self.uid = uid
-        self.codigo = codigo
-        self.client = client
-        self.user = user
-        self.timestamp = timestamp
-        self.status = status
-        self.total = total
-        self.tax = tax
-        self.subtotal = subtotal
-        self.discount = discount
-        self.bodega_id = bodega_id
-        self.almacen_id = almacen_id
-        self.almacen_name = almacen_name
-        self.almacen_ruc = almacen_ruc
-        self.tax_percent = tax_percent
-        self.discount_percent = discount_percent
-        self.paid = paid
-        self.payment_format = payment_format
-        self.paid_amount = paid_amount
-        self.retension = retension
+    # client_id: Optional[str] = None
+    user_id: Optional[str] = None
+    client: Optional[Client] = None
+    paid: Optional[bool] = None
+    paid_amount: Optional[int] = None
+    payment_format: Optional[str] = None
+
+    subtotal: Optional[int] = None
+    total: Optional[int] = None
+    tax: Optional[int] = None
+    retension: Optional[int] = None
+    discount: Optional[int] = None
+    tax_percent: Optional[int] = None
+    discount_percent: Optional[int] = None
+
+    bodega_id: Optional[int] = None
+    items_location: Optional[str] = None
 
     @classmethod
-    def deserialize(cls, the_dict):
+    def deserialize(cls, the_dict) -> 'InvMetadata':
         x = cls().merge_from(the_dict)
         if x.timestamp and not isinstance(x.timestamp, datetime.datetime):
             x.timestamp = parse_iso_datetime(x.timestamp)
@@ -127,14 +86,16 @@ class InvMetadata(SerializableMixin, DbMixin[NNota]):
         return this
 
 
-class Invoice(MetaItemSet):
+class Invoice(MetaItemSet[InvMetadata]):
     _metadata_cls = InvMetadata
 
     def items_to_transaction(self, dbapi) -> Iterator[InventoryMovement]:
+        assert self.meta is not None, 'Meta is None!'
         for item in self.items:
             proditem = dbapi.getone(ProdItem, prod_id=item.prod.prod_id)
             # TODO: deprecate use of upi at all
             inv_id = item.prod.upi or self.meta.bodega_id
+            assert item.prod.multiplicador is not None
             yield InventoryMovement(
                 from_inv_id=inv_id,
                 to_inv_id=-1,
@@ -167,6 +128,20 @@ class SRINotaStatus:
     DELETED_SENT_VALIDATED = 'deleted_sent_validated'
 
 
-NotaExtra = dbmix(NNotaExtra)  # type: ignore
-SRINota = dbmix(NSRINota)  # type: ignore
+class NotaExtra(SerializableDB[NNotaExtra]):
+    db_class = NNotaExtra
+    id: Optional[int] = None
+    status: Optional[str] = None
+    last_change_time: Optional[datetime.datetime] = None
 
+class SRINota(SerializableDB[NSRINota]):
+    db_class = NSRINota
+    uid : Optional[int] = None
+    almacen_ruc : Optional[str] = None
+    orig_codigo : Optional[str] = None
+    timestamp_received: Optional[datetime.datetime] = None
+    status : Optional[str] = None
+    json_inv_location : Optional[str] = None
+    xml_inv_location : Optional[str] = None
+    resp1_location : Optional[str] = None
+    resp2_location : Optional[str] = None

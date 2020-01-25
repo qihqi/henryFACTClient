@@ -1,12 +1,11 @@
 # encoding=utf8
-from __future__ import division
-from builtins import map
-from past.utils import old_div
-from builtins import object
+import datetime
+from typing import Optional
+
 from decimal import Decimal
 import functools
 
-from henry.base.dbapi import dbmix
+from henry.base.dbapi import SerializableDB
 from henry.base.serialization import SerializableMixin, TypedSerializableMixin, parse_iso_datetime
 from .schema import (NUniversalProduct, NDeclaredGood, NPurchaseItem,
                      NPurchase, NCustomItem, NUnit)
@@ -14,10 +13,17 @@ from .schema import (NUniversalProduct, NDeclaredGood, NPurchaseItem,
 NORMAL_FILTER_MULT = Decimal('0.35')
 
 
-class Unit(dbmix(NUnit)):
+class Unit(SerializableDB[NUnit]):
     LENGTH = 'length'
     WEIGHT = 'weight'
     UNIT = 'unit'
+    db_class = NUnit
+    uid : Optional[str] = None
+    name_zh : Optional[str] = None
+    name_es : Optional[str] = None
+    type : Optional[str] = None
+    equiv_base: Optional[str] = None
+    equiv_multiplier : Optional[Decimal] = None
 
 ALL_UNITS = {
     'kg': Unit(uid='kg', name_zh=u'公斤', name_es='kilogramo', equiv_base=None,
@@ -68,10 +74,39 @@ ALL_UNITS = {
                     equiv_multiplier='12', type=Unit.UNIT),
 }
 
-UniversalProd = dbmix(NUniversalProduct)
-DeclaredGood = dbmix(NDeclaredGood)
+class UniversalProd(SerializableDB[NUniversalProduct]):
+    db_class = NUniversalProduct
+    upi : Optional[int] = None
+    name_es : Optional[str] = None
+    name_zh : Optional[str] = None
+    providor_zh : Optional[str] = None
+    providor_item_id : Optional[str] = None
+    selling_id : Optional[str] = None
+    declaring_id : Optional[int] = None
+    material : Optional[str] = None
+    unit : Optional[str] = None
+    description : Optional[str] = None
+    thumbpath : Optional[str] = None
 
-class PurchaseItem(dbmix(NPurchaseItem)):
+class DeclaredGood(SerializableDB[NDeclaredGood]):
+    db_class = NDeclaredGood
+    uid : Optional[int] = None
+    display_name : Optional[str] = None
+    display_price : Optional[Decimal] = None
+    box_code : Optional[str] = None
+    modify_strategy : Optional[str] = None
+
+
+class PurchaseItem(SerializableDB[NPurchaseItem]):
+    db_class = NPurchaseItem
+    uid : Optional[int] = None
+    purchase_id : Optional[int] = None
+    upi : Optional[int] = None
+    color : Optional[str] = None
+    quantity : Optional[Decimal] = None
+    price_rmb : Optional[Decimal] = None
+    box : Optional[Decimal] = None
+    custom_item_uid : Optional[int] = None
 
     @classmethod
     def deserialize(cls, thedict):
@@ -87,7 +122,17 @@ class PurchaseItem(dbmix(NPurchaseItem)):
         return result
 
 
-class CustomItem(dbmix(NCustomItem)):
+class CustomItem(SerializableDB[NCustomItem]):
+    db_class = NCustomItem
+    uid : Optional[int] = None
+    purchase_id : Optional[int] = None
+    display_name : Optional[str] = None
+    quantity : Optional[Decimal] = None
+    price_rmb : Optional[Decimal] = None
+    unit : Optional[str] = None
+    box : Optional[Decimal] = None
+    box_code : Optional[str] = None
+
     @classmethod
     def deserialize(cls, thedict):
         result = super(CustomItem, cls).deserialize(thedict)
@@ -106,7 +151,18 @@ class PurchaseStatus(object):
     CUSTOM = 'CUSTOM'
 
 
-class Purchase(dbmix(NPurchase)):
+class Purchase(SerializableDB[NPurchase]):
+    db_class = NPurchase
+    uid : Optional[int] = None
+    timestamp : Optional[datetime.datetime] = None
+    last_edit_timestamp : Optional[datetime.datetime] = None
+    providor : Optional[str] = None
+    total_rmb : Optional[Decimal] = None
+    created_by : Optional[str] = None
+    total_box : Optional[int] = None
+    total_gross_weight_kg : Optional[Decimal] = None
+    status : Optional[str] = None
+
     @classmethod
     def deserialize(cls, thedict):
         result = super(Purchase, cls).deserialize(thedict)
