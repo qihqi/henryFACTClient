@@ -1,3 +1,4 @@
+import dataclasses
 import datetime
 import os
 import uuid
@@ -24,6 +25,7 @@ class TransType(object):
              EGRESS)
 
 
+@dataclasses.dataclass
 class TransMetadata(SerializableDB[NTransferencia]):
     db_class = NTransferencia
     uid: Optional[int] = None
@@ -34,7 +36,8 @@ class TransMetadata(SerializableDB[NTransferencia]):
     trans_type: Optional[str] = None
     ref: Optional[str] = None
     value: Optional[Decimal] = None
-    items_location: Optional[str] = None
+    items_location: Optional[str] = dataclasses.field(default=None, metadata={
+        'skip': True})
 
     @classmethod
     def deserialize(cls, the_dict):

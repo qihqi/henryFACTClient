@@ -8,6 +8,7 @@ from henry.coreconfig import sessionmanager, BEAKER_SESSION_OPTS, auth_decorator
 from henry.sale_records.dao import InvMovementManager
 from henry.importation.web import make_import_apis
 from henry.product.dao import InventoryApi
+from henry.invoice.api import make_nota_all
 from henry.config import jinja_env
 from henry.sale_records.web import make_sale_records_api
 from henry.background_sync import sync_api

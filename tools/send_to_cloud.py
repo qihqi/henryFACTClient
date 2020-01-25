@@ -49,7 +49,7 @@ def send_to_remote(dbapi, invapi, start, end, send_bytes_func):
 
 
 def main():
-    end = datatime.datetime.now()
+    end = datetime.datetime.now()
     start = end - datetime.timedelta(days=1)
     def send_bytes_func(msg_bytes):
         resp = requests.post(constants.REMOTE_ADDR, data=msg_bytes)

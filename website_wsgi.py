@@ -3,7 +3,6 @@ from beaker.middleware import SessionMiddleware
 
 from henry.accounting.dao import ImageServer, PaymentApi
 from henry.advanced import make_experimental_apps
-from henry.background_sync.worker import ForwardRequestProcessor
 from henry.base.session_manager import SessionManager
 from henry.users.web import make_wsgi_app as userwsgi
 from henry.accounting.web import make_wsgi_app as accwsgi
@@ -25,19 +24,6 @@ dbapi = DBApiGeneric(sessionmanager)
 
 
 forward_transaction = None
-if FORWARD_INV:
-    from uwsgidecorators import spool
-    from henry.constants import REMOTE_URL, REMOTE_PASS, REMOTE_USER, CODENAME
-    session = SessionManager(sessionfactory)
-    # need a different session for processor, as it might run outside
-    # of a http request context
-    dbapi2 = DBApiGeneric(session)
-    processor = ForwardRequestProcessor(dbapi2, REMOTE_URL, (REMOTE_USER, REMOTE_PASS), CODENAME)
-    @spool
-    def method(x):
-        processor.forward_request(x)
-    forward_transaction = method.spool
-    print('website_wsgi forward trans enabled')
 
 invoiceapp = make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, jinja_env,
                                workqueue=forward_transaction)

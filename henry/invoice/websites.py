@@ -5,7 +5,6 @@ import datetime
 from operator import itemgetter
 
 from bottle import request, abort, redirect, Bottle
-from henry.background_sync.worker import WorkObject, doc_to_workobject
 
 from henry.base.auth import get_user
 from henry.base.common import parse_start_end_date
@@ -96,12 +95,6 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
         except ValueError:
             abort(400)
 
-        if workqueue is not None:
-            obj = doc_to_workobject(doc, objtype=WorkObject.INV, action=WorkObject.DELETE)
-            workqueue(work=json_dumps(obj))
-            if old_status == Status.COMITTED:
-                obj = doc_to_workobject(doc, objtype=WorkObject.INV_TRANS, action=WorkObject.DELETE)
-                workqueue(work=json_dumps(obj))
         redirect('/app/nota/{}'.format(db_instance.id))
 
     @w.get('/app/ver_factura_form')

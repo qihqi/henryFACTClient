@@ -7,7 +7,6 @@ from typing import Callable
 from bottle import Bottle, request, abort, redirect, json_loads
 
 from henry.base.dbapi import DBApiGeneric
-from henry.background_sync.worker import WorkObject, doc_to_workobject
 
 from henry.base.auth import AuthType
 from henry.base.common import parse_start_end_date
@@ -51,8 +50,6 @@ def make_inv_api(dbapi: DBApiGeneric,
             if trans.meta.trans_type == TransType.EXTERNAL:
                 trans.meta.dest = 4  # policentro
                 trans.meta.trans_type = TransType.TRANSFER
-            obj = doc_to_workobject(trans, action=WorkObject.CREATE, objtype=WorkObject.TRANS)
-            forward_transaction(work=json_dumps(obj))
         return {'status': trans.meta.status}
 
     @api.delete('/app/api/ingreso/<ingreso_id>')
@@ -62,9 +59,6 @@ def make_inv_api(dbapi: DBApiGeneric,
         trans = transapi.get_doc(ingreso_id)
         old_status = trans.meta.status
         transapi.delete(trans)
-        if forward_transaction is not None and old_status == Status.COMITTED:
-            obj = doc_to_workobject(trans, action=WorkObject.DELETE, objtype=WorkObject.TRANS)
-            forward_transaction(work=json_dumps(obj))
         return {'status': trans.meta.status}
 
     @api.get('/app/api/ingreso/<ingreso_id>')

@@ -95,8 +95,8 @@ class EndToEndTest(unittest.TestCase):
         codigo = None
         with Timing('save factura'):
             r = requests.post(nota_url, data=json.dumps(content), cookies=cookies)
+            print("SAVE", r.text)
             codigo = r.json()['codigo']
-            uid = r.json()['uid']
         print('codigo es', codigo)
 
         with Timing('put factura'):
@@ -104,12 +104,6 @@ class EndToEndTest(unittest.TestCase):
             self.assertEquals(200, r.status_code)
             print(r)
         
-       # at this point, NotaExtra is created.
-        with dbapi.session:
-            ne = dbapi.get(uid, NotaExtra)
-        assert ne is not None
-        assert ne.status == 'POSTEADO'
-
         with Timing('Get FACTura'):
             r = requests.get(nota_url + '/' + str(codigo), cookies=cookies)
             fact = r.json()
@@ -121,13 +115,6 @@ class EndToEndTest(unittest.TestCase):
             r = requests.delete(nota_url + '/' + str(codigo), cookies=cookies)
             self.assertEquals(200, r.status_code)
             print(r)
-
-        with dbapi.session:
-            ne = dbapi.get(uid, NotaExtra)
-        assert ne is not None
-        assert ne.status == 'ELIMINADO'
-
-
 
 
         print('================================Test end============================================')

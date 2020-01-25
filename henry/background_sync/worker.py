@@ -1,9 +1,3 @@
-from __future__ import division
-from __future__ import print_function
-from future import standard_library
-standard_library.install_aliases()
-from builtins import object
-from past.utils import old_div
 import json
 from urllib.parse import urljoin
 from decimal import Decimal
@@ -27,6 +21,8 @@ from henry.invoice.dao import InvMetadata, Invoice
 # create product
 # alter product price (changes to pricelist)
 from henry.product.dao import ProdItemGroup, InvMovementType
+
+# NOTE: this stuff is pretty new and not much in use (2020-01-25)
 
 
 class WorkObject(SerializableMixin):

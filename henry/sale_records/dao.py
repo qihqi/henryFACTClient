@@ -1,3 +1,4 @@
+import dataclasses
 import datetime
 from decimal import Decimal
 from sqlalchemy import func
@@ -12,6 +13,7 @@ from .schema import NInventory, NSale, NInvMovementMeta, NEntity
 
 __author__ = 'han'
 
+@dataclasses.dataclass
 class Inventory(SerializableDB[NInventory]):
     db_class = NInventory
     uid: Optional[int] = None
@@ -21,6 +23,7 @@ class Inventory(SerializableDB[NInventory]):
     name: Optional[str] = None
 
 
+@dataclasses.dataclass
 class Entity(SerializableDB[NEntity]):
     db_class = NEntity
     codename: Optional[str] = None
@@ -54,6 +57,7 @@ def client_sale_report(dbapi: DBApiGeneric, start: datetime.date, end: datetime.
         )
 
 
+@dataclasses.dataclass
 class InvMovementMeta(SerializableDB[NInvMovementMeta]):
     uid: Optional[int] = None
     inventory_codename: Optional[str] = None
@@ -129,6 +133,7 @@ class InvMovementManager(object):
         return invmo
 
 
+@dataclasses.dataclass
 class Sale(SerializableDB[NSale]):
     db_class = NSale
     uid : Optional[int] = None

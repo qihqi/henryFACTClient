@@ -1,26 +1,18 @@
-from __future__ import division
-from __future__ import print_function
-from past.utils import old_div
 import os
 import uuid
-from decimal import Decimal
 
-from bottle import Bottle, request, abort
+from bottle import Bottle, request
 import datetime
 
+from henry.base.auth import AuthType
+from henry.base.dbapi import DBApiGeneric
+from henry.base.fileservice import FileService
 from henry import constants, common
 
-from henry.background_sync.worker import WorkObject, doc_to_workobject
-
-from henry.base.serialization import SerializableMixin, json_loads, json_dumps
+from henry.base.serialization import json_loads, json_dumps
 from henry.base.session_manager import DBContext
-from henry.dao.document import Status
 from henry.invoice.dao import SRINota, SRINotaStatus
 
-from henry.product.dao import Store, PriceList, create_items_chain
-from henry.users.dao import User, Client
-
-from .coreschema import NNota
 from .dao import Invoice
 
 __author__ = 'han'
@@ -68,8 +60,8 @@ def inv_to_sri_dict(inv):
     }
 
 
-def make_nota_all(url_prefix, dbapi, actionlogged,
-                  file_manager, auth_decorator):
+def make_nota_all(url_prefix: str, dbapi: DBApiGeneric,
+                  file_manager: FileService, auth_decorator: AuthType):
 
     api = Bottle()
     dbcontext = DBContext(dbapi.session)

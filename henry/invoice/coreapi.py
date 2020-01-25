@@ -5,7 +5,6 @@ from decimal import Decimal
 
 from bottle import Bottle, request, abort
 import datetime
-from henry.background_sync.worker import WorkObject, doc_to_workobject
 
 from henry.base.serialization import SerializableMixin, json_loads, json_dumps
 from henry.base.session_manager import DBContext
@@ -151,8 +150,10 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
 
         # increment the next invoice's number
         if options.incrementar_codigo:
+            print(' increment codigi')
             user = User(username=inv.meta.user)
-            dbapi.update(user, {'last_factura': int(inv.meta.codigo) + 1})
+            count = dbapi.update(user, {'last_factura': int(inv.meta.codigo) + 1})
+            print('updaet count', count)
         dbapi.db_session.commit()
 
         return {'codigo': inv.meta.uid}

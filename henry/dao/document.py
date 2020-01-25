@@ -4,6 +4,7 @@ import os
 from decimal import Decimal
 from typing import Type, List
 
+from sqlalchemy import inspect
 from sqlalchemy.exc import SQLAlchemyError
 from henry.base.fileservice import FileService
 from henry.base.session_manager import SessionManager
@@ -47,7 +48,7 @@ T = TypeVar('T', bound=SerializableDB)
 SelfType = TypeVar('SelfType', bound='MetaItemSet')
 class MetaItemSet(SerializableMixin, Generic[T]):
     _name = ('meta', 'items')
-    _metadata_cls: Type[T]
+    _metadata_cls: Type[T]  # _metadata class must have a field item_location
     meta: Optional[T]
     items: List[Item]
 
@@ -62,16 +63,25 @@ class MetaItemSet(SerializableMixin, Generic[T]):
     @classmethod
     def deserialize(cls: Type[SelfType], the_dict) -> SelfType:
         x = cls()
+        print('MetaItemset.deserialzie', the_dict)
         x.meta = cls._metadata_cls.deserialize(the_dict['meta'])
         x.items = list(map(Item.deserialize, the_dict['items']))
         return x
 
+    def validate(self):
+        raise NotImplementedError
 
+    @property
+    def filepath_format(self) -> str:
+        raise NotImplementedError
+
+
+Doc = TypeVar('Doc', bound=MetaItemSet)
 class DocumentApi(object):
     def __init__(self, sessionmanager: SessionManager,
                  filemanager: FileService,
                  transaction: InventoryApi,
-                 object_cls: Type[MetaItemSet]):
+                 object_cls: Type[Doc]):
         self.db_session = sessionmanager
         self.dbapi = DBApiGeneric(sessionmanager)
         self.filemanager = filemanager
@@ -81,18 +91,21 @@ class DocumentApi(object):
         self.metadata_cls = object_cls._metadata_cls
         self.db_class = self.metadata_cls.db_class
 
-    def get_doc(self, uid):
+    def get_doc(self, uid) -> Optional[Doc]:
         session = self.db_session.session
-        db_instance = session.query(self.db_class).filter_by(id=uid).first()
-        if db_instance is None:
+        pkey_col = inspect(self.db_class).primary_key[0]
+        db_instance = session.query(self.db_class).filter(pkey_col == uid).first()
+        meta = self.dbapi.get(uid, self.metadata_cls)
+        if meta is None:
             print('cannot find document in table ', self.db_class.__tablename__, end=' ')
             print(' with id ', uid)
             return None
-        doc = self.get_doc_from_file(db_instance.items_location)
-        doc.meta.status = db_instance.status
+        doc = self.get_doc_from_file(meta.items_location)  # type: ignore
+        if doc is not None:
+            doc.meta.status = meta.status  # type: ignore
         return doc
 
-    def get_doc_from_file(self, filename: str):
+    def get_doc_from_file(self, filename: str) -> Optional[Doc]:
         file_content = self.filemanager.get_file(filename)
         if file_content is None:
             print('could not find file at ', filename)
@@ -101,35 +114,31 @@ class DocumentApi(object):
         doc = self.cls.deserialize(content)
         return doc
 
-    def save(self, doc):
+    def save(self, doc: Doc):
         meta = doc.meta
+        assert meta is not None
         if not hasattr(meta, 'timestamp'):
             meta.timestamp = datetime.datetime.now()
         if not meta.status:
             meta.status = Status.NEW
         doc.validate()
-        filepath = doc.filepath_format
-        session = self.db_session.session
-        db_entry = meta.db_instance()
-        db_entry.items_location = filepath
-        session.add(db_entry)
-        session.flush()  # flush to get the autoincrement id
-        doc.meta.uid = db_entry.id
-
-        self.filemanager.put_file(filepath, doc.to_json())
+        meta.items_location = doc.filepath_format
+        self.dbapi.create(meta)
+        self.filemanager.put_file(meta.items_location, doc.to_json())
         return doc
 
-    def commit(self, doc):
+    def commit(self, doc: Doc):
         meta = doc.meta
-        if meta.status and meta.status != Status.NEW:
-            logging.info('attempt to commit doc {} in wrong status'.format(doc.meta.uid))
+        if meta.status and meta.status != Status.NEW:  # type: ignore
+            logging.info('attempt to commit doc {} in wrong status'.format(doc.meta.uid))  # type: ignore
             return None
         if self._set_status_and_update_prod_count(
                 doc, Status.COMITTED, inverse_transaction=False):
             return doc
         return None
 
-    def delete(self, doc):
+    def delete(self, doc: Doc):
+        assert doc.meta is not None
         if doc.meta.status == Status.COMITTED:
             if self._set_status_and_update_prod_count(
                     doc, Status.DELETED, inverse_transaction=True):
@@ -138,16 +147,18 @@ class DocumentApi(object):
         elif doc.meta.status == Status.NEW:
             count = self.db_session.session.query(self.db_class).filter_by(
                 id=doc.meta.uid).update({'status': Status.DELETED})
+            count = self.dbapi.update(doc.meta, {'status': Status.DELETED})
             if count > 0:
-                doc.meta.status = Status.DELETED
                 return doc
-        logging.info('attempt to delete doc {} which is not committed'.format(doc.meta.uid))
+        logging.info('attempt to delete doc {} which is not committed'.format(
+            doc.meta.uid))  # type: ignore
         return None
 
     def _set_status_and_update_prod_count(
-            self, doc, new_status, inverse_transaction):
+            self, doc: Doc, new_status: str, inverse_transaction: bool) -> bool:
         session = self.db_session.session
         now = datetime.datetime.now()
+        assert doc.meta is not None
         try:
             items = list(doc.items_to_transaction(self.dbapi))
             for i in items:
@@ -156,8 +167,7 @@ class DocumentApi(object):
                     i.inverse()
                 i.timestamp = now
             self.transaction.bulk_save(items)
-            session.query(self.db_class).filter_by(
-                id=doc.meta.uid).update({'status': new_status})
+            self.dbapi.update(doc.meta, {'status': new_status})
             session.commit()
             doc.meta.status = new_status
             return True

@@ -66,13 +66,16 @@ class SerializableData(SerializableInterface):
         self.merge_from(kwargs)
 
     def merge_from(self: T, obj: Any) -> T:
-        fieldcopy(self, obj, self.__dataclass_fields__.keys())  # type: ignore
+        fieldcopy(src=obj, dest=self,
+                  fields=self.__dataclass_fields__.keys())  # type: ignore
         return self
 
     def serialize(self) -> Dict[str, Any]:
         """Respects renaming or / and skipping."""
         res = {}
         for field in self.__dataclass_fields__.values():  # type: ignore
+            if field.metadata.get('skip', False):
+                continue
             dictname = field.metadata.get('dict_name', field.name)
             res[dictname] = getattr(self, field.name)
         return res
@@ -90,15 +93,26 @@ class SerializableData(SerializableInterface):
                 possible_types = getattr(field.type, '__args__', [field.type])
                 if isinstance(potential_val, possible_types):
                     kwargs[field.name] = potential_val
-                else:
-                    # if potential_val is str, and have a from_str consturctor:
-                    metadata = field.metadata
-                    if isinstance(potential_val, str) and 'from_str' in metadata:
+                    continue
+
+                # if potential_val is str, and have a from_str consturctor:
+                metadata = field.metadata
+                if isinstance(potential_val, str):
+                    if 'from_str' in metadata:
                         from_str = metadata['from_str']
                         kwargs[field.name] = from_str(potential_val)
-                    else:
-                        # try use the first type
-                        kwargs[field.name] = possible_types[0](potential_val)
+                        continue
+
+                    if possible_types[0] == datetime.datetime:
+                        kwargs[field.name] = parse_iso_datetime(potential_val)
+                        continue
+
+                    if possible_types[0] == datetime.date:
+                        kwargs[field.name] = parse_iso_date(potential_val)
+                        continue
+
+                # try use the first type, this is last resort
+                kwargs[field.name] = possible_types[0](potential_val)
         return cls(**kwargs)
 
     def to_json(self) -> str:

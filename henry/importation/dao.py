@@ -1,4 +1,5 @@
 # encoding=utf8
+import dataclasses
 import datetime
 from typing import Optional
 
@@ -13,6 +14,7 @@ from .schema import (NUniversalProduct, NDeclaredGood, NPurchaseItem,
 NORMAL_FILTER_MULT = Decimal('0.35')
 
 
+@dataclasses.dataclass
 class Unit(SerializableDB[NUnit]):
     LENGTH = 'length'
     WEIGHT = 'weight'
@@ -74,6 +76,7 @@ ALL_UNITS = {
                     equiv_multiplier='12', type=Unit.UNIT),
 }
 
+@dataclasses.dataclass
 class UniversalProd(SerializableDB[NUniversalProduct]):
     db_class = NUniversalProduct
     upi : Optional[int] = None
@@ -88,6 +91,7 @@ class UniversalProd(SerializableDB[NUniversalProduct]):
     description : Optional[str] = None
     thumbpath : Optional[str] = None
 
+@dataclasses.dataclass
 class DeclaredGood(SerializableDB[NDeclaredGood]):
     db_class = NDeclaredGood
     uid : Optional[int] = None
@@ -97,6 +101,7 @@ class DeclaredGood(SerializableDB[NDeclaredGood]):
     modify_strategy : Optional[str] = None
 
 
+@dataclasses.dataclass
 class PurchaseItem(SerializableDB[NPurchaseItem]):
     db_class = NPurchaseItem
     uid : Optional[int] = None
@@ -122,6 +127,7 @@ class PurchaseItem(SerializableDB[NPurchaseItem]):
         return result
 
 
+@dataclasses.dataclass
 class CustomItem(SerializableDB[NCustomItem]):
     db_class = NCustomItem
     uid : Optional[int] = None
@@ -151,6 +157,7 @@ class PurchaseStatus(object):
     CUSTOM = 'CUSTOM'
 
 
+@dataclasses.dataclass
 class Purchase(SerializableDB[NPurchase]):
     db_class = NPurchase
     uid : Optional[int] = None

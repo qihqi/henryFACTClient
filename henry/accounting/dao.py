@@ -1,3 +1,4 @@
+import dataclasses
 import datetime
 import os
 import uuid
@@ -13,6 +14,7 @@ from .acct_schema import (NBank, NDepositAccount, NPayment, NCheck, NDeposit, NI
                           NComment, NAccountStat, NSpent, NAccountTransaction)
 from henry.schema.legacy import NTodo
 
+@dataclasses.dataclass
 class Todo(SerializableDB[NTodo]):
     db_class = NTodo
     uid : Optional[int] = None
@@ -24,6 +26,7 @@ class Todo(SerializableDB[NTodo]):
     creation_date: Optional[datetime.datetime] = None
 
 
+@dataclasses.dataclass
 class Comment(SerializableDB[NComment]):
     db_class = NComment
     uid: Optional[int] = None
@@ -33,6 +36,7 @@ class Comment(SerializableDB[NComment]):
     user_id: Optional[str] = None
     comment: Optional[str] = None
 
+@dataclasses.dataclass
 class Image(SerializableDB[NImage]):
     db_class = NImage
     uid: Optional[int] = None
@@ -42,18 +46,21 @@ class Image(SerializableDB[NImage]):
     path: Optional[str] = None
 
 
+@dataclasses.dataclass
 class Bank(SerializableDB[NBank]):
     db_class = NBank
     id: Optional[int] = None
     name: Optional[str] = None
 
 
+@dataclasses.dataclass
 class DepositAccount(SerializableDB[NDepositAccount]):
     db_class = NDepositAccount
     id: Optional[int] = None
     name: Optional[str] = None
 
 
+@dataclasses.dataclass
 class AccountStat(SerializableDB[NAccountStat]):
     db_class = NAccountStat
     date: Optional[datetime.date] = None
@@ -65,6 +72,7 @@ class AccountStat(SerializableDB[NAccountStat]):
     revised_by: Optional[str] = None
 
 
+@dataclasses.dataclass
 class Spent(SerializableDB[NSpent]):
     db_class = NSpent
     uid: Optional[int] = None
@@ -271,6 +279,7 @@ class ImageServer(object):
         return img
 
 
+@dataclasses.dataclass
 class AccountTransaction(SerializableDB[NAccountTransaction]):
     db_class = NAccountTransaction
     uid: Optional[int] = None

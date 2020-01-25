@@ -1,3 +1,4 @@
+import dataclasses
 import datetime
 import os
 import uuid
@@ -31,6 +32,7 @@ class PaymentFormat(object):
     )
 
 
+@dataclasses.dataclass
 class InvMetadata(SerializableDB[NNota]):
     db_class = NNota
     uid: Optional[int] = None
@@ -44,7 +46,7 @@ class InvMetadata(SerializableDB[NNota]):
     almacen_ruc: Optional[str] = None
 
     # client_id: Optional[str] = None
-    user_id: Optional[str] = None
+    user: Optional[str] = None
     client: Optional[Client] = None
     paid: Optional[bool] = None
     paid_amount: Optional[int] = None
@@ -59,11 +61,14 @@ class InvMetadata(SerializableDB[NNota]):
     discount_percent: Optional[int] = None
 
     bodega_id: Optional[int] = None
-    items_location: Optional[str] = None
+    items_location: Optional[str] = dataclasses.field(default=None, metadata={
+        'skip': True})
 
     @classmethod
     def deserialize(cls, the_dict) -> 'InvMetadata':
+        print('InvMetadata.deserialize', the_dict)
         x = cls().merge_from(the_dict)
+        print('InvMetadata.deserialize after merge', the_dict)
         if x.timestamp and not isinstance(x.timestamp, datetime.datetime):
             x.timestamp = parse_iso_datetime(x.timestamp)
         if 'client' in the_dict:
@@ -128,12 +133,14 @@ class SRINotaStatus:
     DELETED_SENT_VALIDATED = 'deleted_sent_validated'
 
 
+@dataclasses.dataclass
 class NotaExtra(SerializableDB[NNotaExtra]):
     db_class = NNotaExtra
     id: Optional[int] = None
     status: Optional[str] = None
     last_change_time: Optional[datetime.datetime] = None
 
+@dataclasses.dataclass
 class SRINota(SerializableDB[NSRINota]):
     db_class = NSRINota
     uid : Optional[int] = None

@@ -211,7 +211,8 @@ class InvMovementType(object):
 
 
 #  tracks every movement of inventory
-class InventoryMovement(TypedSerializableMixin):
+@dataclasses.dataclass
+class InventoryMovement(SerializableData):
     """
         should have following attributes:
         from_inv_id: (int) id of from bodega
@@ -292,8 +293,9 @@ class InventoryApi(object):
             all_fname = list(map(functools.partial(os.path.join, str(igid)), all_fname))
             for x in self.fileservice.get_file_lines(all_fname):
                 item = InventoryMovement.deserialize(json.loads(x))
-                if start_date <= item.timestamp.date() <= end_date:
-                    yield item
+                if item.timestamp is not None:
+                    if start_date <= item.timestamp.date() <= end_date:
+                        yield item
 
     def get_changes(self, igid: int, start_date: datetime.date, end_date: datetime.date
                     ) -> Mapping[int, Decimal]:

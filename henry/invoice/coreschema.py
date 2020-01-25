@@ -18,7 +18,7 @@ class NNota(Base):
     almacen_ruc = Column(String(20))
 
     client_id = Column(String(20))
-    user_id = Column(String(20))
+    user = Column('user_id', String(20))
     paid = Column(Boolean)
     paid_amount = Column(Integer)
     payment_format = Column(String(20))
