@@ -2,6 +2,7 @@ import dataclasses
 import datetime
 import os
 import uuid
+from decimal import Decimal
 from typing import Optional, Iterator
 from henry.base.serialization import parse_iso_datetime
 from henry.base.dbapi import SerializableDB
@@ -35,6 +36,7 @@ class PaymentFormat(object):
 @dataclasses.dataclass
 class InvMetadata(SerializableDB[NNota]):
     db_class = NNota
+    _pkey_name = 'uid'
     uid: Optional[int] = None
     timestamp: Optional[datetime.datetime] = None
     status: Optional[str] = None
@@ -136,7 +138,7 @@ class SRINotaStatus:
 @dataclasses.dataclass
 class NotaExtra(SerializableDB[NNotaExtra]):
     db_class = NNotaExtra
-    id: Optional[int] = None
+    uid: Optional[int] = None
     status: Optional[str] = None
     last_change_time: Optional[datetime.datetime] = None
 
@@ -148,6 +150,12 @@ class SRINota(SerializableDB[NSRINota]):
     orig_codigo : Optional[str] = None
     timestamp_received: Optional[datetime.datetime] = None
     status : Optional[str] = None
+    orig_timestamp: Optional[datetime.datetime] = None
+    buyer_ruc: Optional[str] = None
+    buyer_name: Optional[str] = None
+    total: Optional[Decimal] = None
+    tax: Optional[Decimal] = None
+
     json_inv_location : Optional[str] = None
     xml_inv_location : Optional[str] = None
     resp1_location : Optional[str] = None

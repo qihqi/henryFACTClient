@@ -74,18 +74,17 @@ class Transferencia(MetaItemSet):
     _metadata_cls = TransMetadata
     meta: TransMetadata
 
-    def items_to_transaction(self, dbapi) -> Iterator[InventoryMovement]:
+    def items_to_transaction(self, dbapi=None):
+        # NOTE: type of item.prod is ProdItemGroup here
+        del dbapi
         tipo = self.meta.trans_type
         for item in self.items:
-            proditem = dbapi.getone(ProdItem, prod_id=item.prod.prod_id)
-            # TODO: deprecate use of upi at all
-            assert item.prod.multiplicador is not None
             yield InventoryMovement(
                 from_inv_id=self.meta.origin or -1,
                 to_inv_id=self.meta.dest or -1,
                 quantity=item.cant,
                 prod_id=item.prod.prod_id,
-                itemgroup_id=proditem.itemgroupid,
+                itemgroup_id=item.prod.uid,
                 type=transtype_to_invtype(tipo),
                 reference_id=str(self.meta.uid),
             )
@@ -117,5 +116,4 @@ class Transferencia(MetaItemSet):
         x.meta = cls._metadata_cls.deserialize(the_dict['meta'])
         x.items = list(map(TransItem.deserialize, the_dict['items']))
         return x
-
 

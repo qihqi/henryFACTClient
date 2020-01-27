@@ -2,7 +2,7 @@ import datetime
 import requests
 from henry import constants
 from henry import common
-from henry.dao.document import Status
+from henry.dao.document import Status, DocumentApi
 from henry.invoice.dao import NotaExtra
 from henry.base.serialization import json_dumps
 from henry.base.dbapi import DBApiGeneric
@@ -11,7 +11,7 @@ from typing import List, Union
 
 
 def get_notas_by_dates(dbapi: DBApiGeneric, start: datetime.datetime,
-                       end: datetime.datetime):
+                       end: datetime.datetime) -> List[NotaExtra]:
     with dbapi.session:
         notas = dbapi.db_session.query(NotaExtra.db_class).filter(
                 NotaExtra.db_class.last_change_time <= end).filter(
@@ -22,8 +22,12 @@ def get_notas_by_dates(dbapi: DBApiGeneric, start: datetime.datetime,
         return notas
 
 
-def send_inv(dbapi, invapi, nota, send_bytes_func):
-    full_inv = invapi.get_doc(nota.id)
+def send_inv(dbapi: DBApiGeneric, invapi: DocumentApi,
+             nota: NotaExtra, send_bytes_func):
+    full_inv = invapi.get_doc(nota.uid)
+    if full_inv is None:
+        print('nota with id {} is none'.format(nota.uid))
+        return
     msg = {'inv': full_inv.serialize()}
     msg['method'] = ('put' if nota.status == Status.COMITTED 
                      else 'delete')
@@ -35,11 +39,13 @@ def send_inv(dbapi, invapi, nota, send_bytes_func):
         with dbapi.session:
             dbapi.update(nota, {'status': new_status})
     else:
-        print('inv id: {} unsuccessful'.format(inv.uid))
-        print(resp.text)
+        print('inv id: {} unsuccessful'.format(nota.uid))
 
 
-def send_to_remote(dbapi, invapi, start, end, send_bytes_func):    
+def send_to_remote(dbapi: DBApiGeneric,
+                   invapi: DocumentApi,
+                   start: datetime.datetime, end: datetime.datetime,
+                   send_bytes_func):
     notas = get_notas_by_dates(dbapi, start, end)
     for n in notas:
         try:
@@ -56,7 +62,8 @@ def main():
         print(resp)
         return resp.status == 200
 
-    from henry.coreconfig import invapi, dbapi
+    from henry.coreconfig import invapi, sessionmanager
+    dbapi = DBApiGeneric(sessionmanager)
     send_to_remote(dbapi, invapi, start, end, send_bytes_func)
 
 

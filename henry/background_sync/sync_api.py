@@ -22,8 +22,8 @@ class ActionType(object):
     MODIFY_PROD = 'modify_prod'
     NEW_INV = 'new_inv'
     DELETE_INV = 'delete_inv'
-    NEW_TRANS = 'new_inv'
-    DELETE_TRANS = 'delete_inv'
+    NEW_TRANS = 'new_trans'
+    DELETE_TRANS = 'delete_trans'
 
 
 class LogMetadata(SerializableMixin):
@@ -110,9 +110,6 @@ class SyncApi(object):
         change_log = _make_log(ActionType.MODIFY_PROD, content)
         fname = make_date_name(change_log.meta.date, change_log.meta.batch)
         self.fileservice.append_file(fname, json_dumps(change_log))
-
-
-
 
 
 

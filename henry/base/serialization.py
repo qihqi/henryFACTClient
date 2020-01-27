@@ -95,7 +95,7 @@ class SerializableData(SerializableInterface):
                     kwargs[field.name] = potential_val
                     continue
 
-                # if potential_val is str, and have a from_str consturctor:
+                # if potential_val is str, and have a from_str constructor:
                 metadata = field.metadata
                 if isinstance(potential_val, str):
                     if 'from_str' in metadata:

@@ -145,8 +145,6 @@ class DocumentApi(object):
                 return doc
             return None
         elif doc.meta.status == Status.NEW:
-            count = self.db_session.session.query(self.db_class).filter_by(
-                id=doc.meta.uid).update({'status': Status.DELETED})
             count = self.dbapi.update(doc.meta, {'status': Status.DELETED})
             if count > 0:
                 return doc

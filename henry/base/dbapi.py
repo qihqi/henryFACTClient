@@ -86,7 +86,7 @@ class DBApiGeneric(object):
         dbobj = obj.db_instance()
         self.sm.session.add(dbobj)
         self.sm.session.flush()
-        pkey = pkey_col.name
+        pkey = self._get_pkey_name(type(obj))
         pkeyval = getattr(dbobj, pkey)
         setattr(obj, pkey, pkeyval)
         return pkeyval
@@ -101,10 +101,10 @@ class DBApiGeneric(object):
 
     def update(self, obj: SerializableDB, content_dict: Mapping) -> int:
         pkey_col = inspect(obj.db_class).primary_key[0]
-        pkey = getattr(obj, pkey_col.name)
+        pkey = getattr(obj, self._get_pkey_name(type(obj)))
         count = self.sm.session.query(obj.db_class).filter(
             pkey_col == pkey).update(
-            content_dict)
+            content_dict, synchronize_session='fetch')
         for x, y in list(content_dict.items()):
             setattr(obj, x, y)
         return count
@@ -112,16 +112,17 @@ class DBApiGeneric(object):
     def update_full(self, obj: SerializableDB) -> int:
         columns = inspect(obj.db_class).columns
         pkey_col = inspect(obj.db_class).primary_key[0]
+        pkey_name = self._get_pkey_name(type(obj))
         values = {col: getattr(obj, col)
                   for col in list(columns.keys())
-                  if col != pkey_col.name}
+                  if col != pkey_name}
         return self.update(obj, values)
 
     def delete(self, obj: SerializableDB) -> int:
         pkey_col = inspect(obj.db_class).primary_key[0]
-        pkey = getattr(obj, pkey_col.name)
+        pkey = getattr(obj, self._get_pkey_name(type(obj)))
         count = self.sm.session.query(obj.db_class).filter(
-            pkey_col == pkey).delete()
+            pkey_col == pkey).delete(synchronize_session='fetch')
         return count
 
     def getone(self, objclass: Type[T], **kwargs) -> Optional[T]:
@@ -148,3 +149,13 @@ class DBApiGeneric(object):
                 f = col >= value
             query = query.filter(f)
         return list(map(objclass.from_db_instance, iter(query)))
+
+    def _get_pkey_name(self, cls: Type[SerializableDB]) -> str:
+        if hasattr(cls, '_pkey_name'):
+            return getattr(cls, '_pkey_name')
+        insp = inspect(cls.db_class)
+        pkey_col = insp.primary_key[0]
+        for key, val in insp.columns.items():
+            if val.name == pkey_col.name:
+                return key
+        raise AssertionError('No primary key among columns', cls.__name__)

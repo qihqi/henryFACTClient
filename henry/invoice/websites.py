@@ -16,7 +16,7 @@ from henry.users.dao import Client
 from henry.accounting.acct_schema import NPayment
 from henry.product.dao import Store
 from henry.accounting.dao import Comment
-from henry.invoice.dao import PaymentFormat
+from henry.invoice.dao import PaymentFormat, InvMetadata
 
 from .coreschema import NNota
 from .coreapi import get_inv_db_instance
@@ -65,37 +65,35 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
         if not ref:
             abort(400, 'escriba el motivo')
         user = get_user(request)
-        db_instance = get_inv_db_instance(dbapi.db_session, almacen_id, codigo)
-        if db_instance is None:
+
+        inv_meta = dbapi.getone(InvMetadata, almacen_id=almacen_id, codigo=codigo)
+        if inv_meta is None:
             alm = dbapi.get(almacen_id, Store)
-            db_instance = dbapi.db_session.query(NNota).filter_by(
-                almacen_ruc=alm.ruc, codigo=codigo).first()
-        if db_instance is None:
+            inv_meta = dbapi.getone(InvMetadata, almacen_ruc=alm.ruc, codigo=codigo)
+        if inv_meta is None:
             return eliminar_factura_form('Factura no existe')
 
-        if db_instance.status == Status.DELETED:
+        if inv_meta.status == Status.DELETED:
             # already deleted
-            redirect('/app/nota/{}'.format(db_instance.id))
-
-        old_status = db_instance.status
+            redirect('/app/nota/{}'.format(inv_meta.uid))
 
         comment = Comment(
             user_id=user['username'],
             timestamp=datetime.datetime.now(),
             comment=ref,
             objtype='notas',
-            objid=str(db_instance.id),
+            objid=str(inv_meta.uid),
         )
         dbapi.create(comment)
-        doc = invapi.get_doc_from_file(db_instance.items_location)
-        doc.meta.status = db_instance.status
+        doc = invapi.get_doc_from_file(inv_meta.items_location)
+        doc.meta.status = inv_meta.status
 
         try:
             invapi.delete(doc)
         except ValueError:
             abort(400)
 
-        redirect('/app/nota/{}'.format(db_instance.id))
+        redirect('/app/nota/{}'.format(inv_meta.uid))
 
     @w.get('/app/ver_factura_form')
     @dbcontext

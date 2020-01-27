@@ -31,7 +31,7 @@ def main():
                 total += prod.base_price_usd * i.cant
             t.meta.value = total
 
-            dbapi.db_session.query(NTransferencia).filter_by(id=t.meta.uid).update({'value': total})
+            dbapi.db_session.query(NTransferencia).filter_by(uid=t.meta.uid).update({'value': total})
 
 
 if __name__ == '__main__':

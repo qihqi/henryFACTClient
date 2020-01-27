@@ -1,3 +1,4 @@
+## NOTE: this shit probably doesnt work
 import datetime
 
 import requests

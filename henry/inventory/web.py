@@ -1,5 +1,3 @@
-from __future__ import print_function
-from builtins import str
 import datetime
 import traceback
 from typing import Callable
@@ -13,11 +11,11 @@ from henry.base.common import parse_start_end_date
 from henry.base.serialization import json_dumps
 from henry.base.session_manager import DBContext
 from henry.common import transmetadata_from_form, items_from_form
-from henry.dao.document import Status, DocumentApi
+from henry.dao.document import DocumentApi
 
 from henry.product.dao import Bodega
 
-from .dao import TransType, Transferencia, TransMetadata
+from .dao import TransType, Transferencia
 
 
 def make_inv_api(dbapi: DBApiGeneric,
@@ -46,10 +44,6 @@ def make_inv_api(dbapi: DBApiGeneric,
     def postear_ingreso(ingreso_id):
         trans = transapi.get_doc(ingreso_id)
         transapi.commit(trans)
-        if forward_transaction is not None:
-            if trans.meta.trans_type == TransType.EXTERNAL:
-                trans.meta.dest = 4  # policentro
-                trans.meta.trans_type = TransType.TRANSFER
         return {'status': trans.meta.status}
 
     @api.delete('/app/api/ingreso/<ingreso_id>')
@@ -94,7 +88,7 @@ def make_inv_wsgi(
         dbapi: DBApiGeneric, jinja_env,
         actionlogged: Callable[[Callable], Callable],
         auth_decorator: AuthType, transapi: DocumentApi,
-        revisionapi, external_bodegas):
+        revisionapi):
     w = Bottle()
     dbcontext = DBContext(dbapi.session)
 
@@ -124,9 +118,7 @@ def make_inv_wsgi(
     def crear_ingreso():
         temp = jinja_env.get_template('inventory/crear_ingreso.html')
         bodegas = dbapi.search(Bodega)
-        bodegas_externas = [Bodega(id=i, nombre=n[0])
-                            for i, n in enumerate(external_bodegas)]
-        return temp.render(bodegas=bodegas, externas=bodegas_externas,
+        return temp.render(bodegas=bodegas, externas={},
                            types=TransType.names)
 
     def remove_upi(items):
@@ -143,18 +135,6 @@ def make_inv_wsgi(
         meta.value = sum((x.cant * (x.prod.base_price_usd or 0) for x in items))
         try:
             transferencia = Transferencia(meta, items)
-            if meta.trans_type == TransType.EXTERNAL:
-                newmeta = TransMetadata().merge_from(meta)
-                external_bodega_index = int(request.forms['externa'])
-                _, api, dest_id = external_bodegas[external_bodega_index]
-                newmeta.dest = dest_id
-                newmeta.origin = None
-                newmeta.trans_type = TransType.INGRESS
-                remove_upi(items)
-                t = api.save(Transferencia(newmeta, items))
-                if t is None:
-                    abort(400)
-                transferencia.meta.ref = t.meta.ref
             transferencia = transapi.save(transferencia)
             redirect('/app/ingreso/{}'.format(transferencia.meta.uid))
         except ValueError as e:

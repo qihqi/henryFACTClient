@@ -215,7 +215,7 @@ def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles):
         filename = bar.ean + '.svg'
         path = imagefiles.make_fullpath(filename)
         if not os.path.exists(path):
-            with open(path, 'w') as barcode_file:
+            with open(path, 'wb') as barcode_file:
                 bar.write(barcode_file)
         url = '/app/img/{}'.format(filename)
 

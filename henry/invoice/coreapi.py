@@ -36,7 +36,6 @@ def fix_inv_by_options(dbapi, inv, options):
     inv.meta.paid = True
 
     if options.revisar_producto:  # create producto if not exist
-        print('here')
         create_prod_if_not_exist(dbapi, inv)
 
     for item in inv.items:
@@ -150,10 +149,8 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
 
         # increment the next invoice's number
         if options.incrementar_codigo:
-            print(' increment codigi')
             user = User(username=inv.meta.user)
             count = dbapi.update(user, {'last_factura': int(inv.meta.codigo) + 1})
-            print('updaet count', count)
         dbapi.db_session.commit()
 
         return {'codigo': inv.meta.uid}
@@ -167,7 +164,7 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
         invapi.commit(inv)
         
         nota_extra = NotaExtra()
-        nota_extra.id = inv.meta.uid
+        nota_extra.uid = inv.meta.uid
         nota_extra.status = Status.COMITTED
         nota_extra.last_change_time = datetime.datetime.now()
         dbapi.create(nota_extra)
@@ -226,5 +223,5 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
 
 def get_inv_db_instance(session, almacen_id, codigo):
     return session.query(
-        NNota.id, NNota.status, NNota.items_location).filter_by(
+        NNota.uid, NNota.status, NNota.items_location).filter_by(
         almacen_id=almacen_id, codigo=codigo).first()

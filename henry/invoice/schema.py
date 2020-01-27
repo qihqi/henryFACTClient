@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, DateTime, String, Boolean, Index
+from sqlalchemy import Column, Integer, DateTime, String, Boolean, Index, Numeric
 from henry.schema.base import Base
 
 __author__ = 'han'
@@ -11,7 +11,13 @@ class NSRINota(Base):
 
     almacen_ruc = Column(String(100))
     orig_codigo = Column(String(100))
-    
+
+    orig_timestamp = Column(DateTime)
+    buyer_ruc = Column(String(30))
+    buyer_name = Column(String(30))
+    total = Column(Numeric(11, 4))
+    tax = Column(Numeric(11, 4))
+
     # original timestamp == when is this created by client on their time
     timestamp_received = Column(DateTime, index=True)
     status = Column(String(10))

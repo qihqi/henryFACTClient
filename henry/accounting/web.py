@@ -40,12 +40,11 @@ def extract_nota_and_client(dbapi: DBApiGeneric,
     codigo = form.get('codigo')
     almacen = form.get('almacen_id')
     if codigo:
-        nota = dbapi.db_session.query(NNota).filter_by(
-            codigo=codigo, almacen_id=almacen).first()
+        nota = dbapi.getone(InvMetadata, codigo=codigo, almacen_id=almacen)
         if nota is None:
             redirect('{}?msg=Orden+Despacho+No+{}+no+existe'.format(
                 redirect_url, codigo))
-        return nota.id, nota.client_id
+        return nota.uid, nota.client.codigo
     return None, None
 
 
@@ -291,38 +290,6 @@ def make_wsgi_app(dbcontext: DBContext, imgserver: ImageServer,
             store=dbapi.search(Store),
             report=report)
 
-    @w.get('/app/resumen_viejo')
-    @dbcontext
-    @auth_decorator(1)
-    def get_resumen_viejo():
-        user = request.query.get('user')
-        store = request.query.get('almacen_id')
-        start, end = parse_start_end_date(request.query)
-
-        if user is None or store is None:
-            abort(400, 'Escoje usuario y almacen')
-        if start is None or end is None:
-            abort(400, 'Hay que ingresar las fechas')
-
-        store = int(store)
-        result = get_notas_with_clients(dbapi.session, end, start, store)
-
-        by_status = split_records(result, lambda x: x.status)
-        deleted = by_status[Status.DELETED]
-        committed = by_status[Status.COMITTED]
-        ventas = split_records(committed, lambda x: x.payment_format)
-
-        gtotal = sum((x.total for x in committed))
-        temp = jinja_env.get_template('invoice/resumen.html')
-        return temp.render(
-            start=start,
-            end=end,
-            user=user,
-            store=dbapi.search(Store),
-            ventas=ventas,
-            gtotal=gtotal,
-            eliminados=deleted)
-
     @w.get('/app/entregar_cuenta_form')
     @dbcontext
     @auth_decorator(1)
@@ -442,7 +409,7 @@ def make_wsgi_app(dbcontext: DBContext, imgserver: ImageServer,
     @auth_decorator(0)
     def post_create_bank():
         name = request.forms.name
-        bank = Bank(nombre=name)
+        bank = Bank(name=name)
         dbapi.create(bank)
         redirect('/app/crear_banco_form?msg=Cuenta+Creada')
 
@@ -692,6 +659,7 @@ def make_wsgi_app(dbcontext: DBContext, imgserver: ImageServer,
     @auth_decorator(0)
     def save_spent(msg='', uid=-1):
         spent = None
+        uid = int(uid)
         if uid >= 0:
             spent = dbapi.db_session.query(NSpent).filter_by(uid=uid).first()
             if spent is None:

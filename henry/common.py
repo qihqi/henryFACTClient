@@ -1,5 +1,7 @@
 from __future__ import division
 from builtins import zip
+from typing import Mapping
+
 from past.utils import old_div
 
 import base64
@@ -48,28 +50,25 @@ def items_from_form(dbapi, form):
     return items
 
 
-def transmetadata_from_form(form):
+def transmetadata_from_form(form: Mapping[str, str]) -> TransMetadata:
     meta = TransMetadata()
-    meta.dest = form.get('dest').decode('utf-8')
-    meta.origin = form.get('origin').decode('utf-8')
-    fecha = form.get('fecha').decode('utf-8')
+    dest = form.get('dest')
+    origin = form.get('origin')
+    meta.dest = int(dest) if dest is not None else None
+    meta.origin = int(origin) if origin is not None else None
+    fecha = form.get('fecha')
     if fecha:
-        fecha = parse_iso(fecha)
+        fecha_date = parse_iso(fecha)
         meta.timestamp = datetime.datetime.combine(
-            fecha.date(), datetime.datetime.now().time())
-    try:
-        meta.dest = int(meta.dest)
-        meta.origin = int(meta.origin)
-    except ValueError:
-        pass
-    meta.meta_type = form.get('meta_type')
-    meta.trans_type = form.get('trans_type')
-    if meta.trans_type == TransType.INGRESS:
-        meta.origin = None  # ingress does not have origin
-    if meta.trans_type in (TransType.EXTERNAL or TransType.EGRESS):
-        meta.dest = None  # dest for external resides in other server
-    if meta.timestamp is None:
+            fecha_date.date(), datetime.datetime.now().time())
+    else:
         meta.timestamp = datetime.datetime.now()
+    meta.trans_type = form.get('trans_type')
+    if meta.trans_type is not None:
+        if meta.trans_type == TransType.INGRESS:
+            meta.origin = None  # ingress does not have origin
+        if meta.trans_type in (TransType.EXTERNAL or TransType.EGRESS):
+            meta.dest = None  # dest for external resides in other server
     return meta
 
 _MODE = AES.MODE_EAX

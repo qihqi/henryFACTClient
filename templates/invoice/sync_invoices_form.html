@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "macros.html" import start_end_date_oneline %}
+
+{%block title %}Facturas{% endblock %}
+
+{% block content %}
+{% if msg %} <h4>{{ msg }}</h4> {% endif %}
+<form method="get">
+    <p>
+        {{ start_end_date_oneline() }}
+        <input type="submit" value="Buscar"/>
+    </p>
+</form>
+
+<table>
+    {% for row in rows %}
+    <tr>
+        <td>{{ row.almacen_ruc }}</td>
+        <td>{{ row.orig_codigo }}</td>
+        <td>{{ row.buyer_name }}</td>
+        <td>{{ row.tax }}</td>
+        <td>{{ row.total }}</td>
+        <td>{{ row.status }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

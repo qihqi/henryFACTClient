@@ -12,7 +12,6 @@ from henry.base.serialization import SerializableMixin
 from henry.product.dao import Store, get_real_prod_id
 from henry.invoice.coreschema import NNota
 from henry.users.schema import NCliente
-from henry.base.serialization import decode_str
 from henry.invoice.dao import PaymentFormat, InvMetadata
 from henry.dao.document import Status
 from henry.users.dao import Client
@@ -25,8 +24,8 @@ def get_notas_with_clients(dbapi, end_date, start_date,
 
     def decode_db_row_with_client(db_raw):
         m = InvMetadata.from_db_instance(db_raw[0])
-        m.client.nombres = decode_str(db_raw.nombres)
-        m.client.apellidos = decode_str(db_raw.apellidos)
+        m.client.nombres = db_raw.nombres
+        m.client.apellidos = db_raw.apellidos
         if not m.almacen_name:
             alm = dbapi.get(m.almacen_id, Store)
             m.almacen_name = alm.nombre
