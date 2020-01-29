@@ -60,7 +60,7 @@ def main():
     def send_bytes_func(msg_bytes):
         resp = requests.post(constants.REMOTE_ADDR, data=msg_bytes)
         print(resp)
-        return resp.status == 200
+        return resp.status_code == 200
 
     from henry.coreconfig import invapi, sessionmanager
     dbapi = DBApiGeneric(sessionmanager)

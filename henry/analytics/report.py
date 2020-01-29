@@ -3,6 +3,9 @@ from decimal import Decimal
 
 from operator import itemgetter
 import os
+
+from past.utils import old_div
+
 from henry.base.serialization import json_loads
 from henry.invoice.dao import Invoice
 from .exporting import dump_content

@@ -4,6 +4,7 @@ from datetime import timedelta
 from operator import attrgetter
 from decimal import Decimal
 
+from past.utils import old_div
 from sqlalchemy import func
 
 from henry.accounting.acct_schema import NPayment, NCheck, NSpent

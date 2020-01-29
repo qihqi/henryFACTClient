@@ -6,6 +6,8 @@ from typing import Optional
 from decimal import Decimal
 import functools
 
+from past.utils import old_div
+
 from henry.base.dbapi import SerializableDB
 from henry.base.serialization import SerializableMixin, TypedSerializableMixin, parse_iso_datetime
 from .schema import (NUniversalProduct, NDeclaredGood, NPurchaseItem,
