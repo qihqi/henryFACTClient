@@ -28,8 +28,7 @@ class RestApi(object):
             except Exception as e:
                 print(e, file=sys.stderr)
                 print('logging failed', file=sys.stderr)
-            obj = self.clazz()
-            setattr(obj, self.clazz.pkey.name, pkey)
+            obj = self.dbapi.get(pkey, self.clazz)
             count = self.dbapi.update(obj, content_dict=content_dict)
             return json_dumps({'modified': count})
 

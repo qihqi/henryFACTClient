@@ -44,6 +44,8 @@ def extract_nota_and_client(dbapi: DBApiGeneric,
         if nota is None:
             redirect('{}?msg=Orden+Despacho+No+{}+no+existe'.format(
                 redirect_url, codigo))
+        assert nota is not None
+        assert nota.client is not None
         return nota.uid, nota.client.codigo
     return None, None
 
@@ -72,7 +74,7 @@ def make_wsgi_api(dbapi: DBApiGeneric, invapi: DocumentApi,
             NNota.status != Status.DELETED).group_by(NNota.almacen_id)
         result = []
         for aid, total in query:
-            result.append((aid, old_div(Decimal(total), 100)))
+            result.append((aid, Decimal(total) / 100))
         return json_dumps({'result': result})
 
     @w.get('/app/api/payment')
@@ -115,7 +117,7 @@ def make_wsgi_api(dbapi: DBApiGeneric, invapi: DocumentApi,
         for x in checks:
             x.imgdeposit = imgserver.get_url_path(x.imgdeposit)
             x.imgcheck = imgserver.get_url_path(x.imgcheck)
-            x.value = old_div(Decimal(x.value), 100)
+            x.value = Decimal(x.value) / 100
         return json_dumps({'result': checks})
 
     @w.post('/app/api/acct_transaction')

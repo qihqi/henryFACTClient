@@ -10,7 +10,7 @@ from henry.base.session_manager import SessionManager, DBContext
 from henry.constants import (CONN_STRING, INVOICE_PATH, ENV,
                              LOGIN_URL, TRANSACTION_PATH, PEDIDO_PATH,
                              ACTION_LOG_PATH,
-                             BEAKER_DIR, FORWARD_INV, ZEROMQ_PORT)
+                             BEAKER_DIR)
 from henry.dao.document import DocumentApi, PedidoApi
 from henry.invoice.dao import Invoice
 from henry.dao.actionlog import ActionLogApi, ActionLogApiDecor
