@@ -4,7 +4,7 @@ import datetime
 
 from bottle import request
 
-from henry.base.serialization import SerializableMixin, json_dumps
+from henry.base.serialization import SerializableMixin, json_dumps, decode_str
 from henry.base.fileservice import LockClass
 
 
@@ -58,12 +58,13 @@ class ActionLogApiDecor(object):
 
     def __call__(self, func):
         def wrapped(*args, **argv):
+            content = decode_str(request.body.read())
             log = ActionLog(
                 timestamp=datetime.datetime.now(),
                 ip_address=request.remote_addr,
                 method=request.method,
                 url=request.url,
-                body=request.body.read().decode('utf-8'))
+                body=content)
             self.api.save(log)
             request.body.seek(0)  # reset body to the beginning
             return func(*args, **argv)

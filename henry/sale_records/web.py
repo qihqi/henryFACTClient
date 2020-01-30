@@ -5,7 +5,7 @@ import json
 from bottle import Bottle, request
 from henry.base.common import parse_start_end_date
 from henry.base.dbapi_rest import bind_dbapi_rest
-from henry.base.serialization import json_dumps, parse_iso_date
+from henry.base.serialization import json_dumps, parse_iso_date, decode_str
 from henry.base.session_manager import DBContext
 from henry.dao.document import Status
 from henry.product.dao import ProdItemGroup, InventoryMovement
@@ -31,7 +31,7 @@ def make_sale_records_api(prefix, auth_decorator, dbapi,
     @auth_decorator(0)
     def post_sale():
         content = Sale.deserialize(json.loads(
-            request.body.read().decode('utf-8')))
+            decode_str(request.body.read())))
         if list(dbapi.search(
                 Sale, seller_codename=content.seller_codename,
                 seller_inv_uid=content.seller_inv_uid)):
@@ -43,7 +43,7 @@ def make_sale_records_api(prefix, auth_decorator, dbapi,
     @dbcontext
     @auth_decorator(0)
     def get_sales():
-        start, end = parse_start_end_date(request.query.decode('utf-8'))
+        start, end = parse_start_end_date(request.query)
         result = list(get_sales_by_date_and_user(dbapi, start, end))
         return json_dumps(result)
 
@@ -52,7 +52,7 @@ def make_sale_records_api(prefix, auth_decorator, dbapi,
     @auth_decorator(0)
     def delete_sale():
         content = Sale.deserialize(json.loads(
-            request.body.read().decode('utf-8')))
+            decode_str(request.body.read())))
         deleted = dbapi.db_session.query(NSale).filter_by(
             seller_codename=content.seller_codename, seller_inv_uid=content.seller_inv_uid
         ).update({'status': Status.DELETED})
@@ -62,7 +62,7 @@ def make_sale_records_api(prefix, auth_decorator, dbapi,
     @dbcontext
     @auth_decorator(0)
     def post_inv_movement_set():
-        raw_inv = request.body.read().decode('utf-8')
+        raw_inv = decode_str(request.body.read())
         inv_movement = InvMovementFull.deserialize(json.loads(raw_inv))
         meta = inv_movement.meta
         meta.origin = get_or_create_inventory_id(dbapi, meta.inventory_codename, meta.origin)
@@ -98,7 +98,7 @@ def make_sale_records_api(prefix, auth_decorator, dbapi,
     @dbcontext
     def get_sales_report():
         start, end = parse_start_end_date(
-                request.query.decode('utf-8'))
+                request.query)
         sales_by_date = list(client_sale_report(dbapi, start, end))
         return json_dumps({'result': sales_by_date})
 
@@ -106,7 +106,7 @@ def make_sale_records_api(prefix, auth_decorator, dbapi,
     # expects [proditemgroup, inventoryMovement, codename]
     @dbcontext
     def post_raw_inv_movement():
-        raw_data = json.loads(request.body.read().decode('utf-8'))
+        raw_data = json.loads(decode_str(request.body.read()))
         ig = ProdItemGroup.deserialize(raw_data[0])
         trans = list(map(InventoryMovement.deserialize, raw_data[1]))
         codename = raw_data[2]

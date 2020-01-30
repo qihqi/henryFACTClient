@@ -6,7 +6,7 @@ from decimal import Decimal
 from bottle import Bottle, request, abort
 import datetime
 
-from henry.base.serialization import SerializableMixin, json_loads, json_dumps
+from henry.base.serialization import SerializableMixin, json_loads, json_dumps, decode_str
 from henry.base.session_manager import DBContext
 from henry.dao.document import Status
 
@@ -130,7 +130,7 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
     @auth_decorator(0)
     @actionlogged
     def create_invoice():
-        json_content = request.body.read().decode('utf-8')
+        json_content = decode_str(request.body.read())
         if not json_content:
             return ''
 
@@ -206,7 +206,7 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
     @auth_decorator(0)
     @actionlogged
     def save_pedido():
-        json_content = request.body.read().decode('utf-8')
+        json_content = decode_str(request.body.read())
         uid, _ = pedidoapi.save(json_content)
         return {'codigo': uid}
 

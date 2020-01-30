@@ -7,15 +7,18 @@ from decimal import Decimal
 
 from bottle import Bottle, request
 
+from henry.dao.document import Status
+from henry.base.common import parse_start_end_date
 from henry.base.dbapi_rest import bind_dbapi_rest
-from henry.base.serialization import json_dumps
+from henry.base.serialization import json_dumps, decode_str, parse_iso_date
 from henry.base.session_manager import DBContext
+from henry.sale_records.dao import InvMovementFull, get_or_create_inventory_id, InvMovementMeta, \
+    get_sales_by_date_and_user, Sale, client_sale_report, Inventory
+from product.dao import ProdItemGroup, InventoryMovement
+from henry.sale_records.schema import NSale
 from .dao import (Purchase, PurchaseItem, UniversalProd, DeclaredGood,
-                  get_purchase_full, get_custom_items_full,
-                  CustomItem, CustomItemFull, normal_filter, Unit,
-                  generate_custom_for_purchase, PurchaseStatus, create_custom,
-                  get_purchase_item_full_by_custom)
-from .schema import NCustomItem
+                  get_purchase_full,
+                  CustomItem, normal_filter, Unit)
 
 
 def make_import_apis(prefix, auth_decorator, dbapi,
@@ -65,7 +68,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     @dbcontext
     @auth_decorator(0)
     def create_full_purchase():
-        rows = json.loads(request.body.read().decode('utf-8'))
+        rows = json.loads(decode_str(request.body.read()))
         purchase = Purchase()
         purchase.timestamp = datetime.datetime.now()
         pid = dbapi.create(purchase)
@@ -86,7 +89,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     @app.put(prefix + '/purchase_full/<uid>')
     @dbcontext
     def update_purchase_full(uid):
-        data = json.loads(request.body.read().decode('utf-8'))
+        data = json.loads(decode_str(request.body.read()))
         print(data)
         # update meta
         updated = Purchase.deserialize(data['meta'])
@@ -110,7 +113,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     @dbcontext
     @auth_decorator(0)
     def post_sale():
-        content = Sale.deserialize(json.loads(request.body.read().decode('utf-8')))
+        content = Sale.deserialize(json.loads(decode_str(request.body.read())))
         if list(dbapi.search(
                 Sale, seller_codename=content.seller_codename,
                 seller_inv_uid=content.seller_inv_uid)):
@@ -130,7 +133,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     @dbcontext
     @auth_decorator(0)
     def delete_sale():
-        content = Sale.deserialize(json.loads(request.body.read().decode('utf-8')))
+        content = Sale.deserialize(json.loads(decode_str(request.body.read())))
         deleted = dbapi.db_session.query(NSale).filter_by(
             seller_codename=content.seller_codename, seller_inv_uid=content.seller_inv_uid
         ).update({'status': Status.DELETED})
@@ -140,7 +143,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     @dbcontext
     @auth_decorator(0)
     def post_inv_movement_set():
-        raw_inv = request.body.read().decode('utf-8')
+        raw_inv = decode_str(request.body.read())
         inv_movement = InvMovementFull.deserialize(json.loads(raw_inv))
         meta = inv_movement.meta
         meta.origin = get_or_create_inventory_id(dbapi, meta.inventory_codename, meta.origin)
@@ -182,7 +185,7 @@ def make_import_apis(prefix, auth_decorator, dbapi,
     # @app.post(prefix + '/raw_inv_movement')
     @dbcontext
     def post_raw_inv_movement():
-        raw_data = json.loads(request.body.read().decode('utf-8'))
+        raw_data = json.loads(decode_str(request.body.read()))
         ig = ProdItemGroup.deserialize(raw_data[0])
         trans = list(map(InventoryMovement.deserialize, raw_data[1]))
         codename = raw_data[2]

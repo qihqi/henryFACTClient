@@ -9,7 +9,7 @@ from henry.background_sync.sync_api import SyncApi
 from henry.base.dbapi import DBApiGeneric
 from henry.base.common import parse_start_end_date
 from henry.base.dbapi_rest import bind_dbapi_rest, bind_restapi, RestApi
-from henry.base.serialization import json_dumps
+from henry.base.serialization import json_dumps, decode_str
 from henry.base.session_manager import SessionManager, DBContext
 from henry.product.dao import ProdItemGroup, Store, Bodega, ProdItem, PriceList, ProdTag, ProdTagContent, InventoryApi
 
@@ -78,7 +78,7 @@ def make_wsgi_api(
             }
         """
 
-        content = request.body.read().decode('utf-8')
+        content = decode_str(request.body.read())
         content = json.loads(content)
         valid, message = validate_full_item(content, dbapi)
         if not valid:
@@ -103,7 +103,7 @@ def make_wsgi_api(
     @dbcontext
     def save_item_with_price():
         # TODO: VALIDATION
-        item_with_price = json.loads(request.body.read().decode('utf-8'))
+        item_with_price = json.loads(decode_str(request.body.read()))
         item = ProdItem.deserialize(item_with_price)
         prod_id = item_with_price['prod_id']
         if int(item_with_price['multiplier']) > 1:

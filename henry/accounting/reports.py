@@ -3,10 +3,12 @@ from collections import defaultdict
 from datetime import timedelta
 from operator import attrgetter
 from decimal import Decimal
+from typing import Optional, List, Iterable
 
 from past.utils import old_div
 from sqlalchemy import func
 
+from henry.base.dbapi import DBApiGeneric
 from henry.accounting.acct_schema import NPayment, NCheck, NSpent
 from henry.accounting.dao import Spent, AccountTransaction, Image
 from henry.base.serialization import SerializableMixin
@@ -19,17 +21,20 @@ from henry.users.dao import Client
 from functools import reduce
 
 
-def get_notas_with_clients(dbapi, end_date, start_date,
-                           store=None, user_id=None):
+def get_notas_with_clients(dbapi: DBApiGeneric,
+                           end_date: datetime.date,
+                           start_date: datetime.date,
+                           store: Optional[int]=None, user_id: Optional[str]=None) -> Iterable[InvMetadata]:
     end_date = end_date + timedelta(days=1) - timedelta(seconds=1)
 
-    def decode_db_row_with_client(db_raw):
+    def decode_db_row_with_client(db_raw) -> InvMetadata:
         m = InvMetadata.from_db_instance(db_raw[0])
         m.client.nombres = db_raw.nombres
         m.client.apellidos = db_raw.apellidos
         if not m.almacen_name:
             alm = dbapi.get(m.almacen_id, Store)
-            m.almacen_name = alm.nombre
+            if alm is not None:
+                m.almacen_name = alm.nombre
         return m
 
     result = dbapi.db_session.query(NNota, NCliente.nombres, NCliente.apellidos).filter(
@@ -39,7 +44,7 @@ def get_notas_with_clients(dbapi, end_date, start_date,
         result = result.filter_by(almacen_id=store)
     if user_id is not None:
         result = result.filter_by(user_id=user_id)
-    return list(map(decode_db_row_with_client, result))
+    return map(decode_db_row_with_client, result)
 
 
 def split_records(source, classifier):
@@ -117,6 +122,7 @@ class DailyReport(SerializableMixin):
         self.checks = checks
         self.deleted = deleted
         self.other_cash = other_cash
+
 
 
 def generate_daily_report(dbapi, day):
@@ -315,9 +321,4 @@ def get_sale_report(invapi, start, end):
 
     report.best_sellers = list(set(best_by_val) | set(best_by_cant))
     return report
-
-
-
-
-
 

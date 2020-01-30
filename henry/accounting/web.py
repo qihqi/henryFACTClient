@@ -15,7 +15,7 @@ from henry import constants
 from henry import hack
 from henry.base.auth import get_user, AuthType
 from henry.base.common import parse_iso, parse_start_end_date, parse_start_end_date_with_default
-from henry.base.serialization import json_dumps
+from henry.base.serialization import json_dumps, decode_str
 from henry.base.dbapi import DBApiGeneric
 from henry.base.dbapi_rest import bind_dbapi_rest
 from henry.dao.document import Status, DocumentApi
@@ -123,7 +123,7 @@ def make_wsgi_api(dbapi: DBApiGeneric, invapi: DocumentApi,
     @w.post('/app/api/acct_transaction')
     @dbcontext
     def post_acct_transaction():
-        data = request.body.read().decode('utf-8')
+        data = decode_str(request.body.read())
         acct = AccountTransaction.deserialize(json.loads(data))
         acct.input_timestamp = datetime.datetime.now()
         acct.deleted = False
@@ -133,7 +133,7 @@ def make_wsgi_api(dbapi: DBApiGeneric, invapi: DocumentApi,
     @w.put('/app/api/acct_transaction/<uid>')
     @dbcontext
     def put_acct_transaction(uid):
-        data = json.loads(request.body.read().decode('utf-8'))
+        data = json.loads(decode_str(request.body.read()))
         acct = AccountTransaction(uid=uid)
         count = dbapi.update(acct, data)
         return {'updated': count}
@@ -215,7 +215,7 @@ def make_wsgi_api(dbapi: DBApiGeneric, invapi: DocumentApi,
     @w.put('/app/api/pago/<uid>')
     @dbcontext
     def modify_payment(uid):
-        data = json.loads(request.body.read().decode('utf-8'))
+        data = json.loads(decode_str(request.body.read()))
         success = dbapi.db_session.query(NPayment).filter_by(uid=uid).update(data)
         dbapi.db_session.commit()
         return {'success': success > 0}
@@ -232,7 +232,7 @@ def make_wsgi_api(dbapi: DBApiGeneric, invapi: DocumentApi,
     @dbcontext
     @auth_decorator(0)
     def post_comment():
-        comment = json.loads(request.body.read().decode('utf-8'))
+        comment = json.loads(decode_str(request.body.read()))
         c = Comment()
         c.objid = comment['objid']
         c.objtype = comment['objtype']
@@ -246,7 +246,7 @@ def make_wsgi_api(dbapi: DBApiGeneric, invapi: DocumentApi,
     @w.get('/app/api/sale_report_monthly')
     @dbcontext
     def sale_report_monthly():
-        start, end = parse_start_end_date(request.query.decode('utf-8'))
+        start, end = parse_start_end_date(decode_str(request.query))
         report = get_sale_report(invapi, start, end)
         return json_dumps(report)
 

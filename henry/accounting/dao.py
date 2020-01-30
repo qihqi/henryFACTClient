@@ -3,10 +3,12 @@ import datetime
 import os
 import uuid
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, Callable
 
 from sqlalchemy import desc
-from henry.base.dbapi import SerializableDB
+
+from henry.base.fileservice import FileService
+from henry.base.dbapi import SerializableDB, DBApiGeneric
 from henry.base.serialization import SerializableMixin
 from henry.invoice.dao import PaymentFormat
 
@@ -239,7 +241,11 @@ class PaymentApi(object):
 
 
 class ImageServer(object):
-    def __init__(self, imgbasepath, dbapi, fileapi, imagewriter):
+    def __init__(self,
+                 imgbasepath: str,
+                 dbapi: DBApiGeneric,
+                 fileapi: FileService,
+                 imagewriter: Callable):
         self.imgbasepath = imgbasepath
         self.dbapi = dbapi
         self.fileapi = fileapi
@@ -260,7 +266,7 @@ class ImageServer(object):
         _, filename = os.path.split(filepath)
         return os.path.join(self.imgbasepath, filename)
 
-    def saveimg(self, objtype, objid, data, replace=False):
+    def saveimg(self, objtype: str, objid: str, data, replace: bool=False) -> Image:
         _, ext = os.path.splitext(data.raw_filename)
         filename = uuid.uuid1().hex + ext
         filename = self.fileapi.make_fullpath(filename)
