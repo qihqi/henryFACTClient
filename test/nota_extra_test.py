@@ -132,7 +132,7 @@ class ItemApiTest(unittest.TestCase):
 
         ne = self.dbapi.search(NotaExtra)
         assert len(ne) == 1
-        assert ne[0].id == inv.meta.uid
+        assert ne[0].uid == inv.meta.uid
         assert ne[0].status == 'POSTEADO'
 
         ids = []
@@ -148,13 +148,13 @@ class ItemApiTest(unittest.TestCase):
         send_to_cloud.send_to_remote(
                 self.dbapi, self.invapi, start, end,
                 send_func)
-        ne = self.dbapi.getone(NotaExtra, id=1)
+        ne = self.dbapi.getone(NotaExtra, uid=1)
         self.assertEqual(ne.status, 'POSTEADO_')
 
         self.assertTrue(self.dbapi.get(1, SRINota) != None)
 
         self.test_app.delete('/api/nota/' + str(inv.meta.uid))
-        ne = self.dbapi.getone(NotaExtra, id=1)
+        ne = self.dbapi.getone(NotaExtra, uid=1)
         assert ne.status == 'ELIMINADO'
 
 

@@ -1,9 +1,5 @@
 from henry.base.fileservice import FileService
-from henry.base.dbapi import DBApi
-from henry.constants import (
-    INGRESO_PATH, BEAKER_DIR,
-    EXTERNAL_URL, EXTERNAL_USER, EXTERNAL_PASS,
-    IMAGE_PATH, EXTERNAL_AUTH_URL, TEMPLATE_LOCATION)
+from henry.constants import (INGRESO_PATH, BEAKER_DIR, IMAGE_PATH, TEMPLATE_LOCATION)
 
 from henry.coreconfig import sessionmanager, transactionapi
 
@@ -13,16 +9,9 @@ from henry.environments import make_jinja_env
 
 sm = sessionmanager
 
-# paymentapi = PaymentApi(sessionmanager)
-paymentapi = None
 imagefiles = FileService(IMAGE_PATH)
 transapi = DocumentApi(sessionmanager, FileService(INGRESO_PATH),
                        transactionapi, object_cls=Transferencia)
-
-
-
-# imgserver = ImageServer('/app/img', DBApi(sm, Image), imagefiles)
-imgserver = None
 
 
 jinja_env = make_jinja_env(TEMPLATE_LOCATION)

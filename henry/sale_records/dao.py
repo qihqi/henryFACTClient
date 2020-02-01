@@ -59,6 +59,7 @@ def client_sale_report(dbapi: DBApiGeneric, start: datetime.date, end: datetime.
 
 @dataclasses.dataclass
 class InvMovementMeta(SerializableDB[NInvMovementMeta]):
+    db_class = NInvMovementMeta
     uid: Optional[int] = None
     inventory_codename: Optional[str] = None
     inventory_docid: Optional[int] = None

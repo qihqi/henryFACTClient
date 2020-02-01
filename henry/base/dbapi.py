@@ -34,36 +34,6 @@ class SerializableDB(SerializableData, Generic[DBType]):
         return y
 
 
-class DBApi(object):
-
-    def __init__(self, sessionmanager, objclass):
-        self.sm = sessionmanager
-        self.objclass = objclass
-        self.api = DBApiGeneric(sessionmanager)
-
-    def create(self, obj):
-        return self.api.create(obj)
-
-    def get(self, pkey):
-        return self.api.get(pkey, self.objclass)
-
-    def update(self, pkey, content_dict):
-        obj = self.objclass()
-        setattr(obj, self.objclass.pkey.name, pkey)
-        return self.api.update(obj, content_dict)
-
-    def delete(self, pkey):
-        obj = self.objclass()
-        setattr(obj, self.objclass.pkey.name, pkey)
-        return self.api.delete(obj)
-
-    def getone(self, **kwargs):
-        return self.api.getone(self.objclass, **kwargs)
-
-    def search(self, **kwargs):
-        return self.api.search(self.objclass, **kwargs)
-
-
 T = TypeVar('T', bound='SerializableDB')
 class DBApiGeneric(object):
 
