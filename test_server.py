@@ -2,7 +2,7 @@ from __future__ import print_function
 import sys
 import os
 
-from bottle import run, static_file, Bottle, install
+from bottle import run, static_file, Bottle
 from henry.config import BEAKER_SESSION_OPTS
 
 app = Bottle()
