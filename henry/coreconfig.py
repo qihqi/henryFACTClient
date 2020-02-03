@@ -13,7 +13,6 @@ from henry.constants import (CONN_STRING, INVOICE_PATH, ENV,
                              BEAKER_DIR)
 from henry.dao.document import DocumentApi, PedidoApi
 from henry.invoice.dao import Invoice
-from henry.dao.actionlog import ActionLogApi, ActionLogApiDecor
 from henry.product.dao import InventoryApi
 
 engine = create_engine(CONN_STRING, pool_recycle=3600, echo=False)

@@ -1,6 +1,7 @@
 from __future__ import division
 from __future__ import print_function
 
+import dataclasses
 import json
 from base64 import b64encode
 
@@ -10,7 +11,7 @@ from decimal import Decimal
 from bottle import Bottle, request, abort
 import datetime
 
-from henry.base.serialization import SerializableMixin, json_dumps, decode_str
+from henry.base.serialization import SerializableMixin, json_dumps, decode_str, SerializableData
 from henry.base.session_manager import DBContext
 from henry.dao.document import Status
 
@@ -23,16 +24,13 @@ from .dao import Invoice, NotaExtra
 __author__ = 'han'
 
 
-class InvoiceOptions(SerializableMixin):
-    _name = ('crear_cliente', 'revisar_producto',
-             'incrementar_codigo', 'usar_decimal', 'no_alm_id')
-
-    def __init__(self):
-        self.crear_cliente = False
-        self.revisar_producto = False
-        self.incrementar_codigo = False
-        self.usar_decimal = False
-        self.no_alm_id = False
+@dataclasses.dataclass
+class InvoiceOptions(SerializableData):
+    crear_cliente: bool = False
+    revisar_producto: bool  = False
+    incrementar_codigo: bool  = False
+    usar_decimal: bool  = False
+    no_alm_id: bool  = False
 
 
 def fix_inv_by_options(dbapi, inv, options):

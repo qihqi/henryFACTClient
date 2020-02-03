@@ -1,7 +1,7 @@
 # encoding=utf8
 import dataclasses
 import datetime
-from typing import Optional
+from typing import Optional, List
 
 from decimal import Decimal
 import functools
@@ -9,7 +9,7 @@ import functools
 from past.utils import old_div
 
 from henry.base.dbapi import SerializableDB
-from henry.base.serialization import SerializableMixin, TypedSerializableMixin, parse_iso_datetime
+from henry.base.serialization import SerializableMixin, parse_iso_datetime, SerializableData
 from .schema import (NUniversalProduct, NDeclaredGood, NPurchaseItem,
                      NPurchase, NCustomItem, NUnit)
 
@@ -192,14 +192,10 @@ class PurchaseFull(SerializableMixin):
         self.items = items
 
 
-class PurchaseItemFull(TypedSerializableMixin):
-    _fields = (
-        ('prod_detail', UniversalProd.deserialize),
-        ('item', PurchaseItem.deserialize))
-
-    def __init__(self, prod_detail=None, item=None):
-        self.prod_detail = prod_detail
-        self.item = item
+@dataclasses.dataclass
+class PurchaseItemFull(SerializableData):
+    prod_detail: UniversalProd = UniversalProd()
+    item: PurchaseItem = PurchaseItem()
 
 
 def _get_purchase_item_full_filter(dbapi, filter_):
@@ -260,15 +256,12 @@ def generate_custom_for_purchase(dbapi, uid):
         custom_id = dbapi.create(custom)
         dbapi.update(item.item, {'custom_item_uid': custom_id})
 
-class CustomItemFull(TypedSerializableMixin):
-    _fields = (
-        ('custom', CustomItem.deserialize),
-        ('purchase_items', functools.partial(map, PurchaseItemFull.deserialize))
-    )
 
-    def __init__(self, custom=None, purchase_items=None):
-        self.custom = custom
-        self.purchase_items = purchase_items or []
+@dataclasses.dataclass
+class CustomItemFull(SerializableData):
+    custom: CustomItem = CustomItem()
+    purchase_item: List[PurchaseItemFull] = dataclasses.field(default_factory=lambda: [])
+
 
 
 def get_custom_items_full(dbapi, uid):

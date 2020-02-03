@@ -88,7 +88,8 @@ class SerializableData(SerializableInterface):
             if potential_val is not None:
                 # unions have this attribute
                 # Assume its a normal type
-                possible_types = getattr(field.type, '__args__', [field.type])
+                possible_types = getattr(field.type, '__args__', (field.type, ))
+                is_list = getattr(field.type, '__origin__', None) == list
                 if isinstance(potential_val, possible_types):
                     kwargs[field.name] = potential_val
                     continue
@@ -109,48 +110,22 @@ class SerializableData(SerializableInterface):
                         kwargs[field.name] = parse_iso_date(potential_val)
                         continue
 
+                if (isinstance(potential_val, dict) and
+                    issubclass(possible_types[0], SerializableData)):
+                    kwargs[field.name] = possible_types[0].deserialize(potential_val)
+                    continue
+
+                if (isinstance(potential_val, list) and is_list):
+                    kwargs[field.name] = list(map(possible_types[0].deserialize,
+                                                  potential_val))
+                    continue
+
                 # try use the first type, this is last resort
                 kwargs[field.name] = possible_types[0](potential_val)
         return cls(**kwargs)
 
     def to_json(self) -> str:
         return json_dumps(self.serialize())
-
-
-class TypedSerializableMixin(object):
-    _fields = ()  # type: Tuple
-    _natural_fields = (int, float, str, str)
-
-    def __init__(self, **kwargs):
-        for x, const in self._fields:
-            val = kwargs.get(x, None)
-            if val is not None:
-                setattr(self, x, val)
-
-    def merge_from_obj(self, obj):
-        for x, const in self._fields:
-            val = getattr(obj, x)
-            if val is not None:
-                setattr(self, x, val)
-        return self
-
-    def merge_from_dict(self, thedict):
-        for x, const in self._fields:
-            val = thedict.get(x, None)
-            if val is not None:
-                if (const not in self._natural_fields or
-                        not isinstance(x, const)):
-                    val = const(val)
-            if val is not None or not hasattr(self, x):
-                setattr(self, x, val)
-        return self
-
-    def serialize(self):
-        return extract_obj_fields(self, list(map(itemgetter(0), self._fields)))
-
-    @classmethod
-    def deserialize(cls, thedict):
-        return cls().merge_from_dict(thedict)
 
 
 class SerializableMixin(object):

@@ -1,3 +1,4 @@
+import dataclasses
 import json
 import logging
 import datetime
@@ -11,7 +12,7 @@ from henry.base.fileservice import FileService
 from henry.base.session_manager import SessionManager
 from henry.base.dbapi import DBApiGeneric, SerializableDB
 
-from henry.base.serialization import SerializableMixin
+from henry.base.serialization import SerializableMixin, SerializableData
 from henry.invoice.coreschema import NPedidoTemporal
 from henry.product.dao import PriceList, InvMovementType, InventoryApi, InventoryMovement
 
@@ -27,25 +28,15 @@ class Status(object):
              COMITTED,
              DELETED)
 
-
-class Item(SerializableMixin):
-    prod: PriceList
-    cant: Decimal
-    _name = ('prod', 'cant')
-
-    def __init__(self, prod=None, cant=None):
-        self.prod = prod
-        self.cant = cant
-
-    @classmethod
-    def deserialize(cls, the_dict):
-        prod = PriceList.deserialize(the_dict['prod'])
-        cant = Decimal(the_dict['cant'])
-        return cls(prod, cant)
+@dataclasses.dataclass
+class Item(SerializableData):
+    prod: PriceList = PriceList()
+    cant: Decimal = Decimal(0)
 
 
 T = TypeVar('T', bound=SerializableDB)
 SelfType = TypeVar('SelfType', bound='MetaItemSet')
+# Cannot use dataclass because this is not dataclass
 class MetaItemSet(SerializableMixin, Generic[T]):
     _name = ('meta', 'items')
     _metadata_cls: Type[T]  # _metadata class must have a field item_location

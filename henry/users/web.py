@@ -4,12 +4,12 @@ This has handlers for pages regarding users and client
 import datetime
 
 from bottle import Bottle, request, redirect
+from sqlalchemy.exc import IntegrityError
 
 from henry.base.dbapi_rest import bind_dbapi_rest
 from henry.base.session_manager import DBContext
 from henry.base.dbapi import DBApiGeneric
 from henry.base.auth import AuthType
-from henry.dao.exceptions import ItemAlreadyExists
 from henry.product.dao import Store
 from henry.users.dao import User, Client
 
@@ -64,7 +64,7 @@ def make_wsgi_app(
         try:
             dbapi.create(cliente)
             dbapi.db_session.commit()
-        except ItemAlreadyExists:
+        except IntegrityError:
             return crear_cliente_form('Cliente con codigo {} ya existe'.format(cliente.codigo))
         return crear_cliente_form('Cliente {} {} creado'.format(cliente.apellidos, cliente.nombres))
 

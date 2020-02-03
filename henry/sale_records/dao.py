@@ -2,11 +2,11 @@ import dataclasses
 import datetime
 from decimal import Decimal
 from sqlalchemy import func
-from typing import Optional, Iterator
+from typing import Optional, Iterator, List
 
 from henry.base.dbapi import SerializableDB, DBApiGeneric
 from henry.dao.document import Status
-from henry.base.serialization import parse_iso_datetime, TypedSerializableMixin, json_dumps
+from henry.base.serialization import parse_iso_datetime, json_dumps, SerializableData
 from henry.product.dao import ProdItemGroup, InventoryMovement
 
 from .schema import NInventory, NSale, NInvMovementMeta, NEntity
@@ -30,15 +30,13 @@ class Entity(SerializableDB[NEntity]):
     name: Optional[str] = None
     desc: Optional[str] = None
 
-
-class SaleReportByDate(TypedSerializableMixin):
-    _fields = (
-        ('timestamp', parse_iso_datetime),
-        ('ruc', str),
-        ('sale_pretax_usd', Decimal),
-        ('tax_usd', Decimal),
-        ('count', int)
-    )
+@dataclasses.dataclass
+class SaleReportByDate(SerializableData):
+    timestamp: Optional[datetime.datetime]
+    ruc: Optional[str]
+    sale_pretax_usd: Optional[Decimal]
+    tax_usd: Optional[Decimal]
+    count: Optional[int]
 
 
 def client_sale_report(dbapi: DBApiGeneric, start: datetime.date, end: datetime.date
@@ -86,18 +84,16 @@ class InvMovementMeta(SerializableDB[NInvMovementMeta]):
         return self
 
 
-class ItemGroupCant(TypedSerializableMixin):
-    _fields = (
-        ('itemgroup', ProdItemGroup.deserialize),
-        ('cant', Decimal)
-    )
+@dataclasses.dataclass
+class ItemGroupCant(SerializableData):
+    itemgroup: ProdItemGroup = ProdItemGroup()
+    cant: Optional[Decimal] = None
 
 
-class InvMovementFull(TypedSerializableMixin):
-    _fields = (
-        ('meta', InvMovementMeta.deserialize),
-        ('items', lambda x: list(map(ItemGroupCant.deserialize, x)))
-    )
+@dataclasses.dataclass
+class InvMovementFull(SerializableData):
+    meta: InvMovementMeta = InvMovementMeta()
+    items: List[ItemGroupCant] = dataclasses.field(default_factory=lambda: [])
 
 
 class InvMovementManager(object):

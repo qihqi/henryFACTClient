@@ -5,7 +5,7 @@ import uuid
 from decimal import Decimal
 
 from henry.base.dbapi import SerializableDB
-from henry.base.serialization import parse_iso_datetime
+from henry.base.serialization import parse_iso_datetime, SerializableData
 from henry.dao.document import MetaItemSet, Item
 from henry.product.dao import PriceList, ProdItemGroup, InvMovementType, InventoryMovement, ProdItem
 
@@ -47,7 +47,10 @@ class TransMetadata(SerializableDB[NTransferencia]):
         return x
 
 
-class TransItem(Item):
+@dataclasses.dataclass
+class TransItem(SerializableData):
+    prod: ProdItemGroup = ProdItemGroup()
+    cant: Decimal = Decimal(0)
 
     @classmethod
     def deserialize(cls, the_dict: Dict) -> 'TransItem':
@@ -114,6 +117,6 @@ class Transferencia(MetaItemSet):
     def deserialize(cls, the_dict: Dict) -> 'Transferencia':
         x = cls()
         x.meta = cls._metadata_cls.deserialize(the_dict['meta'])
-        x.items = list(map(TransItem.deserialize, the_dict['items']))
+        x.items = list(map(TransItem.deserialize, the_dict['items']))  # type: ignore
         return x
 
