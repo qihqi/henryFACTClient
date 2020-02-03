@@ -10,8 +10,8 @@ from henry.base.dbapi import DBApiGeneric
 from typing import List, Union
 
 
-def get_notas_by_dates(dbapi: DBApiGeneric, start: datetime.datetime,
-                       end: datetime.datetime) -> List[NotaExtra]:
+def get_notas_by_dates(dbapi: DBApiGeneric, start: datetime.date,
+                       end: datetime.date) -> List[NotaExtra]:
     with dbapi.session:
         notas = dbapi.db_session.query(NotaExtra.db_class).filter(
                 NotaExtra.db_class.last_change_time <= end).filter(
@@ -44,7 +44,7 @@ def send_inv(dbapi: DBApiGeneric, invapi: DocumentApi,
 
 def send_to_remote(dbapi: DBApiGeneric,
                    invapi: DocumentApi,
-                   start: datetime.datetime, end: datetime.datetime,
+                   start: datetime.date, end: datetime.date,
                    send_bytes_func):
     notas = get_notas_by_dates(dbapi, start, end)
     for n in notas:
@@ -52,19 +52,23 @@ def send_to_remote(dbapi: DBApiGeneric,
             send_inv(dbapi, invapi, n, send_bytes_func)
         except Exception as e:
             print(e)
+    else:
+        print('Nota not found')
 
 
 def main():
-    end = datetime.datetime.now()
-    start = end - datetime.timedelta(days=1)
+    end = datetime.date.today() + datetime.timedelta(days=1)
+    start = end - datetime.timedelta(days=2)
     def send_bytes_func(msg_bytes):
         resp = requests.post(constants.REMOTE_ADDR, data=msg_bytes)
         print(resp)
         return resp.status_code == 200
 
+    print('Starting... {} to {}', start.isoformat(), end.isoformat())
     from henry.coreconfig import invapi, sessionmanager
     dbapi = DBApiGeneric(sessionmanager)
     send_to_remote(dbapi, invapi, start, end, send_bytes_func)
+    print('ending...')
 
 
 if __name__ == '__main__':

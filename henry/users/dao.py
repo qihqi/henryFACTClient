@@ -26,7 +26,7 @@ class Client(SerializableDB[NCliente]):
     apellidos: Optional[str] = None
     direccion: Optional[str] = None
     ciudad: Optional[str] = None
-    telefono: Optional[int] = None
+    telefono: Optional[str] = None
     tipo: Optional[str] = None
     cliente_desde: Optional[datetime.date] = None
 
