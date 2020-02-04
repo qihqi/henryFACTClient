@@ -5,11 +5,13 @@ beautifulsoup4==4.8.1
 bottle==0.12.17
 certifi==2019.9.11
 chardet==3.0.4
+dataclasses==0.7
 decorator==4.4.1
 funcsigs==1.0.2
 future==0.18.2
 idna==2.8
 importlab==0.5.1
+ipython-genutils==0.2.0
 jedi==0.15.1
 Jinja2==2.10.3
 MarkupSafe==1.1.1
@@ -24,6 +26,7 @@ parso==0.5.1
 pexpect==4.7.0
 pickleshare==0.7.5
 Pillow==6.2.1
+pkg-resources==0.0.0
 prompt-toolkit==2.0.10
 ptyprocess==0.6.0
 pycryptodome==3.9.4
