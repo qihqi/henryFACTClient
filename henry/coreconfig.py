@@ -29,8 +29,10 @@ invapi = DocumentApi(sessionmanager, FileService(INVOICE_PATH),
                      transactionapi, object_cls=Invoice)
 
 workerqueue = None
-actionlogapi = ActionLogApi(ACTION_LOG_PATH)
-actionlogged = ActionLogApiDecor(actionlogapi, workerqueue)
+# 2020-2-3 disable actionlog. not very useful
+# actionlogapi = ActionLogApi(ACTION_LOG_PATH)
+# actionlogged = ActionLogApiDecor(actionlogapi, workerqueue)
+actionlogged = lambda x: x
 pedidoapi = PedidoApi(sessionmanager, filemanager=FileService(PEDIDO_PATH))
 
 # for testing, make auth_decorator do nothing
