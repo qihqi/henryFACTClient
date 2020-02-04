@@ -113,7 +113,7 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
                                           almacen_id, codigo)
         if db_instance is None:
             return get_nota_form('Factura no existe')
-        redirect('/app/nota/{}'.format(db_instance.id))
+        redirect('/app/nota/{}'.format(db_instance.uid))
 
     @w.get('/app/nota/<uid>')
     @dbcontext
