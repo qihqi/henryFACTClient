@@ -68,9 +68,7 @@ class InvMetadata(SerializableDB[NNota]):
 
     @classmethod
     def deserialize(cls, the_dict) -> 'InvMetadata':
-        print('InvMetadata.deserialize', the_dict)
         x = cls().merge_from(the_dict)
-        print('InvMetadata.deserialize after merge', the_dict)
         if x.timestamp and not isinstance(x.timestamp, datetime.datetime):
             x.timestamp = parse_iso_datetime(x.timestamp)
         if 'client' in the_dict:
