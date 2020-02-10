@@ -1,3 +1,4 @@
+import json
 import logging
 import datetime
 import os
@@ -11,7 +12,6 @@ from henry.base.session_manager import SessionManager
 from henry.base.dbapi import DBApiGeneric, SerializableDB
 
 from henry.base.serialization import SerializableMixin
-from henry.base.serialization import json_loads
 from henry.invoice.coreschema import NPedidoTemporal
 from henry.product.dao import PriceList, InvMovementType, InventoryApi, InventoryMovement
 
@@ -110,7 +110,7 @@ class DocumentApi(object):
         if file_content is None:
             print('could not find file at ', filename)
             return None
-        content = json_loads(file_content)
+        content = json.loads(file_content)
         doc = self.cls.deserialize(content)
         return doc
 

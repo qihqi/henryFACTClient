@@ -1,5 +1,8 @@
+import json
 import os
 import uuid
+from decimal import Decimal
+from typing import Dict, Optional, List, cast
 
 from jinja2 import Environment
 from bottle import Bottle, request, abort
@@ -10,7 +13,7 @@ from henry.base.dbapi import DBApiGeneric
 from henry.base.fileservice import FileService
 from henry import constants, common
 
-from henry.base.serialization import json_loads, json_dumps
+from henry.base.serialization import json_dumps
 from henry.base.session_manager import DBContext
 from henry.invoice.dao import SRINota, SRINotaStatus
 
@@ -26,39 +29,79 @@ _ALM_ID_TO_INFO = {
     3: {
         'ruc': constants.RUC_CORP,
         'name': constants.NAME_CORP,
+    },
+    99: {
+        'ruc': 'RUCRUCRUC',
+        'name': 'NAMENAMENAME',
     }
 }
 
+class IdType:
+    RUC = '04'
+    CEDULA = '05'
+    CONS_FINAL = '07'
 
-def inv_to_sri_dict(inv):
+
+def guess_id_type(client_id):
+    if len(client_id) == 10:
+        return IdType.CEDULA
+    if len(client_id) > 10:
+        return IdType.RUC
+    return IdType.CONS_FINAL
+
+
+def inv_to_sri_dict(inv: Invoice) -> Optional[Dict]:
     """Return the dict used to render xml."""
-    info = _ALM_ID_TO_INFO.get(inv.almacen_id)
-    # TODO
-    tipo_ident = '99' if inv.meta.client.codigo == 'NA' else None
-    id_compra = '99' if inv.meta.client.codigo == 'NA' else inv.meta.client.codigo
-    return {
+    assert inv.meta
+    assert inv.meta.client
+    assert inv.meta.timestamp is not None
+    if inv.meta.almacen_id is None:
+        return None
+    info = _ALM_ID_TO_INFO.get(inv.meta.almacen_id)
+    if info is None:
+        return None
+    tipo_ident = guess_id_type(inv.meta.client.codigo)
+    # 99 para consumidor final
+    id_compra = '99' if tipo_ident == IdType.CONS_FINAL else inv.meta.client.codigo
+    ts = inv.meta.timestamp
+    res = {
       'ambiente': 1,
       'razon_social': info['name'],
       'ruc': info['ruc'],
       'clave_access': '',
       'codigo': inv.meta.codigo,
       'dir_matriz': 'Boyaca 1515 y Aguirre',
-      'fecha': inv.meta.timestamp.date().isoformat(),
+      'fecha': '{:02}/{:02}/{:04}'.format(ts.day, ts.month, ts.year),
       'tipo_identificacion_comprador': tipo_ident,
       'id_comprador': id_compra,
-      'subtotal': inv.meta.subtotal,
-      'iva': inv.meta.tax,
-      'descuento': inv.meta.discount,
-      'total': inv.meta.total,
-      'detalles': [
-          {
-              'nombre': item.nombre,
-              'cantidad': item.cant,
-              'precio': item.precio1,
-              'descuento': item.precio2 - item.precio1,
-              'total_sin_impuesto': item.precio1 * item.cant,
-          } for item in inv.items]
+      'razon_social_comprador': inv.meta.client.fullname,
+      'subtotal': Decimal(inv.meta.subtotal) / 100,
+      'iva': Decimal(inv.meta.tax) / 100,
+      'descuento': Decimal(inv.meta.discount or 0) / 100,
+      'total': Decimal(inv.meta.total) / 100,
+      'detalles': []
     }
+    for item in inv.items:
+        assert item.prod is not None
+        assert item.prod.precio1 is not None
+        assert item.prod.precio2 is not None
+        assert item.cant is not None
+        if item.cant > item.prod.cant_mayorista:
+            desc = (item.prod.precio1 - item.prod.precio2) * item.cant
+        else:
+            desc = 0
+        total_sin_impuesto = item.prod.precio1 * item.cant - desc
+        total_impuesto = Decimal('0.12') * total_sin_impuesto
+        item_dict = {
+            'nombre': item.prod.nombre,
+            'cantidad': item.cant,
+            'precio': Decimal(item.prod.precio1) / 100,
+            'descuento': Decimal(desc) / 100,
+            'total_sin_impuesto': Decimal(total_sin_impuesto) / 100,
+            'total_impuesto': Decimal(total_impuesto) / 100
+        }
+        cast(List, res['detalles']).append(item_dict)
+    return res
 
 
 def make_nota_all(url_prefix: str, dbapi: DBApiGeneric,
@@ -76,7 +119,7 @@ def make_nota_all(url_prefix: str, dbapi: DBApiGeneric,
         if not msg:
             return ''
         msg_decoded = common.aes_decrypt(msg).decode('utf-8')
-        loaded = json_loads(msg_decoded)
+        loaded = json.loads(msg_decoded)
         inv_json = loaded['inv']
         method = loaded['method']
         inv = Invoice.deserialize(inv_json)
@@ -119,21 +162,52 @@ def make_nota_all(url_prefix: str, dbapi: DBApiGeneric,
         return {'created': pkey}
 
     @api.post('{}/gen_xml/<uid>'.format(url_prefix))
+    @dbcontext
     def gen_xml(uid):
         uid = int(uid)
         sri_nota = dbapi.get(uid, SRINota)
         inv_text = file_manager.get_file(sri_nota.json_inv_location)
         if inv_text is None:
             return {'result': 'no_inv'}
-
-        inv_dict = json_loads(inv_text)
+        inv_dict = json.loads(inv_text)
         inv = Invoice.deserialize(inv_dict)
-
+        print(inv_dict)
         xml_dict = inv_to_sri_dict(inv)
-        xml_text = jinja_env.get_template(...).render(xml_dict)
-
-        file_manager.put_file(sri_nota.xml_inv_location, xml_text)
+        if xml_dict is None:
+            return {'result': 'no puede'}
+        xml_text = jinja_env.get_template(
+            'invoice/factura_2_0_template.xml').render(xml_dict)
+        xml_inv_location = sri_nota.json_inv_location.split('.')[0] + '.xml'
+        file_manager.put_file(xml_inv_location, xml_text)
+        sri_nota.xml_inv_location = xml_inv_location
+        dbapi.update(sri_nota, {'xml_inv_location': xml_inv_location})
         return {'result': xml_text}
+
+    @api.post('{}/gen_xml_signed/<uid>'.format(url_prefix))
+    @dbcontext
+    def gen_xml_signed(uid):
+        uid = int(uid)
+        sri_nota = dbapi.get(uid, SRINota)
+        xml_text = file_manager.get_file(sri_nota.xml_inv_location)
+
+
+    @api.get('{}/remote_nota/<uid>'.format(url_prefix))
+    @dbcontext
+    def get_single_nota(uid):
+        sri_nota = dbapi.get(uid, SRINota)
+        json_inv = json.loads(
+            file_manager.get_file(sri_nota.json_inv_location))
+        xml1 = None
+        if sri_nota.xml_inv_location:
+            xml1 = file_manager.get_file(sri_nota.xml_inv_location)
+        resp1 = None
+        resp2 = None
+        temp = jinja_env.get_template('invoice/sri_nota_full.html')
+        return temp.render(
+            nota=sri_nota, json=json.dumps(json_inv, indent=4),
+            xml1=xml1, resp1=resp1, resp2=resp2)
+
+
 
     @api.get('{}/remote_nota'.format(url_prefix))
     def get_extended_nota():

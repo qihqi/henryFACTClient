@@ -93,8 +93,9 @@ class EndToEndTest(unittest.TestCase):
 
         nota_url = self.url_base + '/nota'
         codigo = None
-        with Timing('save factura'):
-            r = requests.post(nota_url, data=json.dumps(content), cookies=cookies)
+        with Timing('save factura latin1'):
+            r = requests.post(
+                nota_url, data=json.dumps(content).encode('latin1'), cookies=cookies)
             print("SAVE", r.text)
             codigo = r.json()['codigo']
         print('codigo es', codigo)
@@ -103,7 +104,21 @@ class EndToEndTest(unittest.TestCase):
             r = requests.put(self.url_base + '/nota/' + str(codigo), cookies=cookies)
             self.assertEquals(200, r.status_code)
             print(r)
-        
+
+        content['meta']['codigo'] = str(number + 1)
+        with Timing('save factura utf'):
+            r = requests.post(
+                nota_url, data=json.dumps(content).encode('utf-8'), cookies=cookies)
+            print("SAVE", r.text)
+            codigo = r.json()['codigo']
+        print('codigo es', codigo)
+
+        with Timing('put factura'):
+            r = requests.put(self.url_base + '/nota/' + str(codigo), cookies=cookies)
+            self.assertEquals(200, r.status_code)
+            print(r)
+
+
         with Timing('Get FACTura'):
             r = requests.get(nota_url + '/' + str(codigo), cookies=cookies)
             fact = r.json()
@@ -115,7 +130,6 @@ class EndToEndTest(unittest.TestCase):
             r = requests.delete(nota_url + '/' + str(codigo), cookies=cookies)
             self.assertEquals(200, r.status_code)
             print(r)
-
 
         print('================================Test end============================================')
 

@@ -15,7 +15,8 @@
 <table>
     {% for row in rows %}
     <tr>
-        <td>{{ row.almacen_ruc }}</td>
+        <td><a href="/sync/remote_nota/{{row.uid}}"> {{ row.uid}} </a></td>
+        <td> {{ row.almacen_ruc }}</td>
         <td>{{ row.orig_codigo }}</td>
         <td>{{ row.buyer_name }}</td>
         <td>{{ row.tax }}</td>

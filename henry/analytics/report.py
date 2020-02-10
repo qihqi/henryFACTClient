@@ -1,3 +1,4 @@
+import json
 from collections import defaultdict
 from decimal import Decimal
 
@@ -6,7 +7,6 @@ import os
 
 from past.utils import old_div
 
-from henry.base.serialization import json_loads
 from henry.invoice.dao import Invoice
 from .exporting import dump_content
 
@@ -112,7 +112,7 @@ class ExportManager(object):
 
     def decode_iter(self, content):
         def d_(line):
-            j = json_loads(line)
+            j = json.loads(line)
             return Invoice.deserialize(j)
         raw = map(d_, content)
         return raw
@@ -139,7 +139,7 @@ if __name__ == '__main__':
     import sys
     with open(sys.argv[1]) as f:
         def decode(line):
-            j = json_loads(line)
+            j = json.loads(line)
             return Invoice.deserialize(j)
         raw = map(decode, f)
         report = DailyReport(None, map(SaleTransaction, raw))

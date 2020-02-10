@@ -14,7 +14,7 @@ class NSRINota(Base):
 
     orig_timestamp = Column(DateTime)
     buyer_ruc = Column(String(30))
-    buyer_name = Column(String(30))
+    buyer_name = Column(String(100))
     total = Column(Numeric(11, 4))
     tax = Column(Numeric(11, 4))
 

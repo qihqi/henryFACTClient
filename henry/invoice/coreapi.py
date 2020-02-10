@@ -1,12 +1,16 @@
 from __future__ import division
 from __future__ import print_function
+
+import json
+from base64 import b64encode
+
 from past.utils import old_div
 from decimal import Decimal
 
 from bottle import Bottle, request, abort
 import datetime
 
-from henry.base.serialization import SerializableMixin, json_loads, json_dumps, decode_str
+from henry.base.serialization import SerializableMixin, json_dumps, decode_str
 from henry.base.session_manager import DBContext
 from henry.dao.document import Status
 
@@ -130,11 +134,13 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
     @auth_decorator(0)
     @actionlogged
     def create_invoice():
-        json_content = decode_str(request.body.read())
+        cont_bytes = request.body.read()
+        print(b64encode(cont_bytes))
+        json_content = decode_str(cont_bytes)
         if not json_content:
             return ''
 
-        content = json_loads(json_content)
+        content = json.loads(json_content)
         inv, options = parse_invoice_and_options(content)
         fix_inv_by_options(dbapi, inv, options)
         inv.meta.timestamp = datetime.datetime.now()  # always use server's time.

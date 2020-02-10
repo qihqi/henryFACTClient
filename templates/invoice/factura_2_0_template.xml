@@ -48,7 +48,7 @@
                     <codigoPorcentaje>2</codigoPorcentaje> <!-- 2 = 12%, 3 = 14% -->
                     <tarifa>12</tarifa>
                     <baseImponible>{{ d.total_sin_impuesto }}</baseImponible>
-                    <valor>{{ d.total_sin_impuesto * 0.12 }}</valor>
+                    <valor>{{ d.total_impuesto }}</valor>
                 </impuesto>
             </impuestos>
         </detalle>

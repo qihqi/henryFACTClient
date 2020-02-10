@@ -1,6 +1,7 @@
 from __future__ import division
 from builtins import zip
 from typing import Mapping
+import json
 
 from past.utils import old_div
 
@@ -14,7 +15,7 @@ from Crypto.Cipher import AES
 
 from henry import constants
 from henry.base.common import parse_iso
-from henry.base.serialization import json_dumps, json_loads
+from henry.base.serialization import json_dumps
 from henry.inventory.dao import TransMetadata, TransType, TransItem
 from henry.product.dao import PriceList, ProdItemGroup
 
@@ -92,7 +93,7 @@ def aes_decrypt(blob):
     m.update(constants.AES_KEY.encode('utf-8'))
     key = m.digest()[:16]
     blob_str = blob.decode('utf-8')
-    json_decoded = json_loads(blob_str)
+    json_decoded = json.loads(blob_str)
     cipher_text, nonce, tag = tuple(map(base64.b64decode, json_decoded))
     cipher = AES.new(key, _MODE, nonce=nonce)
     plaintext = cipher.decrypt(cipher_text)

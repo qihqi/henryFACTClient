@@ -1,6 +1,7 @@
 import datetime
 import decimal
 import json
+import unicodedata
 from operator import itemgetter
 import re
 from typing import Dict, Tuple, TypeVar, Type, Generic, Union, Any, Callable
@@ -29,9 +30,6 @@ def parse_iso_datetime(datestring: str) -> datetime.datetime:
 
 def parse_iso_date(datestring: str) -> datetime.date:
     return datetime.date(*list(map(int, datestring.split('-'))))  # type: ignore
-
-def json_loads(content: str) -> Dict:
-    return json.loads(content, encoding=DB_ENCODING)
 
 
 class ModelEncoder(json.JSONEncoder):
@@ -194,9 +192,16 @@ def mkgetter(obj: Any) -> Callable:
 
 def decode_str(strobj: bytes) -> str:
     try:
-        return strobj.decode('utf-8')
-    except:
-        return strobj.decode('latin1')
+        # current clientside uses latin1 because that is the
+        # default for apache's httpclient
+        content = strobj.decode('latin1')
+        # latin1 never fails, so make sure that its printable i.e. currect
+        if all(unicodedata.category(c) != 'Cc' for c in content):
+            return content
+    except UnicodeError:
+        pass
+    # Assumes utf8 as catchall
+    return strobj.decode('utf-8')
 
 
 def mksetter(obj: Any) -> Callable:

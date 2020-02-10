@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nota {{nota.uid}}</title>
+</head>
+<body>
+<p>AlmId: {{ nota.almacen_ruc }}</p>
+<p>Codigo: {{ nota.orig_codigo }}</p>
+<p>Cliente: {{ nota.buyer_name }}</p>
+<p>IVa: {{ nota.tax }}</p>
+<p>TOTAL: {{ nota.total }}</p>
+<p>STATUS: {{ nota.status }}</p>
+<p>================================================</p>
+<textarea readonly rows="50" cols="120" style="border:none;">
+    {{ json }}
+</textarea>
+<p>================================================</p>
+<textarea readonly rows="50" cols="120" style="border:none;">
+    {{ xml1 }}
+</textarea>
+<p>================================================</p>
+<h3>RESP 1</h3>
+<textarea readonly rows="50" cols="120" style="border:none;">
+    {{ resp1 }}
+</textarea>
+<p>================================================</p>
+<h3>RESP 2</h3>
+<textarea readonly rows="50" cols="120" style="border:none;">
+    {{ resp2 }}
+</textarea>
+
+</body>
+</html>
