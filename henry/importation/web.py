@@ -14,7 +14,7 @@ from henry.base.serialization import json_dumps, decode_str, parse_iso_date
 from henry.base.session_manager import DBContext
 from henry.sale_records.dao import InvMovementFull, get_or_create_inventory_id, InvMovementMeta, \
     get_sales_by_date_and_user, Sale, client_sale_report, Inventory
-from product.dao import ProdItemGroup, InventoryMovement
+from henry.product.dao import ProdItemGroup, InventoryMovement
 from henry.sale_records.schema import NSale
 from .dao import (Purchase, PurchaseItem, UniversalProd, DeclaredGood,
                   get_purchase_full,

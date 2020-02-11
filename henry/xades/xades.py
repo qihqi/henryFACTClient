@@ -5,6 +5,8 @@ import os
 import subprocess
 import logging
 
+from typing import List, cast
+
 from henry import constants
 
 _START_WEIGHT = 2
@@ -29,14 +31,14 @@ def generate_checkcode(access_key: str) -> int:
     return mod
 
 
-def sign_xml(xml: str) -> str:
-    cmd = [
+def sign_xml(xml: str) -> bytes:
+    cmd = cast(List[str], [
         'java',
         constants.SIGNER_PATH,
         xml,
         base64.b64encode(constants.P12_FILENAME.encode('utf-8')),
         base64.b64encode(constants.P12_KEY.encode('utf-8')),
-    ]
+    ])
     process = subprocess.Popen(cmd,
                                stdout=subprocess.PIPE)
     res = process.communicate()

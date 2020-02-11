@@ -75,10 +75,10 @@ def inv_to_sri_dict(inv: Invoice) -> Optional[Dict]:
       'tipo_identificacion_comprador': tipo_ident,
       'id_comprador': id_compra,
       'razon_social_comprador': inv.meta.client.fullname,
-      'subtotal': Decimal(inv.meta.subtotal) / 100,
-      'iva': Decimal(inv.meta.tax) / 100,
+      'subtotal': Decimal(inv.meta.subtotal or 0) / 100,
+      'iva': Decimal(inv.meta.tax or 0) / 100,
       'descuento': Decimal(inv.meta.discount or 0) / 100,
-      'total': Decimal(inv.meta.total) / 100,
+      'total': Decimal(inv.meta.total or 0) / 100,
       'detalles': []
     }
     for item in inv.items:
@@ -86,10 +86,11 @@ def inv_to_sri_dict(inv: Invoice) -> Optional[Dict]:
         assert item.prod.precio1 is not None
         assert item.prod.precio2 is not None
         assert item.cant is not None
+        assert item.prod.cant_mayorista is not None
         if item.cant > item.prod.cant_mayorista:
             desc = (item.prod.precio1 - item.prod.precio2) * item.cant
         else:
-            desc = 0
+            desc = Decimal(0)
         total_sin_impuesto = item.prod.precio1 * item.cant - desc
         total_impuesto = Decimal('0.12') * total_sin_impuesto
         item_dict = {
