@@ -90,6 +90,8 @@ class SerializableData(SerializableInterface):
                 # Assume its a normal type
                 possible_types = getattr(field.type, '__args__', (field.type, ))
                 is_list = getattr(field.type, '__origin__', None) == list
+                if possible_types is None:
+                    possible_types = (field.type, )
                 if isinstance(potential_val, possible_types):
                     kwargs[field.name] = potential_val
                     continue
