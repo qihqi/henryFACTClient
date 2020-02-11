@@ -100,6 +100,8 @@ class Invoice(MetaItemSet[InvMetadata]):
             proditem = dbapi.getone(ProdItem, prod_id=item.prod.prod_id)
             # TODO: deprecate use of upi at all
             inv_id = item.prod.upi or self.meta.bodega_id
+            if proditem is None:
+                print(item.prod.prod_id)
             assert item.prod.multiplicador is not None
             yield InventoryMovement(
                 from_inv_id=inv_id,

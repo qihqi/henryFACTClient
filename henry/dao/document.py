@@ -54,7 +54,6 @@ class MetaItemSet(SerializableMixin, Generic[T]):
     @classmethod
     def deserialize(cls: Type[SelfType], the_dict) -> SelfType:
         x = cls()
-        print('MetaItemset.deserialzie', the_dict)
         x.meta = cls._metadata_cls.deserialize(the_dict['meta'])
         x.items = list(map(Item.deserialize, the_dict['items']))
         return x

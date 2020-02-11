@@ -1,24 +1,11 @@
+import dataclasses
 import datetime
 import decimal
 import json
 import unicodedata
-from operator import itemgetter
 import re
-from typing import Dict, Tuple, TypeVar, Type, Generic, Union, Any, Callable
-
-# encoding of the database
+from typing import Dict, Tuple, TypeVar, Type, Any, Callable, Union, Sequence
 from henry.base.interface import SerializableInterface
-
-DB_ENCODING = 'latin1'
-
-
-def decode(s):
-    if s is None:
-        return None
-    try:
-        return s.decode('utf-8')
-    except UnicodeDecodeError:
-        return s.decode('latin1')
 
 
 def json_dumps(content) -> str:
@@ -27,6 +14,7 @@ def json_dumps(content) -> str:
 
 def parse_iso_datetime(datestring: str) -> datetime.datetime:
     return datetime.datetime(*list(map(int, re.split('[^\d]', datestring))))  # type: ignore
+
 
 def parse_iso_date(datestring: str) -> datetime.date:
     return datetime.date(*list(map(int, datestring.split('-'))))  # type: ignore
@@ -52,6 +40,49 @@ def extract_obj_fields(obj, names):
     return {
         name: getattr(obj, name) for name in names if getattr(obj, name, None) is not None
         }
+
+
+def deserialize(cls, input_obj):
+    if input_obj is None:
+        return None
+    if dataclasses.is_dataclass(cls):
+        kwargs = {}
+        for field in cls.__dataclass_fields__.values():  # type: ignore
+            metadata = field.metadata
+            dictname = metadata.get('dict_name', field.name)
+            potential_val = input_obj.get(dictname)
+            # if potential_val is str, and have a from_str constructor:
+            if isinstance(potential_val, str) and 'from_str' in metadata:
+                from_str = metadata['from_str']
+                kwargs[field.name] = from_str(potential_val)
+            else:
+                kwargs[field.name] = deserialize(field.type, potential_val)
+        return cls(**kwargs)
+
+    arg_types = getattr(cls, '__args__', None)
+    origin_types = getattr(cls, '__origin__', None)
+    if origin_types is not None:
+        if origin_types == Union:  # Optiona[T] == union[t, none]
+            for t in arg_types:
+                try:
+                    return deserialize(t, input_obj)
+                except:
+                    pass
+
+        if issubclass(origin_types, Sequence):
+            return [deserialize(arg_types[0], i) for i in input_obj]
+
+    if isinstance(input_obj, cls):  # for int, float, str
+        return input_obj
+
+    if isinstance(input_obj, str) and cls == datetime.datetime:
+        return parse_iso_datetime(input_obj)
+
+    if isinstance(input_obj, str) and cls == datetime.date:
+        return parse_iso_date(input_obj)
+
+    return cls(input_obj)  # this should catch Decinmal
+
 
 
 T = TypeVar('T', bound='SerializableData')
@@ -80,51 +111,7 @@ class SerializableData(SerializableInterface):
 
     @classmethod
     def deserialize(cls: Type[T], dict_input: Dict[str, Any]) -> T:
-        """Nested struct only deserialize one level"""
-        kwargs = {}
-        for field in cls.__dataclass_fields__.values():  # type: ignore
-            dictname = field.metadata.get('dict_name', field.name)
-            potential_val = dict_input.get(dictname)
-            if potential_val is not None:
-                # unions have this attribute
-                # Assume its a normal type
-                possible_types = getattr(field.type, '__args__', (field.type, ))
-                is_list = getattr(field.type, '__origin__', None) == list
-                if possible_types is None:
-                    possible_types = (field.type, )
-                if isinstance(potential_val, possible_types):
-                    kwargs[field.name] = potential_val
-                    continue
-
-                # if potential_val is str, and have a from_str constructor:
-                metadata = field.metadata
-                if isinstance(potential_val, str):
-                    if 'from_str' in metadata:
-                        from_str = metadata['from_str']
-                        kwargs[field.name] = from_str(potential_val)
-                        continue
-
-                    if possible_types[0] == datetime.datetime:
-                        kwargs[field.name] = parse_iso_datetime(potential_val)
-                        continue
-
-                    if possible_types[0] == datetime.date:
-                        kwargs[field.name] = parse_iso_date(potential_val)
-                        continue
-
-                if (isinstance(potential_val, dict) and
-                    issubclass(possible_types[0], SerializableData)):
-                    kwargs[field.name] = possible_types[0].deserialize(potential_val)
-                    continue
-
-                if (isinstance(potential_val, list) and is_list):
-                    kwargs[field.name] = list(map(possible_types[0].deserialize,
-                                                  potential_val))
-                    continue
-
-                # try use the first type, this is last resort
-                kwargs[field.name] = possible_types[0](potential_val)
-        return cls(**kwargs)
+        return deserialize(cls, dict_input)
 
     def to_json(self) -> str:
         return json_dumps(self.serialize())
@@ -140,7 +127,7 @@ class SerializableMixin(object):
                 their = obj.get(key, None)
             mine = getattr(self, key, None)
             if isinstance(their, bytes):
-                their = decode(their)
+                their = decode_str(their)
             setattr(self, key, their or mine)  # defaults to theirs
         return self
 
