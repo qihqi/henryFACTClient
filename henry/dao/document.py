@@ -12,7 +12,7 @@ from henry.base.fileservice import FileService
 from henry.base.session_manager import SessionManager
 from henry.base.dbapi import DBApiGeneric, SerializableDB
 
-from henry.base.serialization import SerializableMixin, SerializableData
+from henry.base.serialization import SerializableData
 from henry.invoice.coreschema import NPedidoTemporal
 from henry.product.dao import PriceList, InvMovementType, InventoryApi, InventoryMovement
 
@@ -36,33 +36,30 @@ class Item(SerializableData):
 
 T = TypeVar('T', bound=SerializableDB)
 SelfType = TypeVar('SelfType', bound='MetaItemSet')
-# Cannot use dataclass because this is not dataclass
-class MetaItemSet(SerializableMixin, Generic[T]):
-    _name = ('meta', 'items')
+class MetaItemSet(Generic[T]):
     _metadata_cls: Type[T]  # _metadata class must have a field item_location
     meta: Optional[T]
-    items: List[Item]
-
-    def __init__(self, meta: Optional[T] = None,
-                 items: Iterable[Item] = []):
-        self.meta = meta
-        self.items = list(items)
+    items: List
 
     def items_to_transaction(self, dbapi) -> Iterable[InventoryMovement]:
         raise NotImplementedError()
 
-    @classmethod
-    def deserialize(cls: Type[SelfType], the_dict) -> SelfType:
-        x = cls()
-        x.meta = cls._metadata_cls.deserialize(the_dict['meta'])
-        x.items = list(map(Item.deserialize, the_dict['items']))
-        return x
 
     def validate(self):
         raise NotImplementedError
 
     @property
     def filepath_format(self) -> str:
+        raise NotImplementedError
+
+    def to_json(self):
+        raise NotImplementedError
+
+    def serialize(self):
+        raise NotImplementedError
+
+    @classmethod
+    def deserialize(cls, input_obj):
         raise NotImplementedError
 
 

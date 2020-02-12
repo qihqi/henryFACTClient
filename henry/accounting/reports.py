@@ -1,9 +1,10 @@
+import dataclasses
 import datetime
 from collections import defaultdict
 from datetime import timedelta
 from operator import attrgetter
 from decimal import Decimal
-from typing import Optional, List, Iterable
+from typing import Optional, List, Iterable, Mapping, Tuple, DefaultDict
 
 from past.utils import old_div
 from sqlalchemy import func
@@ -11,7 +12,7 @@ from sqlalchemy import func
 from henry.base.dbapi import DBApiGeneric
 from henry.accounting.acct_schema import NPayment, NCheck, NSpent
 from henry.accounting.dao import Spent, AccountTransaction, Image
-from henry.base.serialization import SerializableMixin
+from henry.base.serialization import SerializableData
 from henry.product.dao import Store, get_real_prod_id
 from henry.invoice.coreschema import NNota
 from henry.users.schema import NCliente
@@ -110,7 +111,7 @@ class InvRecord(object):
         self.comment = comment
 
 
-class DailyReport(SerializableMixin):
+class DailyReport(object):
     def __init__(self, cash, other_by_client,
                  retension, spent, deleted_invoices, payments, checks, deleted, other_cash):
         self.cash = cash
@@ -125,7 +126,7 @@ class DailyReport(SerializableMixin):
 
 
 
-def generate_daily_report(dbapi, day):
+def generate_daily_report(dbapi, day) -> DailyReport:
     all_sale = list(filter(attrgetter('almacen_id'),
                            get_notas_with_clients(dbapi, day, day)))
 
@@ -265,8 +266,21 @@ def get_transactions(dbapi, paymentapi, invapi, imageserver, start_date, end_dat
     }
 
 
-class SaleReport(SerializableMixin):
-    _name = ('menor', 'mayor', 'best_sellers', 'menor_inv_count', 'unique_vistors')
+@dataclasses.dataclass
+class ProdSale(SerializableData):
+    prod_id: Optional[str] = None
+    prod: Optional[str] = None
+    cant: int = 0
+    value: Decimal = Decimal(0)
+
+
+@dataclasses.dataclass
+class SaleReport(SerializableData):
+    menor: DefaultDict[str, Decimal]
+    mayor: DefaultDict[str, Decimal]
+    menor_inv_count: DefaultDict[str, int]
+    unique_visitors: int
+    best_sellers: List[Tuple[str, ProdSale]]
 
     def __init__(self):
         self.menor = defaultdict(Decimal)
@@ -275,26 +289,20 @@ class SaleReport(SerializableMixin):
         self.unique_visitors = 0
         self.best_sellers = []
 
-class ProdSale(SerializableMixin):
-    _name = ('prod', 'cant', 'value')
-    def __init__(self):
-        self.prod_id = None
-        self.prod = None
-        self.cant = 0
-        self.value = 0
 
 
-def get_sale_report_full(invapi, start, end):
+
+def get_sale_report_full(invapi, start, end) -> SaleReport:
     invs = invapi.search_metadata_by_date_range(start, end, status=Status.COMITTED)
     report = SaleReport()
-    prod_sale_map = defaultdict(ProdSale)
+    prod_sale_map = defaultdict(ProdSale)  # type: Mapping[str, ProdSale]
     visitors = set()
     for inv in invs:
         datestr = inv.timestamp.date().isoformat()
         if inv.almacen_id == 2:
-            report.mayor[datestr] += old_div(Decimal(inv.subtotal - (inv.discount or 0)), 100)
+            report.mayor[datestr] += Decimal(inv.subtotal - (inv.discount or 0)) / 100
         if inv.almacen_id in (1, 3):
-            report.menor[datestr] += old_div(Decimal(inv.subtotal - (inv.discount or 0)), 100)
+            report.menor[datestr] += Decimal(inv.subtotal - (inv.discount or 0)) / 100
             report.menor_inv_count[datestr] += 1
         visitors.add(inv.client.codigo)
 
@@ -310,7 +318,7 @@ def get_sale_report_full(invapi, start, end):
     return report
 
 
-def get_sale_report(invapi, start, end):
+def get_sale_report(invapi, start, end) -> SaleReport:
     report = get_sale_report_full(invapi, start, end)
     best_by_cant = sorted(report.best_sellers, key=lambda x: x[1].cant)
     if len(best_by_cant) > 20:
@@ -319,6 +327,6 @@ def get_sale_report(invapi, start, end):
     if len(best_by_val) > 20:
         best_by_val= best_by_val[-20:]
 
-    report.best_sellers = list(set(best_by_val) | set(best_by_cant))
+    report.best_sellers = best_by_cant + best_by_val
     return report
 

@@ -37,12 +37,9 @@ class ProductApiTest(unittest.TestCase):
 
         with self.sessionmanager:
             check2 = self.paymentapi.get_check(uid)
-            for x in check._name:
-                if x in ('status', 'uid'):
-                    continue
-                old = getattr(check, x, None)
-                new = getattr(check2, x, None)
-                assert old == new, (old, new, x)
+            check2.uid = None
+            check2.status = None
+            self.assertEqual(check, check2)
 
 
 if __name__ == '__main__':

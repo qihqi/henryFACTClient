@@ -10,7 +10,7 @@ from henry.dao.document import MetaItemSet, Item
 from henry.product.dao import PriceList, ProdItemGroup, InvMovementType, InventoryMovement, ProdItem
 
 from .schema import NTransferencia
-from typing import Dict, Type, Iterator, Optional
+from typing import Dict, Type, Iterator, Optional, List
 
 
 class TransType(object):
@@ -73,9 +73,11 @@ def transtype_to_invtype(tipo):
     if tipo == TransType.TRANSFER:
         return InvMovementType.TRANSFER
 
-class Transferencia(MetaItemSet):
+@dataclasses.dataclass
+class Transferencia(SerializableData, MetaItemSet):
     _metadata_cls = TransMetadata
     meta: TransMetadata
+    items: List[TransItem]
 
     def items_to_transaction(self, dbapi=None):
         # NOTE: type of item.prod is ProdItemGroup here
@@ -112,11 +114,3 @@ class Transferencia(MetaItemSet):
             self._path = os.path.join(
                 self.meta.timestamp.date().isoformat(), uuid.uuid1().hex)
         return self._path
-
-    @classmethod
-    def deserialize(cls, the_dict: Dict) -> 'Transferencia':
-        x = cls()
-        x.meta = cls._metadata_cls.deserialize(the_dict['meta'])
-        x.items = list(map(TransItem.deserialize, the_dict['items']))  # type: ignore
-        return x
-

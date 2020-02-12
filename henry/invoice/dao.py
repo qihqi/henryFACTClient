@@ -3,10 +3,10 @@ import datetime
 import os
 import uuid
 from decimal import Decimal
-from typing import Optional, Iterator
-from henry.base.serialization import parse_iso_datetime
+from typing import Optional, Iterator, List
+from henry.base.serialization import parse_iso_datetime, SerializableData
 from henry.base.dbapi import SerializableDB
-from henry.dao.document import MetaItemSet
+from henry.dao.document import MetaItemSet, Item
 from henry.product.dao import InventoryMovement, ProdItem, InvMovementType, get_real_prod_id
 from henry.users.dao import Client, User
 
@@ -49,7 +49,7 @@ class InvMetadata(SerializableDB[NNota]):
 
     # client_id: Optional[str] = None
     user: Optional[str] = None
-    client: Optional[Client] = None
+    client: Client = Client()
     paid: Optional[bool] = None
     paid_amount: Optional[int] = None
     payment_format: Optional[str] = None
@@ -66,18 +66,6 @@ class InvMetadata(SerializableDB[NNota]):
     items_location: Optional[str] = dataclasses.field(default=None, metadata={
         'skip': True})
 
-    @classmethod
-    def deserialize(cls, the_dict) -> 'InvMetadata':
-        x = cls().merge_from(the_dict)
-        if x.timestamp and not isinstance(x.timestamp, datetime.datetime):
-            x.timestamp = parse_iso_datetime(x.timestamp)
-        if 'client' in the_dict:
-            client = Client.deserialize(the_dict['client'])
-            x.client = client
-        else:
-            x.client = None
-        return x
-
     def db_instance(self):
         db_instance = super(InvMetadata, self).db_instance()
         db_instance.client_id = self.client.codigo
@@ -91,8 +79,11 @@ class InvMetadata(SerializableDB[NNota]):
         return this
 
 
-class Invoice(MetaItemSet[InvMetadata]):
+@dataclasses.dataclass
+class Invoice(SerializableData, MetaItemSet[InvMetadata]):
     _metadata_cls = InvMetadata
+    meta: InvMetadata
+    items: List[Item]
 
     def items_to_transaction(self, dbapi) -> Iterator[InventoryMovement]:
         assert self.meta is not None, 'Meta is None!'

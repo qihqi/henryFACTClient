@@ -9,7 +9,7 @@ from sqlalchemy import desc
 
 from henry.base.fileservice import FileService
 from henry.base.dbapi import SerializableDB, DBApiGeneric
-from henry.base.serialization import SerializableMixin
+from henry.base.serialization import SerializableData
 from henry.invoice.dao import PaymentFormat
 
 from .acct_schema import (NBank, NDepositAccount, NPayment, NCheck, NDeposit, NImage,
@@ -93,41 +93,35 @@ class Spent(SerializableDB[NSpent]):
     deleted: Optional[bool] = None
 
 
-class Payment(SerializableMixin):
-    _name = (
-        'uid',
-        'note_id',
-        'client_id',
-        'value',
-        'date',
-        'type',
-        'deleted',
-    )
-
-    def __init__(self, **kwargs):
-        self.merge_from(kwargs)
+@dataclasses.dataclass
+class Payment(SerializableDB):
+    db_class = NPayment
+    uid: Optional[int] = None
+    note_id: Optional[int] = None
+    client_id: Optional[str] = None
+    value: Optional[int] = None
+    type: Optional[str] = None
+    date: Optional[datetime.date] = None
+    deleted: Optional[bool] = None
 
 
-class Check(SerializableMixin):
-    _name = (
-        'uid',
-        'bank',
-        'accountno',
-        'checkno',
-        'holder',
-        'checkdate',
-        'deposit_account',
-        'status',
-        'note_id',
-        'client_id',
-        'value',
-        'date',
-        'imgcheck',
-        'imgdeposit',
-    )
+@dataclasses.dataclass
+class Check(SerializableData):
+    uid: Optional[int] = None
+    bank: Optional[str] = None
+    accountno: Optional[str] = None
+    checkno: Optional[int] = None
+    holder: Optional[str] = None
+    checkdate: Optional[datetime.date] = None
+    deposit_account: Optional[str] = None
+    status: Optional[str] = None
+    note_id: Optional[int] = None
+    client_id: Optional[str] = None
+    value: Optional[int] = None
+    date: Optional[datetime.date] = None
+    imgcheck: Optional[str] = None
+    imgdeposit: Optional[str] = None
 
-    def __init__(self, **kwargs):
-        self.merge_from(kwargs)
 
     @classmethod
     def from_db_instance(cls, dbobj):
@@ -138,20 +132,16 @@ class Check(SerializableMixin):
         return new
 
 
-class Deposit(SerializableMixin):
-    _name = (
-        'uid',
-        'account',
-        'status',
-        'revised_by',
-        'note_id',
-        'client_id',
-        'value',
-        'date',
-    )
-
-    def __init__(self, **kwargs):
-        self.merge_from(kwargs)
+@dataclasses.dataclass
+class Deposit(SerializableData):
+    uid: Optional[int] = None
+    account: Optional[str] = None
+    status: Optional[str] = None
+    revised_by: Optional[str] = None
+    note_id: Optional[int] = None
+    client_id: Optional[str] = None
+    value: Optional[int] = None
+    date: Optional[datetime.date] = None
 
     @classmethod
     def from_db_instance(cls, dbobj):
@@ -217,7 +207,7 @@ class PaymentApi(object):
         return self._get_doc(uid, NCheck, Check)
 
     def list_payments(self, start, end):
-        return list(map(Payment.deserialize,
+        return list(map(Payment.from_db_instance,
                    self.sm.session.query(NPayment).filter(
                        NPayment.date >= start).filter(NPayment.date <= end,
                                                       NPayment.deleted != True)))

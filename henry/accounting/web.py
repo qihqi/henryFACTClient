@@ -91,6 +91,7 @@ def make_wsgi_api(dbapi: DBApiGeneric, invapi: DocumentApi,
         result = dbapi.search(Spent, inputdate=day)
         return json_dumps(result)
 
+    # this is the current resume (2020-02-11)
     @w.get('/app/api/account_transaction')
     @dbcontext
     def get_account_transactions_mult_days():
@@ -246,7 +247,7 @@ def make_wsgi_api(dbapi: DBApiGeneric, invapi: DocumentApi,
     @w.get('/app/api/sale_report_monthly')
     @dbcontext
     def sale_report_monthly():
-        start, end = parse_start_end_date(decode_str(request.query))
+        start, end = parse_start_end_date(request.query)
         report = get_sale_report(invapi, start, end)
         return json_dumps(report)
 

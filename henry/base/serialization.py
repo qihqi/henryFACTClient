@@ -13,14 +13,19 @@ def json_dumps(content) -> str:
 
 
 def parse_iso_datetime(datestring: str) -> datetime.datetime:
-    return datetime.datetime(*list(map(int, re.split('[^\d]', datestring))))  # type: ignore
+    parts = list(map(int, re.split('[^\d]', datestring)))
+    if len(parts) > 7:
+        parts = parts[:7]
+    return datetime.datetime(*parts)  # type: ignore
 
 
 def parse_iso_date(datestring: str) -> datetime.date:
-    return datetime.date(*list(map(int, datestring.split('-'))))  # type: ignore
+    parts = list(map(int, datestring.split('-')))[:3]
+    return datetime.date(*parts)  # type: ignore
 
 
 class ModelEncoder(json.JSONEncoder):
+
     def __init__(self, use_int_repr=False, decimal_places=2, *args, **kwargs):
         super(ModelEncoder, self).__init__(*args, **kwargs)
         self.use_int_repr = use_int_repr
@@ -34,12 +39,6 @@ class ModelEncoder(json.JSONEncoder):
         if hasattr(obj, 'isoformat'):
             return obj.isoformat()
         return super(ModelEncoder, self).default(obj)
-
-
-def extract_obj_fields(obj, names):
-    return {
-        name: getattr(obj, name) for name in names if getattr(obj, name, None) is not None
-        }
 
 
 def deserialize(cls, input_obj):

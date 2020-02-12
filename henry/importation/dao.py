@@ -9,7 +9,7 @@ import functools
 from past.utils import old_div
 
 from henry.base.dbapi import SerializableDB
-from henry.base.serialization import SerializableMixin, parse_iso_datetime, SerializableData
+from henry.base.serialization import parse_iso_datetime, SerializableData
 from .schema import (NUniversalProduct, NDeclaredGood, NPurchaseItem,
                      NPurchase, NCustomItem, NUnit)
 
@@ -184,18 +184,18 @@ class Purchase(SerializableDB[NPurchase]):
         return result
 
 
-class PurchaseFull(SerializableMixin):
-    _name = ('meta', 'items')
-
-    def __init__(self, meta=None, items=None):
-        self.meta = meta
-        self.items = items
 
 
 @dataclasses.dataclass
 class PurchaseItemFull(SerializableData):
     prod_detail: UniversalProd = UniversalProd()
     item: PurchaseItem = PurchaseItem()
+
+
+@dataclasses.dataclass
+class PurchaseFull(SerializableData):
+    meta: Purchase
+    items: List[PurchaseItemFull]
 
 
 def _get_purchase_item_full_filter(dbapi, filter_):

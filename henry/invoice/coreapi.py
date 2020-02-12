@@ -11,7 +11,7 @@ from decimal import Decimal
 from bottle import Bottle, request, abort
 import datetime
 
-from henry.base.serialization import SerializableMixin, json_dumps, decode_str, SerializableData
+from henry.base.serialization import json_dumps, decode_str, SerializableData
 from henry.base.session_manager import DBContext
 from henry.dao.document import Status
 
