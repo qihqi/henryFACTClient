@@ -6,7 +6,6 @@ from operator import attrgetter
 from decimal import Decimal
 from typing import Optional, List, Iterable, Mapping, Tuple, DefaultDict
 
-from past.utils import old_div
 from sqlalchemy import func
 
 from henry.base.dbapi import DBApiGeneric
@@ -166,7 +165,7 @@ def generate_daily_report(dbapi, day) -> DailyReport:
 
 def make_acct_trans(value):
     return AccountTransaction(
-        value=old_div(Decimal(value), 100),
+        value= Decimal(value) / 100,
         desc='Deposito/Entregado',
         type='turned_in')
 
@@ -187,7 +186,7 @@ def get_sales_as_transactions(dbapi, start_date, end_date):
         yield AccountTransaction(
             uid='sale{}.{}'.format(x[0].isoformat(), x[1]),
             date=x[0],
-            value=old_div(Decimal(int(x[2])), 100),
+            value=Decimal(int(x[2]))/100,
             desc='Venta {}: {}'.format(x[0], all_alms[x[1]].nombre),
             type='venta')
 
@@ -211,7 +210,7 @@ def get_payments_as_transactions(dbapi, start_date, end_date):
         acct = AccountTransaction(
             uid='pago-'+str(pago.uid),
             date=timestamp.date(),
-            value=old_div(-Decimal(pago.value), 100),
+            value=-Decimal(pago.value)/100,
             desc='{} para Factura {} ({})'.format(
                 pago.type, pago.note_id, pago.date.isoformat()),
             type=thetype)
@@ -233,7 +232,7 @@ def get_spent_as_transactions(dbapi, start_date, end_date):
         yield AccountTransaction(
             uid='gasto'+str(gasto.uid),
             date=gasto.inputdate.date(),
-            value=(old_div(-Decimal(gasto.paid_from_cashier), 100)),
+            value=(-Decimal(gasto.paid_from_cashier)/100),
             desc=gasto.desc,
             type='gasto')
 
@@ -311,7 +310,7 @@ def get_sale_report_full(invapi, start, end) -> SaleReport:
             cod = get_real_prod_id(item.prod.prod_id)
             prod_sale_map[cod].prod = item.prod.nombre
             prod_sale_map[cod].cant += item.cant * (item.prod.multiplicador or 1)
-            prod_sale_map[cod].value += old_div(item.cant * Decimal(item.prod.precio2 or item.prod.precio1), 100)
+            prod_sale_map[cod].value += (item.cant * Decimal(item.prod.precio2 or item.prod.precio1)/ 100)
 
     report.best_sellers = list(prod_sale_map.items())
     report.unique_visitors = len(visitors)
