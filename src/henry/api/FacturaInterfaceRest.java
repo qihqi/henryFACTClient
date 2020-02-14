@@ -7,6 +7,9 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.nio.charset.StandardCharsets;
+
+
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -75,7 +78,8 @@ public class FacturaInterfaceRest implements FacturaInterface {
     public Producto getProductoPorCodigo(String codigo) throws NotFoundException {
         try {
             String url = String.format(PROD_URL, almacenId, codigo);
-            URI prodUri = new URIBuilder().setScheme("http")
+            URI prodUri = new URIBuilder().setCharset(StandardCharsets.UTF_8)
+                                          .setScheme("http")
                                           .setHost(baseUrl)
                                           .setPath(url)
                                           .build();
@@ -94,7 +98,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
     public List<Producto> buscarProducto(String prefijo) {
         try {
             String url = String.format(PROD_URL_PATH, almacenId);
-            URI prodUri = new URIBuilder().setScheme("http")
+            URI prodUri = new URIBuilder().setCharset(StandardCharsets.UTF_8).setScheme("http")
                     .setHost(baseUrl)
                     .setPath(url)
                     .setParameter("prefijo", prefijo).build();
@@ -115,7 +119,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
     @Override
     public Cliente getClientePorCodigo(String codigo) throws NotFoundException {
         try {
-            URI uri = new URIBuilder().setScheme("http")
+            URI uri = new URIBuilder().setCharset(StandardCharsets.UTF_8).setScheme("http")
                     .setHost(baseUrl)
                     .setPath(CLIENT_URL_PATH + "/" + codigo)
                     .build();
@@ -134,7 +138,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
     @Override
     public List<Cliente> buscarCliente(String prefijo) {
         try {
-            URI uri = new URIBuilder().setScheme("http")
+            URI uri = new URIBuilder().setCharset(StandardCharsets.UTF_8).setScheme("http")
                     .setHost(baseUrl)
                     .setPath(CLIENT_URL_PATH)
                     .setParameter("prefijo", prefijo).build();
@@ -163,11 +167,11 @@ public class FacturaInterfaceRest implements FacturaInterface {
         System.out.println(content);
         String path = isFactura ? FACTURA_URL_PATH : VENTA_URL_PATH;
         try {
-            URI uri = new URIBuilder().setScheme("http").setHost(baseUrl)
+            URI uri = new URIBuilder().setCharset(StandardCharsets.UTF_8).setScheme("http").setHost(baseUrl)
                     .setPath(path).build();
             HttpPost req = new HttpPost(uri);
             req.setConfig(timeoutConfig);
-            req.setEntity(new StringEntity(content));
+            req.setEntity(new StringEntity(content, "UTF-8"));
             try (CloseableHttpResponse response = httpClient.execute(req)) {
                 if (response.getStatusLine().getStatusCode() == 200) {
                     HttpEntity entity = response.getEntity();
@@ -178,7 +182,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
                 e.printStackTrace();
             }
         }
-        catch (URISyntaxException|UnsupportedEncodingException ex) {
+        catch (URISyntaxException ex) {
             ex.printStackTrace();
         }
         return -1;
@@ -256,7 +260,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
     @Override
     public Documento getPedidoPorCodigo(String codigo) throws NotFoundException {
         try {
-            URI uri = new URIBuilder().setScheme("http")
+            URI uri = new URIBuilder().setCharset(StandardCharsets.UTF_8).setScheme("http")
                     .setHost(baseUrl)
                     .setPath(VENTA_URL_PATH + "/" + codigo).build();
             String content = getUrl(uri);
@@ -275,7 +279,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
     public boolean commitDocument(int docId) {
         URI uri = null;
         try {
-            uri = new URIBuilder().setScheme("http")
+            uri = new URIBuilder().setCharset(StandardCharsets.UTF_8).setScheme("http")
                 .setHost(baseUrl)
                 .setPath(String.format("%s/%d", FACTURA_URL_PATH, docId))
                 .build();
@@ -295,7 +299,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
     @Override
     public Usuario authenticate(String username, String password) {
         try {
-            URI uri = new URIBuilder().setScheme("http")
+            URI uri = new URIBuilder().setCharset(StandardCharsets.UTF_8).setScheme("http")
                     .setHost(baseUrl)
                     .setPath(LOGIN_URL).build();
             HttpPost req = new HttpPost(uri);
@@ -330,7 +334,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
 
     public Item getItemFromBarcode(String barcode) {
         try {
-            URI uri = new URIBuilder().setScheme("http")
+            URI uri = new URIBuilder().setCharset(StandardCharsets.UTF_8).setScheme("http")
                 .setHost(baseUrl)
                 .setPath(BARCODE_PATH + "/" + barcode).build();
             String content = getUrl(uri);
