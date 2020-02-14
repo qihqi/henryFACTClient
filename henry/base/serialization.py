@@ -163,8 +163,12 @@ def decode_str(strobj: bytes) -> str:
             return content
     except UnicodeError:
         pass
-    # Assumes utf8 as catchall
-    return strobj.decode('utf-8')
+
+    try:
+        # Assumes utf8 as catchall
+        return strobj.decode('utf-8')
+    except UnicodeError:
+        return strobj.decode('latin1')
 
 
 def mksetter(obj: Any) -> Callable:

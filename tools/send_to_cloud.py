@@ -60,9 +60,9 @@ def main():
     end = datetime.date.today() + datetime.timedelta(days=1)
     start = end - datetime.timedelta(days=10)
     def send_bytes_func(msg_bytes):
-        # resp = requests.post(constants.REMOTE_ADDR, data=msg_bytes)
-        resp = requests.post(
-                'http://localhost:8080/sync/remote_nota', data=msg_bytes)
+        resp = requests.post(constants.REMOTE_ADDR, data=msg_bytes)
+        # resp = requests.post(
+        #        'http://localhost:8080/sync/remote_nota', data=msg_bytes)
         print(resp)
         return resp.status_code == 200
 
