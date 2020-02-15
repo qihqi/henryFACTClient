@@ -551,7 +551,6 @@ def make_wsgi_app(dbcontext: DBContext, imgserver: ImageServer,
     def save_check():
         check = parse_payment_from_request(
             request.forms, Check, '/app/guardar_cheque')
-        check.checkdate = parse_iso(check.checkdate)
         paymentapi.save_check(check)
         redirect('/app/guardar_cheque?msg=Cheque+Guardado')
 
