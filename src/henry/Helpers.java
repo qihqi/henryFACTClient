@@ -45,7 +45,7 @@ public class Helpers {
         return d.intValue();
     }
     public static String streamToString(InputStream stream) {
-        Scanner scanner = new Scanner(stream).useDelimiter("\\A");
+        Scanner scanner = new Scanner(stream, "UTF-8").useDelimiter("\\A");
         return scanner.hasNext() ? scanner.next() : null;
     }
 

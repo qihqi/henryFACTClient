@@ -34,7 +34,7 @@ public class ItemContainer extends JPanel
      *
      */
 
-    private static final int DEFAULT_IVA = 14;
+    private static final int DEFAULT_IVA = 12;
     private int ivaPercentValue;
 
     private int current = 0; // the current selected item
