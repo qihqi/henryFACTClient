@@ -538,9 +538,10 @@ def make_wsgi_app(dbcontext: DBContext, imgserver: ImageServer,
         date = datetime.date.today()
         if request.forms.ingresado == 'ayer':
             date = date - datetime.timedelta(days=1)
-        payment = clazz.deserialize(request.forms)
+        rforms = dict(request.forms)
+        rforms['value'] = Decimal(form['value']) * 100
+        payment = clazz.deserialize(rforms)
         payment.note_id, payment.client_id = extract_nota_and_client(dbapi, form, url)
-        payment.value = int(Decimal(payment.value) * 100)
         payment.date = date
         return payment
 

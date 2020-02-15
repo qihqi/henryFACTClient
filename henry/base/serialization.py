@@ -62,11 +62,7 @@ def deserialize(cls, input_obj):
     origin_types = getattr(cls, '__origin__', None)
     if origin_types is not None:
         if origin_types == Union:  # Optiona[T] == union[t, none]
-            for t in arg_types:
-                try:
-                    return deserialize(t, input_obj)
-                except:
-                    pass
+            return deserialize(arg_types[0], input_obj)
 
         if issubclass(origin_types, Sequence):
             return [deserialize(arg_types[0], i) for i in input_obj]
