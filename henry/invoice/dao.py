@@ -116,6 +116,13 @@ class Invoice(SerializableData, MetaItemSet[InvMetadata]):
                 self.meta.timestamp.date().isoformat(), uuid.uuid1().hex)
         return self._path
 
+    def update_metadata(self, db_metadata):
+        self.meta.status = db_metadata.status
+        self.meta.codigo = db_metadata.codigo
+        self.meta.user = db_metadata.user
+        self.meta.almacen_id = db_metadata.almacen_id
+        self.meta.almacen_name = db_metadata.almacen_name
+
 
 class SRINotaStatus:
     CREATED = 'created'

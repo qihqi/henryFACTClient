@@ -62,6 +62,9 @@ class MetaItemSet(Generic[T]):
     def deserialize(cls, input_obj):
         raise NotImplementedError
 
+    def update_metadata(self, db_metadata):
+        pass
+
 
 Doc = TypeVar('Doc', bound=MetaItemSet)
 class DocumentApi(object):
@@ -89,7 +92,7 @@ class DocumentApi(object):
             return None
         doc = self.get_doc_from_file(meta.items_location)  # type: ignore
         if doc is not None:
-            doc.meta.status = meta.status  # type: ignore
+            doc.update_metadata(meta)
         return doc
 
     def get_doc_from_file(self, filename: str) -> Optional[Doc]:
