@@ -114,3 +114,6 @@ class Transferencia(SerializableData, MetaItemSet):
             self._path = os.path.join(
                 self.meta.timestamp.date().isoformat(), uuid.uuid1().hex)
         return self._path
+
+    def update_metadata(self, db_metadata):
+        self.meta.status = db_metadata.status
