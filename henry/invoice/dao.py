@@ -93,11 +93,11 @@ class Invoice(SerializableData, MetaItemSet[InvMetadata]):
             inv_id = item.prod.upi or self.meta.bodega_id
             if proditem is None:
                 print(item.prod.prod_id)
-            assert item.prod.multiplicador is not None
+            mult = proditem.multiplier or item.prod.multiplicador
             yield InventoryMovement(
                 from_inv_id=inv_id,
                 to_inv_id=-1,
-                quantity=(item.cant * item.prod.multiplicador),
+                quantity=(item.cant * mult),
                 prod_id=get_real_prod_id(item.prod.prod_id),
                 itemgroup_id=proditem.itemgroupid,
                 type=InvMovementType.SALE,

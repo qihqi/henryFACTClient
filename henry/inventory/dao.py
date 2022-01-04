@@ -8,6 +8,8 @@ from henry.base.dbapi import SerializableDB
 from henry.base.serialization import parse_iso_datetime, SerializableData
 from henry.dao.document import MetaItemSet, Item
 from henry.product.dao import PriceList, ProdItemGroup, InvMovementType, InventoryMovement, ProdItem
+from henry.product.dao import get_real_prod_id
+
 
 from .schema import NTransferencia
 from typing import Dict, Type, Iterator, Optional, List
@@ -47,22 +49,6 @@ class TransMetadata(SerializableDB[NTransferencia]):
         return x
 
 
-@dataclasses.dataclass
-class TransItem(SerializableData):
-    prod: ProdItemGroup = ProdItemGroup()
-    cant: Decimal = Decimal(0)
-
-    @classmethod
-    def deserialize(cls, the_dict: Dict) -> 'TransItem':
-        if 'name' in the_dict['prod'] and 'prod_id' in the_dict['prod']:
-            prod = ProdItemGroup.deserialize(the_dict['prod'])
-        else:
-            price = PriceList.deserialize(the_dict['prod'])
-            prod = ProdItemGroup(prod_id=price.prod_id, name=price.nombre)  # type: ignore
-        cant = Decimal(the_dict['cant'])
-        return cls(prod, cant)
-
-
 def transtype_to_invtype(tipo):
     if tipo == TransType.INGRESS:
         return InvMovementType.INGRESS
@@ -74,23 +60,41 @@ def transtype_to_invtype(tipo):
         return InvMovementType.TRANSFER
 
 @dataclasses.dataclass
+class TransItem(SerializableData):
+    prod: ProdItem = ProdItem()
+    cant: Decimal = Decimal(0)
+
+    @classmethod
+    def deserialize(cls, the_dict: Dict) -> 'TransItem':
+        prod = ProdItem.deserialize(the_dict['prod'])
+        cant = Decimal(the_dict['cant'])
+        return cls(prod, cant)
+
+
+@dataclasses.dataclass
 class Transferencia(SerializableData, MetaItemSet):
     _metadata_cls = TransMetadata
     meta: TransMetadata
     items: List[TransItem]
 
     def items_to_transaction(self, dbapi=None):
-        # NOTE: type of item.prod is ProdItemGroup here
-        del dbapi
-        tipo = self.meta.trans_type
+        assert self.meta is not None, 'Meta is None!'
         for item in self.items:
+            # item is ProdItem
+            if self.meta.origin == -1:
+                type_ = InvMovementType.INGRESS
+            elif self.meta.dest == -1:
+                type_ = InvMovementType.EGRESS
+            else:
+                type_ = InvMovementType.TRANSFER
+
             yield InventoryMovement(
-                from_inv_id=self.meta.origin or -1,
-                to_inv_id=self.meta.dest or -1,
-                quantity=item.cant,
-                prod_id=item.prod.prod_id,
-                itemgroup_id=item.prod.uid,
-                type=transtype_to_invtype(tipo),
+                from_inv_id=self.meta.origin,
+                to_inv_id=self.meta.dest,
+                quantity=(item.cant * item.prod.multiplier),
+                prod_id=get_real_prod_id(item.prod.prod_id),
+                itemgroup_id=item.prod.itemgroupid,
+                type=type_,
                 reference_id=str(self.meta.uid),
             )
 

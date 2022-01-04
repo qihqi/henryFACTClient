@@ -93,6 +93,7 @@ class ProdItem(SerializableDB[NItem]):
     prod_id: Optional[str] = None
     multiplier: Optional[Decimal] = None
     unit: Optional[str] = None
+    name: Optional[str] = None
 
     def merge_from(self, the_dict: Dict) -> 'ProdItem':
         super(ProdItem, self).merge_from(the_dict)

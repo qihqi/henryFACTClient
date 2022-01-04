@@ -15,7 +15,7 @@
             }
             function makeClickable(a) {
                 var elm = $('<p>');
-                elm.append(a.nombre);
+                elm.append(a.nombre + ' (' + a.unidad + ')');
                 elm.attr("id", a.codigo);
                 elm.click(sendResultToOpener);
                 return elm;
@@ -27,7 +27,7 @@
                         var a = result;    
                         $("#dest").html("");
                         for ( var i = 0; i < a.length; i++) {
-                            var x = {nombre: a[i].name, codigo: a[i].prod_id};
+                            var x = {nombre: a[i].name, codigo: a[i].prod_id, unidad: a[i].unit};
                             $("#dest").append(makeClickable(x));
                         }
                     }

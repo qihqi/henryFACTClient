@@ -22,12 +22,13 @@ function popup(){
     return false;
 }
 function getProdAjaxCall(codigo, bodega_id, callback) {
-    var url = '/app/api/itemgroup?prod_id=' + codigo;
+    var url = '/app/api/item?prod_id=' + encodeURIComponent(codigo);
     getRequest(url, function(status, result) {
         if (status && result.result) {
             var prod = {
                 codigo: result.result[0].prod_id,
-                nombre: result.result[0].name
+                nombre: result.result[0].name,
+                unidad: result.result[0].unit
             };
             callback(true, prod);
         } else {
@@ -37,7 +38,7 @@ function getProdAjaxCall(codigo, bodega_id, callback) {
 }
 
 function searchProdAjax(prefix, bodega_id, callback) {
-    var url = '/app/api/itemgroup?name-prefix=' + prefix;
+    var url = '/app/api/item?name-prefix=' + prefix;
     getRequest(url, function(status, result) {
         if (status) {
             callback(status, result.result);
@@ -137,7 +138,7 @@ function initEvents() {
             var bodegaId = getBodegaId();
             getProdAjaxCall(codigo, bodegaId, function(status, result) {
                 if (status) {
-                    dest.html(result.nombre);
+                    dest.html(result.nombre + ' (' + result.unidad + ')');
                     if (include_price) {
                         $('#price' + id).html(displayMoney(result.precio));
                     }

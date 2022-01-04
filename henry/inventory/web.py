@@ -132,7 +132,7 @@ def make_inv_wsgi(
     def post_crear_ingreso():
         meta = transmetadata_from_form(request.forms)
         items = items_from_form(dbapi, request.forms)
-        meta.value = sum((x.cant * (x.prod.base_price_usd or 0) for x in items))
+        meta.value = 0 # sum((x.cant * (x.prod.base_price_usd or 0) for x in items))
         try:
             transferencia = Transferencia(meta, items)
             transferencia = transapi.save(transferencia)

@@ -17,7 +17,7 @@ from henry import constants
 from henry.base.common import parse_iso
 from henry.base.serialization import json_dumps
 from henry.inventory.dao import TransMetadata, TransType, TransItem
-from henry.product.dao import PriceList, ProdItemGroup
+from henry.product.dao import PriceList, ProdItemGroup, ProdItem
 
 
 def get_base_price(dbapi, prod_id):
@@ -46,8 +46,11 @@ def items_from_form(dbapi, form):
             abort(400, 'cantidad debe ser entero positivo')
         if cant < 0:
             abort(400, 'cantidad debe ser entero positivo')
-        itemg = dbapi.getone(ProdItemGroup, prod_id=prod_id)
-        items.append(TransItem(itemg, cant))
+        print('id is', prod_id) 
+        item = dbapi.getone(ProdItem, prod_id=prod_id)
+        ig = dbapi.get(item.itemgroupid, ProdItemGroup)
+        item.name = ig.name    
+        items.append(TransItem(item, cant))
     return items
 
 

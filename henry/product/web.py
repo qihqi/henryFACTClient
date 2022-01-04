@@ -12,6 +12,7 @@ from henry.base.dbapi_rest import bind_dbapi_rest, bind_restapi, RestApi
 from henry.base.serialization import json_dumps, decode_str
 from henry.base.session_manager import SessionManager, DBContext
 from henry.product.dao import ProdItemGroup, Store, Bodega, ProdItem, PriceList, ProdTag, ProdTagContent, InventoryApi
+from henry.product.schema import NItem, NItemGroup
 
 from typing import Dict, Tuple, Callable
 
@@ -146,7 +147,41 @@ def make_wsgi_api(
     bind_restapi(prefix + '/pricelist', 
         RestApi(dbapi, PriceList, logging=sync_api.log_price_list_change), app)
     bind_dbapi_rest(prefix + '/itemgroup', dbapi, ProdItemGroup, app)
-    bind_dbapi_rest(prefix + '/item', dbapi, ProdItem, app)
+    bind_dbapi_rest(prefix + '/item', dbapi, ProdItem, app, skips_method=('GET',))
+
+    @app.get(prefix + '/item/<pkey>')
+    @dbcontext
+    def get_item_w_name(pkey):
+        items = dbapi.session.session.query(NItem, NItemGroup).filter(
+                NItem.itemgroupid == NItemGroup.uid).first()
+
+        item = ProdItem.from_db_instance(items[0])
+        item.name = items[1].name
+        return json_dumps(item)
+
+    @app.get(prefix + '/item')
+    @dbcontext
+    def get_item_w_name():
+        name_prefix = request.query.get('name-prefix')
+        prod_id = request.query.get('prod_id')
+        assert prod_id or name_prefix, 'prod_id o Prefijo no puede ser vacio'
+
+        query = dbapi.session.session.query(NItem, NItemGroup).filter(
+                NItem.itemgroupid == NItemGroup.uid)
+
+        if prod_id:
+            query = query.filter(NItem.prod_id == prod_id)
+
+        if name_prefix:
+            query = query.filter(NItemGroup.name.startswith(name_prefix))
+
+        res = [] 
+        for it, ig in query:
+            item = ProdItem.from_db_instance(it)
+            item.name = ig.name
+            res.append(item)
+        return json_dumps({'result': res})
+        
     return app
 
 

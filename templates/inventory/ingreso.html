@@ -74,7 +74,6 @@
             {%endif%}
         </h3>
         <h4> Codigo: {{ingreso.meta.uid}}</h4>
-        <h4> Valor: {{ingreso.meta.value}}</h4>
         <table align="center" width=600>
             <tr>
                 <th width=100>Fecha</th>
@@ -93,16 +92,14 @@
                 <th width=100 class="codigo">Codigo</th>
                 <th>Nombre</th>
                 <th width=150 class="cant">Cambio de Cantidad</th>
-                <th>Precio</th>
-                <th>Valor</th>
+                <th>Unidad</th>
             </tr>
             {% for i in ingreso.items %}
             <tr>
                 <td width=100>{{i.prod.prod_id}}</td>
                 <td>{{i.prod.name}}</td>
                 <td width=100 class="cant">{{i.cant}}</td>
-                <td width=100 class="cant">{{i.prod.base_price_usd}}</td>
-                <td width=100 class="cant">{{i.cant * (i.prod.base_price_usd or 0)}}</td>
+                <td width=100 class="cant">{{i.prod.unit}}</td>
             </tr>
             {%endfor %}
         </table>
