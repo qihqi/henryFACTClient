@@ -37,11 +37,11 @@
                     getIngreso(ing_id, function(status, result) {
                         for (var i in result.items) {
                             var row = result.items[i];
-                            var cant = row[2];
+                            var cant = row['cant'];
                                 if (cant > 0 ) {
-                                $('#cod' + (count-1)).val(row[1]);
-                                $('#cant' + (count-1)).val(row[2]);
- ;                               $('#span' + (count-1)).html(row[3]);
+                                $('#cod' + (count-1)).val(row.prod['prod_id']);
+                                $('#cant' + (count-1)).val(cant);
+ ;                               $('#span' + (count-1)).html(row.prod.name);
                                 var newRow = getRow();
                                 $("#insert").append(newRow);
                             }
@@ -64,6 +64,9 @@
     {% endif %}
     <div class="center">
         <button onClick="window.location='/app';" > Regresar </button>
+	{% if not revision %}
+	<input id="ingreso_id"/> <button id="cargar_ingreso"> Copiar Ingreso Viejo</button>
+	{% endif %}
         <form id="p" method="post">
             <p><input type="submit" value="Guardar"/></p>
     {% if not revision %}
