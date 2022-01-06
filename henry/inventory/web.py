@@ -6,7 +6,7 @@ from bottle import Bottle, request, abort, redirect, json_loads
 
 from henry.base.dbapi import DBApiGeneric
 
-from henry.base.auth import AuthType
+from henry.base.auth import AuthType, get_user
 from henry.base.common import parse_start_end_date
 from henry.base.serialization import json_dumps
 from henry.base.session_manager import DBContext
@@ -15,7 +15,7 @@ from henry.dao.document import DocumentApi
 
 from henry.product.dao import Bodega
 
-from .dao import TransType, Transferencia
+from .dao import TransType, Transferencia, RevisionMetadata, Revision
 
 
 def make_inv_api(dbapi: DBApiGeneric,
@@ -88,7 +88,8 @@ def make_inv_wsgi(
         dbapi: DBApiGeneric, jinja_env,
         actionlogged: Callable[[Callable], Callable],
         auth_decorator: AuthType, transapi: DocumentApi,
-        revisionapi):
+        revapi: DocumentApi,
+        revisionapi):  #revisionapi is deprectated
     w = Bottle()
     dbcontext = DBContext(dbapi.session)
 
@@ -119,7 +120,7 @@ def make_inv_wsgi(
         temp = jinja_env.get_template('inventory/crear_ingreso.html')
         bodegas = dbapi.search(Bodega)
         return temp.render(bodegas=bodegas, externas={},
-                           types=TransType.names)
+                           types=TransType.names, revision=False)
 
     def remove_upi(items):
         for i in items:
@@ -164,6 +165,46 @@ def make_inv_wsgi(
     def revisar_inv_form():
         temp = jinja_env.get_template('inventory/crear_revision.html')
         return temp.render(bodegas=dbapi.search(Bodega))
+
+    @w.get('/app/corregir_inventario')
+    @dbcontext
+    @auth_decorator(2)
+    def corregir_inv():
+        temp = jinja_env.get_template('inventory/crear_ingreso.html')
+        bodegas = dbapi.search(Bodega)
+        return temp.render(bodegas=bodegas, externas={},
+                           types=TransType.names, revision=True)
+
+    @w.post('/app/corregir_inventario')
+    @dbcontext
+    @auth_decorator(2)
+    @actionlogged
+    def post_crear_ingreso():
+        meta = RevisionMetadata()
+        meta.timestamp = datetime.datetime.now()
+        meta.user = get_user(request)['username']
+        meta.bodega_id = int(request.forms.get('dest', -1))
+        items = items_from_form(dbapi, request.forms)
+        try:
+            revision = Revision(meta, items)
+            revision = revapi.save(revision)
+            revision = revapi.commit(revision)
+            redirect('/app/revision/{}'.format(revision.meta.uid))
+        except ValueError as e:
+            traceback.print_exc()
+            abort(400, str(e))
+
+    @w.get('/app/revision/<uid>')
+    @dbcontext
+    @auth_decorator(0)
+    def get_ingreso(uid):
+        trans = revapi.get_doc(uid)
+        if not trans:
+            return 'Documento con codigo {} no existe'.format(uid)
+        trans.meta.bodega_name = dbapi.get(trans.meta.bodega_id, Bodega).nombre
+        temp = jinja_env.get_template('inventory/ingreso.html')
+        return temp.render(ingreso=trans, revision=True)
+
 
 #    @w.post('/app/revisar_inventario')
 #    @dbcontext

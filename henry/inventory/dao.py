@@ -11,7 +11,7 @@ from henry.product.dao import PriceList, ProdItemGroup, InvMovementType, Invento
 from henry.product.dao import get_real_prod_id
 
 
-from .schema import NTransferencia
+from .schema import NTransferencia, NRevisionMetadata
 from typing import Dict, Type, Iterator, Optional, List
 
 
@@ -121,3 +121,64 @@ class Transferencia(SerializableData, MetaItemSet):
 
     def update_metadata(self, db_metadata):
         self.meta.status = db_metadata.status
+         
+
+
+@dataclasses.dataclass
+class RevisionMetadata(SerializableDB[NRevisionMetadata]):
+    db_class = NRevisionMetadata
+    uid: Optional[int] = None
+    timestamp: Optional[datetime.datetime] = None
+    status: Optional[str] = None
+    user: Optional[str] = None
+    bodega_id: Optional[int] = None
+    items_location: Optional[str] = dataclasses.field(default=None, metadata={
+        'skip': True})
+
+    @classmethod
+    def deserialize(cls, the_dict):
+        x = super(cls, RevisionMetadata).deserialize(the_dict)
+        if not isinstance(x.timestamp, datetime.datetime):
+            x.timestamp = parse_iso_datetime(x.timestamp)
+        return x
+
+
+@dataclasses.dataclass
+class Revision(SerializableData, MetaItemSet):
+    _metadata_cls = RevisionMetadata 
+    meta: RevisionMetadata 
+    items: List[TransItem]
+
+    def items_to_transaction(self, dbapi=None):
+        assert self.meta is not None, 'Meta is None!'
+        by_ig_id = {}
+        for item in self.items:  # group by itemgroup
+            if not item.prod.itemgroupid in by_ig_id:
+                by_ig_id[item.prod.itemgroupid] = InventoryMovement(
+                    from_inv_id=-1,
+                    to_inv_id=self.meta.bodega_id,
+                    quantity=(item.cant * item.prod.multiplier),
+                    prod_id=get_real_prod_id(item.prod.prod_id),
+                    itemgroup_id=item.prod.itemgroupid,
+                    type=InvMovementType.INITIAL,
+                    reference_id=str(self.meta.uid),
+                )
+            else:
+                by_ig_id[item.prod.itemgroupid].quantity += (item.cant * item.prod.multiplier)
+
+        return by_ig_id.values()
+
+    @property
+    def filepath_format(self) -> str:
+        path = getattr(self, '_path', None)
+        if path is None:
+            assert self.meta.timestamp is not None
+            self._path = os.path.join(
+                self.meta.timestamp.date().isoformat(), uuid.uuid1().hex)
+        return self._path
+
+    def update_metadata(self, db_metadata):
+        pass
+
+    def validate(self):
+        pass

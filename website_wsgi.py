@@ -15,7 +15,7 @@ from henry.base.dbapi import DBApiGeneric
 from henry.base.fileservice import FileService
 from henry.constants import USE_ACCOUNTING_APP, FORWARD_INV
 from henry.config import (BEAKER_SESSION_OPTS, jinja_env, transapi,
-                          imagefiles)
+                          imagefiles, revisionapi)
 from henry.coreconfig import (dbcontext, auth_decorator, sessionmanager,
                               actionlogged, invapi, pedidoapi, transactionapi, sessionfactory)
 from henry.web import webmain as app
@@ -28,7 +28,7 @@ forward_transaction = None
 invoiceapp = make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, jinja_env,
                                workqueue=forward_transaction)
 userapp = userwsgi(dbcontext, auth_decorator, jinja_env, dbapi, actionlogged)
-invapp = make_inv_wsgi(dbapi, jinja_env, actionlogged, auth_decorator, transapi,
+invapp = make_inv_wsgi(dbapi, jinja_env, actionlogged, auth_decorator, transapi, revisionapi,
                        revisionapi=None)
 invappapi = make_inv_api(dbapi, transapi, auth_decorator, actionlogged, forward_transaction=forward_transaction)
 papp = prodapp(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles)

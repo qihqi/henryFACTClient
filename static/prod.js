@@ -24,7 +24,7 @@ function popup(){
 function getProdAjaxCall(codigo, bodega_id, callback) {
     var url = '/app/api/item?prod_id=' + encodeURIComponent(codigo);
     getRequest(url, function(status, result) {
-        if (status && result.result) {
+        if (status && result.result.length > 0) {
             var prod = {
                 codigo: result.result[0].prod_id,
                 nombre: result.result[0].name,

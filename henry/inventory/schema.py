@@ -20,3 +20,17 @@ class NTransferencia(Base):
 
     # unix filepath where the items is stored
     items_location = Column(String(200))
+
+
+class NRevisionMetadata(Base):
+    __tablename__ = 'revisiones'
+
+    uid = Column('id', Integer, primary_key=True, autoincrement=True)
+    timestamp = Column(DateTime, index=True)
+    status = Column(String(10))
+
+    user = Column(String(20))
+    bodega_id = Column(Integer)
+
+    # unix filepath where the items is stored
+    items_location = Column(String(200))

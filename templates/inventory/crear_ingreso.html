@@ -59,29 +59,35 @@
         </style>
     </head>
     <body>
+    {% if revision %}
+    <h2> Corregir inventario de Bodega </h2>
+    {% endif %}
     <div class="center">
         <button onClick="window.location='/app';" > Regresar </button>
-        <input id="ingreso_id"/> <button id="cargar_ingreso"> Copiar Ingreso Viejo</button>
-        <form id="p" method="post" action="/app/crear_ingreso">
+        <form id="p" method="post">
             <p><input type="submit" value="Guardar"/></p>
+    {% if not revision %}
             <p>Fecha: <input name="fecha" value="{{today().isoformat()}}"/></p>
             <select id="tipo" name="trans_type">
                 {% for o in types %}
                 <option value="{{o}}">{{o}}</option>
                 {% endfor %}
             </select>
+    {% endif %}
             <br/>
+	      {% if not revision %}
                 <div id="desde_bodega" class="type_select" style="display:none;">
                     <label>Desde bodega:</label>
                     {{ selector(bodegas, 'origin', 'id', 'nombre') }}
                 </div>
+	     {% endif %}
                 <div id="hasta_bodega" class="type_select" >
+	      {% if not revision %}
                 <label>Hasta bodega:</label>
+              {%else%}
+                <label>bodega:</label>
+	     {% endif %}
                 {{ selector(bodegas, 'dest', 'id', 'nombre') }}
-                </div>
-                <div id="hasta_externa" class="type_select" style="display:none;">
-                    <label>Hasta bodega externa:</label>
-                    {{ selector(externas, 'externa', 'id', 'nombre') }}
                 </div>
                 <table id="insert" cellspacing="10px">
                     <tr>
