@@ -1,0 +1,72 @@
+<html>
+<head>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.guardar').click(function() {
+            var num = $(this).attr('num');
+            var uid = $(this).attr('uid');
+            var url = '/app/api/item/' + uid;
+
+            var mult = $('#' + num + '-mult');
+            var unit = $('#' + num + '-unit');
+
+            var data = {
+                multiplier: mult.val(),
+		unit: unit.val(),
+            };
+            data = JSON.stringify(data);
+            $.ajax({
+                url: url,
+                type: 'PUT',
+                data: data,
+                success: function(result) {
+                    alert('Producto para transferencia guardado');
+                },
+                failure: function(error) {
+                    alert(error);
+                }
+            });
+        });
+    });
+</script>
+<style>
+    .small {
+        width: 80px;
+    }
+    .big{
+        width: 250px;
+    }
+</style>
+</head>
+<body>
+<form action="/app/ver_trans_producto" method="get">
+    Nombre:
+    <input name="prefix" value="{{ prefix }}"/>
+    <input type="submit" value="Buscar" />
+</form>
+<div>
+    <h3>Productos y unidades </h3>
+    <table>
+        <tr>
+            <th></th>
+            <th>Codigo</th>
+            <th>Nombre</th>
+            <th>Unidad</th>
+            <th>Multiplicador</th>
+            <th></th>
+        </tr>
+        {% for p in prods %}
+        <tr id="{{p.codigo}}">
+            <td><input type="hidden" id="{{loop.index}}-uid" value="{{p.uid}}" disabled/></td>
+            <td><input class="small" id="{{loop.index}}-codigo" value="{{p.prod_id}}" disabled/></td>
+            <td><input class="big" id="{{loop.index}}-nombre" value="{{p.name}}" disabled/></td>
+            <td><input class="big" id="{{loop.index}}-unit" value="{{p.unit}}" /></td>
+	    <td><input class="small" id="{{loop.index}}-mult" value="{{'%0.0f' % p.multiplier}}" /></td>
+            <td><button num="{{loop.index}}" uid="{{p.uid}}" class="guardar">Guardar</button></td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+</body>
+</html>

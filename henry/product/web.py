@@ -1,5 +1,6 @@
 import json
 from decimal import Decimal
+from collections import defaultdict
 
 import barcode
 import os
@@ -56,6 +57,26 @@ def make_full_items(itemgroup, items, prices_by_prod_id):
             new_item['prices'].append(pl)
         result['items'].append(new_item)
     return result
+
+
+def get_or_search_item_w_name(dbapi, name_prefix, prod_id):
+    assert prod_id or name_prefix, 'prod_id o Prefijo no puede ser vacio'
+    query = dbapi.session.session.query(NItem, NItemGroup).filter(
+            NItem.itemgroupid == NItemGroup.uid)
+
+    if prod_id:
+        query = query.filter(NItem.prod_id == prod_id)
+
+    if name_prefix:
+        query = query.filter(NItemGroup.name.startswith(name_prefix))
+
+    res = [] 
+    for it, ig in query:
+        item = ProdItem.from_db_instance(it)
+        item.name = ig.name
+        res.append(item)
+    return res
+
 
 def make_wsgi_api(
         prefix: str, sessionmanager: SessionManager, dbcontext: DBContext,
@@ -165,21 +186,7 @@ def make_wsgi_api(
         name_prefix = request.query.get('name-prefix')
         prod_id = request.query.get('prod_id')
         assert prod_id or name_prefix, 'prod_id o Prefijo no puede ser vacio'
-
-        query = dbapi.session.session.query(NItem, NItemGroup).filter(
-                NItem.itemgroupid == NItemGroup.uid)
-
-        if prod_id:
-            query = query.filter(NItem.prod_id == prod_id)
-
-        if name_prefix:
-            query = query.filter(NItemGroup.name.startswith(name_prefix))
-
-        res = [] 
-        for it, ig in query:
-            item = ProdItem.from_db_instance(it)
-            item.name = ig.name
-            res.append(item)
+        res = get_or_search_item_w_name(dbapi, name_prefix, prod_id)
         return json_dumps({'result': res})
         
     return app
@@ -191,7 +198,7 @@ def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles):
 
     @w.get('/app/ver_lista_precio')
     @dbcontext
-    @auth_decorator(0)
+    @auth_decorator(1)
     def ver_lista_precio():
         almacen_id = int(request.query.get('almacen_id', 1))
         prefix = request.query.get('prefix', None)
@@ -204,6 +211,20 @@ def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles):
         return temp.render(
             prods=prods, stores=dbapi.search(Store), prefix=prefix,
             almacen_name=dbapi.get(almacen_id, Store).nombre)
+
+    @w.get('/app/ver_trans_producto')
+    @dbcontext
+    @auth_decorator(1)
+    def ver_lista_precio():
+        prefix = request.query.get('prefix', None)
+        prods = []
+        if prefix:
+            prods = sorted(get_or_search_item_w_name(dbapi, prefix, None),
+                           key=lambda a: a.name)
+        temp = jinja_env.get_template('prod/ver_trans_producto.html')
+        return temp.render(
+            prods=prods, prefix=prefix
+        )
 
     @w.get('/app/tags')
     @dbcontext
