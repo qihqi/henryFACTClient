@@ -3,8 +3,6 @@ from builtins import zip
 from typing import Mapping
 import json
 
-from past.utils import old_div
-
 import base64
 import datetime
 import hashlib
@@ -29,7 +27,7 @@ def get_base_price(dbapi, prod_id):
         return None
     price = price[0]
     mult = price.multiplicador or 1
-    return old_div(old_div(Decimal(price.precio1), 100), mult)
+    return Decimal(price.precio1) / 100 / mult
 
 
 def items_from_form(dbapi, form):
@@ -75,7 +73,7 @@ def transmetadata_from_form(form: Mapping[str, str]) -> TransMetadata:
             meta.dest = None  # dest for external resides in other server
     return meta
 
-_MODE = AES.MODE_EAX
+_MODE = AES.MODE_ECB
 def aes_encrypt(text_bytes):
     """Returns a blob that contains(cipher_text, nonce, tag)."""
     m = hashlib.sha1()

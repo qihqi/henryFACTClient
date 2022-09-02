@@ -6,7 +6,6 @@ from typing import Optional, List
 from decimal import Decimal
 import functools
 
-from past.utils import old_div
 
 from henry.base.dbapi import SerializableDB
 from henry.base.serialization import parse_iso_datetime, SerializableData
@@ -278,7 +277,7 @@ def normal_filter(item):
     return item
 
 def docen_filter(price, quantity, unit, all_units=ALL_UNITS):
-    return price * 12, old_div(quantity, 12), all_units['doz']
+    return price * 12, quantity/ 12, all_units['doz']
 
 def convert_to_kg(price, quantity, unit, box=None, all_units=ALL_UNITS):
     if unit.uid == 'kg':
@@ -287,7 +286,7 @@ def convert_to_kg(price, quantity, unit, box=None, all_units=ALL_UNITS):
     # if unit converts to kg
     if unit.equiv_base == 'kg':
         mult = unit.equiv_multiplier
-        return old_div(price, mult), quantity * mult, all_units['kg']
+        return price / mult, quantity * mult, all_units['kg']
 
     if box is not None:
         return 0, box * 30, all_units['kg']

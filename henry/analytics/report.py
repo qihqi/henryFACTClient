@@ -5,8 +5,6 @@ from decimal import Decimal
 from operator import itemgetter
 import os
 
-from past.utils import old_div
-
 from henry.invoice.dao import Invoice
 from .exporting import dump_content
 
@@ -94,7 +92,7 @@ class DailyReport(object):
         self.total_count = 0
         for inv in self._raw_inv:
             for i in inv.items:
-                val = old_div(i.cant * i.price, 100)
+                val = i.cant * i.price / 100
                 self.by_type[get_type(i.uid)] += val
                 self.by_type_count[get_type(i.uid)] += 1
                 self.by_prod[i.uid] += val
