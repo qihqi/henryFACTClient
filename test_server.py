@@ -27,7 +27,7 @@ def main():
     from henry.schema.base import Base
     from henry.coreconfig import engine
 
-    Base.metadata.create_all(engine)
+#    Base.metadata.create_all(engine)
     host, port = '0.0.0.0', 8080
     if len(sys.argv) > 1:
         url = sys.argv[1]
