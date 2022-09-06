@@ -18,7 +18,7 @@ from henry.product.dao import Store, PriceList, create_items_chain
 from henry.users.dao import User, Client
 
 from .coreschema import NNota
-from .dao import Invoice, NotaExtra
+from .dao import Invoice, NotaExtra, SRINota, SRINotaStatus
 
 __author__ = 'han'
 
@@ -165,12 +165,29 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
     def postear_invoice(uid):
         inv = invapi.get_doc(uid)
         invapi.commit(inv)
-        
+
         nota_extra = NotaExtra()
         nota_extra.uid = inv.meta.uid
         nota_extra.status = Status.COMITTED
         nota_extra.last_change_time = datetime.datetime.now()
         dbapi.create(nota_extra)
+
+        sri_nota = SRINota()
+        sri_nota.almacen_ruc = inv.meta.almacen_ruc
+        sri_nota.orig_codigo = inv.meta.codigo
+        sri_nota.orig_timestamp = inv.meta.timestamp
+        sri_nota.timestamp_received = datetime.datetime.now()
+        sri_nota.status = SRINotaStatus.CREATED
+        sri_nota.total = inv.meta.total
+        if inv.meta.client:
+            sri_nota.buyer_ruc = inv.meta.client.codigo
+            sri_nota.buyer_name = inv.meta.client.fullname
+        sri_nota.tax = inv.meta.tax
+        sri_nota.json_inv_location = inv.filepath_format
+        sri_nota.xml_inv_location = ''
+        sri_nota.resp1_location = ''
+        sri_nota.resp2_location = ''
+        dbapi.create(sri_nota)
 
         return {'status': inv.meta.status}
 

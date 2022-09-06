@@ -23,16 +23,25 @@
         <totalConImpuestos>
             <totalImpuesto>
                 <codigo>2</codigo>  <!-- iva = 2 -->
-                <codigoPorcentaje>2</codigoPorcentaje> <!-- 0 / 2 / 3 for 0/12/14 --> 
+                <codigoPorcentaje>{{ 2 if tax_percent == 12 else 3 }}</codigoPorcentaje> <!-- 2 = 12%, 3 = 14% -->
+                <tarifa>{{ tax_percent }}</tarifa>
                 <baseImponible> {{ subtotal }}</baseImponible>
                 <valor>{{ iva }}</valor>
             </totalImpuesto>
         </totalConImpuestos>
         <importeTotal>{{ total }} </importeTotal>
+        <moneda> DOLAR </moneda>
+        <pagos>
+            <pago>
+                <formaPago>01</formaPago>
+                <total>{{total}}</total>
+            </pago>
+        </pagos>
     </infoFactura>
     <detalles>
         {% for d in detalles %}
         <detalle>
+            <codigoPrincipal>{{d.id}}</codigoPrincipal>
             <descripcion> {{ d.nombre }}</descripcion>
             <cantidad>{{ d.cantidad }}</cantidad>
             <precioUnitario>{{ d.precio }}</precioUnitario>
@@ -45,8 +54,8 @@
             <impuestos>
                 <impuesto>
                     <codigo>2</codigo> <!-- 2 = IVA -->
-                    <codigoPorcentaje>2</codigoPorcentaje> <!-- 2 = 12%, 3 = 14% -->
-                    <tarifa>12</tarifa>
+                    <codigoPorcentaje>{{ 2 if tax_percent == 12 else 3 }}</codigoPorcentaje> <!-- 2 = 12%, 3 = 14% -->
+                    <tarifa>{{ tax_percent }}</tarifa>
                     <baseImponible>{{ d.total_sin_impuesto }}</baseImponible>
                     <valor>{{ d.total_impuesto }}</valor>
                 </impuesto>

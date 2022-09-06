@@ -16,6 +16,7 @@ from henry import constants, common
 from henry.base.serialization import json_dumps
 from henry.base.session_manager import DBContext
 from henry.invoice.dao import SRINota, SRINotaStatus
+from henry.xades import xades
 
 from .dao import Invoice
 
@@ -49,6 +50,21 @@ def guess_id_type(client_id):
         return IdType.RUC
     return IdType.CONS_FINAL
 
+def compute_access_code(inv: Invoice, is_prod: bool):
+    timestamp = inv.meta.timestamp
+    fecha = '{:02}{:02}{:04}'.format(timestamp.day, timestamp.month, timestamp.year)
+    tipo_comp = '01'  # 01 = factura
+    ruc = inv.meta.almacen_ruc
+    numero = '{:09}'.format(int(inv.meta.codigo))  # num de factura
+    codigo_numero = '12345678' # puede ser lo q sea de 8 digitos
+    tipo_emision = '1'
+    serie = '001001'
+    ambiente = '1' # 1 = prueba 2 = prod
+
+    access_key_48 = ''.join([fecha, tipo_comp, ruc, ambiente, serie, numero, codigo_numero, tipo_emision])
+
+    access_key = access_key_48 + str(xades.generate_checkcode(access_key_48))
+    return access_key
 
 def inv_to_sri_dict(inv: Invoice) -> Optional[Dict]:
     """Return the dict used to render xml."""
@@ -64,12 +80,13 @@ def inv_to_sri_dict(inv: Invoice) -> Optional[Dict]:
     # 99 para consumidor final
     id_compra = '99' if tipo_ident == IdType.CONS_FINAL else inv.meta.client.codigo
     ts = inv.meta.timestamp
+    access = compute_access_code(inv, False)
     res = {
       'ambiente': 1,
       'razon_social': info['name'],
       'ruc': info['ruc'],
-      'clave_access': '',
-      'codigo': inv.meta.codigo,
+      'clave_acceso': access,
+      'codigo': '{:09}'.format(inv.meta.codigo),
       'dir_matriz': 'Boyaca 1515 y Aguirre',
       'fecha': '{:02}/{:02}/{:04}'.format(ts.day, ts.month, ts.year),
       'tipo_identificacion_comprador': tipo_ident,
@@ -79,6 +96,7 @@ def inv_to_sri_dict(inv: Invoice) -> Optional[Dict]:
       'iva': Decimal(inv.meta.tax or 0) / 100,
       'descuento': Decimal(inv.meta.discount or 0) / 100,
       'total': Decimal(inv.meta.total or 0) / 100,
+      'tax_percent': inv.meta.tax_percent,
       'detalles': []
     }
     for item in inv.items:
@@ -94,6 +112,7 @@ def inv_to_sri_dict(inv: Invoice) -> Optional[Dict]:
         total_sin_impuesto = item.prod.precio1 * item.cant - desc
         total_impuesto = Decimal('0.12') * total_sin_impuesto
         item_dict = {
+            'id': item.prod.pid,
             'nombre': item.prod.nombre,
             'cantidad': item.cant,
             'precio': Decimal(item.prod.precio1) / 100,

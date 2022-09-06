@@ -122,6 +122,7 @@ class Invoice(SerializableData, MetaItemSet[InvMetadata]):
         self.meta.user = db_metadata.user
         self.meta.almacen_id = db_metadata.almacen_id
         self.meta.almacen_name = db_metadata.almacen_name
+        self._path = db_metadata.items_location
 
 
 class SRINotaStatus:
