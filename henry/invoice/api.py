@@ -1,4 +1,4 @@
-import json
+i    mport json
 import os
 import uuid
 from decimal import Decimal
@@ -191,7 +191,6 @@ def make_nota_all(url_prefix: str, dbapi: DBApiGeneric,
             return {'result': 'no_inv'}
         inv_dict = json.loads(inv_text)
         inv = Invoice.deserialize(inv_dict)
-        print(inv_dict)
         xml_dict = inv_to_sri_dict(inv)
         if xml_dict is None:
             return {'result': 'no puede'}
@@ -256,7 +255,6 @@ def make_nota_all(url_prefix: str, dbapi: DBApiGeneric,
         with dbapi.session:
             res = dbapi.search(SRINota, **{'timestamp_received-gte': start_date,
                                            'timestamp_received-lte': end_date})
-        print(res)
         return temp.render(rows=res)
 
 
