@@ -1,0 +1,121 @@
+<html>
+    <head>
+        <title>cid={{inv.meta.id}}</title>
+        <style>
+            body {
+                text-align : center;
+            }
+            .cant {
+                text-align: right;
+                width: 10px;
+            }
+            .codigo {
+                text-align: left;
+            }
+
+        </style>
+    </head>
+
+    <body>
+        <button onClick="window.print();" > Imprimir </button>
+        <button onClick="window.location='/app';" > Regresar al principio </button>
+        <h4>{{inv.meta.almancen_name}}</h4> <!-- Quinal SA -->
+        <h4>RUC: {{inv.meta.almancen_ruc}}</h4> <!-- Quinal SA -->
+        <h4>001-001-{{inv.meta.codigo}} </h4>
+        <h5>{{ extra.address }}</h4> <!-- Direction -->
+
+        <h5> NO ENVIADO </h5>
+        <h5> Ambiente: {{ extra.ambiente }}</h5>
+        <h5> Clave Aceso: {{ extra.access_code }}</h5>
+
+        <br />
+        <hr />
+
+        <table align="center" width=600>
+            <tr>
+                <th width=100>Fecha de emision </th>
+                <td>{{inv.meta.timestamp.date().isoformat()}}</td>
+                <th width=100>Identificacion</th>
+                <td>{{inv.meta.client.codigo}}</td>
+            </tr>
+            <tr>
+                <th width=100>Razon Social / Nombres y Apellidos</th>
+                <td>{{inv.meta.client.fullname}}</td>
+                <th>Direccion</th>
+                <td>{% if inv.meta.client.direccion %} {{inv.meta.client.direccion}}{%endif%}</td>
+                <th>Guia de Remision</th>
+                <td></td>
+            </tr>
+            <tr>
+            </tr>
+        </table>
+        <!--items-->
+        <br />
+        <hr />
+        <table align="center" width="600">
+            <tr>
+                <th width=100 class="codigo">Cod Principal</th>
+                <th width=150 class="cant">Cant</th>
+                <th>Descripcion</th>
+                <th width=150 class="cant">Precio Unitario</th>
+                <th width=150 class="cant">Subcidio</th>
+                <th width=150 class="cant">Precio Sin Subcidio </th>
+                <th width=150 class="cant">Descuento</th>
+                <th width=150 class="cant">Precio Total</th>
+            </tr>
+            {% for i in inv.items %}
+            <tr>
+                <td>{{i.prod.prod_id}}</td>
+                <td class="cant">{{ i.cant }}</td>
+                <td>{{i.prod.nombre}}</td>
+                <td class="cant">{{ value_from_cents(i.prod.precio1) }}</td>
+                <td class="cant"> </td>
+                <td class="cant"> </td>
+                <td class="cant">{{ 0 }} </td>
+                <td class="cant">{{ value_from_cents(i.prod.precio1 * i.cant) }}</td>
+            </tr>
+            {%endfor %}
+            <tr> <td></td></tr>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <th class="cant"> Subtotal: </th>
+                <td class="cant"> {{value_from_cents(inv.meta.subtotal)}}</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <th class="cant"> Descuento: </th>
+                <td class="cant"> {{value_from_cents(inv.meta.discount)}}</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <th class="cant"> IVA: </th>
+                <td class="cant"> {{value_from_cents(inv.meta.tax)}}</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <th class="cant"> Total: </th>
+                <td class="cant"> {{value_from_cents(inv.meta.total)}} </td>
+            </tr>
+        </table>
+    </body>
+</html>

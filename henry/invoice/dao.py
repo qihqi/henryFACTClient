@@ -157,5 +157,7 @@ class SRINota(SerializableDB[NSRINota]):
 
     json_inv_location : Optional[str] = None
     xml_inv_location : Optional[str] = None
+    xml_inv_signed_location : Optional[str] = None
     resp1_location : Optional[str] = None
     resp2_location : Optional[str] = None
+    access_code: Optional[str] = None

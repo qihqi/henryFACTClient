@@ -25,9 +25,14 @@ class NSRINota(Base):
     # unix filepath where the items is stored
     json_inv_location = Column(String(200))
 
-    # this is what is send to sri
+    # this is what is send to sri, signed?
     xml_inv_location = Column(String(200))
-    
+
+    xml_inv_signed_location = Column(String(200))
+
     # send response
     resp1_location = Column(String(200))
     resp2_location = Column(String(200))
+
+    # access code
+    access_code = Column(String(50))
