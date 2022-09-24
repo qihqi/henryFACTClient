@@ -1,9 +1,9 @@
-from __future__ import division
-from builtins import str
 import datetime
+import json
 from operator import itemgetter
 
-from bottle import request, abort, redirect, Bottle
+from bottle import request, response, abort, redirect, Bottle
+import barcode
 
 from henry.base.auth import get_user
 from henry.base.common import parse_start_end_date
@@ -15,15 +15,16 @@ from henry.users.dao import Client
 from henry.accounting.acct_schema import NPayment
 from henry.product.dao import Store
 from henry.accounting.dao import Comment
-from henry.invoice.dao import PaymentFormat, InvMetadata
+from henry.invoice.dao import PaymentFormat, InvMetadata, SRINota, Invoice
 
 from .coreschema import NNota
+from .schema import NSRINota
 from .coreapi import get_inv_db_instance
 
 __author__ = 'han'
 
 
-def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, jinja_env, workqueue):
+def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, jinja_env, workqueue, file_manager):
     w = Bottle()
     dbcontext = DBContext(dbapi.session)
 
@@ -167,5 +168,78 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
        temp = jinja_env.get_template('client_stat.html')
        client = dbapi.get(uid, Client) # clientapi.get(uid)
        return temp.render(client=client, activities=all_data, compra=compra, pago=pago)
+
+
+    def sri_nota_to_nota_and_extra(sri_nota):
+        json_env = json.loads(
+            file_manager.get_file(sri_nota.json_inv_location))
+        doc = Invoice.deserialize(json_env)
+        if not doc:
+            abort(404, 'Documento con codigo {} no existe'.format(uid))
+
+        bcode = barcode.Gs1_128(sri_nota.access_code)
+        svg_code = bcode.render().decode('utf-8')
+        index = svg_code.find('<svg')
+        svg_code = svg_code[index:]
+        extra = {
+            'ambiente': 'ambiente',
+            'direccion': 'direction',
+            'access_code': sri_nota.access_code,
+            'svg_code': svg_code
+        }
+        return doc, extra
+
+    @w.get('/app/factura/<uid>')
+    @dbcontext
+    @auth_decorator(0)
+    def get_nota_print(uid):
+        sri_nota = dbapi.get(uid, SRINota)
+        doc, extra = sri_nota_to_nota_and_extra(sri_nota)
+        if doc:
+            temp = jinja_env.get_template('invoice/nota_impreso.html')
+            return temp.render(inv=doc, extra=extra)
+        return 'Documento con codigo {} no existe'.format(uid)
+
+
+
+    @w.get('/app/alm/<alm_ruc>/ultima_factura')
+    @dbcontext
+    @auth_decorator(0)
+    def last_inv_print(alm_ruc):
+        nsri_nota = dbapi.db_session.query(NSRINota).filter(
+            NSRINota.almacen_ruc == alm_ruc).order_by(
+            NSRINota.timestamp_received.desc()).first()
+
+        if nsri_nota is None:
+            abort(404, 'No existe')
+
+        sri_nota = SRINota.from_db_instance(nsri_nota)
+        doc, extra = sri_nota_to_nota_and_extra(sri_nota)
+
+        print(sri_nota.serialize())
+        temp = jinja_env.get_template('invoice/nota_impreso.html')
+        response.headers['Cache-Control'] = 'no-cache'
+        return temp.render(inv=doc, extra=extra)
+
+    @w.get('/app/exportar_facturas')
+    @dbcontext
+    @auth_decorator(0)
+    def export_inv_view():
+        start, end = parse_start_end_date(request.query)
+        if not start:
+            start = datetime.datetime.today() - datetime.timedelta(days=1)
+        if not end:
+            end = datetime.datetime.today()
+        alm = request.query.almacen_id
+        query = dbapi.db_session.query(NSRINota).filter(
+            NSRINota.orig_timestamp >= start, NSRINota.orig_timestamp <= end)
+        almacenes = dbapi.search(Store)
+        if alm:
+            alm_obj = dbapi.get(alm, Store)
+            print('ruc is ', alm_obj.ruc)
+            query = query.filter_by(almacen_ruc=alm_obj.ruc)
+        temp = jinja_env.get_template('invoice/buscar_export_factura.html')
+        return temp.render(sri_notas=query, start=start, end=end,
+                           almacenes=dbapi.search(Store))
 
     return w

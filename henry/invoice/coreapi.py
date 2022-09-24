@@ -186,11 +186,11 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
             sri_nota.orig_timestamp = inv.meta.timestamp
             sri_nota.timestamp_received = datetime.datetime.now()
             sri_nota.status = SRINotaStatus.CREATED
-            sri_nota.total = inv.meta.total
+            sri_nota.total = Decimal(inv.meta.total) / 100
             if inv.meta.client:
                 sri_nota.buyer_ruc = inv.meta.client.codigo
                 sri_nota.buyer_name = inv.meta.client.fullname
-            sri_nota.tax = inv.meta.tax
+            sri_nota.tax = Decimal(inv.meta.tax) / 100
             sri_nota.json_inv_location = inv.filepath_format
             sri_nota.xml_inv_location = ''
             sri_nota.xml_inv_signed_location = ''

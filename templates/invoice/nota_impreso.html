@@ -5,12 +5,20 @@
             body {
                 text-align : center;
             }
+            td {
+                font-size: 10px;
+            }
+            th {
+                font-size: 10px;
+            }
             .cant {
                 text-align: right;
-                width: 10px;
+                width: 5px;
+                font-size: 10px;
             }
             .codigo {
                 text-align: left;
+                font-size: 10px;
             }
 
         </style>
@@ -27,7 +35,7 @@
         <h5> NO ENVIADO </h5>
         <h5> Ambiente: {{ extra.ambiente }}</h5>
         <h5> Clave Aceso: {{ extra.access_code }}</h5>
-
+        {{ extra.svg_code | safe }}
         <br />
         <hr />
 
