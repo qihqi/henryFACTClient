@@ -141,6 +141,7 @@ class NotaExtra(SerializableDB[NNotaExtra]):
     status: Optional[str] = None
     last_change_time: Optional[datetime.datetime] = None
 
+
 @dataclasses.dataclass
 class SRINota(SerializableDB[NSRINota]):
     db_class = NSRINota
@@ -161,3 +162,13 @@ class SRINota(SerializableDB[NSRINota]):
     resp1_location : Optional[str] = None
     resp2_location : Optional[str] = None
     access_code: Optional[str] = None
+
+def load_nota(sri_nota, file_manager):
+    if sri_nota.json_inv_location is None:
+        return None
+    inv_text = file_manager.get_file(sri_nota.json_inv_location)
+    if inv_text is None:
+        return None
+    inv_dict = json.loads(inv_text)
+    inv = Invoice.deserialize(inv_dict)
+    return inv

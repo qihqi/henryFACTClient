@@ -175,9 +175,9 @@ def make_nota_all(url_prefix: str, dbapi: DBApiGeneric,
         uid = int(uid)
         sri_nota = dbapi.get(uid, SRINota)
         inv_text = file_manager.get_file(sri_nota.json_inv_location)
-        if inv_text is None:
+        inv = load_nota(sri_nota, file_manager)
+        if inv is None:
             return {'result': 'no_inv'}
-        inv_dict = json.loads(inv_text)
         inv = Invoice.deserialize(inv_dict)
         xml_dict = inv_to_sri_dict(inv, sri_nota)
         if xml_dict is None:

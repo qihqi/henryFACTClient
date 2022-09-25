@@ -1,0 +1,54 @@
+{%extends "base.html"%}
+{%block title%}Resumen de Venta {%endblock%}
+{%block script%}
+<style>
+.baseform {
+    left-margin: auto;
+    right-margin: auto;
+    width: auto;
+}
+.prod_label {
+    width: 50%;
+    float: left;
+}
+</style>
+{%endblock%}
+
+{%block content%}
+<form class="baseform" method="get">
+    <h5>{{ message }}</h5>
+    <h4>Resumen de Venta</h4>
+    {% from "macros.html" import start_end_date, select_almacen, selector%}
+    {{ start_end_date() }}
+    <p>
+        <label class="prod_label" for="almacen">Almacen:</label>
+        {{ select_almacen(almacenes) }}
+    </p>
+    <br/>
+    <input name="action" value="ver" type="submit"/>
+</form>
+<table>
+    <tr>
+        <th>Id</th>
+        <th>Codigo</th>
+        <th>RUC cliente</th>
+        <th>Nombre cliente</th>
+        <th>Fecha y Hora</th>
+        <th>IVA</th>
+        <th>Total</th>
+        <th>Estado</th>
+    </tr>
+    {%for x in sri_notas%}
+    <tr>
+        <th><a href="/app/factura/{{x.uid}}">{{ x.uid }}</a></th>
+        <th>{{ x.orig_codigo }}</th>
+        <th>{{ x.buyer_ruc}}</th>
+        <th>{{ x.buyer_name}}</th>
+        <th>{{ x.orig_timestamp.isoformat()}}</th>
+        <th>{{ x.tax}}</th>
+        <th>{{ x.total }}</th>
+        <th>{{ x.status }}</th>
+    </tr>
+    {% endfor %}
+</table>
+{%endblock%}
