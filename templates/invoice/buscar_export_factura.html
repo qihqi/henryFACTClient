@@ -27,6 +27,15 @@
     <br/>
     <input name="action" value="ver" type="submit"/>
 </form>
+
+{% if min_id and max_id and alm_ruc %}
+<form class="baseform" method="post">
+    <input type="hidden" name="start_id" value="{{min_id}}" />
+    <input type="hidden" name="end_id" value="{{max_id}}" />
+    <input type="hidden" name="ruc" value="{{alm_ruc}}" />
+    <input type="submit" name="action" value="Bajar Archivo" />
+</form>
+{% endif %}
 <table>
     <tr>
         <th>Id</th>

@@ -32,13 +32,18 @@ def generate_checkcode(access_key: str) -> int:
 
 
 def sign_xml(xml: str) -> bytes:
+    """
+    Args:
+        xml: is the content of the xml file
+    """
     cmd = cast(List[str], [
-        'java',
+        'java', '-jar',
         constants.SIGNER_PATH,
         xml,
-        base64.b64encode(constants.P12_FILENAME.encode('utf-8')),
-        base64.b64encode(constants.P12_KEY.encode('utf-8')),
+        base64.b64encode(constants.P12_FILENAME.encode('utf-8')).decode('ascii'),
+        base64.b64encode(constants.P12_KEY.encode('utf-8')).decode('ascii'),
     ])
+    print(' '.join(cmd))
     process = subprocess.Popen(cmd,
                                stdout=subprocess.PIPE)
     res = process.communicate()

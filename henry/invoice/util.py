@@ -1,8 +1,9 @@
-from typing import Optional, Dict
+from decimal import Decimal
+from typing import Optional, Dict, cast, List
 
 from henry.xades import xades
 from henry.invoice.dao import Invoice
-from henry.invoice.dao import Invoice, SRINota
+from henry.invoice.dao import Invoice, SRINota, load_nota
 from henry import constants
 
 
@@ -112,10 +113,9 @@ def inv_to_sri_dict(inv: Invoice, sri_nota: SRINota) -> Optional[Dict]:
     return res
 
 
-def get_or_generate_xml(sri_nota: SRINota, file_manager, jinja_env, dbapi):
+def get_or_generate_xml_path(sri_nota: SRINota, file_manager, jinja_env, dbapi):
     if sri_nota.xml_inv_location:
-        with open(sri_nota.xml_inv_location) as f:
-            return f.read()
+        return sri_nota.xml_inv_location
 
     inv = load_nota(sri_nota, file_manager)
     xml_dict = inv_to_sri_dict(inv, sri_nota)
@@ -127,5 +127,7 @@ def get_or_generate_xml(sri_nota: SRINota, file_manager, jinja_env, dbapi):
     file_manager.put_file(xml_inv_location, xml_text)
     sri_nota.xml_inv_location = xml_inv_location
     dbapi.update(sri_nota, {'xml_inv_location': xml_inv_location})
-    return xml_text
+    return xml_inv_location
+
+
 

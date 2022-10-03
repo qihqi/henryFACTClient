@@ -1,6 +1,9 @@
+import io
 import datetime
 import json
 from operator import itemgetter
+import os
+import zipfile
 
 from bottle import request, response, abort, redirect, Bottle
 import barcode
@@ -20,6 +23,7 @@ from henry.invoice.dao import PaymentFormat, InvMetadata, SRINota, Invoice
 from .coreschema import NNota
 from .schema import NSRINota
 from .coreapi import get_inv_db_instance
+from .util import get_or_generate_xml_path
 
 __author__ = 'han'
 
@@ -234,12 +238,47 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
         query = dbapi.db_session.query(NSRINota).filter(
             NSRINota.orig_timestamp >= start, NSRINota.orig_timestamp <= end)
         almacenes = dbapi.search(Store)
+        alm_ruc = None
         if alm:
             alm_obj = dbapi.get(alm, Store)
-            print('ruc is ', alm_obj.ruc)
-            query = query.filter_by(almacen_ruc=alm_obj.ruc)
+            alm_ruc = alm_obj.ruc
+            query = query.filter_by(almacen_ruc=alm_ruc)
+        notas = sorted(query, key=lambda x: x.uid)
+        min_id, max_id = None, None
+        if notas:
+            min_id = notas[0].uid
+            max_id = notas[-1].uid
         temp = jinja_env.get_template('invoice/buscar_export_factura.html')
-        return temp.render(sri_notas=query, start=start, end=end,
-                           almacenes=dbapi.search(Store))
+        return temp.render(sri_notas=notas, start=start, end=end,
+                           almacenes=almacenes, min_id=min_id, max_id=max_id,
+                           alm_ruc=alm_ruc)
+
+    @w.post('/app/exportar_facturas')
+    @dbcontext
+    @auth_decorator(0)
+    def export_inv_real():
+        start_id = int(request.forms.get('start_id'))
+        end_id = int(request.forms.get('end_id'))
+        ruc = request.forms.get('almacen_ruc')
+        query = dbapi.db_session.query(NSRINota).filter(
+            NSRINota.uid >= start_id, NSRINota.uid <= end_id)
+
+        content = io.BytesIO()
+        with zipfile.ZipFile(content, 'w') as zfile:
+            for k in query:
+                sri_nota = SRINota.from_db_instance(k)
+                relpath = get_or_generate_xml_path(sri_nota, file_manager, jinja_env, dbapi)
+                fullpath = file_manager.make_fullpath(relpath)
+                name = os.path.basename(fullpath)
+                zfile.write(fullpath, arcname=name)
+        print(len(content.getbuffer()))
+        content.seek(0)
+        response.headers['Content-Type'] = 'application/zip'
+        response.headers['Content-Disposition'] = 'attachment; filename="{}-{}.zip"'.format(start_id, end_id)
+        return content
+
+
+
+
 
     return w
