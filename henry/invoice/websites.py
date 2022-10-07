@@ -23,7 +23,7 @@ from henry.invoice.dao import PaymentFormat, InvMetadata, SRINota, Invoice
 from .coreschema import NNota
 from .schema import NSRINota
 from .coreapi import get_inv_db_instance
-from .util import get_or_generate_xml_path
+from .util import get_or_generate_xml_paths
 
 __author__ = 'han'
 
@@ -267,8 +267,8 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
         with zipfile.ZipFile(content, 'w') as zfile:
             for k in query:
                 sri_nota = SRINota.from_db_instance(k)
-                relpath = get_or_generate_xml_path(sri_nota, file_manager, jinja_env, dbapi)
-                fullpath = file_manager.make_fullpath(relpath)
+                relpath, signed_path = get_or_generate_xml_paths(sri_nota, file_manager, jinja_env, dbapi)
+                fullpath = file_manager.make_fullpath(signed_path)
                 name = os.path.basename(fullpath)
                 zfile.write(fullpath, arcname=name)
         print(len(content.getbuffer()))

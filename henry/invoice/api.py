@@ -20,6 +20,7 @@ from henry.xades import xades
 
 from .dao import Invoice
 from .util import compute_access_code
+from .util import get_or_generate_xml_paths
 
 __author__ = 'han'
 
@@ -174,28 +175,10 @@ def make_nota_all(url_prefix: str, dbapi: DBApiGeneric,
     def gen_xml(uid):
         uid = int(uid)
         sri_nota = dbapi.get(uid, SRINota)
-        inv_text = file_manager.get_file(sri_nota.json_inv_location)
-        inv = load_nota(sri_nota, file_manager)
-        if inv is None:
-            return {'result': 'no_inv'}
-        inv = Invoice.deserialize(inv_dict)
-        xml_dict = inv_to_sri_dict(inv, sri_nota)
-        if xml_dict is None:
-            return {'result': 'no puede'}
-        xml_text = jinja_env.get_template(
-            'invoice/factura_2_0_template.xml').render(xml_dict)
-        xml_inv_location = sri_nota.json_inv_location.split('.')[0] + '.xml'
-        file_manager.put_file(xml_inv_location, xml_text)
-        sri_nota.xml_inv_location = xml_inv_location
-        dbapi.update(sri_nota, {'xml_inv_location': xml_inv_location})
-        return {'result': xml_text}
+        relpath, signed_path = get_or_generate_xml_paths(
+            sri_nota, file_manager, jinja_env, dbapi)
 
-    @api.post('{}/gen_xml_signed/<uid>'.format(url_prefix))
-    @dbcontext
-    def gen_xml_signed(uid):
-        uid = int(uid)
-        sri_nota = dbapi.get(uid, SRINota)
-        xml_text = file_manager.get_file(sri_nota.xml_inv_location)
+        return {'result': signed_path}
 
 
     @api.get('{}/remote_nota/<uid>'.format(url_prefix))
@@ -205,8 +188,8 @@ def make_nota_all(url_prefix: str, dbapi: DBApiGeneric,
         json_inv = json.loads(
             file_manager.get_file(sri_nota.json_inv_location))
         xml1 = None
-        if sri_nota.xml_inv_location:
-            xml1 = file_manager.get_file(sri_nota.xml_inv_location)
+        if sri_nota.xml_inv_signed_location:
+            xml1 = file_manager.get_file(sri_nota.xml_inv_signed_location)
         resp1 = None
         resp2 = None
         temp = jinja_env.get_template('invoice/sri_nota_full.html')

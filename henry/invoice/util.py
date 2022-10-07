@@ -113,21 +113,29 @@ def inv_to_sri_dict(inv: Invoice, sri_nota: SRINota) -> Optional[Dict]:
     return res
 
 
-def get_or_generate_xml_path(sri_nota: SRINota, file_manager, jinja_env, dbapi):
-    if sri_nota.xml_inv_location:
-        return sri_nota.xml_inv_location
+def get_or_generate_xml_paths(sri_nota: SRINota, file_manager, jinja_env, dbapi):
 
-    inv = load_nota(sri_nota, file_manager)
-    xml_dict = inv_to_sri_dict(inv, sri_nota)
-    if xml_dict is None:
-        return None
-    xml_text = jinja_env.get_template(
-        'invoice/factura_2_0_template.xml').render(xml_dict)
-    xml_inv_location = '{}.xml'.format(sri_nota.access_code)
-    file_manager.put_file(xml_inv_location, xml_text)
-    sri_nota.xml_inv_location = xml_inv_location
-    dbapi.update(sri_nota, {'xml_inv_location': xml_inv_location})
-    return xml_inv_location
+    if not sri_nota.xml_inv_location or not sri_nota.xml_inv_signed_location:
+        inv = load_nota(sri_nota, file_manager)
+        xml_dict = inv_to_sri_dict(inv, sri_nota)
+        if xml_dict is None:
+            return None, None
+        xml_text = jinja_env.get_template(
+            'invoice/factura_2_0_template.xml').render(xml_dict)
+        xml_inv_location = '{}.xml'.format(sri_nota.access_code)
+        file_manager.put_file(xml_inv_location, xml_text)
+        sri_nota.xml_inv_location = xml_inv_location
+
+        xml_inv_signed_location = '{}-signed.xml'.format(sri_nota.access_code)
+        signed_xml = xades.sign_xml(xml_text).decode('utf-8')
+        file_manager.put_file(xml_inv_signed_location, signed_xml)
+
+        dbapi.update(sri_nota, {
+            'xml_inv_location': xml_inv_location,
+            'xml_inv_signed_location': xml_inv_signed_location,
+        })
+
+    return sri_nota.xml_inv_location, sri_nota.xml_inv_signed_location
 
 
 
