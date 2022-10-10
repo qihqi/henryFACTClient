@@ -7,6 +7,7 @@ import zipfile
 
 from bottle import request, response, abort, redirect, Bottle
 import barcode
+import zeep
 
 from henry.base.auth import get_user
 from henry.base.common import parse_start_end_date
@@ -18,7 +19,7 @@ from henry.users.dao import Client
 from henry.accounting.acct_schema import NPayment
 from henry.product.dao import Store
 from henry.accounting.dao import Comment
-from henry.invoice.dao import PaymentFormat, InvMetadata, SRINota, Invoice
+from henry.invoice.dao import PaymentFormat, InvMetadata, SRINota, Invoice, SRINotaStatus
 
 from .coreschema import NNota
 from .schema import NSRINota
@@ -277,8 +278,25 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
         response.headers['Content-Disposition'] = 'attachment; filename="{}-{}.zip"'.format(start_id, end_id)
         return content
 
+    @w.post('/app/validate_remote')
+    def validate_nota():
+        uid = request.forms.get('uid')
+        sri_nota = dbapi.get(uid, SRINota)
+        xml, xml_signed = get_or_generate_xml_paths(
+                sri_nota, file_manager, jinja_env, dbapi)
+        fullpath = file_manager.make_fullpath(xml_signed)
 
-
+        client = zeep.Client('https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl')
+        with open(fullpath, 'wb') as f:
+            xml_content = f.read()
+        resp = client.service.validarComprobante(xml_content)
+        resp1_location = sri_nota.xml_inv_location + 'resp1'
+        file_manager.put_file(resp1_location, resp)
+        dbapi.update(sri_nota, {
+            'resp1_location': resp1_location,
+            'status': SRINotaStatus.CREATED_SENT
+        })
+        return {'status': 'success'}
 
 
     return w

@@ -24,9 +24,8 @@
             <totalImpuesto>
                 <codigo>2</codigo>  <!-- iva = 2 -->
                 <codigoPorcentaje>{{ 2 if tax_percent == 12 else 3 }}</codigoPorcentaje> <!-- 2 = 12%, 3 = 14% -->
-                <tarifa>{{ tax_percent }}</tarifa>
-                <baseImponible> {{ subtotal }}</baseImponible>
-                <valor>{{ iva }}</valor>
+                <baseImponible> {{  '%0.2f' % subtotal }}</baseImponible>
+                <valor>{{  '%0.2f' % iva }}</valor>
             </totalImpuesto>
         </totalConImpuestos>
         <importeTotal>{{ total }} </importeTotal>
@@ -56,8 +55,8 @@
                     <codigo>2</codigo> <!-- 2 = IVA -->
                     <codigoPorcentaje>{{ 2 if tax_percent == 12 else 3 }}</codigoPorcentaje> <!-- 2 = 12%, 3 = 14% -->
                     <tarifa>{{ tax_percent }}</tarifa>
-                    <baseImponible>{{ d.total_sin_impuesto }}</baseImponible>
-                    <valor>{{ d.total_impuesto }}</valor>
+                    <baseImponible>{{ '%0.2f' % d.total_sin_impuesto }}</baseImponible>
+                    <valor>{{  '%0.2f' % d.total_impuesto }}</valor>
                 </impuesto>
             </impuestos>
         </detalle>

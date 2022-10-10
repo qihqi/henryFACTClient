@@ -20,7 +20,7 @@ from henry.xades import xades
 
 from .dao import Invoice
 from .util import compute_access_code
-from .util import get_or_generate_xml_paths
+from .util import get_or_generate_xml_paths, generate_xml_paths
 
 __author__ = 'han'
 
@@ -175,7 +175,7 @@ def make_nota_all(url_prefix: str, dbapi: DBApiGeneric,
     def gen_xml(uid):
         uid = int(uid)
         sri_nota = dbapi.get(uid, SRINota)
-        relpath, signed_path = get_or_generate_xml_paths(
+        relpath, signed_path = generate_xml_paths(
             sri_nota, file_manager, jinja_env, dbapi)
 
         return {'result': signed_path}
@@ -246,6 +246,5 @@ def make_nota_all(url_prefix: str, dbapi: DBApiGeneric,
             res = dbapi.search(SRINota, **{'timestamp_received-gte': start_date,
                                            'timestamp_received-lte': end_date})
         return temp.render(rows=res)
-
 
     return api

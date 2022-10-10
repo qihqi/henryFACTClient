@@ -65,22 +65,27 @@ def inv_to_sri_dict(inv: Invoice, sri_nota: SRINota) -> Optional[Dict]:
         return None
     tipo_ident = guess_id_type(inv.meta.client.codigo)
     # 99 para consumidor final
-    id_compra = '99' if tipo_ident == IdType.CONS_FINAL else inv.meta.client.codigo
     ts = inv.meta.timestamp
     access = sri_nota.access_code
     if access is None:
         access = compute_access_code(inv, False)
+    if tipo_ident == IdType.CONS_FINAL:
+        comprador = 'CONSUMIDOR FINAL'
+        id_compra = '9999999999999'
+    else:
+        comprador = inv.meta.client.fullname
+        id_compra = inv.meta.client.codigo
     res = {
       'ambiente': 1,
       'razon_social': info['name'],
       'ruc': info['ruc'],
       'clave_acceso': access,
-      'codigo': '{:09}'.format(inv.meta.codigo),
+      'codigo': '{:09}'.format(int(inv.meta.codigo)),
       'dir_matriz': 'Boyaca 1515 y Aguirre',
       'fecha': '{:02}/{:02}/{:04}'.format(ts.day, ts.month, ts.year),
       'tipo_identificacion_comprador': tipo_ident,
       'id_comprador': id_compra,
-      'razon_social_comprador': inv.meta.client.fullname,
+      'razon_social_comprador': comprador,
       'subtotal': Decimal(inv.meta.subtotal or 0) / 100,
       'iva': Decimal(inv.meta.tax or 0) / 100,
       'descuento': Decimal(inv.meta.discount or 0) / 100,
@@ -101,7 +106,7 @@ def inv_to_sri_dict(inv: Invoice, sri_nota: SRINota) -> Optional[Dict]:
         total_sin_impuesto = item.prod.precio1 * item.cant - desc
         total_impuesto = Decimal('0.12') * total_sin_impuesto
         item_dict = {
-            'id': item.prod.pid,
+            'id': item.prod.prod_id,
             'nombre': item.prod.nombre,
             'cantidad': item.cant,
             'precio': Decimal(item.prod.precio1) / 100,
@@ -112,28 +117,32 @@ def inv_to_sri_dict(inv: Invoice, sri_nota: SRINota) -> Optional[Dict]:
         cast(List, res['detalles']).append(item_dict)
     return res
 
+def generate_xml_paths(sri_nota: SRINota, file_manager, jinja_env, dbapi):
+    inv = load_nota(sri_nota, file_manager)
+    xml_dict = inv_to_sri_dict(inv, sri_nota)
+    if xml_dict is None:
+        return None, None
+    xml_text = jinja_env.get_template(
+        'invoice/factura_2_0_template.xml').render(xml_dict)
+    xml_inv_location = '{}.xml'.format(sri_nota.access_code)
+    file_manager.put_file(xml_inv_location, xml_text)
+    sri_nota.xml_inv_location = xml_inv_location
+
+    xml_inv_signed_location = '{}-signed.xml'.format(sri_nota.access_code)
+    signed_xml = xades.sign_xml(xml_text).decode('utf-8')
+    file_manager.put_file(xml_inv_signed_location, signed_xml)
+
+    dbapi.update(sri_nota, {
+        'xml_inv_location': xml_inv_location,
+        'xml_inv_signed_location': xml_inv_signed_location,
+    })
+    return sri_nota.xml_inv_location, sri_nota.xml_inv_signed_location
+
 
 def get_or_generate_xml_paths(sri_nota: SRINota, file_manager, jinja_env, dbapi):
 
     if not sri_nota.xml_inv_location or not sri_nota.xml_inv_signed_location:
-        inv = load_nota(sri_nota, file_manager)
-        xml_dict = inv_to_sri_dict(inv, sri_nota)
-        if xml_dict is None:
-            return None, None
-        xml_text = jinja_env.get_template(
-            'invoice/factura_2_0_template.xml').render(xml_dict)
-        xml_inv_location = '{}.xml'.format(sri_nota.access_code)
-        file_manager.put_file(xml_inv_location, xml_text)
-        sri_nota.xml_inv_location = xml_inv_location
-
-        xml_inv_signed_location = '{}-signed.xml'.format(sri_nota.access_code)
-        signed_xml = xades.sign_xml(xml_text).decode('utf-8')
-        file_manager.put_file(xml_inv_signed_location, signed_xml)
-
-        dbapi.update(sri_nota, {
-            'xml_inv_location': xml_inv_location,
-            'xml_inv_signed_location': xml_inv_signed_location,
-        })
+        return generate_xml_paths(sri_nota, file_manager, jinja_env, dbapi)
 
     return sri_nota.xml_inv_location, sri_nota.xml_inv_signed_location
 
