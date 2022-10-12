@@ -128,11 +128,13 @@ class Invoice(SerializableData, MetaItemSet[InvMetadata]):
 
 class SRINotaStatus:
     CREATED = 'created'
-    CREATED_SENT = 'created_sent'
-    CREATED_SENT_VALIDATED = 'created_sent_validated'
+    CREATED_SENT = 'sent'
+    CREATED_SENT_VALIDATED = 'valid'
+    VALIDATED_FAILED = 'vfailed'
     DELETED = 'deleted'
-    DELETED_SENT = 'deleted_sent'
-    DELETED_SENT_VALIDATED = 'deleted_sent_validated'
+    DELETED_SENT = 'dsent'
+    DELETED_SENT_VALIDATED = 'dvalid'
+    DELETED_VALIDATED_FAILED = 'dvfailed'
 
 
 @dataclasses.dataclass

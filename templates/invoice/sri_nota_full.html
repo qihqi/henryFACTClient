@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Nota {{nota.uid}}</title>
     <script src="https://code.jquery.com/jquery-3.6.1.min.js" integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
+
 </head>
 <body>
 <p>AlmId: {{ nota.almacen_ruc }}</p>
@@ -12,7 +13,34 @@
 <p>IVa: {{ nota.tax / 100}}</p>
 <p>TOTAL: {{ nota.total / 100}}</p>
 <p>STATUS: {{ nota.status }}</p>
-<button id="enviar" uid="{{nota.uid}}">Enviar a SRI</button>
+
+<script>
+    function validate_or_authorize(uid, validate) {
+        var url = '';
+        if (validate) {
+            url = '/app/validate_remote';
+        } else {
+            url = '/app/authorize_remote';
+        }
+        $.ajax( {
+            url: url,
+            method: 'POST',
+            data: {uid: uid},
+            success: function() {
+                alert("success");
+            }
+        });
+    }
+    function enviar(uid) {
+        validate_or_authorize(uid, false);
+    }
+    function autorizar(uid) {
+        validate_or_authorize(uid, true);
+    }
+</script>
+
+<button onclick="enviar({{nota.uid}});">Enviar a SRI</button>
+<button onclick="autorizar({{nota.uid}});">Autorizar </button>
 <p>================================================</p>
 <textarea readonly rows="50" cols="120" style="border:none;">
 {{ json }}
@@ -31,18 +59,6 @@
 <textarea readonly rows="50" cols="120" style="border:none;">
 {{ resp2 }}
 </textarea>
-
-<script>
-    $('#enviar').click(function() {
-        var uid = $('#enviar).attr('uid');
-        $.ajax( {
-            url: '/app/validate_remote',
-            data: {uid: uid},
-            success: function() {
-                alert("success");
-            });
-    })
-</script>
 
 </body>
 </html>

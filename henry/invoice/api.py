@@ -189,9 +189,15 @@ def make_nota_all(url_prefix: str, dbapi: DBApiGeneric,
             file_manager.get_file(sri_nota.json_inv_location))
         xml1 = None
         if sri_nota.xml_inv_signed_location:
+            print(sri_nota.xml_inv_signed_location)
             xml1 = file_manager.get_file(sri_nota.xml_inv_signed_location)
+            print(xml1)
         resp1 = None
+        if sri_nota.resp1_location:
+            resp1 = file_manager.get_file(sri_nota.resp1_location)
         resp2 = None
+        if sri_nota.resp2_location:
+            resp2 = file_manager.get_file(sri_nota.resp2_location)
         temp = jinja_env.get_template('invoice/sri_nota_full.html')
         return temp.render(
             nota=sri_nota, json=json.dumps(json_inv, indent=4),

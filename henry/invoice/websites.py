@@ -18,13 +18,15 @@ from henry.users.dao import Client
 
 from henry.accounting.acct_schema import NPayment
 from henry.product.dao import Store
+from henry.product.schema import NStore
 from henry.accounting.dao import Comment
 from henry.invoice.dao import PaymentFormat, InvMetadata, SRINota, Invoice, SRINotaStatus
+from henry.constants import SRI_ENV_PROD
 
 from .coreschema import NNota
 from .schema import NSRINota
 from .coreapi import get_inv_db_instance
-from .util import get_or_generate_xml_paths
+from .util import get_or_generate_xml_paths, WS_PROD, WS_TEST
 
 __author__ = 'han'
 
@@ -207,13 +209,15 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
 
 
 
-    @w.get('/app/alm/<alm_ruc>/ultima_factura')
+    @w.get('/app/alm/<alm_id>/ultima_factura')
     @dbcontext
     @auth_decorator(0)
-    def last_inv_print(alm_ruc):
-        nsri_nota = dbapi.db_session.query(NSRINota).filter(
-            NSRINota.almacen_ruc == alm_ruc).order_by(
-            NSRINota.timestamp_received.desc()).first()
+    def last_inv_print(alm_id):
+        nsri_nota = dbapi.db_session.query(NSRINota).join(
+                NStore, NSRINota.almacen_ruc == NStore.ruc
+            ).filter(
+                NStore.almacen_id == alm_id).order_by(
+                    NSRINota.timestamp_received.desc()).first()
 
         if nsri_nota is None:
             abort(404, 'No existe')
@@ -279,24 +283,38 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
         return content
 
     @w.post('/app/validate_remote')
+    @dbcontext
     def validate_nota():
         uid = request.forms.get('uid')
         sri_nota = dbapi.get(uid, SRINota)
         xml, xml_signed = get_or_generate_xml_paths(
                 sri_nota, file_manager, jinja_env, dbapi)
         fullpath = file_manager.make_fullpath(xml_signed)
-
-        client = zeep.Client('https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl')
-        with open(fullpath, 'wb') as f:
+        with open(fullpath, 'rb') as f:
             xml_content = f.read()
-        resp = client.service.validarComprobante(xml_content)
+        ws = WS_PROD if SRI_ENV_PROD else WS_TEST
+        ans = ws.validate(xml_content)
         resp1_location = sri_nota.xml_inv_location + 'resp1'
-        file_manager.put_file(resp1_location, resp)
+        file_manager.put_file(resp1_location, str(ans))
         dbapi.update(sri_nota, {
             'resp1_location': resp1_location,
             'status': SRINotaStatus.CREATED_SENT
         })
         return {'status': 'success'}
 
+    @w.post('/app/authorize_remote')
+    @dbcontext
+    def validate_nota():
+        uid = request.forms.get('uid')
+        sri_nota = dbapi.get(uid, SRINota)
+        ws = WS_PROD if SRI_ENV_PROD else WS_TEST
+        status, text = ws.authorize(sri_nota.access_code)
+        resp2_location = sri_nota.xml_inv_location + 'resp2'
+        file_manager.put_file(resp2_location, text)
+        dbapi.update(sri_nota, {
+            'resp2_location': resp2_location,
+            'status': status,
+        })
+        return {'status': status}
 
     return w

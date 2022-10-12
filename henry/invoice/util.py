@@ -1,10 +1,61 @@
+import dataclasses
 from decimal import Decimal
 from typing import Optional, Dict, cast, List
+import zeep
 
 from henry.xades import xades
 from henry.invoice.dao import Invoice
 from henry.invoice.dao import Invoice, SRINota, load_nota
 from henry import constants
+
+class WsEnvironment:
+    name: str
+    code: str
+    validate_url: str
+    authorize_url: str
+
+    def __init__(self, name, code, validate_url, authorize_url):
+        self.name = name
+        self.code = code
+        self.validate_url = validate_url
+        self.authorize_url = authorize_url
+
+        self._val_client = None
+        self._auth_client = None
+
+    def validate(self, xml_bytes):
+        if self._val_client is None:
+            self._val_client = zeep.Client(self.validate_url)
+        return self._val_client.service.validarComprobante(xml_bytes)
+
+    def authorize(self, access_code):
+        if self._val_client is None:
+            self._auth_client = zeep.Client(self.authorize_url)
+        ans = self._auth_client.service.autorizacionComprobante(access_code)
+        text = str(ans)
+        is_auth = False
+        if (ans.autorizaciones.autorizacion and
+            'estado' in ans.autorizationes.autorization[0]):
+            is_auth = (ans.autorizaciones.autorizacion[0]['estado'] == 'AUTORIZADO')
+        status = SRINotaStatus.CREATED_VALIDATED if is_auth else SRINotaStatus.VALIDATED_FAILED
+        return status, text
+
+
+
+WS_PROD = WsEnvironment(
+    'PRODUCCION', '2',
+    'https://cel.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl',
+    'https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl'
+)
+
+WS_TEST = WsEnvironment(
+    'PRUEBA',
+    '1',
+    'https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl',
+    'https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl'
+)
+
+
 
 
 def compute_access_code(inv: Invoice, is_prod: bool):
@@ -140,10 +191,8 @@ def generate_xml_paths(sri_nota: SRINota, file_manager, jinja_env, dbapi):
 
 
 def get_or_generate_xml_paths(sri_nota: SRINota, file_manager, jinja_env, dbapi):
-
     if not sri_nota.xml_inv_location or not sri_nota.xml_inv_signed_location:
         return generate_xml_paths(sri_nota, file_manager, jinja_env, dbapi)
-
     return sri_nota.xml_inv_location, sri_nota.xml_inv_signed_location
 
 
