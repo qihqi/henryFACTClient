@@ -10,7 +10,6 @@ from henry.accounting.acct_schema import ObjType, NComment
 from henry.base.session_manager import DBContext
 from henry.product.dao import ProdItemGroup, ProdItem, PriceList, Category, Bodega, Store
 from henry.product.schema import NPriceList
-from henry.schema.legacy import NContenido, NProducto
 from henry.invoice.coreschema import NNota
 from henry.dao.document import Item
 from henry.invoice.dao import PaymentFormat
@@ -101,59 +100,6 @@ def make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transaction
             for x in fullinv.items:
                 yield inv, x
 
-    @w.get('/app/vendidos_por_categoria')
-    @dbcontext
-    @auth_decorator(2)
-    def vendidos_por_categoria():
-        cat = request.query.categoria_id
-        start, end = parse_start_end_date(request.query)
-        prods = dbapi.db_session.query(NProducto.codigo).filter_by(
-            categoria_id=cat)
-        all_codigos = {p.codigo for p in prods}
-        all_items = []
-        total = 0
-        for inv, x in full_invoice_items(invapi, start, end):
-            if x.prod.prod_id in all_codigos:
-                x.prod.precio = (x.prod.precio1 if x.cant >= x.prod.cant_mayorista
-                                 else x.prod.precio2)
-                x.subtotal = x.prod.precio * x.cant
-                total += x.subtotal
-                all_items.append((inv, x))
-        temp = jinja_env.get_template('ver_vendidos.html')
-        return temp.render(items=all_items, total=total)
-
-    @w.get('/app/ver_transacciones')
-    @dbcontext
-    @auth_decorator(2)
-    def ver_transacciones():
-        prod_id = request.query.prod_id or '123'
-        bodega_id = request.query.bodega_id or 1
-        today = datetime.date.today()
-        start, end = parse_start_end_date_with_default(
-            request.query, today - datetime.timedelta(days=7), today)
-        items = sorted(transactionapi.get_transactions(prod_id, start, end),
-                       key=lambda i: i.fecha, reverse=True)
-        counts = {}
-        count_expr = dbapi.db_session.query(NContenido).filter_by(
-            prod_id=prod_id)
-        if bodega_id is not None:
-            bodega_id = int(bodega_id)
-            if bodega_id == -1:
-                bodega_id = None
-
-        for x in count_expr:
-            counts[x.bodega_id] = x.cant
-        if bodega_id:
-            items = [i for i in items if i.bodega_id == bodega_id]
-        for i in items:
-            i.bodega_name = dbapi.get(i.bodega_id, Bodega).nombre
-            i.count = counts[i.bodega_id]
-            counts[i.bodega_id] -= i.delta
-        bodegas = dbapi.search(Bodega)
-        bodegas.append(Bodega(id=-1, nombre='Todas'))
-        temp = jinja_env.get_template('ver_transacciones.html')
-        return temp.render(items=items, start=start, end=end,
-                           prod_id=prod_id, bodegas=bodegas, bodega_id=bodega_id)
 
     @w.get('/app/ver_ventas')
     @dbcontext
@@ -183,19 +129,6 @@ def make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transaction
         return temp.render(items=values, start=start, end=end,
                            almacen=almacen.nombre,
                            almacenes=dbapi.search(Store))
-
-    @w.get('/app/adv/producto/<pid>')
-    @dbcontext
-    @auth_decorator(0)
-    def ver_prod_advanced(pid):
-        session = dbapi.db_session
-        prod = session.query(NProducto).filter_by(codigo=pid).first()
-        contenidos = list(session.query(NContenido).filter_by(prod_id=pid))
-        pricelist = list(session.query(NPriceList).filter(
-            NPriceList.prod_id.in_((pid, pid + '+', pid + '-'))))
-        images = []
-        temp = jinja_env.get_template('adv_producto.html')
-        return temp.render(prod=prod, contenidos=contenidos, pricelist=pricelist, images=images)
 
     @w.get('/app/edit_note/<uid>')
     @dbcontext

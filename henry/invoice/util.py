@@ -5,7 +5,7 @@ import zeep
 
 from henry.xades import xades
 from henry.base.common import HenryException
-from henry.invoice.dao import Invoice, SRINota, load_nota, SRINota, SRINotaStatus
+from henry.invoice.dao import Invoice, SRINota, SRINota, SRINotaStatus
 from henry import constants
 
 
@@ -177,7 +177,7 @@ def inv_to_sri_dict(inv: Invoice, sri_nota: SRINota) -> Optional[Dict]:
     return res
 
 def generate_xml_paths(sri_nota: SRINota, file_manager, jinja_env, dbapi):
-    inv = load_nota(sri_nota, file_manager)
+    inv = sri_nota.load_nota(file_manager)
     if inv is None:
         raise HenryException(
                 'Inv corresponding a {} not found'.format(sri_nota.uid))

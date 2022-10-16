@@ -19,13 +19,20 @@ from henry.accounting.acct_schema import NPayment
 from henry.product.dao import Store
 from henry.product.schema import NStore
 from henry.accounting.dao import Comment
-from henry.invoice.dao import PaymentFormat, InvMetadata, SRINota, Invoice, SRINotaStatus
+from henry.invoice.dao import (
+        PaymentFormat,
+        InvMetadata,
+        SRINota,
+        Invoice,
+        SRINotaStatus,
+        CommResult,
+        )
 from henry.constants import SRI_ENV_PROD
 
 from .coreschema import NNota
 from .schema import NSRINota
 from .coreapi import get_inv_db_instance
-from .util import get_or_generate_xml_paths, WS_PROD, WS_TEST
+from .util import get_or_generate_xml_paths, WS_PROD, WS_TEST, generate_xml_paths
 
 __author__ = 'han'
 
@@ -299,11 +306,21 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
         with open(fullpath, 'rb') as f:
             xml_content = f.read()
         ws = WS_PROD if SRI_ENV_PROD else WS_TEST
-        ans = ws.validate(xml_content)
-        resp1_location = sri_nota.xml_inv_location + 'resp1'
-        file_manager.put_file(resp1_location, str(ans))
+        try:
+            ans = ws.validate(xml_content)
+        except ConnectionError:
+            return {'status': 'failed', 'msg': 'SRI no tiene servicio'}
+
+        result = CommResult(
+            status='success',
+            request_type = 'ENVIAR',
+            request_sent = xml_content.decode('utf-8'),
+            response = str(ans),
+            environment = SRI_ENV_PROD,
+            timestamp=datetime.datetime.now(),
+        )
+        sri_nota.append_comm_result(result, file_manager, dbapi)
         dbapi.update(sri_nota, {
-            'resp1_location': resp1_location,
             'status': SRINotaStatus.CREATED_SENT
         })
         return {'status': 'success'}
@@ -315,13 +332,20 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
         sri_nota = dbapi.get(uid, SRINota)
         ws = WS_PROD if SRI_ENV_PROD else WS_TEST
         status, text = ws.authorize(sri_nota.access_code)
-        resp2_location = sri_nota.xml_inv_location + 'resp2'
-        file_manager.put_file(resp2_location, text)
+
+        result = CommResult(
+            status=status,
+            request_type = 'AUTORIZAR',
+            request_sent = sri_nota.access_code,
+            response = text,
+            environment = SRI_ENV_PROD,
+            timestamp=datetime.datetime.now(),
+        )
+        sri_nota.append_comm_result(result, file_manager, dbapi)
         dbapi.update(sri_nota, {
-            'resp2_location': resp2_location,
             'status': status,
         })
-        return {'status': status}
+        return {'status': 'success'}
 
     @w.get('/app/view_nota')
     @dbcontext
@@ -351,19 +375,12 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
             file_manager.get_file(sri_nota.json_inv_location))
         xml1 = None
         if sri_nota.xml_inv_signed_location:
-            print(sri_nota.xml_inv_signed_location)
             xml1 = file_manager.get_file(sri_nota.xml_inv_signed_location)
-            print(xml1)
-        resp1 = None
-        if sri_nota.resp1_location:
-            resp1 = file_manager.get_file(sri_nota.resp1_location)
-        resp2 = None
-        if sri_nota.resp2_location:
-            resp2 = file_manager.get_file(sri_nota.resp2_location)
+        comm_results = sri_nota.load_comm_result(file_manager)
         temp = jinja_env.get_template('invoice/sri_nota_full.html')
         return temp.render(
             nota=sri_nota, json=json.dumps(json_inv, indent=4),
-            xml1=xml1, resp1=resp1, resp2=resp2)
+            xml1=xml1, comm_results=comm_results)
 
     @w.get('/app/nota_to_print/<uid>')
     @dbcontext
@@ -383,5 +400,15 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
             temp = jinja_env.get_template('invoice/nota_impreso.html')
             return temp.render(inv=doc, extra=extra)
         return 'Documento con codigo {} no existe'.format(uid)
+
+    @w.post('/app/api/gen_xml/<uid>')
+    @dbcontext
+    def gen_xml(uid):
+        uid = int(uid)
+        sri_nota = dbapi.get(uid, SRINota)
+        relpath, signed_path = generate_xml_paths(
+            sri_nota, file_manager, jinja_env, dbapi)
+
+        return {'result': signed_path}
 
     return w

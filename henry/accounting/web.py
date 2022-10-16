@@ -28,7 +28,7 @@ from henry.users.dao import User
 from .reports import (generate_daily_report, split_records_binary, get_transactions, payment_report,
                       get_notas_with_clients, split_records, get_turned_in_cash, get_sale_report)
 from .acct_schema import NCheck, NSpent, NAccountStat
-from .dao import (Todo, Check, Deposit, Payment, Bank,
+from .dao import (Check, Deposit, Payment, Bank,
                   DepositAccount, AccountStat, Spent, AccountTransaction, Comment, PaymentApi, ImageServer)
 from functools import reduce
 from typing import Mapping

@@ -14,18 +14,7 @@ from henry.invoice.dao import PaymentFormat
 
 from .acct_schema import (NBank, NDepositAccount, NPayment, NCheck, NDeposit, NImage,
                           NComment, NAccountStat, NSpent, NAccountTransaction)
-from henry.schema.legacy import NTodo
 
-@dataclasses.dataclass
-class Todo(SerializableDB[NTodo]):
-    db_class = NTodo
-    uid : Optional[int] = None
-    objtype : Optional[str] = None
-    objid : Optional[str] = None
-    msg : Optional[str] = None
-    status : Optional[str] = None
-    due_date: Optional[datetime.datetime] = None
-    creation_date: Optional[datetime.datetime] = None
 
 
 @dataclasses.dataclass

@@ -1,12 +1,13 @@
+from curses import ascii
 import dataclasses
 import datetime
 import json
 import os
 import uuid
 from decimal import Decimal
-from typing import Optional, Iterator, List
+from typing import Optional, Iterator, List, Iterable
 from henry.base.serialization import parse_iso_datetime, SerializableData
-from henry.base.dbapi import SerializableDB
+from henry.base.dbapi import SerializableDB, DBApiGeneric
 from henry.dao.document import MetaItemSet, Item
 from henry.product.dao import InventoryMovement, ProdItem, InvMovementType, get_real_prod_id
 from henry.users.dao import Client, User
@@ -14,6 +15,7 @@ from henry.users.dao import Client, User
 from .coreschema import NNota, NNotaExtra
 from .schema import NSRINota
 from henry.base.fileservice import FileService
+from henry.base.serialization import SerializableData
 
 __author__ = 'han'
 
@@ -149,6 +151,19 @@ class NotaExtra(SerializableDB[NNotaExtra]):
 
 
 @dataclasses.dataclass
+class CommResult(SerializableData):
+    status: str
+    request_type: str
+    request_sent: str
+    response: str
+    environment: bool
+    timestamp: datetime.datetime
+
+# Use record separator as separator because newline
+# might be used already
+COMM_SEP = chr(ascii.RS)
+
+@dataclasses.dataclass
 class SRINota(SerializableDB[NSRINota]):
     db_class = NSRINota
     uid : Optional[int] = None
@@ -172,13 +187,42 @@ class SRINota(SerializableDB[NSRINota]):
     xml_inv_signed_location : Optional[str] = None
     all_comm_path: Optional[str] = None
 
+    def load_nota(self, file_manager: FileService) -> Optional[Invoice]:
+        if self.json_inv_location is None:
+            return None
+        inv_text = file_manager.get_file(self.json_inv_location)
+        if inv_text is None:
+            return None
+        inv_dict = json.loads(inv_text)
+        inv = Invoice.deserialize(inv_dict)
+        return inv
 
-def load_nota(sri_nota: SRINota, file_manager: FileService) -> Optional[Invoice]:
-    if sri_nota.json_inv_location is None:
-        return None
-    inv_text = file_manager.get_file(sri_nota.json_inv_location)
-    if inv_text is None:
-        return None
-    inv_dict = json.loads(inv_text)
-    inv = Invoice.deserialize(inv_dict)
-    return inv
+    def load_comm_result(
+            self, file_manager: FileService) -> Iterable[CommResult]:
+        if self.all_comm_path:
+            content = file_manager.get_file(self.all_comm_path)
+            if content:
+                for line in content.split(COMM_SEP):
+                    line = line.strip()
+                    if line:
+                        yield CommResult.deserialize(json.loads(line))
+
+        return []
+
+    def append_comm_result(
+            self,
+            comm_result: CommResult,
+            file_manager: FileService,
+            dbapi: DBApiGeneric):
+        if not self.all_comm_path:
+            assert self.access_code, 'Access code is None'
+            self.all_comm_path = self.access_code + 'resp'
+            dbapi.update(self, {
+                'all_comm_path': self.all_comm_path,
+            })
+        file_manager.append_file(self.all_comm_path,
+                                 COMM_SEP + comm_result.to_json())
+
+
+
+
