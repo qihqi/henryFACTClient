@@ -13,6 +13,7 @@ from henry.users.dao import Client, User
 
 from .coreschema import NNota, NNotaExtra
 from .schema import NSRINota
+from henry.base.fileservice import FileService
 
 __author__ = 'han'
 
@@ -95,6 +96,8 @@ class Invoice(SerializableData, MetaItemSet[InvMetadata]):
             if proditem is None:
                 print(item.prod.prod_id)
             mult = proditem.multiplier or item.prod.multiplicador
+            assert item.cant is not None, 'cant is None'
+            assert mult is not None, 'multiplier is None'
             yield InventoryMovement(
                 from_inv_id=inv_id,
                 to_inv_id=-1,
@@ -149,24 +152,28 @@ class NotaExtra(SerializableDB[NNotaExtra]):
 class SRINota(SerializableDB[NSRINota]):
     db_class = NSRINota
     uid : Optional[int] = None
+    almacen_id: Optional[int] = None
     almacen_ruc : Optional[str] = None
     orig_codigo : Optional[str] = None
-    timestamp_received: Optional[datetime.datetime] = None
-    status : Optional[str] = None
     orig_timestamp: Optional[datetime.datetime] = None
     buyer_ruc: Optional[str] = None
     buyer_name: Optional[str] = None
+
     total: Optional[Decimal] = None
     tax: Optional[Decimal] = None
+    discount: Optional[Decimal] = None
+    access_code: Optional[str] = None
+
+    timestamp_received: Optional[datetime.datetime] = None
+    status : Optional[str] = None
 
     json_inv_location : Optional[str] = None
     xml_inv_location : Optional[str] = None
     xml_inv_signed_location : Optional[str] = None
-    resp1_location : Optional[str] = None
-    resp2_location : Optional[str] = None
-    access_code: Optional[str] = None
+    all_comm_path: Optional[str] = None
 
-def load_nota(sri_nota, file_manager):
+
+def load_nota(sri_nota: SRINota, file_manager: FileService) -> Optional[Invoice]:
     if sri_nota.json_inv_location is None:
         return None
     inv_text = file_manager.get_file(sri_nota.json_inv_location)

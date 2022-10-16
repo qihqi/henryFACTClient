@@ -9,7 +9,7 @@ from sqlalchemy.orm.session import Session
 from henry.base.session_manager import SessionManager
 
 
-def get_user_info(session: Session, username: str) -> NUsuario:
+def get_user_info(session: Session, username: str) -> Optional[NUsuario]:
     return session.query(NUsuario).filter_by(username=username).first()
 
 

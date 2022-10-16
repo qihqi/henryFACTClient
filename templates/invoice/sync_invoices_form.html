@@ -1,21 +1,30 @@
 {% extends "base.html" %}
 {% from "macros.html" import start_end_date_oneline %}
+{% from "macros.html" import selector %}
 
 {%block title %}Facturas{% endblock %}
 
 {% block content %}
 {% if msg %} <h4>{{ msg }}</h4> {% endif %}
 <form method="get">
-    <p>
-        {{ start_end_date_oneline() }}
-        <input type="submit" value="Buscar"/>
-    </p>
+    <p>{{ start_end_date_oneline(start, end) }} </p>
+    <p>Almacen: {{ selector(stores, 'almacen_ruc', 'ruc', 'nombre') }} </p>
+    <p>  <input type="submit" value="Buscar"/> </p>
 </form>
 
 <table>
+    <tr>
+        <th> </th>
+        <th>RUC</th>
+        <th>codigo</th>
+        <th> Comprador </th>
+        <th> IVA </th>
+        <th> total </th>
+        <th> estado </th>
+    </tr>
     {% for row in rows %}
     <tr>
-        <td><a href="/sync/remote_nota/{{row.uid}}"> {{ row.uid}} </a></td>
+        <td><a href="/app/remote_nota/{{row.uid}}"> {{ row.uid}} </a></td>
         <td> {{ row.almacen_ruc }}</td>
         <td>{{ row.orig_codigo }}</td>
         <td>{{ row.buyer_name }}</td>

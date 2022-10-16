@@ -182,7 +182,7 @@ def make_wsgi_api(
 
     @app.get(prefix + '/item')
     @dbcontext
-    def get_item_w_name():
+    def get_item_w_name_list():
         name_prefix = request.query.get('name-prefix')
         prod_id = request.query.get('prod_id')
         assert prod_id or name_prefix, 'prod_id o Prefijo no puede ser vacio'

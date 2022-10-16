@@ -47,6 +47,7 @@ def fix_inv_by_options(dbapi, inv, options):
             # if not using decimal, means that cant is send as int.
             # treating it as a decimal of 3 decimal places.
             item.cant = Decimal(item.cant) / 1000
+            item.prod.cant_mayorista = Decimal(item.prod.cant_mayorista) / 1000
 
         # this is an effort so that the prod coming from
         # invoice is incomplete. So it attempts so complete it with updated data

@@ -117,6 +117,8 @@ class DBApiGeneric(object):
                 f = col <= value
             if mode == 'gte':
                 f = col >= value
+            if mode == 'ne':
+                f = col != value
             query = query.filter(f)
         return list(map(objclass.from_db_instance, iter(query)))
 

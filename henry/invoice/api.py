@@ -75,7 +75,7 @@ def inv_to_sri_dict(inv: Invoice, sri_nota: SRINota) -> Optional[Dict]:
       'razon_social': info['name'],
       'ruc': info['ruc'],
       'clave_acceso': access,
-      'codigo': '{:09}'.format(inv.meta.codigo),
+      'codigo': '{:09}'.format(int(inv.meta.codigo or 0)),
       'dir_matriz': 'Boyaca 1515 y Aguirre',
       'fecha': '{:02}/{:02}/{:04}'.format(ts.day, ts.month, ts.year),
       'tipo_identificacion_comprador': tipo_ident,
@@ -181,46 +181,6 @@ def make_nota_all(url_prefix: str, dbapi: DBApiGeneric,
         return {'result': signed_path}
 
 
-    @api.get('{}/remote_nota/<uid>'.format(url_prefix))
-    @dbcontext
-    def get_single_nota(uid):
-        sri_nota = dbapi.get(uid, SRINota)
-        json_inv = json.loads(
-            file_manager.get_file(sri_nota.json_inv_location))
-        xml1 = None
-        if sri_nota.xml_inv_signed_location:
-            print(sri_nota.xml_inv_signed_location)
-            xml1 = file_manager.get_file(sri_nota.xml_inv_signed_location)
-            print(xml1)
-        resp1 = None
-        if sri_nota.resp1_location:
-            resp1 = file_manager.get_file(sri_nota.resp1_location)
-        resp2 = None
-        if sri_nota.resp2_location:
-            resp2 = file_manager.get_file(sri_nota.resp2_location)
-        temp = jinja_env.get_template('invoice/sri_nota_full.html')
-        return temp.render(
-            nota=sri_nota, json=json.dumps(json_inv, indent=4),
-            xml1=xml1, resp1=resp1, resp2=resp2)
-
-    @api.get('{}/nota_to_print/<uid>'.format(url_prefix))
-    @dbcontext
-    @auth_decorator(0)
-    def get_nota_print(uid):
-        sri_nota = dbapi.get(uid, SRINota)
-        print(sri_nota.serialize())
-        json_env = json.loads(
-            file_manager.get_file(sri_nota.json_inv_location))
-        doc = Invoice.deserialize(json_env)
-        extra = {
-            'ambiente': 'ambiente',
-            'direccion': 'direction',
-            'access_code': sri_nota.access_code
-        }
-        if doc:
-            temp = jinja_env.get_template('invoice/nota_impreso.html')
-            return temp.render(inv=doc, extra=extra)
-        return 'Documento con codigo {} no existe'.format(uid)
 
 
 
@@ -238,19 +198,5 @@ def make_nota_all(url_prefix: str, dbapi: DBApiGeneric,
                             'timestamp_received-lte': end_date})
         return json_dumps(list(res))
 
-    @api.get('{}/view_nota'.format(url_prefix))
-    def view_nota():
-        start = request.query.get('start')
-        end = request.query.get('end')
-        temp = jinja_env.get_template('invoice/sync_invoices_form.html')
-        if start is None or end is None:
-            return temp.render(rows=[])
-        datestrp = datetime.datetime.strptime
-        start_date = datestrp(start, "%Y-%m-%d")
-        end_date = datestrp(end, "%Y-%m-%d")
-        with dbapi.session:
-            res = dbapi.search(SRINota, **{'timestamp_received-gte': start_date,
-                                           'timestamp_received-lte': end_date})
-        return temp.render(rows=res)
 
     return api

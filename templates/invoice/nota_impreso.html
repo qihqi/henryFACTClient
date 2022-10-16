@@ -1,6 +1,6 @@
 <html>
     <head>
-        <title>cid={{inv.meta.id}}</title>
+        <title>{{extra.name}}-{{inv.meta.codigo}}</title>
         <style>
             body {
                 text-align : center;
@@ -27,10 +27,10 @@
     <body>
         <button onClick="window.print();" > Imprimir </button>
         <button onClick="window.location='/app';" > Regresar al principio </button>
-        <h4>{{inv.meta.almancen_name}}</h4> <!-- Quinal SA -->
-        <h4>RUC: {{inv.meta.almancen_ruc}}</h4> <!-- Quinal SA -->
+        <h4>{{extra.name}}</h4> <!-- Quinal SA -->
+        <h4>RUC: {{extra.ruc}}</h4> <!-- Quinal SA -->
+        <h5>Direccion: {{ extra.address }}</h4> <!-- Direction -->
         <h4>001-001-{{inv.meta.codigo}} </h4>
-        <h5>{{ extra.address }}</h4> <!-- Direction -->
 
         <h5> NO ENVIADO </h5>
         <h5> Ambiente: {{ extra.ambiente }}</h5>

@@ -4,9 +4,11 @@ from typing import Optional, Dict, cast, List
 import zeep
 
 from henry.xades import xades
-from henry.invoice.dao import Invoice
-from henry.invoice.dao import Invoice, SRINota, load_nota
+from henry.base.common import HenryException
+from henry.invoice.dao import Invoice, SRINota, load_nota, SRINota, SRINotaStatus
 from henry import constants
+
+
 
 class WsEnvironment:
     name: str
@@ -29,15 +31,16 @@ class WsEnvironment:
         return self._val_client.service.validarComprobante(xml_bytes)
 
     def authorize(self, access_code):
-        if self._val_client is None:
+        if self._auth_client is None:
             self._auth_client = zeep.Client(self.authorize_url)
         ans = self._auth_client.service.autorizacionComprobante(access_code)
         text = str(ans)
         is_auth = False
-        if (ans.autorizaciones.autorizacion and
-            'estado' in ans.autorizationes.autorization[0]):
+        if (ans is not None and
+            ans.autorizaciones.autorizacion and
+            'estado' in ans.autorizaciones.autorizacion[0]):
             is_auth = (ans.autorizaciones.autorizacion[0]['estado'] == 'AUTORIZADO')
-        status = SRINotaStatus.CREATED_VALIDATED if is_auth else SRINotaStatus.VALIDATED_FAILED
+        status = SRINotaStatus.CREATED_SENT_VALIDATED if is_auth else SRINotaStatus.VALIDATED_FAILED
         return status, text
 
 
@@ -60,10 +63,12 @@ WS_TEST = WsEnvironment(
 
 def compute_access_code(inv: Invoice, is_prod: bool):
     timestamp = inv.meta.timestamp
+    assert timestamp is not None
     fecha = '{:02}{:02}{:04}'.format(timestamp.day, timestamp.month, timestamp.year)
     tipo_comp = '01'  # 01 = factura
+    assert inv.meta.almacen_ruc is not None
     ruc = inv.meta.almacen_ruc
-    numero = '{:09}'.format(int(inv.meta.codigo))  # num de factura
+    numero = '{:09}'.format(int(inv.meta.codigo or 0))  # num de factura
     codigo_numero = '12345678' # puede ser lo q sea de 8 digitos
     tipo_emision = '1'
     serie = '001001'
@@ -124,8 +129,11 @@ def inv_to_sri_dict(inv: Invoice, sri_nota: SRINota) -> Optional[Dict]:
         comprador = 'CONSUMIDOR FINAL'
         id_compra = '9999999999999'
     else:
+        assert inv.meta.client.fullname is not None
         comprador = inv.meta.client.fullname
+        assert inv.meta.client.codigo is not None
         id_compra = inv.meta.client.codigo
+    assert inv.meta.codigo is not None
     res = {
       'ambiente': 1,
       'razon_social': info['name'],
@@ -170,6 +178,10 @@ def inv_to_sri_dict(inv: Invoice, sri_nota: SRINota) -> Optional[Dict]:
 
 def generate_xml_paths(sri_nota: SRINota, file_manager, jinja_env, dbapi):
     inv = load_nota(sri_nota, file_manager)
+    if inv is None:
+        raise HenryException(
+                'Inv corresponding a {} not found'.format(sri_nota.uid))
+
     xml_dict = inv_to_sri_dict(inv, sri_nota)
     if xml_dict is None:
         return None, None

@@ -43,6 +43,7 @@ class Store(SerializableDB[NStore]):
     ruc: Optional[str] = None
     nombre: Optional[str] = None
     bodega_id: Optional[int] = None
+    address: Optional[str] = None
 
 
 @dataclasses.dataclass

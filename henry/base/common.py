@@ -6,6 +6,9 @@ __author__ = 'han'
 
 from typing import Mapping, Tuple, Optional
 
+class HenryException(Exception):
+    pass
+
 
 def parse_iso(date_string: str) -> datetime.datetime:
     return datetime.datetime.strptime(date_string, '%Y-%m-%d')

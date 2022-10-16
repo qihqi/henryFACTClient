@@ -45,6 +45,7 @@ class NStore(Base):
     ruc = Column(String(20))
     nombre = Column(String(20))
     bodega_id = Column(Integer)
+    address = Column(String(100))
 
 
 class NPriceListLabel(Base):

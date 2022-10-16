@@ -179,7 +179,7 @@ def make_inv_wsgi(
     @dbcontext
     @auth_decorator(2)
     @actionlogged
-    def post_crear_ingreso():
+    def post_corregir_ingreso():
         meta = RevisionMetadata()
         meta.timestamp = datetime.datetime.now()
         meta.user = get_user(request)['username']
@@ -197,7 +197,7 @@ def make_inv_wsgi(
     @w.get('/app/revision/<uid>')
     @dbcontext
     @auth_decorator(0)
-    def get_ingreso(uid):
+    def get_ingreso_web(uid):
         trans = revapi.get_doc(uid)
         if not trans:
             return 'Documento con codigo {} no existe'.format(uid)

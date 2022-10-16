@@ -7,7 +7,6 @@ import zipfile
 
 from bottle import request, response, abort, redirect, Bottle
 import barcode
-import zeep
 
 from henry.base.auth import get_user
 from henry.base.common import parse_start_end_date
@@ -177,7 +176,7 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
        return temp.render(client=client, activities=all_data, compra=compra, pago=pago)
 
 
-    def sri_nota_to_nota_and_extra(sri_nota):
+    def sri_nota_to_nota_and_extra(sri_nota, store):
         json_env = json.loads(
             file_manager.get_file(sri_nota.json_inv_location))
         doc = Invoice.deserialize(json_env)
@@ -188,10 +187,15 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
         svg_code = bcode.render().decode('utf-8')
         index = svg_code.find('<svg')
         svg_code = svg_code[index:]
+        if doc.meta.client.codigo == 'NA':
+            doc.meta.client.codigo = '9999999999999'
+
         extra = {
-            'ambiente': 'ambiente',
-            'direccion': 'direction',
+            'ambiente': 'PRODUCCION' if SRI_ENV_PROD else 'PRUEBA',
+            'name': store.nombre,
+            'address': store.address,
             'access_code': sri_nota.access_code,
+            'ruc': sri_nota.almacen_ruc,
             'svg_code': svg_code
         }
         return doc, extra
@@ -213,8 +217,8 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
     @dbcontext
     @auth_decorator(0)
     def last_inv_print(alm_id):
-        nsri_nota = dbapi.db_session.query(NSRINota).join(
-                NStore, NSRINota.almacen_ruc == NStore.ruc
+        nsri_nota, nstore = dbapi.db_session.query(NSRINota, NStore).filter(
+                NSRINota.almacen_ruc == NStore.ruc
             ).filter(
                 NStore.almacen_id == alm_id).order_by(
                     NSRINota.timestamp_received.desc()).first()
@@ -222,8 +226,10 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
         if nsri_nota is None:
             abort(404, 'No existe')
 
+
         sri_nota = SRINota.from_db_instance(nsri_nota)
-        doc, extra = sri_nota_to_nota_and_extra(sri_nota)
+        store = Store.from_db_instance(nstore)
+        doc, extra = sri_nota_to_nota_and_extra(sri_nota, nstore)
 
         print(sri_nota.serialize())
         temp = jinja_env.get_template('invoice/nota_impreso.html')
@@ -316,5 +322,66 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
             'status': status,
         })
         return {'status': status}
+
+    @w.get('/app/view_nota')
+    @dbcontext
+    def view_nota():
+        start = request.query.get('start')
+        end = request.query.get('end')
+        temp = jinja_env.get_template('invoice/sync_invoices_form.html')
+        stores = dbapi.search(Store, **{'ruc-ne': None})
+        if start is None or end is None:
+            return temp.render(rows=[], stores=rows)
+
+        datestrp = datetime.datetime.strptime
+        start_date = datestrp(start, "%Y-%m-%d")
+        end_date = datestrp(end, "%Y-%m-%d")
+        almacen_ruc = request.query.get('almacen_ruc')
+        res = dbapi.search(SRINota, **{'timestamp_received-gte': start_date,
+                                       'timestamp_received-lte': end_date,
+                                       'almacen_ruc': almacen_ruc})
+        return temp.render(rows=res, stores=stores,
+                           start=start_date.date(), end=end_date.date())
+
+    @w.get('/app/remote_nota/<uid>')
+    @dbcontext
+    def get_single_nota(uid):
+        sri_nota = dbapi.get(uid, SRINota)
+        json_inv = json.loads(
+            file_manager.get_file(sri_nota.json_inv_location))
+        xml1 = None
+        if sri_nota.xml_inv_signed_location:
+            print(sri_nota.xml_inv_signed_location)
+            xml1 = file_manager.get_file(sri_nota.xml_inv_signed_location)
+            print(xml1)
+        resp1 = None
+        if sri_nota.resp1_location:
+            resp1 = file_manager.get_file(sri_nota.resp1_location)
+        resp2 = None
+        if sri_nota.resp2_location:
+            resp2 = file_manager.get_file(sri_nota.resp2_location)
+        temp = jinja_env.get_template('invoice/sri_nota_full.html')
+        return temp.render(
+            nota=sri_nota, json=json.dumps(json_inv, indent=4),
+            xml1=xml1, resp1=resp1, resp2=resp2)
+
+    @w.get('/app/nota_to_print/<uid>')
+    @dbcontext
+    @auth_decorator(0)
+    def get_nota_print(uid):
+        sri_nota = dbapi.get(uid, SRINota)
+        print(sri_nota.serialize())
+        json_env = json.loads(
+            file_manager.get_file(sri_nota.json_inv_location))
+        doc = Invoice.deserialize(json_env)
+        extra = {
+            'ambiente': 'ambiente',
+            'direccion': 'direction',
+            'access_code': sri_nota.access_code
+        }
+        if doc:
+            temp = jinja_env.get_template('invoice/nota_impreso.html')
+            return temp.render(inv=doc, extra=extra)
+        return 'Documento con codigo {} no existe'.format(uid)
 
     return w
