@@ -1,7 +1,8 @@
-from sqlalchemy import Column, Integer, DateTime, String, Boolean, Index, Numeric
+from sqlalchemy import Column, Integer, DateTime, String, Numeric
 from henry.schema.base import Base
 
 __author__ = 'han'
+
 
 class NSRINota(Base):
     __tablename__ = 'sri_notas'
@@ -33,4 +34,3 @@ class NSRINota(Base):
 
     # path to a json file with communications with remote
     all_comm_path = Column(String(200))
-

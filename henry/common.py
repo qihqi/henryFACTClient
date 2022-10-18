@@ -44,10 +44,10 @@ def items_from_form(dbapi, form):
             abort(400, 'cantidad debe ser entero positivo')
         if cant < 0:
             abort(400, 'cantidad debe ser entero positivo')
-        print('id is', prod_id) 
+        print('id is', prod_id)
         item = dbapi.getone(ProdItem, prod_id=prod_id)
         ig = dbapi.get(item.itemgroupid, ProdItemGroup)
-        item.name = ig.name    
+        item.name = ig.name
         items.append(TransItem(item, cant))
     return items
 
@@ -73,7 +73,10 @@ def transmetadata_from_form(form: Mapping[str, str]) -> TransMetadata:
             meta.dest = None  # dest for external resides in other server
     return meta
 
+
 _MODE = AES.MODE_ECB
+
+
 def aes_encrypt(text_bytes):
     """Returns a blob that contains(cipher_text, nonce, tag)."""
     m = hashlib.sha1()
@@ -82,8 +85,8 @@ def aes_encrypt(text_bytes):
     cipher = AES.new(key, _MODE)
     cipher_text, tag = cipher.encrypt_and_digest(text_bytes)
     content = [
-        base64.b64encode(cipher_text).decode('ascii'), 
-        base64.b64encode(cipher.nonce).decode('ascii'), 
+        base64.b64encode(cipher_text).decode('ascii'),
+        base64.b64encode(cipher.nonce).decode('ascii'),
         base64.b64encode(tag).decode('ascii')]
     return json_dumps(content).encode('utf-8')
 
@@ -100,4 +103,3 @@ def aes_decrypt(blob):
     plaintext = cipher.decrypt(cipher_text)
     cipher.verify(tag)
     return plaintext
-

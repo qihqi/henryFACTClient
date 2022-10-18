@@ -82,5 +82,4 @@ def make_search_pricelist_api(
         result['cant'] = cant
         return json_dumps(result)
 
-    return api  ## END BLOCK
-
+    return api  # END BLOCK

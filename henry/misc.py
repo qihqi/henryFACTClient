@@ -28,7 +28,7 @@ def fix_id(uid):
     uid = fix_id_error(uid)
     if uid == 'NA':
         return '9' * 13  # si es consumidor final retorna 13 digitos de 9
-    uid = re.sub('[^\d]', '', uid)
+    uid = re.sub(r'[^\d]', '', uid)
     if not validate_uid_and_ruc(uid):
         return '9' * 13
     return uid
@@ -39,23 +39,25 @@ def abs_string(string):
         return string[1:]
     return string
 
+
 def validate_ruc(uid):
-    if uid[2] == '9': # ruc of private parties
+    if uid[2] == '9':  # ruc of private parties
         coef = [4, 3, 2, 7, 6, 5, 4, 3, 2]
         the_sum = sum(x * y for x, y in zip(coef, list(map(int, uid[:9]))))
         the_sum = 11 - the_sum % 11
         if the_sum > 10:
             the_sum -= 10
         return int(uid[9]) == the_sum
-    elif uid[2] == '6': # ruc of public parties
+    elif uid[2] == '6':  # ruc of public parties
         coef = [3, 2, 7, 6, 5, 4, 3, 2]
         the_sum = sum(x * y for x, y in zip(coef, list(map(int, uid[:8]))))
         the_sum = 11 - the_sum % 11
         if the_sum > 10:
             the_sum -= 10
         return int(uid[8]) == the_sum
-    else: # ruc of persons
+    else:  # ruc of persons
         return validate_cedula(uid[:10])
+
 
 def validate_cedula(uid):
     first_digits = int(uid[:2])

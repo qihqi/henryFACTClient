@@ -36,6 +36,7 @@ class NNota(Base):
     # unix filepath where the items is stored
     items_location = Column(String(200))
 
+
 Index('ix_notas_2', NNota.almacen_id, NNota.codigo)
 
 
@@ -46,7 +47,7 @@ class NNotaExtra(Base):
     status = Column(String(10))
     last_change_time = Column(DateTime)
 
-    
+
 class NPedidoTemporal(Base):
     __tablename__ = 'pedidos_temporales'
     id = Column(Integer, autoincrement=True, primary_key=True)

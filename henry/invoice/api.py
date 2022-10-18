@@ -16,11 +16,10 @@ from henry import constants, common
 from henry.base.serialization import json_dumps
 from henry.base.session_manager import DBContext
 from henry.invoice.dao import SRINota, SRINotaStatus
-from henry.xades import xades
 
 from .dao import Invoice
 from .util import compute_access_code
-from .util import get_or_generate_xml_paths, generate_xml_paths
+from .util import generate_xml_paths
 
 __author__ = 'han'
 
@@ -38,6 +37,7 @@ _ALM_ID_TO_INFO = {
         'name': 'NAMENAMENAME',
     }
 }
+
 
 class IdType:
     RUC = '04'
@@ -71,22 +71,22 @@ def inv_to_sri_dict(inv: Invoice, sri_nota: SRINota) -> Optional[Dict]:
     if access is None:
         access = compute_access_code(inv, False)
     res = {
-      'ambiente': 1,
-      'razon_social': info['name'],
-      'ruc': info['ruc'],
-      'clave_acceso': access,
-      'codigo': '{:09}'.format(int(inv.meta.codigo or 0)),
-      'dir_matriz': 'Boyaca 1515 y Aguirre',
-      'fecha': '{:02}/{:02}/{:04}'.format(ts.day, ts.month, ts.year),
-      'tipo_identificacion_comprador': tipo_ident,
-      'id_comprador': id_compra,
-      'razon_social_comprador': inv.meta.client.fullname,
-      'subtotal': Decimal(inv.meta.subtotal or 0) / 100,
-      'iva': Decimal(inv.meta.tax or 0) / 100,
-      'descuento': Decimal(inv.meta.discount or 0) / 100,
-      'total': Decimal(inv.meta.total or 0) / 100,
-      'tax_percent': inv.meta.tax_percent,
-      'detalles': []
+        'ambiente': 1,
+        'razon_social': info['name'],
+        'ruc': info['ruc'],
+        'clave_acceso': access,
+        'codigo': '{:09}'.format(int(inv.meta.codigo or 0)),
+        'dir_matriz': 'Boyaca 1515 y Aguirre',
+        'fecha': '{:02}/{:02}/{:04}'.format(ts.day, ts.month, ts.year),
+        'tipo_identificacion_comprador': tipo_ident,
+        'id_comprador': id_compra,
+        'razon_social_comprador': inv.meta.client.fullname,
+        'subtotal': Decimal(inv.meta.subtotal or 0) / 100,
+        'iva': Decimal(inv.meta.tax or 0) / 100,
+        'descuento': Decimal(inv.meta.discount or 0) / 100,
+        'total': Decimal(inv.meta.total or 0) / 100,
+        'tax_percent': inv.meta.tax_percent,
+        'detalles': []
     }
     for item in inv.items:
         assert item.prod is not None
@@ -130,12 +130,11 @@ def make_nota_all(url_prefix: str, dbapi: DBApiGeneric,
         msg_decoded = common.aes_decrypt(msg).decode('utf-8')
         loaded = json.loads(msg_decoded)
         inv_json = loaded['inv']
-        method = loaded['method']
         inv = Invoice.deserialize(inv_json)
 
         prefix = os.path.join('remote_nota',
-            datetime.date.today().isoformat(),
-            uuid.uuid4().hex)
+                              datetime.date.today().isoformat(),
+                              uuid.uuid4().hex)
 
         file_manager.put_file(prefix + '.json', json_dumps(inv_json))
 
@@ -150,7 +149,6 @@ def make_nota_all(url_prefix: str, dbapi: DBApiGeneric,
 
         if existing:
             return {'created': '', 'msg': 'ya exist'}
-
 
         row = SRINota()
         row.almacen_ruc = inv.meta.almacen_ruc
@@ -180,10 +178,6 @@ def make_nota_all(url_prefix: str, dbapi: DBApiGeneric,
 
         return {'result': signed_path}
 
-
-
-
-
     @api.get('{}/remote_nota'.format(url_prefix))
     def get_extended_nota():
         start = request.query.get('start')
@@ -195,8 +189,7 @@ def make_nota_all(url_prefix: str, dbapi: DBApiGeneric,
         end_date = datestrp(end, "%Y-%m-%d")
         with dbapi.session:
             res = dbapi.search(SRINota, **{'timestamp_received-gte': start_date,
-                            'timestamp_received-lte': end_date})
+                                           'timestamp_received-lte': end_date})
         return json_dumps(list(res))
-
 
     return api

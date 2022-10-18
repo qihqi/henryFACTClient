@@ -26,5 +26,19 @@ def dump_content(ddate, dest_dir, prefix, listurl, itemurl):
 
 
 def export(ddate, dest, baseurl):
-    dump_content(ddate, dest, 'sale', baseurl + '/app/api/nota', baseurl + '/api/nota')
-    dump_content(ddate, dest, 'trans', baseurl + '/app/api/ingreso', baseurl + '/app/api/ingreso')
+    dump_content(
+        ddate,
+        dest,
+        'sale',
+        baseurl +
+        '/app/api/nota',
+        baseurl +
+        '/api/nota')
+    dump_content(
+        ddate,
+        dest,
+        'trans',
+        baseurl +
+        '/app/api/ingreso',
+        baseurl +
+        '/app/api/ingreso')

@@ -6,6 +6,7 @@ __author__ = 'han'
 
 from typing import Mapping, Tuple, Optional
 
+
 class HenryException(Exception):
     pass
 
@@ -15,7 +16,7 @@ def parse_iso(date_string: str) -> datetime.datetime:
 
 
 def parse_start_end_date(forms: Mapping[str, str],
-                         start_name:str = 'start', end_name: str = 'end'
+                         start_name: str = 'start', end_name: str = 'end'
                          ) -> Tuple[Optional[datetime.datetime],
                                     Optional[datetime.datetime]]:
     start = forms.get(start_name, None)
@@ -27,7 +28,7 @@ def parse_start_end_date(forms: Mapping[str, str],
             start_date = parse_iso(start)
         if end:
             end_date = parse_iso(end)
-    except:
+    except BaseException:
         abort(400, 'Fecha en formato equivocada')
     return start_date, end_date
 
@@ -40,7 +41,7 @@ def convert_to_cent(dec) -> int:
 
 def parse_start_end_date_with_default(
         form: Mapping[str, str],
-        start:datetime.date, end: datetime.date) -> Tuple[datetime.date, datetime.date]:
+        start: datetime.date, end: datetime.date) -> Tuple[datetime.date, datetime.date]:
     new_start, new_end = parse_start_end_date(form)
     new_end_res = end if new_end is None else new_end.date()
     new_start_res = start if new_start is None else new_start.date()

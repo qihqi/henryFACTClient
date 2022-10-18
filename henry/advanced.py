@@ -8,12 +8,11 @@ from sqlalchemy import desc
 
 from henry.accounting.acct_schema import ObjType, NComment
 from henry.base.session_manager import DBContext
-from henry.product.dao import ProdItemGroup, ProdItem, PriceList, Category, Bodega, Store
-from henry.product.schema import NPriceList
+from henry.product.dao import ProdItemGroup, ProdItem, PriceList, Category, Store
 from henry.invoice.coreschema import NNota
 from henry.dao.document import Item
 from henry.invoice.dao import PaymentFormat
-from henry.base.common import parse_start_end_date, parse_start_end_date_with_default
+from henry.base.common import parse_start_end_date_with_default
 
 
 def make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transactionapi):
@@ -79,7 +78,7 @@ def make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transaction
         if almacen_id is None:
             abort(400, 'input almacen_id')
         prods = dbapi.search(PriceList, **{'nombre-prefix': prefix,
-                                         'almacen_id': almacen_id})
+                                           'almacen_id': almacen_id})
         temp = jinja_env.get_template('buscar_precios.html')
         return temp.render(prods=prods)
 
@@ -99,7 +98,6 @@ def make_experimental_apps(dbapi, invapi, auth_decorator, jinja_env, transaction
                 continue
             for x in fullinv.items:
                 yield inv, x
-
 
     @w.get('/app/ver_ventas')
     @dbcontext

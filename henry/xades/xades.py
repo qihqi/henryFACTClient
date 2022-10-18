@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import base64
-import os
 import subprocess
-import logging
 
 from typing import List, cast
 
@@ -12,6 +10,7 @@ from henry import constants
 _START_WEIGHT = 2
 _MAX_WEIGHT = 7
 _BASE = 11
+
 
 def generate_checkcode(access_key: str) -> int:
     """

@@ -6,13 +6,13 @@ from decimal import Decimal
 
 from henry.base.dbapi import SerializableDB
 from henry.base.serialization import parse_iso_datetime, SerializableData
-from henry.dao.document import MetaItemSet, Item
-from henry.product.dao import PriceList, ProdItemGroup, InvMovementType, InventoryMovement, ProdItem
+from henry.dao.document import MetaItemSet
+from henry.product.dao import InvMovementType, InventoryMovement, ProdItem
 from henry.product.dao import get_real_prod_id
 
 
 from .schema import NTransferencia, NRevisionMetadata
-from typing import Dict, Type, Iterator, Optional, List
+from typing import Dict, Optional, List
 
 
 class TransType(object):
@@ -58,6 +58,7 @@ def transtype_to_invtype(tipo):
         return InvMovementType.EGRESS
     if tipo == TransType.TRANSFER:
         return InvMovementType.TRANSFER
+
 
 @dataclasses.dataclass
 class TransItem(SerializableData):
@@ -121,7 +122,6 @@ class Transferencia(SerializableData, MetaItemSet):
 
     def update_metadata(self, db_metadata):
         self.meta.status = db_metadata.status
-         
 
 
 @dataclasses.dataclass
@@ -145,15 +145,15 @@ class RevisionMetadata(SerializableDB[NRevisionMetadata]):
 
 @dataclasses.dataclass
 class Revision(SerializableData, MetaItemSet):
-    _metadata_cls = RevisionMetadata 
-    meta: RevisionMetadata 
+    _metadata_cls = RevisionMetadata
+    meta: RevisionMetadata
     items: List[TransItem]
 
     def items_to_transaction(self, dbapi=None):
         assert self.meta is not None, 'Meta is None!'
         by_ig_id = {}
         for item in self.items:  # group by itemgroup
-            if not item.prod.itemgroupid in by_ig_id:
+            if item.prod.itemgroupid not in by_ig_id:
                 by_ig_id[item.prod.itemgroupid] = InventoryMovement(
                     from_inv_id=-1,
                     to_inv_id=self.meta.bodega_id,
@@ -164,7 +164,8 @@ class Revision(SerializableData, MetaItemSet):
                     reference_id=str(self.meta.uid),
                 )
             else:
-                by_ig_id[item.prod.itemgroupid].quantity += (item.cant * item.prod.multiplier)
+                by_ig_id[item.prod.itemgroupid].quantity += (
+                    item.cant * item.prod.multiplier)
 
         return by_ig_id.values()
 

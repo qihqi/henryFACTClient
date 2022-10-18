@@ -142,6 +142,6 @@ if __name__ == '__main__':
         raw = map(decode, f)
         report = DailyReport(None, map(SaleTransaction, raw))
         report.process()
-        for x, y in sorted(list(report.by_prod_count.items()), key=itemgetter(1)):
+        for x, y in sorted(list(report.by_prod_count.items()),
+                           key=itemgetter(1)):
             print(x, y)
-

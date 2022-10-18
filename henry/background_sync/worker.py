@@ -42,8 +42,8 @@ class WorkObject(SerializableMixin):
 
     def __repr__(self):
         return 'WorkObject<objid={}, objtype={}, action={}, content={}>'.format(
-            self.objid, self.objtype, self.action, self.content
-        )
+            self.objid, self.objtype, self.action, self.content)
+
 
 def doc_to_workobject(inv, action, objtype):
     obj = WorkObject()
@@ -52,6 +52,7 @@ def doc_to_workobject(inv, action, objtype):
     obj.objtype = objtype
     obj.objid = inv.meta.uid
     return obj
+
 
 class ForwardRequestProcessor(object):
 
@@ -68,7 +69,9 @@ class ForwardRequestProcessor(object):
                 data = self.invmeta_to_sale(work.content)
                 action = 'POST'
             elif work.action == WorkObject.DELETE:
-                data = Sale(seller_inv_uid=work.objid, seller_codename=self.codename)
+                data = Sale(
+                    seller_inv_uid=work.objid,
+                    seller_codename=self.codename)
                 action = 'DELETE'
             desturl = '/import/client_sale'
         else:
@@ -97,7 +100,7 @@ class ForwardRequestProcessor(object):
             work.content = Transferencia.deserialize(work.content)
         else:
             print('ERROR')
-            return -1 # RETRY
+            return -1  # RETRY
         r = self.exec_work(work)
         if r.status_code == 200:
             return -2  # OK
@@ -109,7 +112,7 @@ class ForwardRequestProcessor(object):
         doc = work.content
         if work.objtype == WorkObject.INV_TRANS:
             invmeta.timestamp = doc.meta.timestamp
-            invmeta.value_usd = old_div(Decimal(doc.meta.subtotal - (doc.meta.discount or 0)), 100)
+            invmeta.value_usd = Decimal(doc.meta.subtotal - (doc.meta.discount or 0)) / 100
             invmeta.inventory_docid = doc.meta.uid
             invmeta.trans_type = InvMovementType.SALE
             invmeta.origin = doc.meta.bodega_id
@@ -125,11 +128,16 @@ class ForwardRequestProcessor(object):
         items = []
         if work.action == WorkObject.DELETE:
             invmeta.origin, invmeta.dest = invmeta.dest, invmeta.origin
-            invmeta.trans_type = InvMovementType.delete_type(invmeta.trans_type)
-            invmeta.timestamp = datetime.datetime.now()  # record delete time which is different than invoice time
+            invmeta.trans_type = InvMovementType.delete_type(
+                invmeta.trans_type)
+            # record delete time which is different than invoice time
+            invmeta.timestamp = datetime.datetime.now()
         for trans in doc.items_to_transaction(self.dbapi):
             itemgroup = self.dbapi.get(trans.itemgroup_id, ProdItemGroup)
-            items.append(ItemGroupCant(cant=trans.quantity, itemgroup=itemgroup))
+            items.append(
+                ItemGroupCant(
+                    cant=trans.quantity,
+                    itemgroup=itemgroup))
         return InvMovementFull(meta=invmeta, items=items)
 
     def invmeta_to_sale(self, meta):
@@ -139,8 +147,8 @@ class ForwardRequestProcessor(object):
         sale.seller_ruc = meta.almacen_ruc
         sale.seller_inv_uid = meta.uid
         sale.invoice_code = meta.codigo
-        sale.pretax_amount_usd = old_div(Decimal(meta.subtotal - (meta.discount or 0)), 100)
-        sale.tax_usd = old_div(Decimal(meta.tax or 0), 100)
+        sale.pretax_amount_usd = Decimal(meta.subtotal - (meta.discount or 0)) / 100
+        sale.tax_usd = Decimal(meta.tax or 0) / 100
         sale.status = Status.NEW
         sale.user_id = meta.user
         sale.payment_format = meta.payment_format

@@ -36,6 +36,8 @@ def get_user(r: bottle.LocalRequest) -> Optional[str]:
 
 
 AuthType = Callable[[int], Callable[[Callable], Callable]]
+
+
 class AuthDecorator(object):
     def __init__(self, redirect_url: str, db: SessionManager):
         self.redirect = redirect_url
@@ -53,10 +55,12 @@ class AuthDecorator(object):
                         return func(*args, **kwargs)
                     else:
                         response.status = 401
-                        response.set_header('www-authenticate', 'Basic realm="Henry"')
+                        response.set_header(
+                            'www-authenticate', 'Basic realm="Henry"')
                 else:
                     response.status = 401
-                    response.set_header('www-authenticate', 'Basic realm="Henry"')
+                    response.set_header(
+                        'www-authenticate', 'Basic realm="Henry"')
             return wrapped
 
         return decorator

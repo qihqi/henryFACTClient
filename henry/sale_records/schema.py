@@ -28,8 +28,8 @@ class NSale(Base):  # nominal sale
 
     seller_codename = Column(String(20))
     seller_ruc = Column(String(20))
-    seller_inv_uid = Column(Integer) # uid of document
-    invoice_code = Column(String(10)) # codigo
+    seller_inv_uid = Column(Integer)  # uid of document
+    invoice_code = Column(String(10))  # codigo
 
     pretax_amount_usd = Column(Numeric(15, 4), default=0)
     tax_usd = Column(Numeric(15, 4), default=0)
@@ -37,6 +37,8 @@ class NSale(Base):  # nominal sale
 
     user_id = Column(String(20))
     payment_format = Column(String(20))
+
+
 Index('ix_sales_2', NSale.seller_codename, NSale.seller_inv_uid)
 
 
@@ -57,6 +59,7 @@ class NInvMovementMeta(Base):
 
     # unix filepath where the items is stored
     items_location = Column(String(200))
+
 
 Index('ix_inv_mov_2', NInvMovementMeta.inventory_codename,
       NInvMovementMeta.inventory_docid, NInvMovementMeta.trans_type)

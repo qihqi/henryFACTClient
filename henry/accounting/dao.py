@@ -16,7 +16,6 @@ from .acct_schema import (NBank, NDepositAccount, NPayment, NCheck, NDeposit, NI
                           NComment, NAccountStat, NSpent, NAccountTransaction)
 
 
-
 @dataclasses.dataclass
 class Comment(SerializableDB[NComment]):
     db_class = NComment
@@ -26,6 +25,7 @@ class Comment(SerializableDB[NComment]):
     timestamp: Optional[datetime.datetime] = None
     user_id: Optional[str] = None
     comment: Optional[str] = None
+
 
 @dataclasses.dataclass
 class Image(SerializableDB[NImage]):
@@ -110,7 +110,6 @@ class Check(SerializableData):
     date: Optional[datetime.date] = None
     imgcheck: Optional[str] = None
     imgdeposit: Optional[str] = None
-
 
     @classmethod
     def from_db_instance(cls, dbobj):
@@ -197,9 +196,10 @@ class PaymentApi(object):
 
     def list_payments(self, start, end):
         return list(map(Payment.from_db_instance,
-                   self.sm.session.query(NPayment).filter(
-                       NPayment.date >= start).filter(NPayment.date <= end,
-                                                      NPayment.deleted != True)))
+                        self.sm.session.query(NPayment).filter(
+                            NPayment.date >= start).filter(
+                                NPayment.date <= end,
+                                NPayment.deleted != True)))  # noqa: E712
 
     def list_checks(self, paymentdate=None, checkdate=None):
         query = self.sm.session.query(NCheck).join(NPayment)
@@ -208,7 +208,8 @@ class PaymentApi(object):
             query = query.filter(NPayment.date >= start, NPayment.date <= end)
         if checkdate is not None:
             start, end = checkdate
-            query = query.filter(NCheck.checkdate >= start, NCheck.checkdate <= end)
+            query = query.filter(NCheck.checkdate >= start,
+                                 NCheck.checkdate <= end)
         if paymentdate:
             query = query.order_by(desc(NPayment.date))
         else:
@@ -245,7 +246,7 @@ class ImageServer(object):
         _, filename = os.path.split(filepath)
         return os.path.join(self.imgbasepath, filename)
 
-    def saveimg(self, objtype: str, objid: str, data, replace: bool=False) -> Image:
+    def saveimg(self, objtype: str, objid: str, data, replace: bool = False) -> Image:
         _, ext = os.path.splitext(data.raw_filename)
         filename = uuid.uuid1().hex + ext
         filename = self.fileapi.make_fullpath(filename)
@@ -289,4 +290,3 @@ class AccountTransaction(SerializableDB[NAccountTransaction]):
         if hasattr(self, 'img'):
             result['img'] = self.img
         return result
-

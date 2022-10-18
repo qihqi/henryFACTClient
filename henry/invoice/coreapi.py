@@ -27,10 +27,10 @@ __author__ = 'han'
 @dataclasses.dataclass
 class InvoiceOptions(SerializableData):
     crear_cliente: bool = False
-    revisar_producto: bool  = False
-    incrementar_codigo: bool  = False
-    usar_decimal: bool  = False
-    no_alm_id: bool  = False
+    revisar_producto: bool = False
+    incrementar_codigo: bool = False
+    usar_decimal: bool = False
+    no_alm_id: bool = False
 
 
 def fix_inv_by_options(dbapi, inv, options):
@@ -112,7 +112,6 @@ def parse_invoice_and_options(content_dict):
     return inv, options
 
 
-
 def create_prod_if_not_exist(dbapi, inv):
     for i in inv.items:
         alm_id = inv.meta.almacen_id
@@ -142,7 +141,8 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
         content = json.loads(json_content)
         inv, options = parse_invoice_and_options(content)
         fix_inv_by_options(dbapi, inv, options)
-        inv.meta.timestamp = datetime.datetime.now()  # always use server's time.
+        # always use server's time.
+        inv.meta.timestamp = datetime.datetime.now()
         # at this point, inv should no longer change
 
         if options.crear_cliente:  # create client if not exist
@@ -155,7 +155,8 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
         # increment the next invoice's number
         if options.incrementar_codigo:
             user = User(username=inv.meta.user)
-            count = dbapi.update(user, {'last_factura': int(inv.meta.codigo) + 1})
+            dbapi.update(
+                user, {'last_factura': int(inv.meta.codigo) + 1})
         dbapi.db_session.commit()
 
         return {'codigo': inv.meta.uid}
@@ -220,15 +221,14 @@ def make_nota_api(url_prefix, dbapi, actionlogged,
     @actionlogged
     def delete_invoice(uid):
         inv = invapi.get_doc(uid)
-        old_status = inv.meta.status
         invapi.delete(inv)
         # Save extra information
         nota_extra = dbapi.get(uid, NotaExtra)
         if nota_extra is not None:
             dbapi.update(
-                    nota_extra, 
-                    {'status': Status.DELETED, 
-                     'last_change_time': datetime.datetime.now()})
+                nota_extra,
+                {'status': Status.DELETED,
+                 'last_change_time': datetime.datetime.now()})
 
         return {'status': inv.meta.status}
 

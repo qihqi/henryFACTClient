@@ -51,7 +51,6 @@ def make_inv_api(dbapi: DBApiGeneric,
     @actionlogged
     def delete_ingreso(ingreso_id):
         trans = transapi.get_doc(ingreso_id)
-        old_status = trans.meta.status
         transapi.delete(trans)
         return {'status': trans.meta.status}
 
@@ -89,7 +88,7 @@ def make_inv_wsgi(
         actionlogged: Callable[[Callable], Callable],
         auth_decorator: AuthType, transapi: DocumentApi,
         revapi: DocumentApi,
-        revisionapi):  #revisionapi is deprectated
+        revisionapi):  # revisionapi is deprectated
     w = Bottle()
     dbcontext = DBContext(dbapi.session)
 
@@ -97,7 +96,8 @@ def make_inv_wsgi(
     @dbcontext
     @auth_decorator(0)
     def ver_ingreso_form():
-        return jinja_env.get_template('inventory/ver_ingreso_form.html').render()
+        return jinja_env.get_template(
+            'inventory/ver_ingreso_form.html').render()
 
     @w.get('/app/ingreso/<uid>')
     @dbcontext
@@ -133,7 +133,8 @@ def make_inv_wsgi(
     def post_crear_ingreso():
         meta = transmetadata_from_form(request.forms)
         items = items_from_form(dbapi, request.forms)
-        meta.value = 0 # sum((x.cant * (x.prod.base_price_usd or 0) for x in items))
+        # sum((x.cant * (x.prod.base_price_usd or 0) for x in items))
+        meta.value = 0
         try:
             transferencia = Transferencia(meta, items)
             transferencia = transapi.save(transferencia)
@@ -150,14 +151,19 @@ def make_inv_wsgi(
         if not end:
             end = datetime.datetime.now()
         else:
-            end = end + datetime.timedelta(days=1) - datetime.timedelta(seconds=1)
+            end = end + datetime.timedelta(days=1) - \
+                datetime.timedelta(seconds=1)
         if not start:
             start = end - datetime.timedelta(days=7)
         trans_list = transapi.search_metadata_by_date_range(start, end)
         temp = jinja_env.get_template('inventory/ingresos_list.html')
         bodega = {b.id: b.nombre for b in dbapi.search(Bodega)}
         print(start, end)
-        return temp.render(trans=trans_list, start=start, end=end, bodega=bodega)
+        return temp.render(
+            trans=trans_list,
+            start=start,
+            end=end,
+            bodega=bodega)
 
     @w.get('/app/revisar_inventario')
     @dbcontext

@@ -35,7 +35,9 @@ def make_sale_records_api(prefix, auth_decorator, dbapi,
         if list(dbapi.search(
                 Sale, seller_codename=content.seller_codename,
                 seller_inv_uid=content.seller_inv_uid)):
-            return {'status': 'failed', 'reason': 'sale with the id already exists'}
+            return {
+                'status': 'failed',
+                'reason': 'sale with the id already exists'}
         dbapi.create(content)
         return {'status': 'success'}
 
@@ -65,8 +67,10 @@ def make_sale_records_api(prefix, auth_decorator, dbapi,
         raw_inv = decode_str(request.body.read())
         inv_movement = InvMovementFull.deserialize(json.loads(raw_inv))
         meta = inv_movement.meta
-        meta.origin = get_or_create_inventory_id(dbapi, meta.inventory_codename, meta.origin)
-        meta.dest = get_or_create_inventory_id(dbapi, meta.inventory_codename, meta.dest)
+        meta.origin = get_or_create_inventory_id(
+            dbapi, meta.inventory_codename, meta.origin)
+        meta.dest = get_or_create_inventory_id(
+            dbapi, meta.inventory_codename, meta.dest)
 
         if list(dbapi.search(InvMovementMeta,
                              inventory_codename=meta.inventory_codename,
@@ -91,14 +95,15 @@ def make_sale_records_api(prefix, auth_decorator, dbapi,
         today = parse_iso_date(day)
         tomorrow = today + datetime.timedelta(days=1)
         print(today, tomorrow)
-        movements = list(dbapi.search(InvMovementMeta, **{'timestamp-gte': today, 'timestamp-lte': tomorrow}))
+        movements = list(dbapi.search(InvMovementMeta, **
+                         {'timestamp-gte': today, 'timestamp-lte': tomorrow}))
         return json_dumps({'result': movements})
 
     @app.get(prefix + '/sales_report')
     @dbcontext
     def get_sales_report():
         start, end = parse_start_end_date(
-                request.query)
+            request.query)
         sales_by_date = list(client_sale_report(dbapi, start, end))
         return json_dumps({'result': sales_by_date})
 
@@ -120,10 +125,15 @@ def make_sale_records_api(prefix, auth_decorator, dbapi,
 
         for i in trans:
             i.itemgroup_id = ig.uid
-            if dbapi.getone(Inventory, entity_codename=codename, external_id=i.from_inv_id) is None:
+            if dbapi.getone(
+                    Inventory,
+                    entity_codename=codename,
+                    external_id=i.from_inv_id) is None:
                 # create new Inventory if none
-                i.from_inv_id = get_or_create_inventory_id(dbapi, codename, i.from_inv_id)
-                i.to_inv_id = get_or_create_inventory_id(dbapi, codename, i.to_inv_id)
+                i.from_inv_id = get_or_create_inventory_id(
+                    dbapi, codename, i.from_inv_id)
+                i.to_inv_id = get_or_create_inventory_id(
+                    dbapi, codename, i.to_inv_id)
                 i.reference_id = codename + (i.reference_id or '')
             inventoryapi.save(i)
 

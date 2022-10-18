@@ -26,7 +26,7 @@ class NUnit(Base):
     name_zh = Column(String(50))
     name_es = Column(String(50))
     type = Column(String(20))
-    equiv_base= Column(String(20))
+    equiv_base = Column(String(20))
     equiv_multiplier = Column(Numeric(10, 3))
 
 
@@ -37,7 +37,6 @@ class NDeclaredGood(Base):
     display_price = Column(Numeric(15, 4))
     box_code = Column(String(20))
     modify_strategy = Column(String(20))
-
 
 
 # container = set of invoices
@@ -81,5 +80,3 @@ class NCustomItem(Base):
     unit = Column(String(50))
     box = Column(Numeric(11, 3))
     box_code = Column(String(20))
-
-

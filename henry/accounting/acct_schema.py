@@ -137,6 +137,7 @@ class NComment(Base):
     user_id = Column(String(10))
     comment = Column(String(200))
 
+
 Index('ix_comment_2', NComment.objtype, NComment.objid)
 
 
@@ -147,6 +148,7 @@ class NImage(Base):
     objid = Column(String(20))
     imgtag = Column(String(20))
     path = Column(String(100))
+
 
 Index('ix_image_2', NImage.objtype, NImage.objid)
 
@@ -163,4 +165,3 @@ class NAccountTransaction(Base):
     deleted = Column(Boolean)
     input_timestamp = Column(DateTime)
     last_modified = Column(DateTime)
-

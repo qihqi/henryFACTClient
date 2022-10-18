@@ -26,7 +26,7 @@ from henry.invoice.coreschema import NNota
 from .acct_schema import ObjType, NComment, NPayment
 from henry.users.dao import User
 from .reports import (generate_daily_report, split_records_binary, get_transactions, payment_report,
-                      get_notas_with_clients, split_records, get_turned_in_cash, get_sale_report)
+                      get_turned_in_cash, get_sale_report)
 from .acct_schema import NCheck, NSpent, NAccountStat
 from .dao import (Check, Deposit, Payment, Bank,
                   DepositAccount, AccountStat, Spent, AccountTransaction, Comment, PaymentApi, ImageServer)
@@ -100,7 +100,8 @@ def make_wsgi_api(dbapi: DBApiGeneric, invapi: DocumentApi,
         if override_transaction_getter:
             result = override_transaction_getter(start, end)
         else:
-            result = get_transactions(dbapi, paymentapi, invapi, imgserver, start, end)
+            result = get_transactions(
+                dbapi, paymentapi, invapi, imgserver, start, end)
         return json_dumps(result)
 
     @w.get('/app/api/check')
@@ -190,12 +191,12 @@ def make_wsgi_api(dbapi: DBApiGeneric, invapi: DocumentApi,
                 result['without_deposit'].append(x)
         return json_dumps(result)
 
-
     # account stat
     bind_dbapi_rest('/app/api/account_stat', dbapi, AccountStat, w)
     bind_dbapi_rest('/app/api/bank_account', dbapi, DepositAccount, w)
     bind_dbapi_rest('/app/api/account_deposit', dbapi, AccountTransaction, w)
-    bind_dbapi_rest('/app/api/spent', dbapi, Spent, w, skips_method=('DELETE', ))
+    bind_dbapi_rest('/app/api/spent', dbapi, Spent,
+                    w, skips_method=('DELETE', ))
 
     @w.get('/app/api/pago/<uid>')
     @dbcontext
@@ -209,7 +210,8 @@ def make_wsgi_api(dbapi: DBApiGeneric, invapi: DocumentApi,
     @w.delete('/app/api/pago/<uid>')
     @dbcontext
     def mark_pago_deleted(uid):
-        success = dbapi.db_session.query(NPayment).filter_by(uid=uid).update({'deleted': True})
+        success = dbapi.db_session.query(NPayment).filter_by(
+            uid=uid).update({'deleted': True})
         dbapi.db_session.commit()
         return {'success': success > 0}
 
@@ -217,7 +219,8 @@ def make_wsgi_api(dbapi: DBApiGeneric, invapi: DocumentApi,
     @dbcontext
     def modify_payment(uid):
         data = json.loads(decode_str(request.body.read()))
-        success = dbapi.db_session.query(NPayment).filter_by(uid=uid).update(data)
+        success = dbapi.db_session.query(
+            NPayment).filter_by(uid=uid).update(data)
         dbapi.db_session.commit()
         return {'success': success > 0}
 
@@ -314,8 +317,10 @@ def make_wsgi_app(dbcontext: DBContext, imgserver: ImageServer,
         checkimgs = {check.payment_id: os.path.split(check.imgcheck)[1]
                      for check in report.checks if check.imgcheck}
         existing = dbapi.get(date, AccountStat)
-        all_img = list(imgserver.getimg(objtype='entrega_cuenta', objid=date.isoformat()))
-        temp = jinja_env.get_template('invoice/crear_entregar_cuenta_form.html')
+        all_img = list(imgserver.getimg(
+            objtype='entrega_cuenta', objid=date.isoformat()))
+        temp = jinja_env.get_template(
+            'invoice/crear_entregar_cuenta_form.html')
         total_cash = sum(report.cash.values()) + report.other_cash
         return temp.render(
             cash=report.cash, others=report.other_by_client,
@@ -541,7 +546,8 @@ def make_wsgi_app(dbcontext: DBContext, imgserver: ImageServer,
         rforms = dict(request.forms)
         rforms['value'] = Decimal(form['value']) * 100
         payment = clazz.deserialize(rforms)
-        payment.note_id, payment.client_id = extract_nota_and_client(dbapi, form, url)
+        payment.note_id, payment.client_id = extract_nota_and_client(
+            dbapi, form, url)
         payment.date = date
         return payment
 
@@ -589,7 +595,8 @@ def make_wsgi_app(dbcontext: DBContext, imgserver: ImageServer,
     @dbcontext
     @auth_decorator(0)
     def ver_cheques_por_titular():
-        start, end = parse_start_end_date_with_default(request.query, None, None)
+        start, end = parse_start_end_date_with_default(
+            request.query, None, None)
         titular = request.query.titular
         if titular:
             result = dbapi.db_session.query(NCheck).filter(
@@ -753,7 +760,8 @@ def make_wsgi_app(dbcontext: DBContext, imgserver: ImageServer,
     @dbcontext
     def get_sells_xml():
         start_date, end_date = parse_start_end_date(request.query)
-        end_date = end_date + datetime.timedelta(days=1) - datetime.timedelta(seconds=1)
+        end_date = end_date + \
+            datetime.timedelta(days=1) - datetime.timedelta(seconds=1)
         form_type = request.query.get('form_type')
 
         ruc = request.query.get('alm')
@@ -761,14 +769,17 @@ def make_wsgi_app(dbcontext: DBContext, imgserver: ImageServer,
             start_date, end_date, other_filters={'almacen_ruc': ruc}))
         for inv in invs:
             inv.client.codigo = hack.fix_id_error(inv.client.codigo)
-        deleted, sold = split_records_binary(invs, lambda x: x.status == Status.DELETED)
+        deleted, sold = split_records_binary(
+            invs, lambda x: x.status == Status.DELETED)
         grouped = group_by_customer(sold)
 
         meta = Meta()
         meta.date = start_date
-        meta.total = reduce(lambda acc, x: acc + x.subtotal, list(grouped.values()), 0)
+        meta.total = reduce(lambda acc, x: acc + x.subtotal,
+                            list(grouped.values()), 0)
         meta.almacen_ruc = ruc
-        meta.almacen_name = [x.nombre for x in dbapi.search(Store) if x.ruc == ruc][0]
+        meta.almacen_name = [
+            x.nombre for x in dbapi.search(Store) if x.ruc == ruc][0]
         temp = jinja_env.get_template('accounting/resumen_agrupado.html')
         if form_type == 'ats':
             temp = jinja_env.get_template('accounting/ats.xml')
@@ -814,7 +825,8 @@ def make_wsgi_app(dbcontext: DBContext, imgserver: ImageServer,
     def view_comments():
         temp = jinja_env.get_template('comments.html')
         all_comments = dbapi.search(Comment)
-        all_comments = sorted(all_comments, key=attrgetter('timestamp'), reverse=True)
+        all_comments = sorted(
+            all_comments, key=attrgetter('timestamp'), reverse=True)
         return temp.render(comments=all_comments)
 
     @w.get('/app/sale_report_monthly')
@@ -822,7 +834,8 @@ def make_wsgi_app(dbcontext: DBContext, imgserver: ImageServer,
     def sale_report_monthly():
         start, end = parse_start_end_date(request.query)
         report = get_sale_report(invapi, start, end)
-        report.best_sellers = sorted(report.best_sellers, key=lambda x: x[1].value, reverse=True)
+        report.best_sellers = sorted(
+            report.best_sellers, key=lambda x: x[1].value, reverse=True)
         temp = jinja_env.get_template('sale_report_monthly.html')
         return temp.render(report=report)
 

@@ -18,7 +18,11 @@ class FileService(object):
         fullpath = os.path.join(dirname, name)
         return fullpath
 
-    def put_file(self, filename: str, content: str, override=True) -> Optional[str]:
+    def put_file(
+            self,
+            filename: str,
+            content: str,
+            override=True) -> Optional[str]:
         fullpath = self.make_fullpath(filename)
         if not override and os.path.exists(fullpath):
             return None
@@ -43,16 +47,16 @@ class FileService(object):
                 f.flush()
         return fullpath
 
-    def get_file_lines(self, filenames: Iterable[str],
-                       condition: Optional[Callable[[str], bool]] = None) -> Iterator[str]:
-        if condition is None:
-            condition = lambda x: True
+    def get_file_lines(self,
+                       filenames: Iterable[str],
+                       condition: Optional[Callable[[str],
+                                                    bool]] = None) -> Iterator[str]:
         for fname in filenames:
             fullpath = self.make_fullpath(fname)
             if os.path.exists(fullpath):
                 with open(fullpath) as f:
                     for line in f.readlines():
-                        if condition(line):
+                        if condition is None or condition(line):
                             yield line
 
 

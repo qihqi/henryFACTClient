@@ -6,16 +6,15 @@ import os
 import uuid
 from decimal import Decimal
 from typing import Optional, Iterator, List, Iterable
-from henry.base.serialization import parse_iso_datetime, SerializableData
+from henry.base.serialization import SerializableData
 from henry.base.dbapi import SerializableDB, DBApiGeneric
 from henry.dao.document import MetaItemSet, Item
 from henry.product.dao import InventoryMovement, ProdItem, InvMovementType, get_real_prod_id
-from henry.users.dao import Client, User
+from henry.users.dao import Client
 
 from .coreschema import NNota, NNotaExtra
 from .schema import NSRINota
 from henry.base.fileservice import FileService
-from henry.base.serialization import SerializableData
 
 __author__ = 'han'
 
@@ -159,17 +158,19 @@ class CommResult(SerializableData):
     environment: bool
     timestamp: datetime.datetime
 
+
 # Use record separator as separator because newline
 # might be used already
 COMM_SEP = chr(ascii.RS)
 
+
 @dataclasses.dataclass
 class SRINota(SerializableDB[NSRINota]):
     db_class = NSRINota
-    uid : Optional[int] = None
+    uid: Optional[int] = None
     almacen_id: Optional[int] = None
-    almacen_ruc : Optional[str] = None
-    orig_codigo : Optional[str] = None
+    almacen_ruc: Optional[str] = None
+    orig_codigo: Optional[str] = None
     orig_timestamp: Optional[datetime.datetime] = None
     buyer_ruc: Optional[str] = None
     buyer_name: Optional[str] = None
@@ -180,11 +181,11 @@ class SRINota(SerializableDB[NSRINota]):
     access_code: Optional[str] = None
 
     timestamp_received: Optional[datetime.datetime] = None
-    status : Optional[str] = None
+    status: Optional[str] = None
 
-    json_inv_location : Optional[str] = None
-    xml_inv_location : Optional[str] = None
-    xml_inv_signed_location : Optional[str] = None
+    json_inv_location: Optional[str] = None
+    xml_inv_location: Optional[str] = None
+    xml_inv_signed_location: Optional[str] = None
     all_comm_path: Optional[str] = None
 
     def load_nota(self, file_manager: FileService) -> Optional[Invoice]:
@@ -222,7 +223,3 @@ class SRINota(SerializableDB[NSRINota]):
             })
         file_manager.append_file(self.all_comm_path,
                                  COMM_SEP + comm_result.to_json())
-
-
-
-

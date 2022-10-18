@@ -13,6 +13,7 @@ from .schema import NInventory, NSale, NInvMovementMeta, NEntity
 
 __author__ = 'han'
 
+
 @dataclasses.dataclass
 class Inventory(SerializableDB[NInventory]):
     db_class = NInventory
@@ -30,6 +31,7 @@ class Entity(SerializableDB[NEntity]):
     name: Optional[str] = None
     desc: Optional[str] = None
 
+
 @dataclasses.dataclass
 class SaleReportByDate(SerializableData):
     timestamp: Optional[datetime.datetime]
@@ -39,8 +41,10 @@ class SaleReportByDate(SerializableData):
     count: Optional[int]
 
 
-def client_sale_report(dbapi: DBApiGeneric, start: datetime.date, end: datetime.date
-                       ) -> Iterator[SaleReportByDate]:
+def client_sale_report(
+        dbapi: DBApiGeneric,
+        start: datetime.date,
+        end: datetime.date) -> Iterator[SaleReportByDate]:
     sales_by_date = list(dbapi.db_session.query(
         NSale.seller_ruc,
         func.date(NSale.timestamp), func.sum(NSale.pretax_amount_usd),
@@ -133,18 +137,18 @@ class InvMovementManager(object):
 @dataclasses.dataclass
 class Sale(SerializableDB[NSale]):
     db_class = NSale
-    uid : Optional[int] = None
-    timestamp : Optional[datetime.datetime] = None
-    client_id : Optional[str] = None
-    seller_codename : Optional[str] = None
-    seller_ruc : Optional[str] = None
-    seller_inv_uid : Optional[int] = None
-    invoice_code : Optional[str] = None
-    pretax_amount_usd : Optional[Decimal] = None
-    tax_usd : Optional[Decimal] = None
-    status : Optional[str] = None
-    user_id : Optional[str] = None
-    payment_format : Optional[str] = None
+    uid: Optional[int] = None
+    timestamp: Optional[datetime.datetime] = None
+    client_id: Optional[str] = None
+    seller_codename: Optional[str] = None
+    seller_ruc: Optional[str] = None
+    seller_inv_uid: Optional[int] = None
+    invoice_code: Optional[str] = None
+    pretax_amount_usd: Optional[Decimal] = None
+    tax_usd: Optional[Decimal] = None
+    status: Optional[str] = None
+    user_id: Optional[str] = None
+    payment_format: Optional[str] = None
 
     def merge_from(self, other):
         super(Sale, self).merge_from(other)
@@ -170,11 +174,16 @@ def get_sales_by_date_and_user(dbapi, start_date, end_date):
 def get_or_create_inventory_id(dbapi, codename, external_id):
     if external_id == -1:
         return -1
-    inv = dbapi.getone(Inventory, entity_codename=codename, external_id=external_id)
+    inv = dbapi.getone(
+        Inventory,
+        entity_codename=codename,
+        external_id=external_id)
     if not inv:
-        largest_id = dbapi.db_session.query(func.max(NInventory.inventory_id)).first()[0] or 0
-        inv = Inventory(entity_codename=codename, external_id=external_id, inventory_id=largest_id + 1)
+        largest_id = dbapi.db_session.query(
+            func.max(NInventory.inventory_id)).first()[0] or 0
+        inv = Inventory(
+            entity_codename=codename,
+            external_id=external_id,
+            inventory_id=largest_id + 1)
         dbapi.create(inv)
     return inv.inventory_id
-
-

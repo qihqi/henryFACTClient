@@ -1,11 +1,11 @@
 from typing import TypeVar, Generic, Type, Any, Dict
-from sqlalchemy.sql.schema import Column
-from sqlalchemy.util._collections import OrderedProperties
 from henry.schema.base import Base
 
 
 DBType = TypeVar('DBType', bound=Base)  # this is one of the sqlalchemy classes
 SelfType = TypeVar('SelfType', bound='DBObjectInterface')
+
+
 class DBObjectInterface(Generic[DBType]):
     """Interface for objects that knows how to convert into a db object.
 
@@ -24,6 +24,8 @@ class DBObjectInterface(Generic[DBType]):
 
 
 T = TypeVar('T', bound='SerializableInterface')
+
+
 class SerializableInterface(object):
 
     def merge_from(self: T, obj: Any) -> T:

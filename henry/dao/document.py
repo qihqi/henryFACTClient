@@ -6,7 +6,6 @@ import os
 from decimal import Decimal
 from typing import Type, List
 
-from sqlalchemy import inspect
 from sqlalchemy.exc import SQLAlchemyError
 from henry.base.fileservice import FileService
 from henry.base.session_manager import SessionManager
@@ -28,6 +27,7 @@ class Status(object):
              COMITTED,
              DELETED)
 
+
 @dataclasses.dataclass
 class Item(SerializableData):
     prod: PriceList = PriceList()
@@ -36,6 +36,8 @@ class Item(SerializableData):
 
 T = TypeVar('T', bound=SerializableDB)
 SelfType = TypeVar('SelfType', bound='MetaItemSet')
+
+
 class MetaItemSet(Generic[T]):
     _metadata_cls: Type[T]  # _metadata class must have a field item_location
     meta: Optional[T]
@@ -43,7 +45,6 @@ class MetaItemSet(Generic[T]):
 
     def items_to_transaction(self, dbapi) -> Iterable[InventoryMovement]:
         raise NotImplementedError()
-
 
     def validate(self):
         raise NotImplementedError
@@ -67,6 +68,8 @@ class MetaItemSet(Generic[T]):
 
 
 Doc = TypeVar('Doc', bound=MetaItemSet)
+
+
 class DocumentApi(object):
     def __init__(self, sessionmanager: SessionManager,
                  filemanager: FileService,
@@ -82,12 +85,12 @@ class DocumentApi(object):
         self.db_class = self.metadata_cls.db_class
 
     def get_doc(self, uid) -> Optional[Doc]:
-        session = self.db_session.session
-        pkey_col = inspect(self.db_class).primary_key[0]
-        db_instance = session.query(self.db_class).filter(pkey_col == uid).first()
         meta = self.dbapi.get(uid, self.metadata_cls)
         if meta is None:
-            print('cannot find document in table ', self.db_class.__tablename__, end=' ')
+            print(
+                'cannot find document in table ',
+                self.db_class.__tablename__,
+                end=' ')
             print(' with id ', uid)
             return None
         doc = self.get_doc_from_file(meta.items_location)  # type: ignore
@@ -120,7 +123,9 @@ class DocumentApi(object):
     def commit(self, doc: Doc):
         meta = doc.meta
         if meta.status and meta.status != Status.NEW:  # type: ignore
-            logging.info('attempt to commit doc {} in wrong status'.format(doc.meta.uid))  # type: ignore
+            logging.info(
+                'attempt to commit doc {} in wrong status'.format(
+                    doc.meta.uid))  # type: ignore
             return None
         if self._set_status_and_update_prod_count(
                 doc, Status.COMITTED, inverse_transaction=False):
@@ -143,7 +148,10 @@ class DocumentApi(object):
         return None
 
     def _set_status_and_update_prod_count(
-            self, doc: Doc, new_status: str, inverse_transaction: bool) -> bool:
+            self,
+            doc: Doc,
+            new_status: str,
+            inverse_transaction: bool) -> bool:
         session = self.db_session.session
         now = datetime.datetime.now()
         assert doc.meta is not None
@@ -165,7 +173,12 @@ class DocumentApi(object):
             session.rollback()
             return False
 
-    def search_metadata_by_date_range(self, start, end, status=None, other_filters=None):
+    def search_metadata_by_date_range(
+            self,
+            start,
+            end,
+            status=None,
+            other_filters=None):
         session = self.db_session.session
         query = session.query(self.db_class).filter(
             self.db_class.timestamp >= start).filter(
@@ -209,5 +222,6 @@ class PedidoApi(object):
             f = self.filemanager.get_file(filename)
             if f is not None:
                 return f
-        logging.info('Could not find pedido within {} days of lookback'.format(look_back))
+        logging.info(
+            'Could not find pedido within {} days of lookback'.format(look_back))
         return None

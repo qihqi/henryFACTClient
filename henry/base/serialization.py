@@ -13,7 +13,7 @@ def json_dumps(content) -> str:
 
 
 def parse_iso_datetime(datestring: str) -> datetime.datetime:
-    parts = list(map(int, re.split('[^\d]', datestring)))
+    parts = list(map(int, re.split('[^\\d]', datestring)))
     if len(parts) > 7:
         parts = parts[:7]
     return datetime.datetime(*parts)  # type: ignore
@@ -79,13 +79,15 @@ def deserialize(cls, input_obj):
     return cls(input_obj)  # this should catch Decinmal
 
 
-
 T = TypeVar('T', bound='SerializableData')
+
+
 class SerializableData(SerializableInterface):
     """Meant to be subclassed by a class with @dataclass decorator.
 
     Adds methods to support converting to / from dicts
     """
+
     def __init__(self, **kwargs):
         self.merge_from(kwargs)
 
@@ -136,8 +138,12 @@ class SerializableMixin(object):
     @staticmethod
     def _serialize_helper(obj, names):
         return {
-            name: getattr(obj, name) for name in names if getattr(obj, name, None) is not None
-        }
+            name: getattr(
+                obj,
+                name) for name in names if getattr(
+                obj,
+                name,
+                None) is not None}
 
     def to_json(self):
         return json_dumps(self.serialize())
@@ -182,5 +188,5 @@ def fieldcopy(src, dest, fields):
             if isinstance(value, bytes):
                 value = decode_str(value)
             destsetter(f, value)
-        except:
+        except BaseException:
             pass

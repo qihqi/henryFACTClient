@@ -16,10 +16,12 @@ from henry.users.dao import User, Client
 from typing import Callable
 
 
-def make_wsgi_app(
-        dbcontext: DBContext,
-        auth_decorator: AuthType,
-        jinja_env, dbapi: DBApiGeneric, actionlogged: Callable[[Callable], Callable]):
+def make_wsgi_app(dbcontext: DBContext,
+                  auth_decorator: AuthType,
+                  jinja_env,
+                  dbapi: DBApiGeneric,
+                  actionlogged: Callable[[Callable],
+                                         Callable]):
     w = Bottle()
 
     # bind apis
@@ -34,8 +36,11 @@ def make_wsgi_app(
         if client is None:
             message = 'Cliente {} no encontrado'.format(id)
         temp = jinja_env.get_template('crear_cliente.html')
-        return temp.render(client=client, message=message, action='/app/modificar_cliente',
-                           button_text='Modificar')
+        return temp.render(
+            client=client,
+            message=message,
+            action='/app/modificar_cliente',
+            button_text='Modificar')
 
     @w.post('/app/modificar_cliente')
     @dbcontext
@@ -65,8 +70,13 @@ def make_wsgi_app(
             dbapi.create(cliente)
             dbapi.db_session.commit()
         except IntegrityError:
-            return crear_cliente_form('Cliente con codigo {} ya existe'.format(cliente.codigo))
-        return crear_cliente_form('Cliente {} {} creado'.format(cliente.apellidos, cliente.nombres))
+            return crear_cliente_form(
+                'Cliente con codigo {} ya existe'.format(
+                    cliente.codigo))
+        return crear_cliente_form(
+            'Cliente {} {} creado'.format(
+                cliente.apellidos,
+                cliente.nombres))
 
     @w.get('/app/secuencia')
     @dbcontext
@@ -102,8 +112,11 @@ def make_wsgi_app(
     @auth_decorator(0)
     def crear_cliente_form(message=None):
         temp = jinja_env.get_template('crear_cliente.html')
-        return temp.render(client=None, message=message, action='/app/crear_cliente',
-                           button_text='Crear')
+        return temp.render(
+            client=None,
+            message=message,
+            action='/app/crear_cliente',
+            button_text='Crear')
 
     bind_dbapi_rest('/app/api/client', dbapi, Client, w)
     return w

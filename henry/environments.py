@@ -23,8 +23,10 @@ def display_date(x):
 def decimal_places(dec, places='0.01'):
     return dec.quantize(Decimal(places))
 
+
 def normalize_decimal(dec):
     return ('%f' % dec).rstrip('0').rstrip('.')
+
 
 def make_jinja_env(template_paths):
     jinja_env = Environment(loader=FileSystemLoader(template_paths),

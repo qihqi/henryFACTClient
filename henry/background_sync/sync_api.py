@@ -4,7 +4,6 @@ from builtins import object
 import shutil
 import requests
 import datetime
-import uuid
 import os
 import json
 from bottle import Bottle, request
@@ -41,6 +40,7 @@ class ChangeLog(SerializableMixin):
         'content'
     )
 
+
 def make_date_name(date, batch):
     return '{date}_{batch}'.format(date=date,
                                    batch=batch)
@@ -51,10 +51,10 @@ def make_date_name(date, batch):
 # this code runs in the remote server.
 def make_wsgi_api(prefix, fileservice):
     app = Bottle()
-    
+
     @app.post(prefix + '/logs')
     def save_logs():
-        #json list with all transactions
+        # json list with all transactions
         for line in request.body.readlines():
             line = line.decode('utf-8')
             data = json.loads(line)
@@ -112,7 +112,6 @@ class SyncApi(object):
         self.fileservice.append_file(fname, json_dumps(change_log))
 
 
-
 if __name__ == '__main__':
     print('Start Uploading...')
     print('new dir', NEW_LOG_DIR)
@@ -121,5 +120,3 @@ if __name__ == '__main__':
         print('Success')
     else:
         print('Failed')
-
-

@@ -11,6 +11,7 @@ app = Bottle()
 BASEDIR = '/var/data/exports'
 invmanager = ExportManager(BASEDIR, 'sale', 'http://192.168.0.22')
 
+
 def timerange(start, end, delta=datetime.timedelta(days=1)):
     x = start
     while x <= end:
@@ -31,7 +32,8 @@ def all_daily_stats():
         if x.isoweekday() != 7:  # skips Sundays
             report = invmanager.get(x)
             if report is not None:
-                result[x.isoformat()] = (report.total_count, report.total_value, report.total_tax)
+                result[x.isoformat()] = (report.total_count,
+                                         report.total_value, report.total_tax)
             else:
                 result[x.isoformat()] = None
     return result
@@ -42,7 +44,6 @@ def reload_analytics(day):
     day = datetime.datetime.strptime(day, '%Y-%m-%d').date()
     invmanager.reload_analytics(day)
     return {'status': 'success'}
-
 
 
 @app.get('/app/analytics/daily/<day>')
@@ -58,6 +59,6 @@ def get_daily_stats_fine(day):
         'by_type': report.by_type,
     })
 
+
 if __name__ == '__main__':
     bottle.run(app, host='0.0.0.0', debug=True, port=8080)
-

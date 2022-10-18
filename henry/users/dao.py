@@ -7,6 +7,7 @@ from henry.users.schema import NUsuario, NCliente
 
 __author__ = 'han'
 
+
 @dataclasses.dataclass
 class User(SerializableDB[NUsuario]):
     db_class = NUsuario

@@ -1,6 +1,5 @@
 import json
 from decimal import Decimal
-from collections import defaultdict
 
 import barcode
 import os
@@ -62,7 +61,7 @@ def make_full_items(itemgroup, items, prices_by_prod_id):
 def get_or_search_item_w_name(dbapi, name_prefix, prod_id):
     assert prod_id or name_prefix, 'prod_id o Prefijo no puede ser vacio'
     query = dbapi.session.session.query(NItem, NItemGroup).filter(
-            NItem.itemgroupid == NItemGroup.uid)
+        NItem.itemgroupid == NItemGroup.uid)
 
     if prod_id:
         query = query.filter(NItem.prod_id == prod_id)
@@ -70,7 +69,7 @@ def get_or_search_item_w_name(dbapi, name_prefix, prod_id):
     if name_prefix:
         query = query.filter(NItemGroup.name.startswith(name_prefix))
 
-    res = [] 
+    res = []
     for it, ig in query:
         item = ProdItem.from_db_instance(it)
         item.name = ig.name
@@ -79,8 +78,10 @@ def get_or_search_item_w_name(dbapi, name_prefix, prod_id):
 
 
 def make_wsgi_api(
-        prefix: str, sessionmanager: SessionManager, dbcontext: DBContext,
-                  auth_decorator: AuthType,
+        prefix: str, sessionmanager:
+        SessionManager,
+        dbcontext: DBContext,
+        auth_decorator: AuthType,
         dbapi: DBApiGeneric,
         inventoryapi: InventoryApi,
         sync_api: SyncApi):
@@ -118,7 +119,8 @@ def make_wsgi_api(
         items = dbapi.search(ProdItem, itemgroupid=itemgroup.uid)
         prices_by_item = {}
         for x in items:
-            prices_by_item[x.prod_id] = dbapi.search(PriceList, prod_id=x.prod_id)
+            prices_by_item[x.prod_id] = dbapi.search(
+                PriceList, prod_id=x.prod_id)
         return json_dumps(make_full_items(itemgroup, items, prices_by_item))
 
     @app.post(prefix + '/item_with_price')
@@ -163,18 +165,33 @@ def make_wsgi_api(
         start, end = parse_start_end_date(request.query)
         start = start.date()
         end = end.date()
-        return json_dumps({'results': list(inventoryapi.list_transactions(uid, start, end))})
+        return json_dumps(
+            {'results': list(inventoryapi.list_transactions(uid, start, end))})
 
-    bind_restapi(prefix + '/pricelist', 
-        RestApi(dbapi, PriceList, logging=sync_api.log_price_list_change), app)
+    bind_restapi(
+        prefix +
+        '/pricelist',
+        RestApi(
+            dbapi,
+            PriceList,
+            logging=sync_api.log_price_list_change),
+        app)
     bind_dbapi_rest(prefix + '/itemgroup', dbapi, ProdItemGroup, app)
-    bind_dbapi_rest(prefix + '/item', dbapi, ProdItem, app, skips_method=('GET',))
+    bind_dbapi_rest(
+        prefix +
+        '/item',
+        dbapi,
+        ProdItem,
+        app,
+        skips_method=(
+            'GET',
+        ))
 
     @app.get(prefix + '/item/<pkey>')
     @dbcontext
     def get_item_w_name(pkey):
         items = dbapi.session.session.query(NItem, NItemGroup).filter(
-                NItem.itemgroupid == NItemGroup.uid).first()
+            NItem.itemgroupid == NItemGroup.uid).first()
 
         item = ProdItem.from_db_instance(items[0])
         item.name = items[1].name
@@ -188,9 +205,8 @@ def make_wsgi_api(
         assert prod_id or name_prefix, 'prod_id o Prefijo no puede ser vacio'
         res = get_or_search_item_w_name(dbapi, name_prefix, prod_id)
         return json_dumps({'result': res})
-        
-    return app
 
+    return app
 
 
 def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles):
@@ -215,7 +231,7 @@ def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles):
     @w.get('/app/ver_trans_producto')
     @dbcontext
     @auth_decorator(1)
-    def ver_lista_precio():
+    def ver_trans_producto():
         prefix = request.query.get('prefix', None)
         prods = []
         if prefix:
@@ -235,7 +251,7 @@ def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles):
 
     @w.get('/app/tags/<tag>')
     @dbcontext
-    def get_tags(tag):
+    def get_tags_each(tag):
         tags = dbapi.search(ProdTagContent, tag=tag)
         for t in tags:
             t.prod = dbapi.get(t.itemgroup_id, ProdItemGroup)
@@ -280,7 +296,12 @@ def make_wsgi_app(dbcontext, auth_decorator, jinja_env, dbapi, imagefiles):
         price = int(prod.precio1 * quantity * Decimal('1.12') + Decimal('0.5'))
 
         temp = jinja_env.get_template('prod/barcode.html')
-        return temp.render(url=url, row=row, column=column, prodname=prod.nombre, price=price)
+        return temp.render(
+            url=url,
+            row=row,
+            column=column,
+            prodname=prod.nombre,
+            price=price)
     return w
 
 
@@ -306,7 +327,6 @@ def create_full_item_from_dict(dbapi, content):
     itemgroupid = dbapi.create(itemgroup)
 
     items = {}
-    allstores = {x.almacen_id: x for x in dbapi.search(Store)}
 
     for item in content['items']:
         prices = item['prices']
@@ -321,7 +341,7 @@ def create_full_item_from_dict(dbapi, content):
         elif i.multiplier < 1:
             i.prod_id = itemgroup.prod_id + '-'
 
-        item_id = dbapi.create(i)
+        dbapi.create(i)
         items[i.unit] = i
 
         # create prices

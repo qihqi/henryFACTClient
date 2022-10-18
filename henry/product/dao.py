@@ -9,8 +9,16 @@ import dataclasses
 from henry.base.fileservice import FileService
 from henry.base.dbapi import SerializableDB, DBApiGeneric
 from henry.base.serialization import json_dumps, SerializableData
-from .schema import (NBodega, NCategory, NPriceListLabel,
-                     NPriceList, NItemGroup, NItem, NStore, NProdTag, NProdTagContent)
+from .schema import (
+    NBodega,
+    NCategory,
+    NPriceListLabel,
+    NPriceList,
+    NItemGroup,
+    NItem,
+    NStore,
+    NProdTag,
+    NProdTagContent)
 from typing import Dict, Optional, List, Tuple, Union, Iterable, Iterator, Mapping, DefaultDict
 
 
@@ -157,14 +165,18 @@ def create_items_chain(dbapi: DBApiGeneric, pl: PriceList):
         item = make_item_from_pricelist(pl)
         item.itemgroupid = ig.uid
         dbapi.create(item)
-    pricelist = dbapi.getone(PriceList, prod_id=pl.prod_id, almacen_id=pl.almacen_id)
+    pricelist = dbapi.getone(
+        PriceList,
+        prod_id=pl.prod_id,
+        almacen_id=pl.almacen_id)
     if pricelist is None:
         pricelist = PriceList()
         pricelist.merge_from(pl)
         dbapi.create(pricelist)
 
 
-def quantity_tuple(quantities: List[Tuple[int, str]]) -> List[Tuple[int, Decimal]]:
+def quantity_tuple(
+        quantities: List[Tuple[int, str]]) -> List[Tuple[int, Decimal]]:
     # quantities should be a list of tuples of bodega_id: quantity
     # with type (int, Decimal)
     # the starting type is (int, str), need to convert str to decimal
@@ -180,10 +192,12 @@ class InventorySnapshot(SerializableData):
     creation_time: Optional[datetime.datetime] = None
     itemgroup_id: Optional[int] = None
     prod_id: Optional[str] = None
-    quantity: List[Tuple[int, Decimal]] = dataclasses.field(default_factory=lambda: [])
+    quantity: List[Tuple[int, Decimal]] = dataclasses.field(
+        default_factory=lambda: [])
     upto_date: Optional[datetime.date] = None
     last_upto_date: Optional[datetime.date] = None
-    last_quantity: List[Tuple[int, Decimal]] = dataclasses.field(default_factory=lambda: [])
+    last_quantity: List[Tuple[int, Decimal]] = dataclasses.field(
+        default_factory=lambda: [])
 
     # _fields = (
     #     ('creation_time', parse_iso_datetime),
@@ -270,7 +284,8 @@ class InventoryApi(object):
         if os.path.exists(snapshot_path):
             records = self.fileservice.get_file(snapshotname)
             if records:
-                return list(map(InventorySnapshot.deserialize, json.loads(records)))
+                return list(
+                    map(InventorySnapshot.deserialize, json.loads(records)))
         return []
 
     def list_transactions(
@@ -279,7 +294,9 @@ class InventoryApi(object):
         # start date can be None, but end_date cannot
         if not isinstance(end_date, datetime.date):
             raise ValueError('end_date must be a valid date object')
-        if not isinstance(start_date, datetime.date) and start_date is not None:
+        if not isinstance(
+                start_date,
+                datetime.date) and start_date is not None:
             raise ValueError('start_date must be a valid date object')
         root = self.fileservice.make_fullpath(str(igid))
         last_month = InventoryApi._year_month(end_date)
@@ -291,15 +308,16 @@ class InventoryApi(object):
                 start_date = datetime.date(year, month, 1)
             all_fname = [f for f in all_fname if
                          f >= InventoryApi._year_month(start_date)]
-            all_fname = list(map(functools.partial(os.path.join, str(igid)), all_fname))
+            all_fname = list(map(functools.partial(
+                os.path.join, str(igid)), all_fname))
             for x in self.fileservice.get_file_lines(all_fname):
                 item = InventoryMovement.deserialize(json.loads(x))
                 if item.timestamp is not None:
                     if start_date <= item.timestamp.date() <= end_date:
                         yield item
 
-    def get_changes(self, igid: int, start_date: datetime.date, end_date: datetime.date
-                    ) -> Mapping[int, Decimal]:
+    def get_changes(self, igid: int, start_date: datetime.date,
+                    end_date: datetime.date) -> Mapping[int, Decimal]:
         deltas = defaultdict(Decimal)  # type: DefaultDict[int, Decimal]
         for x in self.list_transactions(igid, start_date, end_date):
             if x.from_inv_id is not None:
@@ -319,8 +337,10 @@ class InventoryApi(object):
         records.insert(0, new_record)
         self._write_snapshot(igid, records[:-1])
 
-    def _get_new_snapshot_to_date(self, igid: int, end_date: datetime.date
-                                  ) -> Tuple[InventorySnapshot, List[InventorySnapshot]]:
+    def _get_new_snapshot_to_date(self,
+                                  igid: int,
+                                  end_date: datetime.date) -> Tuple[InventorySnapshot,
+                                                                    List[InventorySnapshot]]:
         # get last account
         records = self.get_past_records(igid)
         start_date = datetime.date(2000, 1, 1)
@@ -345,12 +365,13 @@ class InventoryApi(object):
         return new_record, records
 
     def _get_last_snapshot_quantities(self, records: List[InventorySnapshot]):
-        last_quantities = defaultdict(Decimal)  # type: DefaultDict[int, Decimal]
+        last_quantities: DefaultDict[int, Decimal] = defaultdict(Decimal)
         if records:
             for inv_id, quantity in records[0].quantity:
                 last_quantities[inv_id] = quantity
         return last_quantities
 
     def get_current_quantity(self, igid: int):
-        new_record, _ = self._get_new_snapshot_to_date(igid, datetime.date.today())
+        new_record, _ = self._get_new_snapshot_to_date(
+            igid, datetime.date.today())
         return defaultdict(Decimal, new_record.quantity)

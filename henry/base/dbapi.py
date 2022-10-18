@@ -11,6 +11,8 @@ from henry.base.session_manager import SessionManager
 
 DBType = TypeVar('DBType', bound=Base)  # this is one of the sqlalchemy classes
 SelfType = TypeVar('SelfType', bound='SerializableDB')
+
+
 class SerializableDB(SerializableData, Generic[DBType]):
     """Interface for objects that knows how to convert into a db object.
 
@@ -35,6 +37,8 @@ class SerializableDB(SerializableData, Generic[DBType]):
 
 
 T = TypeVar('T', bound='SerializableDB')
+
+
 class DBApiGeneric(object):
 
     # db_class = database_class  # type: Type[DBType]
@@ -52,7 +56,6 @@ class DBApiGeneric(object):
         return self.sm.session
 
     def create(self, obj: SerializableDB):
-        pkey_col = inspect(obj.db_class).primary_key[0]
         dbobj = obj.db_instance()
         self.sm.session.add(dbobj)
         self.sm.session.flush()
@@ -81,7 +84,6 @@ class DBApiGeneric(object):
 
     def update_full(self, obj: SerializableDB) -> int:
         columns = inspect(obj.db_class).columns
-        pkey_col = inspect(obj.db_class).primary_key[0]
         pkey_name = self._get_pkey_name(type(obj))
         values = {col: getattr(obj, col)
                   for col in list(columns.keys())
@@ -102,7 +104,7 @@ class DBApiGeneric(object):
         return result[0]
 
     def search(
-        self, objclass: Type[T], **kwargs) -> List[T]:
+            self, objclass: Type[T], **kwargs) -> List[T]:
         query = self.sm.session.query(objclass.db_class)
         columns = inspect(objclass.db_class).columns
         for key, value in list(kwargs.items()):

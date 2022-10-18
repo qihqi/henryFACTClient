@@ -1,9 +1,7 @@
-import datetime
-from bottle import Bottle, request
+from bottle import Bottle
 
 from henry.coreconfig import (dbcontext, auth_decorator)
 from henry.config import jinja_env
-from henry.dao.document import Status
 
 webmain = w = Bottle()
 

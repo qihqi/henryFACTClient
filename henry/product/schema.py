@@ -68,6 +68,7 @@ class NPriceList(Base):
     unidad = Column(String(20))
     multiplicador = Column(Numeric(11, 3))
 
+
 Index('ix_lista_de_precio_2', NPriceList.almacen_id, NPriceList.prod_id)
 
 

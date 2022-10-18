@@ -1,6 +1,5 @@
 from __future__ import print_function
 from builtins import map
-from collections import defaultdict
 import json
 import datetime
 from decimal import Decimal
@@ -22,7 +21,7 @@ from .dao import (Purchase, PurchaseItem, UniversalProd, DeclaredGood,
 
 
 def make_import_apis(prefix, auth_decorator, dbapi,
-                     jinja_env):
+                     jinja_env, invmomanager, inventoryapi):
     app = Bottle()
     dbcontext = DBContext(dbapi.session)
 
@@ -97,14 +96,17 @@ def make_import_apis(prefix, auth_decorator, dbapi,
         updated.last_edit_timestamp = datetime.datetime.now()
         dbapi.update_full(updated)
 
-        to_create_item = list(map(PurchaseItem.deserialize, data.get('create_items', [])))
+        to_create_item = list(
+            map(PurchaseItem.deserialize, data.get('create_items', [])))
         for pi in to_create_item:
             pi.purchase_id = uid
             dbapi.create(pi)
-        to_delete_item = list(map(PurchaseItem.deserialize, data.get('delete_items', [])))
+        to_delete_item = list(
+            map(PurchaseItem.deserialize, data.get('delete_items', [])))
         for pi in to_delete_item:
             dbapi.delete(pi)
-        to_edit_item = list(map(PurchaseItem.deserialize, data.get('edit_items', [])))
+        to_edit_item = list(map(PurchaseItem.deserialize,
+                            data.get('edit_items', [])))
         for pi in to_edit_item:
             dbapi.update_full(pi)
         return {'status': 'success'}
@@ -117,7 +119,9 @@ def make_import_apis(prefix, auth_decorator, dbapi,
         if list(dbapi.search(
                 Sale, seller_codename=content.seller_codename,
                 seller_inv_uid=content.seller_inv_uid)):
-            return {'status': 'failed', 'reason': 'sale with the id already exists'}
+            return {
+                'status': 'failed',
+                'reason': 'sale with the id already exists'}
         dbapi.create(content)
         return {'status': 'success'}
 
@@ -146,8 +150,10 @@ def make_import_apis(prefix, auth_decorator, dbapi,
         raw_inv = decode_str(request.body.read())
         inv_movement = InvMovementFull.deserialize(json.loads(raw_inv))
         meta = inv_movement.meta
-        meta.origin = get_or_create_inventory_id(dbapi, meta.inventory_codename, meta.origin)
-        meta.dest = get_or_create_inventory_id(dbapi, meta.inventory_codename, meta.dest)
+        meta.origin = get_or_create_inventory_id(
+            dbapi, meta.inventory_codename, meta.origin)
+        meta.dest = get_or_create_inventory_id(
+            dbapi, meta.inventory_codename, meta.dest)
 
         if list(dbapi.search(InvMovementMeta,
                              inventory_codename=meta.inventory_codename,
@@ -172,7 +178,8 @@ def make_import_apis(prefix, auth_decorator, dbapi,
         today = parse_iso_date(day)
         tomorrow = today + datetime.timedelta(days=1)
         print(today, tomorrow)
-        movements = list(dbapi.search(InvMovementMeta, **{'timestamp-gte': today, 'timestamp-lte': tomorrow}))
+        movements = list(dbapi.search(InvMovementMeta, **
+                         {'timestamp-gte': today, 'timestamp-lte': tomorrow}))
         return json_dumps({'result': movements})
 
     @app.get(prefix + '/sales_report')
@@ -199,12 +206,16 @@ def make_import_apis(prefix, auth_decorator, dbapi,
 
         for i in trans:
             i.itemgroup_id = ig.uid
-            if dbapi.getone(Inventory, entity_codename=codename, external_id=i.from_inv_id) is None:
+            if dbapi.getone(
+                    Inventory,
+                    entity_codename=codename,
+                    external_id=i.from_inv_id) is None:
                 # create new Inventory if none
-                i.from_inv_id = get_or_create_inventory_id(dbapi, codename, i.from_inv_id)
-                i.to_inv_id = get_or_create_inventory_id(dbapi, codename, i.to_inv_id)
+                i.from_inv_id = get_or_create_inventory_id(
+                    dbapi, codename, i.from_inv_id)
+                i.to_inv_id = get_or_create_inventory_id(
+                    dbapi, codename, i.to_inv_id)
                 i.reference_id = codename + (i.reference_id or '')
             inventoryapi.save(i)
 
     return app
-
