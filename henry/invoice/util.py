@@ -4,10 +4,11 @@ from typing import Optional, Dict, cast, List
 import zeep
 
 from henry.xades import xades
+from henry.base.dbapi import DBApiGeneric
 from henry.base.common import HenryException
 from henry.invoice.dao import Invoice, SRINota, SRINota, SRINotaStatus
+from henry.product.dao import Store
 from henry import constants
-
 
 
 class WsEnvironment:
@@ -58,6 +59,17 @@ WS_TEST = WsEnvironment(
     'https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl'
 )
 
+ID_TO_CERT_PATH = {
+    1 : {
+        'key': constants.P12_KEY_QUINAL,
+        'path': constants.P12_FILENAME_QUINAL,
+    },
+    3 : {
+        'key': constants.P12_KEY_CORP,
+        'path': constants.P12_FILENAME_CORP,
+    },
+}
+
 
 
 
@@ -80,21 +92,6 @@ def compute_access_code(inv: Invoice, is_prod: bool):
     return access_key
 
 
-_ALM_ID_TO_INFO = {
-    1: {
-        'ruc': constants.RUC,
-        'name': constants.NAME,
-    },
-    3: {
-        'ruc': constants.RUC_CORP,
-        'name': constants.NAME_CORP,
-    },
-    99: {
-        'ruc': 'RUCRUCRUC',
-        'name': 'NAMENAMENAME',
-    }
-}
-
 class IdType:
     RUC = '04'
     CEDULA = '05'
@@ -109,15 +106,15 @@ def guess_id_type(client_id):
     return IdType.CONS_FINAL
 
 
-def inv_to_sri_dict(inv: Invoice, sri_nota: SRINota) -> Optional[Dict]:
+def inv_to_sri_dict(inv: Invoice, sri_nota: SRINota, dbapi: DBApiGeneric) -> Optional[Dict]:
     """Return the dict used to render xml."""
     assert inv.meta
     assert inv.meta.client
     assert inv.meta.timestamp is not None
     if inv.meta.almacen_id is None:
         return None
-    info = _ALM_ID_TO_INFO.get(inv.meta.almacen_id)
-    if info is None:
+    store = dbapi.get(inv.meta.almacen_id, Store)
+    if store is None:
         return None
     tipo_ident = guess_id_type(inv.meta.client.codigo)
     # 99 para consumidor final
@@ -134,13 +131,14 @@ def inv_to_sri_dict(inv: Invoice, sri_nota: SRINota) -> Optional[Dict]:
         assert inv.meta.client.codigo is not None
         id_compra = inv.meta.client.codigo
     assert inv.meta.codigo is not None
+    assert store is not None
     res = {
-      'ambiente': 1,
-      'razon_social': info['name'],
-      'ruc': info['ruc'],
+      'ambiente': 2 if constants.SRI_ENV_PROD else 1,
+      'razon_social': store.nombre,
+      'ruc': store.ruc,
       'clave_acceso': access,
       'codigo': '{:09}'.format(int(inv.meta.codigo)),
-      'dir_matriz': 'Boyaca 1515 y Aguirre',
+      'dir_matriz': store.address,
       'fecha': '{:02}/{:02}/{:04}'.format(ts.day, ts.month, ts.year),
       'tipo_identificacion_comprador': tipo_ident,
       'id_comprador': id_compra,
@@ -182,7 +180,7 @@ def generate_xml_paths(sri_nota: SRINota, file_manager, jinja_env, dbapi):
         raise HenryException(
                 'Inv corresponding a {} not found'.format(sri_nota.uid))
 
-    xml_dict = inv_to_sri_dict(inv, sri_nota)
+    xml_dict = inv_to_sri_dict(inv, sri_nota, dbapi)
     if xml_dict is None:
         return None, None
     xml_text = jinja_env.get_template(
@@ -190,9 +188,16 @@ def generate_xml_paths(sri_nota: SRINota, file_manager, jinja_env, dbapi):
     xml_inv_location = '{}.xml'.format(sri_nota.access_code)
     file_manager.put_file(xml_inv_location, xml_text)
     sri_nota.xml_inv_location = xml_inv_location
+    assert sri_nota.almacen_id
+    keyinfo = ID_TO_CERT_PATH.get(sri_nota.almacen_id)
+    if keyinfo is None:
+        raise HenryException('Wrong almacen_id {}'.format(sri_nota.almacen_id))
+    p12filename = keyinfo['path']
+    p12key = keyinfo['key']
+    print(p12filename, p12key)
 
     xml_inv_signed_location = '{}-signed.xml'.format(sri_nota.access_code)
-    signed_xml = xades.sign_xml(xml_text).decode('utf-8')
+    signed_xml = xades.sign_xml(xml_text, p12filename, p12key).decode('utf-8')
     file_manager.put_file(xml_inv_signed_location, signed_xml)
 
     dbapi.update(sri_nota, {

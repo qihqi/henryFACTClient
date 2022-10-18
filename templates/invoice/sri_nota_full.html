@@ -26,6 +26,7 @@ div.fixed {
 <p>IVa: {{ nota.tax / 100}}</p>
 <p>TOTAL: {{ nota.total / 100}}</p>
 <p>STATUS: {{ nota.status }}</p>
+<p><a href="/app/remote_nota_xml/{{nota.uid}}">Bajar el archivo XML</a></p>
 
 <script>
     function esperar() {
@@ -87,7 +88,6 @@ div.fixed {
         <th>Fecha</th>
         <th>Ambiente</th>
         <th>Tipo</th>
-        <th>Enviado</th>
         <th>Respuesta</th>
         <th>Estado</th>
     </tr>
@@ -96,8 +96,7 @@ div.fixed {
         <td>{{item.timestamp}}</td>
         <td>{{'PRODUCCION' if item.environment else 'PRUEBA'}}</td>
         <td>{{item.request_type}}</td>
-        <td>{{item.request_sent[0:100]}}</td>
-        <td>{{item.response[0:100]}}</td>
+        <td>{{item.response[0:300]}}</td>
         <td>{{item.status}}</td>
     </tr>
     {% endfor %}

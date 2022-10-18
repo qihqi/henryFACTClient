@@ -21,21 +21,36 @@
                 font-size: 10px;
             }
 
+            svg {
+                height: 50px;
+            }
+
         </style>
     </head>
 
-    <body>
-        <button onClick="window.print();" > Imprimir </button>
-        <button onClick="window.location='/app';" > Regresar al principio </button>
-        <h4>{{extra.name}}</h4> <!-- Quinal SA -->
-        <h4>RUC: {{extra.ruc}}</h4> <!-- Quinal SA -->
-        <h5>Direccion: {{ extra.address }}</h4> <!-- Direction -->
-        <h4>001-001-{{inv.meta.codigo}} </h4>
-
-        <h5> NO ENVIADO </h5>
-        <h5> Ambiente: {{ extra.ambiente }}</h5>
-        <h5> Clave Aceso: {{ extra.access_code }}</h5>
-        {{ extra.svg_code | safe }}
+    <body onload="window.print();">
+        <table style="margin:auto; ">
+            <tr>
+                <td style="border: 1px solid">
+                    <h4>RUC: {{extra.ruc}}</h4> <!-- Quinal SA -->
+                    <h4> FACTURA </h5>
+                    <h4>No. 001-001-{{inv.meta.codigo}} </h4>
+                    <h4>{{extra.name}}</h4> <!-- Quinal SA -->
+                    <h5>Direccion: </h5>
+                    <p>{{ extra.address }}</p> <!-- Direction -->
+                </td>
+                <td style="border: 1px solid">
+                    <h5> Estado: {{extra.status}}</h5>
+                    <h5> Ambiente: {{ extra.ambiente }}</h5>
+                    <h5> Emision: NORMAL </h5>
+                    <h5> Numero Autorizacion: </h5>
+                    <p>{{ extra.access_code }} </h5>
+                    <h5> Clave Aceso: </h5>
+                    {{ extra.svg_code | safe }}
+                    <p> {{ extra.access_code }}</p>
+                </td>
+            </tr>
+        </table>
         <br />
         <hr />
 

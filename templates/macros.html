@@ -20,10 +20,10 @@ Desde: <input name="start" value="{{start_value}}" />
 Hasta: <input name="end" value="{{end_value}}" />
 {% endmacro %}
 
-{% macro selector(contents, name, key, value)%}
+{% macro selector(contents, name, key, value, default='')%}
 <select name="{{ name }}">
     {% for s in contents%}
-    <option value="{{s[key]}}">{{s[value]}}</option>
+    <option value="{{s[key]}}" {% if s[key] == default %} selected {% endif %}>{{s[value]}}</option>
     {% endfor %}
 </select>
 {% endmacro %}

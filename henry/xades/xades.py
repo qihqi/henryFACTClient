@@ -31,7 +31,7 @@ def generate_checkcode(access_key: str) -> int:
     return mod
 
 
-def sign_xml(xml: str) -> bytes:
+def sign_xml(xml: str, p12filename: str, p12key: str) -> bytes:
     """
     Args:
         xml: is the content of the xml file
@@ -40,8 +40,8 @@ def sign_xml(xml: str) -> bytes:
         'java', '-jar',
         constants.SIGNER_PATH,
         xml,
-        base64.b64encode(constants.P12_FILENAME.encode('utf-8')).decode('ascii'),
-        base64.b64encode(constants.P12_KEY.encode('utf-8')).decode('ascii'),
+        base64.b64encode(p12filename.encode('utf-8')).decode('ascii'),
+        base64.b64encode(p12key.encode('utf-8')).decode('ascii'),
     ])
     print(' '.join(cmd))
     process = subprocess.Popen(cmd,

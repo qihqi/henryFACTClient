@@ -1,12 +1,14 @@
 import io
 import datetime
+import time
 import json
 from operator import itemgetter
 import os
 import zipfile
 
-from bottle import request, response, abort, redirect, Bottle
+from bottle import request, response, abort, redirect, Bottle, static_file
 import barcode
+from sqlalchemy import and_
 
 from henry.base.auth import get_user
 from henry.base.common import parse_start_end_date
@@ -17,7 +19,6 @@ from henry.users.dao import Client
 
 from henry.accounting.acct_schema import NPayment
 from henry.product.dao import Store
-from henry.product.schema import NStore
 from henry.accounting.dao import Comment
 from henry.invoice.dao import (
         PaymentFormat,
@@ -35,6 +36,12 @@ from .coreapi import get_inv_db_instance
 from .util import get_or_generate_xml_paths, WS_PROD, WS_TEST, generate_xml_paths
 
 __author__ = 'han'
+
+REMAP_SRI_STATUS = {
+    SRINotaStatus.CREATED: 'NO ENVIADO',
+    SRINotaStatus.CREATED_SENT: 'VALIDADO',
+    SRINotaStatus.CREATED_SENT_VALIDATED: 'AUTORIZADO',
+}
 
 
 def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, jinja_env, workqueue, file_manager):
@@ -203,7 +210,8 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
             'address': store.address,
             'access_code': sri_nota.access_code,
             'ruc': sri_nota.almacen_ruc,
-            'svg_code': svg_code
+            'svg_code': svg_code,
+            'status': REMAP_SRI_STATUS.get(sri_nota.status, 'NO ENVIADO')
         }
         return doc, extra
 
@@ -219,29 +227,25 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
         return 'Documento con codigo {} no existe'.format(uid)
 
 
-
-    @w.get('/app/alm/<alm_id>/ultima_factura')
+    @w.get('/app/alm/<alm_id>/ultimas_facturas')
     @dbcontext
     @auth_decorator(0)
     def last_inv_print(alm_id):
-        nsri_nota, nstore = dbapi.db_session.query(NSRINota, NStore).filter(
-                NSRINota.almacen_ruc == NStore.ruc
-            ).filter(
-                NStore.almacen_id == alm_id).order_by(
-                    NSRINota.timestamp_received.desc()).first()
+        nsri_notas = dbapi.db_session.query(NSRINota).filter(
+            NSRINota.almacen_id == alm_id
+        ).order_by(
+            NSRINota.timestamp_received.desc()).limit(10).all()
 
-        if nsri_nota is None:
-            abort(404, 'No existe')
+        sri_notas = list(map(SRINota.from_db_instance, nsri_notas))
+        store = dbapi.getone(Store, almacen_id=alm_id)
 
+        for sri_nota in sri_notas:
+            sri_nota.should_send = sri_nota.status == SRINotaStatus.CREATED
+            sri_nota.status = REMAP_SRI_STATUS.get(sri_nota.status, '')
 
-        sri_nota = SRINota.from_db_instance(nsri_nota)
-        store = Store.from_db_instance(nstore)
-        doc, extra = sri_nota_to_nota_and_extra(sri_nota, nstore)
-
-        print(sri_nota.serialize())
-        temp = jinja_env.get_template('invoice/nota_impreso.html')
+        temp = jinja_env.get_template('invoice/ultimas_facturas.html')
         response.headers['Cache-Control'] = 'no-cache'
-        return temp.render(inv=doc, extra=extra)
+        return temp.render(notas=sri_notas, store=store)
 
     @w.get('/app/exportar_facturas')
     @dbcontext
@@ -354,18 +358,38 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
         end = request.query.get('end')
         temp = jinja_env.get_template('invoice/sync_invoices_form.html')
         stores = dbapi.search(Store, **{'ruc-ne': None})
-        if start is None or end is None:
-            return temp.render(rows=[], stores=rows)
+        all_status = [
+            dict(key='all', name='TODOS'),
+            dict(key=SRINotaStatus.CREATED, name='CREADO'),
+            dict(key=SRINotaStatus.CREATED_SENT, name='ENVIADO'),
+            dict(key=SRINotaStatus.CREATED_SENT_VALIDATED, name='AUTORIZADO'),
+            dict(key='invalid', name='INVALIDO'),
+        ]
+        if start is not None and end is not None:
+            datestrp = datetime.datetime.strptime
+            start_date = datestrp(start, "%Y-%m-%d")
+            end_date = datestrp(end, "%Y-%m-%d") + datetime.timedelta(days=1)
+            almacen_ruc = request.query.get('almacen_ruc')
+            status = request.query.get('status', 'todos')
+            query = dbapi.db_session.query(NSRINota).filter(
+                    and_(NSRINota.timestamp_received >= start_date,
+                    NSRINota.timestamp_received < end_date,
+                    NSRINota.almacen_ruc == almacen_ruc))
+            valid_status = (
+                    SRINotaStatus.CREATED,
+                    SRINotaStatus.CREATED_SENT,
+                    SRINotaStatus.CREATED_SENT_VALIDATED)
+            if status in valid_status:
+                query = query.filter(NSRINota.status == status)
+            elif status == 'invalid':
+                query = query.filter(NSRINota.status.not_in(valid_status))
+            res = query.all()
 
-        datestrp = datetime.datetime.strptime
-        start_date = datestrp(start, "%Y-%m-%d")
-        end_date = datestrp(end, "%Y-%m-%d")
-        almacen_ruc = request.query.get('almacen_ruc')
-        res = dbapi.search(SRINota, **{'timestamp_received-gte': start_date,
-                                       'timestamp_received-lte': end_date,
-                                       'almacen_ruc': almacen_ruc})
+
+        else:
+            res = []
         return temp.render(rows=res, stores=stores,
-                           start=start_date.date(), end=end_date.date())
+                           status=all_status, old_query=request.query)
 
     @w.get('/app/remote_nota/<uid>')
     @dbcontext
@@ -376,7 +400,8 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
         xml1 = None
         if sri_nota.xml_inv_signed_location:
             xml1 = file_manager.get_file(sri_nota.xml_inv_signed_location)
-        comm_results = sri_nota.load_comm_result(file_manager)
+        comm_results = reversed(list(
+            sri_nota.load_comm_result(file_manager)))
         temp = jinja_env.get_template('invoice/sri_nota_full.html')
         return temp.render(
             nota=sri_nota, json=json.dumps(json_inv, indent=4),
@@ -387,19 +412,14 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
     @auth_decorator(0)
     def get_nota_print(uid):
         sri_nota = dbapi.get(uid, SRINota)
-        print(sri_nota.serialize())
-        json_env = json.loads(
-            file_manager.get_file(sri_nota.json_inv_location))
-        doc = Invoice.deserialize(json_env)
-        extra = {
-            'ambiente': 'ambiente',
-            'direccion': 'direction',
-            'access_code': sri_nota.access_code
-        }
-        if doc:
-            temp = jinja_env.get_template('invoice/nota_impreso.html')
-            return temp.render(inv=doc, extra=extra)
-        return 'Documento con codigo {} no existe'.format(uid)
+        if sri_nota is None:
+            abort(404, 'No existe')
+
+        store = dbapi.getone(Store, almacen_id=sri_nota.almacen_id)
+        doc, extra = sri_nota_to_nota_and_extra(sri_nota, store)
+        temp = jinja_env.get_template('invoice/nota_impreso.html')
+        response.headers['Cache-Control'] = 'no-cache'
+        return temp.render(inv=doc, extra=extra)
 
     @w.post('/app/api/gen_xml/<uid>')
     @dbcontext
@@ -410,5 +430,92 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
             sri_nota, file_manager, jinja_env, dbapi)
 
         return {'result': signed_path}
+
+    # this function need to be idenpotent
+    @w.put('/app/api/post_sri_nota/<uid>')
+    @dbcontext
+    def post_sri_nota(uid):
+        sri_nota = dbapi.get(uid, SRINota)
+        relpath, signed_path = get_or_generate_xml_paths(
+            sri_nota, file_manager, jinja_env, dbapi)
+
+        if sri_nota.status == SRINotaStatus.CREATED:
+            fullpath = file_manager.make_fullpath(signed_path)
+            with open(fullpath, 'rb') as f:
+                xml_content = f.read()
+            ws = WS_PROD if SRI_ENV_PROD else WS_TEST
+            try:
+                ans = ws.validate(xml_content)
+            except Exception as e:
+                message = str(e)
+                result = CommResult(
+                    status='failed',
+                    request_type = 'ENVIAR',
+                    request_sent = xml_content.decode('utf-8'),
+                    response = message,
+                    environment = SRI_ENV_PROD,
+                    timestamp=datetime.datetime.now(),
+                )
+                sri_nota.append_comm_result(result, file_manager, dbapi)
+                dbapi.update(sri_nota, {
+                    'status': SRINotaStatus.VALIDATED_FAILED
+                })
+                return {'status': 'failed', 'msg': 'SRI no tiene servicio'}
+
+            result = CommResult(
+                status='success',
+                request_type = 'ENVIAR',
+                request_sent = xml_content.decode('utf-8'),
+                response = str(ans),
+                environment = SRI_ENV_PROD,
+                timestamp=datetime.datetime.now(),
+            )
+            sri_nota.append_comm_result(result, file_manager, dbapi)
+            dbapi.update(sri_nota, {
+                'status': SRINotaStatus.CREATED_SENT
+            })
+            time.sleep(0.5)
+            try:
+                status, text = ws.authorize(sri_nota.access_code)
+            except Exception as e:
+                message = str(e)
+                result = CommResult(
+                    status='failed',
+                    request_type = 'AUTORIZAR',
+                    request_sent = xml_content.decode('utf-8'),
+                    response = message,
+                    environment = SRI_ENV_PROD,
+                    timestamp=datetime.datetime.now(),
+                )
+                sri_nota.append_comm_result(result, file_manager, dbapi)
+                dbapi.update(sri_nota, {
+                    'status': SRINotaStatus.VALIDATED_FAILED
+                })
+                return {'status': 'failed', 'msg': 'SRI no tiene servicio'}
+
+            result = CommResult(
+                status=status,
+                request_type = 'AUTORIZAR',
+                request_sent = sri_nota.access_code,
+                response = text,
+                environment = SRI_ENV_PROD,
+                timestamp=datetime.datetime.now(),
+            )
+            sri_nota.append_comm_result(result, file_manager, dbapi)
+            dbapi.update(sri_nota, {
+                'status': status,
+            })
+
+        return {'status': 'success'}
+
+    @w.get('/app/remote_nota_xml/<uid>')
+    @dbcontext
+    def download_xml_redirect(uid):
+        sri_nota = dbapi.get(uid, SRINota)
+        fullpath = file_manager.make_fullpath(sri_nota.xml_inv_location)
+        dirname, fname = os.path.split(fullpath)
+        return static_file(fname, root=dirname, download=fname)
+
+
 
     return w

@@ -1,0 +1,72 @@
+<html>
+    <head>
+    <script src="https://code.jquery.com/jquery-3.6.1.min.js" integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
+    <script>
+        function esperar() {
+            $('#esp_area').show();
+            $('.actbutton').prop('disabled', true);
+        }
+        function regresar(){
+            $('#esp_area').hide();
+            $('.actbutton').prop('disabled', false);
+        }
+        function enviar_full(uid, should_send) {
+            var url = '/app/api/post_sri_nota/' + uid;
+            if (should_send) {
+                esperar();
+                $.ajax( {
+                    url: url,
+                    method: 'PUT',
+                    data: {uid: uid},
+                    success: function() {
+                        window.open('/app/nota_to_print/' + uid);
+                        location.reload();
+                    },
+                    failure: function(msg) {
+                        alert('Fallo en mandar: ' + msg);
+                        regresar();
+                    }
+                });
+            } else {
+                window.open('/app/nota_to_print/' + uid);
+            }
+
+        }
+
+    </script>
+    </head>
+    <body>
+        <div id="esp_area" class="fixed" style="display:none;">
+            <h2 style="margin: auto; text-align: center;">
+                Espere por favor ... </h2>
+        </div>
+        <h1>Facturas de  {{store.nombre}}</h1>
+        <button onclick="location.reload();"> Recargar </button>
+        <table>
+            <tr>
+                <td style="width: 150px;">Tiempo</td>
+                <td style="width: 80px;">Numero</td>
+                <td>Cliente</td>
+                <td style="width: 100px;">Total</td>
+                <td style="width: 80px;">Estado</td>
+                <td></td>
+            </tr>
+            {% for inv in notas %}
+            <tr>
+                <td>{{inv.orig_timestamp}} </td>
+                <td>{{inv.orig_codigo}} </td>
+                <td>{{inv.buyer_name}}</td>
+                <td>    {{inv.total}}</td>
+                <td>    {{inv.status}}</td>
+                <td>
+                    <button class="actbutton"
+                        onclick="enviar_full({{inv.uid}}, {% if inv.should_send %} true {%else%} false {%endif%});">
+                        {% if inv.should_send %}Enviar e{%endif%}
+                        Imprimir
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </body>
+</html>
