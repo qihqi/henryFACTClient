@@ -379,7 +379,10 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
                 query = query.filter(NSRINota.status == status)
             elif status == 'invalid':
                 query = query.filter(NSRINota.status.not_in(valid_status))
-            res = query.all()
+            res = list(map(SRINota.from_db_instance, query.all()))
+            for sri_nota in res:
+                sri_nota.status = REMAP_SRI_STATUS.get(
+                        sri_nota.status or '', 'INVALIDO')
 
         else:
             res = []
@@ -398,6 +401,7 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
         comm_results = reversed(list(
             sri_nota.load_comm_result(file_manager)))
         temp = jinja_env.get_template('invoice/sri_nota_full.html')
+        sri_nota.status = REMAP_SRI_STATUS.get(sri_nota.status or '', 'INVALIDO')
         return temp.render(
             nota=sri_nota, json=json.dumps(json_inv, indent=4),
             xml1=xml1, comm_results=comm_results)
@@ -412,7 +416,7 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
 
         store = dbapi.getone(Store, almacen_id=sri_nota.almacen_id)
         doc, extra = sri_nota_to_nota_and_extra(sri_nota, store)
-        temp = jinja_env.get_template('invoice/nota_impreso.html')
+        temp = jinja_env.get_template('invoice/nota_impreso2.html')
         response.headers['Cache-Control'] = 'no-cache'
         return temp.render(inv=doc, extra=extra)
 

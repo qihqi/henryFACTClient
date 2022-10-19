@@ -1,0 +1,111 @@
+<html>
+    <head>
+        <title>{{extra.name}}-{{inv.meta.codigo}}</title>
+        <style>
+            body {
+                text-align : center;
+            }
+            td {
+                font-size: 10px;
+            }
+            th {
+                font-size: 10px;
+            }
+            .cant {
+                text-align: right;
+                width: 5px;
+                font-size: 10px;
+            }
+            .codigo {
+                text-align: left;
+                font-size: 10px;
+            }
+
+            svg {
+                height: 50px;
+            }
+            p {
+                font-size: 10px;
+            }
+
+        </style>
+    </head>
+
+    <body onload="window.print();">
+        <table style="margin:auto; ">
+            <tr>
+                <td style="border: 1px solid">
+                    <h4>RUC: {{extra.ruc}}</h4> <!-- Quinal SA -->
+                    <h4> FACTURA </h5>
+                    <h4>No. 001-001-{{inv.meta.codigo}} </h4>
+                    <h4>{{extra.name}}</h4> <!-- Quinal SA -->
+                    <h5>Direccion: </h5>
+                    <p>{{ extra.address }}</p> <!-- Direction -->
+                </td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid">
+                    <h5> Estado: {{extra.status}}</h5>
+                    <h5> Ambiente: {{ extra.ambiente }}</h5>
+                    <h5> Emision: NORMAL </h5>
+                    <h5> Numero Autorizacion: </h5>
+                    <p>{{ extra.access_code }} </h5>
+                    <h5> Clave Aceso: </h5>
+                    {{ extra.svg_code | safe }}
+                    <p> {{ extra.access_code }}</p>
+                </td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid">
+            <p width=100><b>Fecha de emision:</b> {{inv.meta.timestamp.date().isoformat()}}</p>
+            <p><b>Identificacion:</b> {{inv.meta.client.codigo}}</p>
+            <p><b>Razon Social: </b>{{inv.meta.client.fullname}}</p>
+            <p><b>Direccion:</b></p>
+                <p>{% if inv.meta.client.direccion %} {{inv.meta.client.direccion}}{%endif%}</p>
+                </td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid">
+                    <table align="center">
+                        <tr>
+                            <th  class="codigo">Cod Principal</th>
+                            <th width=150 class="cant">Cant</th>
+                            <th>Descripcion</th>
+                            <th class="cant">Precio Unitario</th>
+                            <th class="cant">Descuento</th>
+                            <th class="cant">Precio Total</th>
+                        </tr>
+                        {% for i in inv.items %}
+                        <tr>
+                            <td>{{i.prod.prod_id}}</td>
+                            <td class="cant">{{ i.cant }}</td>
+                            <td>{{i.prod.nombre}}</td>
+                            <td class="cant">{{ value_from_cents(i.prod.precio1) }}</td>
+                            <td class="cant">{{ 0 }} </td>
+                            <td class="cant">{{ value_from_cents(i.prod.precio1 * i.cant) }}</td>
+                        </tr>
+                        {%endfor %}
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid">
+                    <table style="margin:auto;">
+                        <tr>
+                            <th class="cant"> Subtotal: </th>
+                            <td class="cant"> {{value_from_cents(inv.meta.subtotal)}}</td>
+                            <th class="cant"> Descuento: </th>
+                            <td class="cant"> {{value_from_cents(inv.meta.discount)}}</td>
+                            <th class="cant"> IVA: </th>
+                            <td class="cant"> {{value_from_cents(inv.meta.tax)}}</td>
+                            <th class="cant"> Total: </th>
+                            <td class="cant"> {{value_from_cents(inv.meta.total)}} </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+
+        </table>
+        <!--items-->
+    </body>
+</html>
