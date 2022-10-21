@@ -178,6 +178,26 @@ def make_nota_all(url_prefix: str, dbapi: DBApiGeneric,
 
         return {'result': signed_path}
 
+    @api.get('{}/mark_remote_nota_as_valid/<uid>')
+    @dbcontext
+    def mark_remote_nota_as_valid(uid):
+        uid = int(uid)
+        sri_nota = dbapi.get(uid, SRINota)
+        result = CommResult(
+            status='success',
+            request_type='AUTORIZAR',
+            request_sent='',
+            response='Marcado manualmente como autorizado',
+            environment=SRI_ENV_PROD,
+            timestamp=datetime.datetime.now(),
+        )
+        sri_nota.append_comm_result(result, file_manager, dbapi)
+        dbapi.update(sri_nota, {
+            'status': SRINotaStatus.CREATED_SENT_VALIDATED
+        })
+
+        return {'status': 'success'}
+
     @api.get('{}/remote_nota'.format(url_prefix))
     def get_extended_nota():
         start = request.query.get('start')
