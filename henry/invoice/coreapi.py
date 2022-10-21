@@ -14,6 +14,7 @@ import datetime
 from henry.base.serialization import json_dumps, decode_str, SerializableData
 from henry.base.session_manager import DBContext
 from henry.dao.document import Status
+from henry.base.common import HenryException
 
 from henry.product.dao import Store, PriceList, create_items_chain
 from henry.users.dao import User, Client
@@ -21,9 +22,8 @@ from henry.users.dao import User, Client
 from .coreschema import NNota
 from .dao import Invoice, NotaExtra, SRINota, SRINotaStatus, CommResult
 from .util import compute_access_code
-from .util import get_or_generate_xml_paths, WS_PROD, WS_TEST, sri_nota_to_nota_and_extra
+from .util import get_or_generate_xml_paths, sri_nota_to_nota_and_extra
 
-from henry.constants import SRI_ENV_PROD
 
 __author__ = 'han'
 
@@ -54,8 +54,15 @@ def fix_inv_by_options(dbapi, inv, options):
             item.prod.cant_mayorista = Decimal(item.prod.cant_mayorista) / 1000
 
         # this is an effort so that the prod coming from
-        # invoice is incomplete. So it attempts so complete it with updated data
-        if getattr(item.prod, 'upi', None) is None or getattr(item.prod, 'almacen_id', None) is None:
+        # invoice is incomplete. So it attempts so complete it with updated
+        # data
+        if getattr(
+                item.prod,
+                'upi',
+                None) is None or getattr(
+                item.prod,
+                'almacen_id',
+                None) is None:
             alm_id = item.prod.almacen_id or inv.meta.almacen_id
             if alm_id != 2:
                 alm_id = 1
@@ -127,11 +134,20 @@ def create_prod_if_not_exist(dbapi, inv):
 
 def make_nota_api(
         url_prefix, dbapi, actionlogged,
-        invapi, auth_decorator, pedidoapi, workerqueue, jinja_env):
+        invapi, auth_decorator, pedidoapi, workerqueue, jinja_env,
+        quinal_ws, corp_ws):
     api = Bottle()
     dbcontext = DBContext(dbapi.session)
     file_manager = invapi.filemanager
     # ########## NOTA ############################
+
+    def alm_id_to_ws(alm_id):
+        if alm_id == 1:
+            return quinal_ws
+        elif alm_id == 3:
+            return corp_ws
+        else:
+            raise HenryException('Almacen id invalid')
 
     @api.post('{}/nota'.format(url_prefix))
     @dbcontext
@@ -206,7 +222,8 @@ def make_nota_api(
             sri_nota.xml_inv_location = ''
             sri_nota.xml_inv_signed_location = ''
             sri_nota.all_comm_path = ''
-            sri_nota.access_code = compute_access_code(inv)
+            ws = alm_id_to_ws(sri_nota.almacen_id)
+            sri_nota.access_code = compute_access_code(inv, ws)
             dbapi.create(sri_nota)
 
         return {'status': inv.meta.status, 'access_code': sri_nota.access_code}
@@ -247,7 +264,9 @@ def make_nota_api(
             abort(404, 'No existe')
 
         store = dbapi.getone(Store, almacen_id=sri_nota.almacen_id)
-        doc, extra = sri_nota_to_nota_and_extra(sri_nota, store, file_manager)
+        ws = alm_id_to_ws(sri_nota.almacen_id)
+        doc, extra = sri_nota_to_nota_and_extra(
+            sri_nota, store, file_manager, ws)
         temp = jinja_env.get_template('invoice/nota_impreso_matrix.txt')
         return temp.render(inv=doc, extra=extra)
 
@@ -256,14 +275,16 @@ def make_nota_api(
     @dbcontext
     def post_sri_nota(uid):
         sri_nota = dbapi.get(uid, SRINota)
+        ws = alm_id_to_ws(sri_nota.almacen_id)
         relpath, signed_path = get_or_generate_xml_paths(
-            sri_nota, file_manager, jinja_env, dbapi)
+            sri_nota, file_manager, jinja_env, dbapi, ws)
 
         if sri_nota.status == SRINotaStatus.CREATED:
             fullpath = file_manager.make_fullpath(signed_path)
             with open(fullpath, 'rb') as f:
                 xml_content = f.read()
-            ws = WS_PROD if SRI_ENV_PROD else WS_TEST
+            ws = alm_id_to_ws(sri_nota.almacen_id)
+
             try:
                 ans = ws.validate(xml_content)
             except Exception as e:
@@ -273,7 +294,7 @@ def make_nota_api(
                     request_type='ENVIAR',
                     request_sent=xml_content.decode('utf-8'),
                     response=message,
-                    environment=SRI_ENV_PROD,
+                    environment=ws.name == 'PRODUCCION',
                     timestamp=datetime.datetime.now(),
                 )
                 sri_nota.append_comm_result(result, file_manager, dbapi)
@@ -287,7 +308,7 @@ def make_nota_api(
                 request_type='ENVIAR',
                 request_sent=xml_content.decode('utf-8'),
                 response=str(ans),
-                environment=SRI_ENV_PROD,
+                environment=ws.name == 'PRODUCCION',
                 timestamp=datetime.datetime.now(),
             )
             sri_nota.append_comm_result(result, file_manager, dbapi)
@@ -304,7 +325,7 @@ def make_nota_api(
                     request_type='AUTORIZAR',
                     request_sent=xml_content.decode('utf-8'),
                     response=message,
-                    environment=SRI_ENV_PROD,
+                    environment=ws.name == 'PRODUCCION',
                     timestamp=datetime.datetime.now(),
                 )
                 sri_nota.append_comm_result(result, file_manager, dbapi)
@@ -318,7 +339,7 @@ def make_nota_api(
                 request_type='AUTORIZAR',
                 request_sent=sri_nota.access_code,
                 response=text,
-                environment=SRI_ENV_PROD,
+                environment=ws.name == 'PRODUCCION',
                 timestamp=datetime.datetime.now(),
             )
             sri_nota.append_comm_result(result, file_manager, dbapi)

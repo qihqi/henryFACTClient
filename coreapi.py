@@ -2,7 +2,8 @@ from beaker.middleware import SessionMiddleware
 from bottle import Bottle
 from henry.base.dbapi import DBApiGeneric
 from henry.coreconfig import (BEAKER_SESSION_OPTS, invapi, auth_decorator, pedidoapi,
-                              sessionmanager, actionlogged)
+                              sessionmanager, actionlogged,
+                              quinal_ws, corp_ws)
 from henry.invoice.coreapi import make_nota_api
 from henry.product.coreapi import make_search_pricelist_api
 from henry.users.coreapi import make_client_coreapi
@@ -17,7 +18,8 @@ queryprod = make_search_pricelist_api('/api', actionlogged=actionlogged, dbapi=d
 invoice = make_nota_api(
     '/api',
     dbapi=dbapi, actionlogged=actionlogged, invapi=invapi, auth_decorator=auth_decorator,
-    pedidoapi=pedidoapi, workerqueue=None, jinja_env=jinja_env)
+    pedidoapi=pedidoapi, workerqueue=None,
+    jinja_env=jinja_env, quinal_ws=quinal_ws, corp_ws=corp_ws)
 # GET CLIENT + AUTH
 clientapis = make_client_coreapi('/api', dbapi, actionlogged)
 

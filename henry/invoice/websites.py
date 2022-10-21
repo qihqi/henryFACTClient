@@ -7,11 +7,10 @@ import os
 import zipfile
 
 from bottle import request, response, abort, redirect, Bottle, static_file
-import barcode
 from sqlalchemy import and_
 
 from henry.base.auth import get_user
-from henry.base.common import parse_start_end_date
+from henry.base.common import parse_start_end_date, HenryException
 from henry.base.serialization import json_dumps
 from henry.base.session_manager import DBContext
 from henry.dao.document import Status
@@ -24,28 +23,43 @@ from henry.invoice.dao import (
     PaymentFormat,
     InvMetadata,
     SRINota,
-    Invoice,
     SRINotaStatus,
     CommResult,
 )
-from henry.constants import SRI_ENV_PROD
 
 from .coreschema import NNota, NSRINota
 from .coreapi import get_inv_db_instance
 from .util import (
-        get_or_generate_xml_paths,
-        WS_PROD,
-        WS_TEST,
-        generate_xml_paths,
-        sri_nota_to_nota_and_extra,
-        REMAP_SRI_STATUS
-        )
+    get_or_generate_xml_paths,
+    generate_xml_paths,
+    sri_nota_to_nota_and_extra,
+    REMAP_SRI_STATUS
+)
 
 __author__ = 'han'
 
-def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, jinja_env, workqueue, file_manager):
+
+def make_invoice_wsgi(
+        dbapi,
+        auth_decorator,
+        actionlogged,
+        invapi,
+        pedidoapi,
+        jinja_env,
+        workqueue,
+        file_manager,
+        quinal_ws,
+        corp_ws):
     w = Bottle()
     dbcontext = DBContext(dbapi.session)
+
+    def alm_id_to_ws(alm_id):
+        if alm_id == 1:
+            return quinal_ws
+        elif alm_id == 3:
+            return corp_ws
+        else:
+            raise HenryException('Almacen id invalid')
 
     @w.get('/app/list_facturas')
     @dbcontext
@@ -191,7 +205,11 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
 
         temp = jinja_env.get_template('client_stat.html')
         client = dbapi.get(uid, Client)  # clientapi.get(uid)
-        return temp.render(client=client, activities=all_data, compra=compra, pago=pago)
+        return temp.render(
+            client=client,
+            activities=all_data,
+            compra=compra,
+            pago=pago)
 
     @w.get('/app/alm/<alm_id>/ultimas_facturas')
     @dbcontext
@@ -256,8 +274,9 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
         with zipfile.ZipFile(content, 'w') as zfile:
             for k in query:
                 sri_nota = SRINota.from_db_instance(k)
+                ws = alm_id_to_ws(sri_nota.almacen_id)
                 relpath, signed_path = get_or_generate_xml_paths(
-                    sri_nota, file_manager, jinja_env, dbapi)
+                    sri_nota, file_manager, jinja_env, dbapi, ws)
                 fullpath = file_manager.make_fullpath(signed_path)
                 name = os.path.basename(fullpath)
                 zfile.write(fullpath, arcname=name)
@@ -273,12 +292,13 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
     def validate_nota():
         uid = request.forms.get('uid')
         sri_nota = dbapi.get(uid, SRINota)
+        ws = alm_id_to_ws(sri_nota.almacen_id)
         xml, xml_signed = get_or_generate_xml_paths(
-            sri_nota, file_manager, jinja_env, dbapi)
+            sri_nota, file_manager, jinja_env, dbapi, ws)
         fullpath = file_manager.make_fullpath(xml_signed)
         with open(fullpath, 'rb') as f:
             xml_content = f.read()
-        ws = WS_PROD if SRI_ENV_PROD else WS_TEST
+        ws = alm_id_to_ws(sri_nota.almacen_id)
         try:
             ans = ws.validate(xml_content)
         except ConnectionError:
@@ -289,7 +309,7 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
             request_type='ENVIAR',
             request_sent=xml_content.decode('utf-8'),
             response=str(ans),
-            environment=SRI_ENV_PROD,
+            environment=ws.name == 'PRODUCCION',
             timestamp=datetime.datetime.now(),
         )
         sri_nota.append_comm_result(result, file_manager, dbapi)
@@ -303,7 +323,7 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
     def autorize_remote():
         uid = request.forms.get('uid')
         sri_nota = dbapi.get(uid, SRINota)
-        ws = WS_PROD if SRI_ENV_PROD else WS_TEST
+        ws = alm_id_to_ws(sri_nota.almacen_id)
         status, text = ws.authorize(sri_nota.access_code)
 
         result = CommResult(
@@ -311,7 +331,7 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
             request_type='AUTORIZAR',
             request_sent=sri_nota.access_code,
             response=text,
-            environment=SRI_ENV_PROD,
+            environment=ws.name == 'PRODUCCION',
             timestamp=datetime.datetime.now(),
         )
         sri_nota.append_comm_result(result, file_manager, dbapi)
@@ -355,7 +375,7 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
             res = list(map(SRINota.from_db_instance, query.all()))
             for sri_nota in res:
                 sri_nota.status = REMAP_SRI_STATUS.get(
-                        sri_nota.status or '', 'INVALIDO')
+                    sri_nota.status or '', 'INVALIDO')
 
         else:
             res = []
@@ -374,7 +394,8 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
         comm_results = reversed(list(
             sri_nota.load_comm_result(file_manager)))
         temp = jinja_env.get_template('invoice/sri_nota_full.html')
-        sri_nota.status = REMAP_SRI_STATUS.get(sri_nota.status or '', 'INVALIDO')
+        sri_nota.status = REMAP_SRI_STATUS.get(
+            sri_nota.status or '', 'INVALIDO')
         return temp.render(
             nota=sri_nota, json=json.dumps(json_inv, indent=4),
             xml1=xml1, comm_results=comm_results)
@@ -388,7 +409,9 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
             abort(404, 'No existe')
 
         store = dbapi.getone(Store, almacen_id=sri_nota.almacen_id)
-        doc, extra = sri_nota_to_nota_and_extra(sri_nota, store, file_manager)
+        ws = alm_id_to_ws(sri_nota.almacen_id)
+        doc, extra = sri_nota_to_nota_and_extra(
+            sri_nota, store, file_manager, ws)
         temp = jinja_env.get_template('invoice/nota_impreso.html')
         response.headers['Cache-Control'] = 'no-cache'
         return temp.render(inv=doc, extra=extra)
@@ -398,8 +421,9 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
     def gen_xml(uid):
         uid = int(uid)
         sri_nota = dbapi.get(uid, SRINota)
+        ws = alm_id_to_ws(sri_nota.almacen_id)
         relpath, signed_path = generate_xml_paths(
-            sri_nota, file_manager, jinja_env, dbapi)
+            sri_nota, file_manager, jinja_env, dbapi, ws)
 
         return {'result': signed_path}
 
@@ -408,12 +432,13 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
     def mark_remote_nota_as_valid(uid):
         uid = int(uid)
         sri_nota = dbapi.get(uid, SRINota)
+        ws = alm_id_to_ws(sri_nota.almacen_id)
         result = CommResult(
             status='success',
             request_type='AUTORIZAR',
             request_sent='',
             response='Marcado manualmente como autorizado',
-            environment=SRI_ENV_PROD,
+            environment=ws.name == 'PRODUCCION',
             timestamp=datetime.datetime.now(),
         )
         sri_nota.append_comm_result(result, file_manager, dbapi)
@@ -428,14 +453,15 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
     @dbcontext
     def post_sri_nota(uid):
         sri_nota = dbapi.get(uid, SRINota)
+        ws = alm_id_to_ws(sri_nota.almacen_id)
         relpath, signed_path = get_or_generate_xml_paths(
-            sri_nota, file_manager, jinja_env, dbapi)
+            sri_nota, file_manager, jinja_env, dbapi, ws)
 
         if sri_nota.status == SRINotaStatus.CREATED:
             fullpath = file_manager.make_fullpath(signed_path)
             with open(fullpath, 'rb') as f:
                 xml_content = f.read()
-            ws = WS_PROD if SRI_ENV_PROD else WS_TEST
+            ws = alm_id_to_ws(sri_nota.almacen_id)
             try:
                 ans = ws.validate(xml_content)
             except Exception as e:
@@ -445,7 +471,7 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
                     request_type='ENVIAR',
                     request_sent=xml_content.decode('utf-8'),
                     response=message,
-                    environment=SRI_ENV_PROD,
+                    environment=ws.name == 'PRODUCCION',
                     timestamp=datetime.datetime.now(),
                 )
                 sri_nota.append_comm_result(result, file_manager, dbapi)
@@ -459,7 +485,7 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
                 request_type='ENVIAR',
                 request_sent=xml_content.decode('utf-8'),
                 response=str(ans),
-                environment=SRI_ENV_PROD,
+                environment=ws.name == 'PRODUCCION',
                 timestamp=datetime.datetime.now(),
             )
             sri_nota.append_comm_result(result, file_manager, dbapi)
@@ -476,7 +502,7 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
                     request_type='AUTORIZAR',
                     request_sent=xml_content.decode('utf-8'),
                     response=message,
-                    environment=SRI_ENV_PROD,
+                    environment=ws.name == 'PRODUCCION',
                     timestamp=datetime.datetime.now(),
                 )
                 sri_nota.append_comm_result(result, file_manager, dbapi)
@@ -490,7 +516,7 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
                 request_type='AUTORIZAR',
                 request_sent=sri_nota.access_code,
                 response=text,
-                environment=SRI_ENV_PROD,
+                environment=ws.name == 'PRODUCCION',
                 timestamp=datetime.datetime.now(),
             )
             sri_nota.append_comm_result(result, file_manager, dbapi)
@@ -507,6 +533,5 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
         fullpath = file_manager.make_fullpath(sri_nota.xml_inv_location)
         dirname, fname = os.path.split(fullpath)
         return static_file(fname, root=dirname, download=fname)
-
 
     return w

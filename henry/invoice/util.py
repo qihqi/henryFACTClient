@@ -53,19 +53,6 @@ class WsEnvironment:
         return status, text
 
 
-WS_PROD = WsEnvironment(
-    'PRODUCCION', '2',
-    'https://cel.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl',
-    'https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl'
-)
-
-WS_TEST = WsEnvironment(
-    'PRUEBA',
-    '1',
-    'https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline?wsdl',
-    'https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl'
-)
-
 ID_TO_CERT_PATH = {
     1: {
         'key': constants.P12_KEY_QUINAL,
@@ -78,7 +65,7 @@ ID_TO_CERT_PATH = {
 }
 
 
-def compute_access_code(inv: Invoice):
+def compute_access_code(inv: Invoice, ws: WsEnvironment):
     timestamp = inv.meta.timestamp
     assert timestamp is not None
     fecha = '{:02}{:02}{:04}'.format(
@@ -90,7 +77,7 @@ def compute_access_code(inv: Invoice):
     codigo_numero = '12345678'  # puede ser lo q sea de 8 digitos
     tipo_emision = '1'
     serie = '001001'
-    ambiente = '2' if constants.SRI_ENV_PROD else '1' # 1 = prueba 2 = prod
+    ambiente = ws.code  # 1 = prueba 2 = prod
 
     access_key_48 = ''.join(
         [fecha, tipo_comp, ruc, ambiente, serie, numero, codigo_numero, tipo_emision])
@@ -113,7 +100,8 @@ def guess_id_type(client_id):
     return IdType.CONS_FINAL
 
 
-def inv_to_sri_dict(inv: Invoice, sri_nota: SRINota, dbapi: DBApiGeneric) -> Optional[Dict]:
+def inv_to_sri_dict(inv: Invoice, sri_nota: SRINota,
+                    dbapi: DBApiGeneric, ws: WsEnvironment) -> Optional[Dict]:
     """Return the dict used to render xml."""
     assert inv.meta
     assert inv.meta.client
@@ -128,7 +116,7 @@ def inv_to_sri_dict(inv: Invoice, sri_nota: SRINota, dbapi: DBApiGeneric) -> Opt
     ts = inv.meta.timestamp
     access = sri_nota.access_code
     if access is None:
-        access = compute_access_code(inv)
+        access = compute_access_code(inv, ws)
     if tipo_ident == IdType.CONS_FINAL:
         comprador = 'CONSUMIDOR FINAL'
         id_compra = '9999999999999'
@@ -140,7 +128,7 @@ def inv_to_sri_dict(inv: Invoice, sri_nota: SRINota, dbapi: DBApiGeneric) -> Opt
     assert inv.meta.codigo is not None
     assert store is not None
     res = {
-        'ambiente': 2 if constants.SRI_ENV_PROD else 1,
+        'ambiente': ws.code,
         'razon_social': store.nombre,
         'ruc': store.ruc,
         'clave_acceso': access,
@@ -182,13 +170,14 @@ def inv_to_sri_dict(inv: Invoice, sri_nota: SRINota, dbapi: DBApiGeneric) -> Opt
     return res
 
 
-def generate_xml_paths(sri_nota: SRINota, file_manager, jinja_env, dbapi):
+def generate_xml_paths(sri_nota: SRINota,
+                       file_manager, jinja_env, dbapi, ws):
     inv = sri_nota.load_nota(file_manager)
     if inv is None:
         raise HenryException(
             'Inv corresponding a {} not found'.format(sri_nota.uid))
 
-    xml_dict = inv_to_sri_dict(inv, sri_nota, dbapi)
+    xml_dict = inv_to_sri_dict(inv, sri_nota, dbapi, ws)
     if xml_dict is None:
         return None, None
     xml_text = jinja_env.get_template(
@@ -215,13 +204,22 @@ def generate_xml_paths(sri_nota: SRINota, file_manager, jinja_env, dbapi):
     return sri_nota.xml_inv_location, sri_nota.xml_inv_signed_location
 
 
-def get_or_generate_xml_paths(sri_nota: SRINota, file_manager, jinja_env, dbapi):
+def get_or_generate_xml_paths(
+        sri_nota: SRINota,
+        file_manager,
+        jinja_env,
+        dbapi,
+        ws):
     if not sri_nota.xml_inv_location or not sri_nota.xml_inv_signed_location:
-        return generate_xml_paths(sri_nota, file_manager, jinja_env, dbapi)
+        return generate_xml_paths(sri_nota, file_manager, jinja_env, dbapi, ws)
     return sri_nota.xml_inv_location, sri_nota.xml_inv_signed_location
 
 
-def sri_nota_to_nota_and_extra(sri_nota: SRINota, store: Store, file_manager):
+def sri_nota_to_nota_and_extra(
+        sri_nota: SRINota,
+        store: Store,
+        file_manager,
+        ws: WsEnvironment):
     json_env = json.loads(
         file_manager.get_file(sri_nota.json_inv_location))
     doc = Invoice.deserialize(json_env)
@@ -237,7 +235,7 @@ def sri_nota_to_nota_and_extra(sri_nota: SRINota, store: Store, file_manager):
         doc.meta.client.codigo = '9999999999999'
 
     extra = {
-        'ambiente': 'PRODUCCION' if constants.SRI_ENV_PROD else 'PRUEBA',
+        'ambiente': ws.name,
         'name': store.nombre,
         'address': store.address,
         'access_code': sri_nota.access_code,
