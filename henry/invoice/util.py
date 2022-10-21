@@ -1,6 +1,8 @@
+import json
 from decimal import Decimal
 from typing import Optional, Dict, cast, List
 import zeep
+import barcode
 
 from henry.xades import xades
 from henry.base.dbapi import DBApiGeneric
@@ -8,6 +10,12 @@ from henry.base.common import HenryException
 from henry.invoice.dao import Invoice, SRINota, SRINotaStatus
 from henry.product.dao import Store
 from henry import constants
+
+REMAP_SRI_STATUS = {
+    SRINotaStatus.CREATED: 'NO ENVIADO',
+    SRINotaStatus.CREATED_SENT: 'VALIDADO',
+    SRINotaStatus.CREATED_SENT_VALIDATED: 'AUTORIZADO',
+}
 
 
 class WsEnvironment:
@@ -70,7 +78,7 @@ ID_TO_CERT_PATH = {
 }
 
 
-def compute_access_code(inv: Invoice, is_prod: bool):
+def compute_access_code(inv: Invoice):
     timestamp = inv.meta.timestamp
     assert timestamp is not None
     fecha = '{:02}{:02}{:04}'.format(
@@ -82,7 +90,7 @@ def compute_access_code(inv: Invoice, is_prod: bool):
     codigo_numero = '12345678'  # puede ser lo q sea de 8 digitos
     tipo_emision = '1'
     serie = '001001'
-    ambiente = '1'  # 1 = prueba 2 = prod
+    ambiente = '2' if constants.SRI_ENV_PROD else '1' # 1 = prueba 2 = prod
 
     access_key_48 = ''.join(
         [fecha, tipo_comp, ruc, ambiente, serie, numero, codigo_numero, tipo_emision])
@@ -120,7 +128,7 @@ def inv_to_sri_dict(inv: Invoice, sri_nota: SRINota, dbapi: DBApiGeneric) -> Opt
     ts = inv.meta.timestamp
     access = sri_nota.access_code
     if access is None:
-        access = compute_access_code(inv, False)
+        access = compute_access_code(inv)
     if tipo_ident == IdType.CONS_FINAL:
         comprador = 'CONSUMIDOR FINAL'
         id_compra = '9999999999999'
@@ -211,3 +219,30 @@ def get_or_generate_xml_paths(sri_nota: SRINota, file_manager, jinja_env, dbapi)
     if not sri_nota.xml_inv_location or not sri_nota.xml_inv_signed_location:
         return generate_xml_paths(sri_nota, file_manager, jinja_env, dbapi)
     return sri_nota.xml_inv_location, sri_nota.xml_inv_signed_location
+
+
+def sri_nota_to_nota_and_extra(sri_nota: SRINota, store: Store, file_manager):
+    json_env = json.loads(
+        file_manager.get_file(sri_nota.json_inv_location))
+    doc = Invoice.deserialize(json_env)
+    if not doc:
+        raise HenryException('Documento con codigo {} no existe'.format(
+            sri_nota.uid))
+
+    bcode = barcode.Gs1_128(sri_nota.access_code)
+    svg_code = bcode.render().decode('utf-8')
+    index = svg_code.find('<svg')
+    svg_code = svg_code[index:]
+    if doc.meta.client.codigo == 'NA':
+        doc.meta.client.codigo = '9999999999999'
+
+    extra = {
+        'ambiente': 'PRODUCCION' if constants.SRI_ENV_PROD else 'PRUEBA',
+        'name': store.nombre,
+        'address': store.address,
+        'access_code': sri_nota.access_code,
+        'ruc': sri_nota.almacen_ruc,
+        'svg_code': svg_code,
+        'status': REMAP_SRI_STATUS.get(sri_nota.status or '', 'NO ENVIADO')
+    }
+    return doc, extra

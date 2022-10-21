@@ -11,7 +11,7 @@
             $('.actbutton').prop('disabled', false);
         }
         function enviar_full(uid, should_send) {
-            var url = '/app/api/post_sri_nota/' + uid;
+            var url = '/api/post_sri_nota/' + uid;
             if (should_send) {
                 esperar();
                 $.ajax( {

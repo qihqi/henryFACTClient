@@ -30,19 +30,18 @@ from henry.invoice.dao import (
 )
 from henry.constants import SRI_ENV_PROD
 
-from .coreschema import NNota
-from .schema import NSRINota
+from .coreschema import NNota, NSRINota
 from .coreapi import get_inv_db_instance
-from .util import get_or_generate_xml_paths, WS_PROD, WS_TEST, generate_xml_paths
+from .util import (
+        get_or_generate_xml_paths,
+        WS_PROD,
+        WS_TEST,
+        generate_xml_paths,
+        sri_nota_to_nota_and_extra,
+        REMAP_SRI_STATUS
+        )
 
 __author__ = 'han'
-
-REMAP_SRI_STATUS = {
-    SRINotaStatus.CREATED: 'NO ENVIADO',
-    SRINotaStatus.CREATED_SENT: 'VALIDADO',
-    SRINotaStatus.CREATED_SENT_VALIDATED: 'AUTORIZADO',
-}
-
 
 def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, jinja_env, workqueue, file_manager):
     w = Bottle()
@@ -193,32 +192,6 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
         temp = jinja_env.get_template('client_stat.html')
         client = dbapi.get(uid, Client)  # clientapi.get(uid)
         return temp.render(client=client, activities=all_data, compra=compra, pago=pago)
-
-    def sri_nota_to_nota_and_extra(sri_nota: SRINota, store: Store):
-        json_env = json.loads(
-            file_manager.get_file(sri_nota.json_inv_location))
-        doc = Invoice.deserialize(json_env)
-        if not doc:
-            abort(404, 'Documento con codigo {} no existe'.format(
-                sri_nota.uid))
-
-        bcode = barcode.Gs1_128(sri_nota.access_code)
-        svg_code = bcode.render().decode('utf-8')
-        index = svg_code.find('<svg')
-        svg_code = svg_code[index:]
-        if doc.meta.client.codigo == 'NA':
-            doc.meta.client.codigo = '9999999999999'
-
-        extra = {
-            'ambiente': 'PRODUCCION' if SRI_ENV_PROD else 'PRUEBA',
-            'name': store.nombre,
-            'address': store.address,
-            'access_code': sri_nota.access_code,
-            'ruc': sri_nota.almacen_ruc,
-            'svg_code': svg_code,
-            'status': REMAP_SRI_STATUS.get(sri_nota.status or '', 'NO ENVIADO')
-        }
-        return doc, extra
 
     @w.get('/app/alm/<alm_id>/ultimas_facturas')
     @dbcontext
@@ -415,8 +388,8 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
             abort(404, 'No existe')
 
         store = dbapi.getone(Store, almacen_id=sri_nota.almacen_id)
-        doc, extra = sri_nota_to_nota_and_extra(sri_nota, store)
-        temp = jinja_env.get_template('invoice/nota_impreso2.html')
+        doc, extra = sri_nota_to_nota_and_extra(sri_nota, store, file_manager)
+        temp = jinja_env.get_template('invoice/nota_impreso.html')
         response.headers['Cache-Control'] = 'no-cache'
         return temp.render(inv=doc, extra=extra)
 
@@ -505,7 +478,7 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
                 'status': status,
             })
 
-        return {'status': 'success'}
+        return {'status': 'success', 'access_code': sri_nota.access_code}
 
     @w.get('/app/remote_nota_xml/<uid>')
     @dbcontext
@@ -514,5 +487,6 @@ def make_invoice_wsgi(dbapi, auth_decorator, actionlogged, invapi, pedidoapi, ji
         fullpath = file_manager.make_fullpath(sri_nota.xml_inv_location)
         dirname, fname = os.path.split(fullpath)
         return static_file(fname, root=dirname, download=fname)
+
 
     return w

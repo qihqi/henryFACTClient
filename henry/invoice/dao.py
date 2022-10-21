@@ -12,8 +12,7 @@ from henry.dao.document import MetaItemSet, Item
 from henry.product.dao import InventoryMovement, ProdItem, InvMovementType, get_real_prod_id
 from henry.users.dao import Client
 
-from .coreschema import NNota, NNotaExtra
-from .schema import NSRINota
+from .coreschema import NNota, NNotaExtra, NSRINota
 from henry.base.fileservice import FileService
 
 __author__ = 'han'

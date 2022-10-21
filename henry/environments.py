@@ -27,6 +27,32 @@ def decimal_places(dec, places='0.01'):
 def normalize_decimal(dec):
     return ('%f' % dec).rstrip('0').rstrip('.')
 
+def shorten_to(line, max_line_size):
+    if len(line) <= max_line_size:
+        return line
+    tokens = line.split()
+    new_toks = [t[:5] for t in tokens]
+    new_line = ' '.join(new_toks)
+    if new_line > max_line_size:
+        new_line = new_line[:max_line_size]
+    return new_line
+
+
+def left_right_just(first, second, max_line_size):
+    spaces = max_line_size - len(first) - len(second)
+    return '{}{}{}'.format(first, ' ' * spaces, second)
+
+
+def format_invoice_line(row, max_line_size):
+    # make sure product is within max_line_size
+    desc = shorten_to(row.prod.nombre, max_line_size)
+    p = value_from_cents(row.prod.precio1)
+    first_elem = '{} x {:.2f}'.format(row.cant, p)
+    second_elem = '{:.2f}'.format(row.cant * p)
+    return '{}\n{}'.format(
+            desc, left_right_just(first_elem, second_elem, max_line_size))
+
+
 
 def make_jinja_env(template_paths):
     jinja_env = Environment(loader=FileSystemLoader(template_paths),
@@ -43,5 +69,7 @@ def make_jinja_env(template_paths):
         'display_date': display_date,
         'decimal_places': decimal_places,
         'normalize_decimal': normalize_decimal,
+        'format_invoice_line': format_invoice_line,
+        'left_right_just': left_right_just,
     })
     return jinja_env

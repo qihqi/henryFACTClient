@@ -7,8 +7,8 @@ __author__ = 'han'
 class NSRINota(Base):
     __tablename__ = 'sri_notas'
 
-    # id
-    uid = Column(Integer, primary_key=True, autoincrement=True)
+    # id, this is the same as NNotai.d
+    uid = Column(Integer, primary_key=True)
 
     almacen_id = Column(Integer)
     almacen_ruc = Column(String(100))

@@ -69,7 +69,7 @@ def inv_to_sri_dict(inv: Invoice, sri_nota: SRINota) -> Optional[Dict]:
     ts = inv.meta.timestamp
     access = sri_nota.access_code
     if access is None:
-        access = compute_access_code(inv, False)
+        access = compute_access_code(inv)
     res = {
         'ambiente': 1,
         'razon_social': info['name'],
