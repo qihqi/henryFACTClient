@@ -98,6 +98,9 @@ public final class Config {
     @Getter @SerializedName("impresora_matriz")
     boolean matrixPrinter;
 
+    @Getter @SerializedName("impresora_matriz_peq")
+    boolean smallMatrixPrinter;
+
     public static Config getConfigFromJson(String json) {
         System.out.println(json);
         Config config = new Gson().fromJson(json, Config.class);

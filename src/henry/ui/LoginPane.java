@@ -6,6 +6,7 @@ import henry.printing.Config;
 import henry.printing.FacturaPrinter;
 import henry.printing.GenericPrinter;
 import henry.printing.MinoristaPrinter;
+import henry.printing.MatrixPrinter;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.FileInputStream;
@@ -95,8 +96,11 @@ class LoginPane extends JPanel implements ActionListener{
         api.setAlmacenId(usuario.getAlmacenId());
         System.out.println(serverbox.getSelectedItem());
         System.out.println("index " + serverbox.getSelectedIndex());
-        GenericPrinter printer;
-        if (config.isMatrixPrinter()) {
+        GenericPrinter printer = null;
+        MatrixPrinter mprinter = null;
+        if (config.isSmallMatrixPrinter()) {
+            mprinter = new MatrixPrinter(api);
+        } else if (config.isMatrixPrinter()) {
             printer = new MinoristaPrinter(config);
             System.out.println("menorista printer");
         }
@@ -105,7 +109,7 @@ class LoginPane extends JPanel implements ActionListener{
             System.out.println("factura printer");
         }
         FacturaVentana factura = new FacturaVentana(
-                api, usuario, printer, config.isFactura());
+                api, usuario, printer, mprinter, config.isFactura());
         factura.setVisible(true);
         SwingUtilities.getWindowAncestor(this).dispose();
     }

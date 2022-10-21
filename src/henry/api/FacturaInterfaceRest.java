@@ -47,9 +47,11 @@ public class FacturaInterfaceRest implements FacturaInterface {
     private static final String CLIENT_URL_PATH = "/api/cliente";
     private static final String VENTA_URL_PATH = "/api/pedido";
     private static final String FACTURA_URL_PATH = "/api/nota";
+    private static final String FACTURA_REMOTE_URL_PATH = "/api/post_sri_nota";
     private static final String PROD_URL = "/api/alm/%d/producto/%s";
     private static final String LOGIN_URL = "/api/authenticate";
     private static final String BARCODE_PATH = "/api/barcode";
+    private static final String PRINTABLE_INV_PATH = "/api/nota_to_print/%d";
 
     private CloseableHttpClient httpClient;
     private String baseUrl;
@@ -295,6 +297,53 @@ public class FacturaInterfaceRest implements FacturaInterface {
         }
         return false;
     }
+
+    @Override
+    public boolean genRemoteDoc(int docId) {
+        URI uri = null;
+        try {
+            uri = new URIBuilder().setCharset(StandardCharsets.UTF_8).setScheme("http")
+                .setHost(baseUrl)
+                .setPath(String.format("%s/%d", FACTURA_REMOTE_URL_PATH, docId))
+                .build();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        HttpPut req = new HttpPut(uri);
+        try (CloseableHttpResponse response = httpClient.execute(req)) {
+            return (response.getStatusLine().getStatusCode() == 200);
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public byte[] getPrintableInvoice(int docId) {
+        URI uri = null;
+        try {
+            uri = new URIBuilder()
+                .setCharset(StandardCharsets.UTF_8).setScheme("http")
+                .setHost(baseUrl)
+                .setPath(String.format(PRINTABLE_INV_PATH, docId))
+                .build();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+            return null;
+        }
+        HttpGet req = new HttpGet(uri);
+        req.setConfig(timeoutConfig);
+        try (CloseableHttpResponse response = httpClient.execute(req)) {
+            HttpEntity entity = response.getEntity();
+            if (response.getStatusLine().getStatusCode() == 200) {
+                return entity.getContent().readAllBytes();
+            }
+        }
+        catch (IOException e) {
+        }
+        return null;
+    }
+
 
     @Override
     public Usuario authenticate(String username, String password) {

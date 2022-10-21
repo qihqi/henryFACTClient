@@ -20,6 +20,10 @@ public interface FacturaInterface {
 
     Usuario authenticate(String username, String password);
     boolean commitDocument(int docId);
+    // Send the doc to a remote server
+    boolean genRemoteDoc(int docId);
+
+    byte[] getPrintableInvoice(int docId);
 
     Item getItemFromBarcode(String barcode);
 
