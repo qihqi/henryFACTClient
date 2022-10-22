@@ -2,6 +2,8 @@ package henry.api;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -336,7 +338,7 @@ public class FacturaInterfaceRest implements FacturaInterface {
         try (CloseableHttpResponse response = httpClient.execute(req)) {
             HttpEntity entity = response.getEntity();
             if (response.getStatusLine().getStatusCode() == 200) {
-                return entity.getContent().readAllBytes();
+                return streamToBytes(entity.getContent());
             }
         }
         catch (IOException e) {
@@ -412,6 +414,20 @@ public class FacturaInterfaceRest implements FacturaInterface {
         catch (IOException e) {
         }
         return null;
+    }
+
+    public byte[] streamToBytes(InputStream is) throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        int nRead;
+        byte[] data = new byte[1024];
+
+        while ((nRead = is.read(data, 0, data.length)) != -1) {
+            buffer.write(data, 0, nRead);
+        }
+
+        buffer.flush();
+        byte[] targetArray = buffer.toByteArray();
+        return targetArray;
     }
 }
 
